@@ -3,6 +3,9 @@ import 'package:flutter_gerador/core/constants/app_colors.dart';
 import 'package:flutter_gerador/core/constants/app_strings.dart';
 
 class ScriptSettingsSection extends StatelessWidget {
+  final TextEditingController apiKeyController;
+  final String selectedModel;
+  final ValueChanged<String?> onModelChanged;
   final TextEditingController titleController;
   final TextEditingController contextController;
   final String measureType;
@@ -21,6 +24,9 @@ class ScriptSettingsSection extends StatelessWidget {
 
   const ScriptSettingsSection({
     super.key,
+    required this.apiKeyController,
+    required this.selectedModel,
+    required this.onModelChanged,
     required this.titleController,
     required this.contextController,
     required this.measureType,
@@ -40,254 +46,317 @@ class ScriptSettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 220,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppStrings.scriptTitleLabel,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.title),
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          SizedBox(
-            width: 220,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppStrings.contextLabel,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: contextController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: 'Descreva o enredo, personagens principais, cenário...',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: ElevatedButton(
-                      onPressed: onGenerateContext,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.fireOrange,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 180,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Chave da API Gemini',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
                       ),
-                      child: const Icon(Icons.auto_awesome, size: 20),
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          SizedBox(
-            width: 180,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppStrings.measureLabel,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  value: measureType,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'palavras', child: Text('Palavras')),
-                    DropdownMenuItem(value: 'caracteres', child: Text('Caracteres')),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: apiKeyController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.key),
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
                   ],
-                  onChanged: onMeasureTypeChanged,
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          SizedBox(
-            width: 180,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppStrings.quantityLabel,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                SizedBox(
-                  width: 80,
-                  child: TextFormField(
-                    controller: quantityController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                      border: OutlineInputBorder(),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 140,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Modelo',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
                     ),
-                    onChanged: onQuantityFieldChanged,
-                  ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      value: selectedModel,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'gemini-1.5-pro', child: Text('Gemini 1.5 Pro')),
+                      ],
+                      onChanged: onModelChanged,
+                    ),
+                  ],
                 ),
-                Slider(
-                  value: quantity.toDouble(),
-                  min: measureType == 'palavras' ? 500 : 2000,
-                  max: measureType == 'palavras' ? 14000 : 100000,
-                  divisions: 40,
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 180,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.scriptTitleLabel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: titleController,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.title),
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 180,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.contextLabel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: contextController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: 'Descreva o enredo...',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: ElevatedButton(
+                          onPressed: onGenerateContext,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.fireOrange,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Icon(Icons.auto_awesome, size: 20),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 140,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.measureLabel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      value: measureType,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'palavras', child: Text('Palavras')),
+                        DropdownMenuItem(value: 'caracteres', child: Text('Caracteres')),
+                      ],
+                      onChanged: onMeasureTypeChanged,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 160,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.quantityLabel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: 80,
+                      child: TextFormField(
+                        controller: quantityController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: onQuantityFieldChanged,
+                      ),
+                    ),
+                    Slider(
+                      value: quantity.toDouble(),
+                      min: measureType == 'palavras' ? 500 : 2000,
+                      max: measureType == 'palavras' ? 14000 : 100000,
+                      divisions: 40,
+                      activeColor: AppColors.fireOrange,
+                      onChanged: onQuantityChanged,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 160,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.languageLabel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      value: language,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'de', child: Text('Alemão')),
+                        DropdownMenuItem(value: 'bg', child: Text('Búlgaro')),
+                        DropdownMenuItem(value: 'es-mx', child: Text('Espanhol Mexicano')),
+                        DropdownMenuItem(value: 'fr', child: Text('Francês')),
+                        DropdownMenuItem(value: 'en', child: Text('Inglês')),
+                        DropdownMenuItem(value: 'it', child: Text('Italiano')),
+                        DropdownMenuItem(value: 'pl', child: Text('Polonês')),
+                        DropdownMenuItem(value: 'pt', child: Text('Português')),
+                        DropdownMenuItem(value: 'tr', child: Text('Turco')),
+                        DropdownMenuItem(value: 'ro', child: Text('Romeno')),
+                      ],
+                      onChanged: onLanguageChanged,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 200,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Perspectiva Narrativa',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      value: perspective,
+                      decoration: const InputDecoration(
+                        isDense: false,
+                        contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'terceira',
+                          child: Text('Terceira Pessoa', style: TextStyle(fontSize: 16)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'primeira_homem_idoso',
+                          child: Text('Primeira pessoa Homem idoso', style: TextStyle(fontSize: 16)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'primeira_homem_jovem',
+                          child: Text('Primeira pessoa Homem Jovem de 25 a 40', style: TextStyle(fontSize: 16)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'primeira_mulher_idosa',
+                          child: Text('Primeira pessoa Mulher Idosa', style: TextStyle(fontSize: 16)),
+                        ),
+                        DropdownMenuItem(
+                          value: 'primeira_mulher_jovem',
+                          child: Text('Primeira pessoa Mulher jovem de 25 a 40', style: TextStyle(fontSize: 16)),
+                        ),
+                      ],
+                      onChanged: onPerspectiveChanged,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 160,
+                child: CheckboxListTile(
+                  title: Text(AppStrings.callToActionLabel),
+                  value: includeCallToAction,
                   activeColor: AppColors.fireOrange,
-                  onChanged: onQuantityChanged,
+                  onChanged: onIncludeCallToActionChanged,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          SizedBox(
-            width: 180,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppStrings.languageLabel,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  value: language,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'de', child: Text('Alemão')),
-                    DropdownMenuItem(value: 'bg', child: Text('Búlgaro')),
-                    DropdownMenuItem(value: 'es-mx', child: Text('Espanhol Mexicano')),
-                    DropdownMenuItem(value: 'fr', child: Text('Francês')),
-                    DropdownMenuItem(value: 'en', child: Text('Inglês')),
-                    DropdownMenuItem(value: 'it', child: Text('Italiano')),
-                    DropdownMenuItem(value: 'pl', child: Text('Polonês')),
-                    DropdownMenuItem(value: 'pt', child: Text('Português')),
-                    DropdownMenuItem(value: 'tr', child: Text('Turco')),
-                    DropdownMenuItem(value: 'ro', child: Text('Romeno')),
-                  ],
-                  onChanged: onLanguageChanged,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          SizedBox(
-            width: 220,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Perspectiva Narrativa',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  value: perspective,
-                  decoration: const InputDecoration(
-                    isDense: false,
-                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'terceira',
-                      child: Text('Terceira Pessoa', style: TextStyle(fontSize: 16)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'primeira_homem_idoso',
-                      child: Text('Primeira pessoa Homem idoso', style: TextStyle(fontSize: 16)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'primeira_homem_jovem',
-                      child: Text('Primeira pessoa Homem Jovem de 25 a 40', style: TextStyle(fontSize: 16)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'primeira_mulher_idosa',
-                      child: Text('Primeira pessoa Mulher Idosa', style: TextStyle(fontSize: 16)),
-                    ),
-                    DropdownMenuItem(
-                      value: 'primeira_mulher_jovem',
-                      child: Text('Primeira pessoa Mulher jovem de 25 a 40', style: TextStyle(fontSize: 16)),
-                    ),
-                  ],
-                  onChanged: onPerspectiveChanged,
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          SizedBox(
-            width: 180,
-            child: CheckboxListTile(
-              title: Text(AppStrings.callToActionLabel),
-              value: includeCallToAction,
-              activeColor: AppColors.fireOrange,
-              onChanged: onIncludeCallToActionChanged,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

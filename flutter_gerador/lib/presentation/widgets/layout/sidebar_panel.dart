@@ -91,131 +91,153 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
     return LayoutBuilder(
       builder: (context, constraints) {
         double sidebarWidth = constraints.maxWidth.clamp(260, 340);
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
-          child: SizedBox(
-            width: sidebarWidth,
-            child: ClipRect(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ApiConfigSection(
-                      apiKeyController: apiKeyController,
-                      selectedModel: selectedModel,
-                      onModelChanged: (value) {
+        return Container(
+          width: 380,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.background,
+            border: Border(
+              right: BorderSide(color: Colors.orange.withOpacity(0.5), width: 2),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Configurações em linha horizontal no topo
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ScriptSettingsSection(
+                    apiKeyController: apiKeyController,
+                    selectedModel: selectedModel,
+                    onModelChanged: (value) {
+                      setState(() {
+                        selectedModel = value ?? selectedModel;
+                      });
+                    },
+                    titleController: titleController,
+                    contextController: contextController,
+                    measureType: measureType,
+                    onMeasureTypeChanged: (value) {
+                      setState(() {
+                        measureType = value ?? measureType;
+                        quantity = measureType == 'palavras' ? 1000 : 2000;
+                        quantityController.text = quantity.toString();
+                      });
+                    },
+                    quantity: quantity,
+                    quantityController: quantityController,
+                    onQuantityChanged: (value) {
+                      setState(() {
+                        quantity = value.toInt();
+                        quantityController.text = quantity.toString();
+                      });
+                    },
+                    onQuantityFieldChanged: (val) {
+                      final parsed = int.tryParse(val);
+                      if (parsed != null && parsed > 0) {
                         setState(() {
-                          selectedModel = value ?? selectedModel;
+                          quantity = parsed;
                         });
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    ScriptSettingsSection(
-                      titleController: titleController,
-                      contextController: contextController,
-                      measureType: measureType,
-                      onMeasureTypeChanged: (value) {
-                        setState(() {
-                          measureType = value ?? measureType;
-                          quantity = measureType == 'palavras' ? 1000 : 2000;
-                          quantityController.text = quantity.toString();
-                        });
-                      },
-                      quantity: quantity,
-                      quantityController: quantityController,
-                      onQuantityChanged: (value) {
-                        setState(() {
-                          quantity = value.toInt();
-                          quantityController.text = quantity.toString();
-                        });
-                      },
-                      onQuantityFieldChanged: (val) {
-                        final parsed = int.tryParse(val);
-                        if (parsed != null && parsed > 0) {
-                          setState(() {
-                            quantity = parsed;
-                          });
-                        }
-                      },
-                      language: language,
-                      onLanguageChanged: (value) {
-                        setState(() {
-                          language = value ?? language;
-                        });
-                      },
-                      perspective: perspective,
-                      onPerspectiveChanged: (value) {
-                        setState(() {
-                          perspective = value ?? perspective;
-                        });
-                      },
-                      includeCallToAction: includeCallToAction,
-                      onIncludeCallToActionChanged: (value) {
-                        setState(() {
-                          includeCallToAction = value ?? false;
-                        });
-                      },
-                      onGenerateContext: _isGeneratingContext ? null : () async {
-                        if (titleController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Preencha o título para gerar o contexto automaticamente.'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-                        setState(() => _isGeneratingContext = true);
-                        try {
-                          // Chamada simplificada à Gemini para gerar contexto
-                          final geminiService = GeminiService();
-                          final config = ScriptConfig(
-                            apiKey: apiKeyController.text,
-                            model: selectedModel,
-                            title: titleController.text,
-                            context: '',
-                            measureType: measureType,
-                            quantity: 200,
-                            language: language,
-                            perspective: perspective,
-                            includeCallToAction: false,
-                          );
-                          final result = await geminiService.generateScript(config, (_) {});
-                          contextController.text = result.scriptText;
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Erro ao gerar contexto: ${e.toString()}'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                        setState(() => _isGeneratingContext = false);
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    GenerationButton(
-                      isFormValid: isFormValid,
-                      isGenerating: generationState.isGenerating,
-                      onPressed: _generateScript,
-                    ),
-                    if (generationState.isGenerating)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: OutlinedButton(
-                          onPressed: () {
-                            generationNotifier.cancelGeneration();
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.red),
-                            foregroundColor: Colors.red,
+                      }
+                    },
+                    language: language,
+                    onLanguageChanged: (value) {
+                      setState(() {
+                        language = value ?? language;
+                      });
+                    },
+                    perspective: perspective,
+                    onPerspectiveChanged: (value) {
+                      setState(() {
+                        perspective = value ?? perspective;
+                      });
+                    },
+                    includeCallToAction: includeCallToAction,
+                    onIncludeCallToActionChanged: (value) {
+                      setState(() {
+                        includeCallToAction = value ?? false;
+                      });
+                    },
+                    onGenerateContext: _isGeneratingContext ? null : () async {
+                      if (titleController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Preencha o título para gerar o contexto automaticamente.'),
+                            backgroundColor: Colors.red,
                           ),
-                          child: const Text('Cancelar Geração'),
-                        ),
-                      ),
-                  ],
+                        );
+                        return;
+                      }
+                      setState(() => _isGeneratingContext = true);
+                      try {
+                        final geminiService = GeminiService();
+                        final config = ScriptConfig(
+                          apiKey: apiKeyController.text,
+                          model: selectedModel,
+                          title: titleController.text,
+                          context: '',
+                          measureType: measureType,
+                          quantity: 200,
+                          language: language,
+                          perspective: perspective,
+                          includeCallToAction: false,
+                        );
+                        final result = await geminiService.generateScript(config, (_) {});
+                        contextController.text = result.scriptText;
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Erro ao gerar contexto: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                      setState(() => _isGeneratingContext = false);
+                    },
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                // Campo de roteiro gerado embaixo, ocupando toda a largura
+                Container(
+                  width: double.infinity,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.orange),
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.black.withOpacity(0.05),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      generationState.result?.scriptText == null || generationState.result!.scriptText.isEmpty
+                          ? 'Nenhum roteiro gerado ainda.'
+                          : generationState.result!.scriptText,
+                      style: TextStyle(fontSize: 14, color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GenerationButton(
+                  isFormValid: isFormValid,
+                  isGenerating: generationState.isGenerating,
+                  onPressed: _generateScript,
+                ),
+                if (generationState.isGenerating)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: OutlinedButton(
+                      onPressed: () {
+                        generationNotifier.cancelGeneration();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.red),
+                        foregroundColor: Colors.red,
+                      ),
+                      child: const Text('Cancelar Geração'),
+                    ),
+                  ),
+              ],
             ),
           ),
         );
