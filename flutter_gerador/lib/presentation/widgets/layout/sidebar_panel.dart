@@ -2,7 +2,8 @@ import 'package:flutter_gerador/data/services/gemini_service.dart';
 import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter/material.dart';
 
-
+// NOTE: Este arquivo não é mais utilizado após migração para layout horizontal
+// Mantido para referência histórica - Layout original com sidebar lateral
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gerador/presentation/providers/script_config_provider.dart';
