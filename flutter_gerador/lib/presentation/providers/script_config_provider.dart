@@ -9,7 +9,7 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
           title: '',
           context: '',
           measureType: 'palavras',
-          quantity: 1000,
+          quantity: 2000,
           language: 'pt',
           perspective: 'terceira',
           includeCallToAction: false,

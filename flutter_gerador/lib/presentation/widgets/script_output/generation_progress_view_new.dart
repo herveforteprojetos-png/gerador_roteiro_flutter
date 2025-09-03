@@ -69,28 +69,21 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
     return AnimatedBuilder(
       animation: _progressAnimation,
       builder: (context, child) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height - 200,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _buildTerminalHeader(),
-                const SizedBox(height: 16),
-                _buildProgressBar(),
-                const SizedBox(height: 20),
-                _buildMetricsCards(),
-                const SizedBox(height: 20),
-                _buildPhaseIndicator(),
-                const SizedBox(height: 20),
-                _buildTerminalConsole(),
-                const SizedBox(height: 20),
-                _buildCancelButton(),
-              ],
-            ),
-          ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _buildTerminalHeader(),
+            const SizedBox(height: 16),
+            _buildProgressBar(),
+            const SizedBox(height: 24),
+            _buildMetricsCards(),
+            const SizedBox(height: 24),
+            _buildPhaseIndicator(),
+            const SizedBox(height: 24),
+            _buildTerminalConsole(),
+            const SizedBox(height: 24),
+            _buildCancelButton(),
+          ],
         );
       },
     );

@@ -28,7 +28,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
 
   String selectedModel = 'gemini-1.5-pro';
   String measureType = 'palavras';
-  int quantity = 1000;
+  int quantity = 2000;
   late TextEditingController quantityController;
   String language = 'pt';
   String perspective = 'terceira';
@@ -122,7 +122,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                     onMeasureTypeChanged: (value) {
                       setState(() {
                         measureType = value ?? measureType;
-                        quantity = measureType == 'palavras' ? 1000 : 2000;
+                        quantity = measureType == 'palavras' ? 2000 : 5000;
                         quantityController.text = quantity.toString();
                       });
                     },
@@ -137,9 +137,24 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                     onQuantityFieldChanged: (val) {
                       final parsed = int.tryParse(val);
                       if (parsed != null && parsed > 0) {
-                        setState(() {
-                          quantity = parsed;
-                        });
+                        // Validar limites baseados no tipo de medida
+                        final minLimit = measureType == 'palavras' ? 500 : 1000;
+                        final maxLimit = measureType == 'palavras' ? 14000 : 100000;
+                        
+                        if (parsed >= minLimit && parsed <= maxLimit) {
+                          setState(() {
+                            quantity = parsed;
+                          });
+                        } else {
+                          // Mostrar aviso sobre limites
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Limite: $minLimit a $maxLimit ${measureType}'),
+                              backgroundColor: Colors.orange,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
                       }
                     },
                     language: language,

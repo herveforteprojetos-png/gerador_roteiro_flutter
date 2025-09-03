@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gerador/data/services/gemini_service.dart';
 import 'package:flutter_gerador/data/models/script_config.dart';
+import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/presentation/providers/script_generation_provider.dart';
-import 'package:flutter_gerador/core/constants/app_colors.dart';
+import 'package:flutter_gerador/presentation/providers/generation_config_provider.dart';
+import 'package:flutter_gerador/presentation/providers/auxiliary_tools_provider.dart';
+import 'package:flutter_gerador/presentation/widgets/script_output/generation_progress_view.dart';
+import 'package:flutter_gerador/presentation/widgets/layout/expanded_header_widget.dart';
+import 'package:flutter_gerador/presentation/widgets/tools/extra_tools_panel.dart';
+import 'package:flutter_gerador/presentation/widgets/download/download_manager.dart';
+import 'package:flutter_gerador/core/theme/app_colors.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -13,22 +21,11 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  final TextEditingController apiKeyController = TextEditingController();
-  final TextEditingController titleController = TextEditingController();
   final TextEditingController contextController = TextEditingController();
-  
-  String selectedModel = 'gemini-1.5-pro';
   bool _isGeneratingContext = false;
-
-  bool get isFormValid =>
-      apiKeyController.text.isNotEmpty &&
-      titleController.text.isNotEmpty &&
-      contextController.text.isNotEmpty;
 
   @override
   void dispose() {
-    apiKeyController.dispose();
-    titleController.dispose();
     contextController.dispose();
     super.dispose();
   }
@@ -37,30 +34,44 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final generationState = ref.watch(scriptGenerationProvider);
     final generationNotifier = ref.read(scriptGenerationProvider.notifier);
+    final config = ref.watch(generationConfigProvider);
+    final configNotifier = ref.read(generationConfigProvider.notifier);
+    final auxiliaryState = ref.watch(auxiliaryToolsProvider);
+
+    // Listener para contexto gerado automaticamente
+    ref.listen(auxiliaryToolsProvider, (previous, current) {
+      if (previous?.generatedContext != current.generatedContext && 
+          current.generatedContext != null &&
+          contextController.text.isEmpty) {
+        contextController.text = current.generatedContext!;
+      }
+    });
 
     void _generateScript() async {
-      if (apiKeyController.text.isEmpty || apiKeyController.text.length < 20) {
+      if (!configNotifier.isValid) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Chave da API Gemini inválida ou ausente.'),
+            content: Text('Por favor, preencha todos os campos obrigatórios.'),
             backgroundColor: Colors.red,
           ),
         );
         return;
       }
-      final config = ScriptConfig(
-        apiKey: apiKeyController.text,
-        model: selectedModel,
-        title: titleController.text,
-        context: contextController.text,
-        measureType: 'palavras',
-        quantity: 5000,
-        language: 'pt',
-        perspective: 'terceira',
-        includeCallToAction: false,
+
+      final scriptConfig = ScriptConfig(
+        apiKey: config.apiKey,
+        model: config.model,
+        title: config.title,
+        context: contextController.text.isNotEmpty ? contextController.text : 'Gerar contexto automaticamente',
+        measureType: config.measureType,
+        quantity: config.quantity,
+        language: config.language,
+        perspective: config.perspective,
+        includeCallToAction: config.includeCallToAction,
       );
+
       try {
-        await generationNotifier.generateScript(config);
+        await generationNotifier.generateScript(scriptConfig);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -75,212 +86,119 @@ class _HomePageState extends ConsumerState<HomePage> {
       backgroundColor: AppColors.darkBackground,
       body: Column(
         children: [
-          // HEADER HORIZONTAL FIXO NO TOPO
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.darkBackground,
-              border: Border(
-                bottom: BorderSide(color: AppColors.fireOrange, width: 2),
-              ),
-            ),
-            child: Row(
-              children: [
-                // Campo Chave da API (à esquerda)
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Chave da API Gemini',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.fireOrange,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: apiKeyController,
-                        obscureText: true,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'Cole sua chave da API aqui...',
-                          hintStyle: TextStyle(color: Colors.grey[600]),
-                          prefixIcon: Icon(Icons.key, color: AppColors.fireOrange),
-                          filled: true,
-                          fillColor: Colors.black.withOpacity(0.3),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.fireOrange),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.fireOrange.withOpacity(0.5)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.fireOrange, width: 2),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                // Dropdown Modelo (centro)
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Modelo',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.fireOrange,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: selectedModel,
-                        style: const TextStyle(color: Colors.white),
-                        dropdownColor: AppColors.darkBackground,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.black.withOpacity(0.3),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.fireOrange),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.fireOrange.withOpacity(0.5)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.fireOrange, width: 2),
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'gemini-1.5-pro',
-                            child: Text('Gemini 1.5 Pro'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedModel = value ?? selectedModel;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                // Campo Título (à direita)
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Título do Roteiro',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.fireOrange,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: titleController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'Digite o título da sua história...',
-                          hintStyle: TextStyle(color: Colors.grey[600]),
-                          prefixIcon: Icon(Icons.title, color: AppColors.fireOrange),
-                          filled: true,
-                          fillColor: Colors.black.withOpacity(0.3),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.fireOrange),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.fireOrange.withOpacity(0.5)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.fireOrange, width: 2),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // HEADER HORIZONTAL EXPANDIDO
+          const ExpandedHeaderWidget(),
           
           // ÁREA PRINCIPAL
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: generationState.result != null && generationState.result!.scriptText.isNotEmpty
+              child: generationState.isGenerating
+                  ?
+                  // PROGRESSO DE GERAÇÃO
+                  GenerationProgressView(
+                    progress: generationState.progress ?? GenerationProgress(
+                      percentage: 0.0,
+                      currentPhase: 'Preparando...',
+                      phaseIndex: 0,
+                      totalPhases: 6,
+                      currentBlock: 0,
+                      totalBlocks: 10,
+                      logs: ['Iniciando geração...'],
+                      wordsGenerated: 0,
+                    ),
+                    onCancel: () {
+                      generationNotifier.cancelGeneration();
+                    },
+                  )
+                  : generationState.result != null && generationState.result!.scriptText.isNotEmpty
                   ? 
-                  // ÁREA DE RESULTADO (quando gerado)
-                  Column(
-                    children: [
-                      // Resultado do roteiro
-                      Expanded(
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
-                            border: Border.all(color: AppColors.fireOrange),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: SingleChildScrollView(
-                            child: Text(
-                              generationState.result!.scriptText,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                height: 1.5,
-                              ),
+                  // ÁREA DE RESULTADO COM PAINEL DE FERRAMENTAS
+                  Container(
+                    height: MediaQuery.of(context).size.height - 300, // Altura fixa para evitar overflow
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Resultado do roteiro (área principal)
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            height: double.infinity,
+                            child: Column(
+                              children: [
+                                // Resultado do roteiro
+                                Expanded(
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(20),
+                                    margin: const EdgeInsets.only(right: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.3),
+                                      border: Border.all(color: AppColors.fireOrange),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: SingleChildScrollView(
+                                      child: SelectableText(
+                                        generationState.result!.scriptText,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                // Métricas do roteiro
+                                Container(
+                                  margin: const EdgeInsets.only(right: 16),
+                                  child: _buildScriptMetrics(generationState.result!.scriptText),
+                                ),
+                                const SizedBox(height: 16),
+                                // Botões de ação (copiar e download)
+                                Container(
+                                  margin: const EdgeInsets.only(right: 16),
+                                  child: _buildActionButtons(generationState.result!.scriptText),
+                                ),
+                                const SizedBox(height: 16),
+                                // Botão para nova geração
+                                Container(
+                                  margin: const EdgeInsets.only(right: 16),
+                                  child: SizedBox(
+                                    width: 200,
+                                    height: 45,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        // Reset do estado para permitir nova geração
+                                        generationNotifier.cancelGeneration();
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.fireOrange,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(25),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Gerar Novo Roteiro',
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Botão para nova geração
-                      SizedBox(
-                        width: 200,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Reset do estado para permitir nova geração
-                            generationNotifier.cancelGeneration();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.fireOrange,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          child: const Text(
-                            'Gerar Novo Roteiro',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
+                        // Painel de Ferramentas Extras
+                        Container(
+                          width: 280,
+                          height: double.infinity,
+                          child: ExtraToolsPanel(scriptText: generationState.result!.scriptText),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   )
                   :
                   // TEXTAREA E BOTÃO GERAR (estado inicial)
@@ -338,7 +256,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           width: 200,
                           height: 50,
                           child: ElevatedButton(
-                            onPressed: generationState.isGenerating || !isFormValid ? null : _generateScript,
+                            onPressed: generationState.isGenerating || !configNotifier.isValid ? null : _generateScript,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.fireOrange,
                               foregroundColor: Colors.white,
@@ -383,6 +301,154 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildScriptMetrics(String scriptText) {
+    final characterCount = scriptText.length;
+    final wordCount = scriptText.trim().split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
+    
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.fireOrange.withOpacity(0.1),
+              border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildMetricCard(
+                      icon: Icons.text_fields,
+                      label: 'Caracteres',
+                      value: characterCount.toString(),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: AppColors.fireOrange.withOpacity(0.3),
+                    ),
+                    _buildMetricCard(
+                      icon: Icons.article,
+                      label: 'Palavras',
+                      value: wordCount.toString(),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetricCard({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: AppColors.fireOrange,
+          size: 24,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            color: AppColors.fireOrange,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(String scriptText) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () => _copyToClipboard(scriptText),
+            icon: const Icon(Icons.copy, size: 18),
+            label: const Text('Copiar Roteiro'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white.withOpacity(0.1),
+              foregroundColor: Colors.white,
+              side: BorderSide(color: Colors.white.withOpacity(0.3)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () => _downloadScript(scriptText),
+            icon: const Icon(Icons.download, size: 18),
+            label: const Text('Download'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.fireOrange,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _copyToClipboard(String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Roteiro copiado para a área de transferência!'),
+          backgroundColor: AppColors.fireOrange,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _downloadScript(String scriptText) async {
+    final config = ref.read(generationConfigProvider);
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final fileName = config.title.isNotEmpty 
+        ? '${config.title.replaceAll(RegExp(r'[^\w\s-]'), '')}_$timestamp'
+        : 'roteiro_$timestamp';
+
+    await DownloadManager.showDownloadDialog(
+      context: context,
+      title: 'Roteiro Gerado',
+      content: scriptText,
+      fileName: fileName,
+      fileExtension: 'txt',
     );
   }
 }

@@ -222,7 +222,7 @@ class ScriptSettingsSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppStrings.quantityLabel,
+                      '${AppStrings.quantityLabel} ($quantity/${measureType == 'palavras' ? '14k' : '100k'})',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.orange,
@@ -245,9 +245,9 @@ class ScriptSettingsSection extends StatelessWidget {
                     ),
                     Slider(
                       value: quantity.toDouble(),
-                      min: measureType == 'palavras' ? 500 : 2000,
+                      min: measureType == 'palavras' ? 500 : 1000,
                       max: measureType == 'palavras' ? 14000 : 100000,
-                      divisions: 40,
+                      divisions: measureType == 'palavras' ? 27 : 99,
                       activeColor: AppColors.fireOrange,
                       onChanged: onQuantityChanged,
                     ),
