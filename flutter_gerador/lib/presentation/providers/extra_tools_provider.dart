@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/generation_config.dart';
-import '../../data/services/gemini_service.dart';
+import 'package:flutter_gerador/data/models/generation_config.dart';
+import 'package:flutter_gerador/data/services/gemini_service.dart';
+import 'package:flutter_gerador/data/services/srt_service.dart';
 
 class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
   ExtraToolsNotifier() : super(const ExtraToolsState());
@@ -9,47 +10,27 @@ class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
     state = state.copyWith(isGeneratingSRT: true, srtError: null);
     
     try {
-      final geminiService = GeminiService();
-      
-      final srtPrompt = '''
-Com base no seguinte roteiro, crie legendas no formato SRT para um vídeo:
-
-**Roteiro:**
-$scriptText
-
-**Instruções:**
-1. Divida o texto em segmentos apropriados para legendas (máximo 2 linhas por legenda)
-2. Calcule tempos realistas considerando uma velocidade de fala natural
-3. Use o formato SRT padrão:
-   - Número da legenda
-   - Tempo inicial --> Tempo final
-   - Texto da legenda
-   - Linha em branco
-
-**Exemplo de formato:**
-1
-00:00:01,000 --> 00:00:04,000
-Primeira linha da legenda
-Segunda linha se necessário
-
-2
-00:00:05,000 --> 00:00:08,000
-Próxima legenda
-
-Gere as legendas em ${config.language} mantendo sincronia natural com a narrativa.
-''';
-
-      final response = await geminiService.generateText(
-        prompt: srtPrompt,
-        apiKey: config.apiKey,
+      // Configurações específicas para CapCut baseadas na imagem
+      final srtContent = SrtService.generateSrt(
+        scriptText,
+        wordsPerMinute: 120, // Mais lento para não encavalar
+        maxCharactersPerSubtitle: 500, // Máximo de caracteres por bloco (CapCut)
+        maxLinesPerSubtitle: 3, // Permitir até 3 linhas
+        minDisplayTime: 2.0, // Duração mínima por bloco (30 palavras ÷ 15 = 2s)
+        maxDisplayTime: 8.0, // Duração máxima por bloco (100 palavras ÷ 12.5 = 8s)
+        gapBetweenSubtitles: 1.0, // Intervalo de 1 segundo entre blocos
+        minWordsPerBlock: 30, // Mínimo de palavras por bloco
+        maxWordsPerBlock: 100, // Máximo de palavras por bloco
+        blockDurationSeconds: 30, // Duração base de 30 segundos por bloco
+        intervalBetweenBlocks: 20, // Intervalo de 20 segundos entre blocos
       );
 
       state = state.copyWith(
         isGeneratingSRT: false,
-        generatedSRT: response,
+        generatedSRT: srtContent,
       );
 
-      return response;
+      return srtContent;
     } catch (e) {
       state = state.copyWith(
         isGeneratingSRT: false,
@@ -66,41 +47,37 @@ Gere as legendas em ${config.language} mantendo sincronia natural com a narrativ
       final geminiService = GeminiService();
       
       final youtubePrompt = '''
-Com base no seguinte roteiro, crie uma descrição otimizada para YouTube:
+Com base no seguinte roteiro, crie uma descrição SIMPLES e CONCISA para YouTube:
 
 **Título do Vídeo:** ${config.title}
 **Roteiro:**
 $scriptText
 
-**Crie uma descrição que inclua:**
+**INSTRUÇÕES ESPECÍFICAS:**
+
+1. Crie APENAS uma descrição sobre o vídeo (máximo 500 caracteres)
+2. Liste tags relevantes baseadas no conteúdo
+3. Adapte completamente para o idioma: ${config.language}
+
+**FORMATO OBRIGATÓRIO:**
 
 🎬 **SOBRE O VÍDEO**
-[Resumo envolvente do conteúdo em 2-3 frases]
+[Descrição envolvente do conteúdo em máximo 500 caracteres, destacando os pontos principais da história]
 
-📖 **SINOPSE**
-[Descrição mais detalhada da história/conteúdo]
+�️ **TAGS SUGERIDAS**
+[Lista de tags separadas por espaços, incluindo gênero, tema, idioma e palavras-chave relevantes - ex: #horror #misterio #storytelling #${config.language.toLowerCase()}]
 
-🎭 **DESTAQUES**
-• [Ponto interessante 1]
-• [Ponto interessante 2] 
-• [Ponto interessante 3]
-
-⏰ **CAPÍTULOS** (se aplicável)
-00:00 - Introdução
-[Adicionar timestamps baseados no roteiro]
-
-🏷️ **TAGS SUGERIDAS**
-#tag1 #tag2 #tag3 #storytelling #${config.language}
-
-📱 **CONECTE-SE**
-[Espaço para links das redes sociais]
-
-Responda em ${config.language} com uma descrição profissional e otimizada para SEO.
+**IMPORTANTE:**
+- Responda COMPLETAMENTE em ${config.language}
+- Seja conciso e envolvente
+- Foque nos elementos mais interessantes da história
+- Use tags que ajudem na descoberta do conteúdo
 ''';
 
       final response = await geminiService.generateText(
         prompt: youtubePrompt,
         apiKey: config.apiKey,
+        model: 'gemini-1.5-flash',
       );
 
       state = state.copyWith(
@@ -113,6 +90,96 @@ Responda em ${config.language} com uma descrição profissional e otimizada para
       state = state.copyWith(
         isGeneratingYouTube: false,
         youtubeError: 'Erro ao gerar descrição: ${e.toString()}',
+      );
+      rethrow;
+    }
+  }
+
+  Future<String> generateProtagonistPrompt(GenerationConfig config, String scriptText) async {
+    state = state.copyWith(isGeneratingPrompts: true, promptsError: null);
+    
+    try {
+      final geminiService = GeminiService();
+      
+      final protagonistPrompt = '''
+Com base no seguinte roteiro, gere um prompt em inglês para criar uma imagem do protagonista no Midjourney:
+
+**Título:** ${config.title}
+**Roteiro:**
+$scriptText
+
+**Instruções:**
+- Gere um prompt do protagonista da cintura para cima
+- De frente para a câmera
+- Com roupa normal dele (baseada no contexto do roteiro)
+- O prompt deve ser em inglês para melhor compreensão da IA
+- Inclua detalhes físicos, roupas e expressão
+- Use estilo realista e fotográfico
+
+**Formato:** Apenas o prompt em inglês, sem explicações adicionais.
+''';
+
+      final result = await geminiService.generateText(
+        prompt: protagonistPrompt,
+        apiKey: config.apiKey,
+        model: config.model,
+      );
+      
+      state = state.copyWith(
+        isGeneratingPrompts: false,
+        generatedPrompts: result,
+      );
+
+      return result;
+    } catch (e) {
+      state = state.copyWith(
+        isGeneratingPrompts: false,
+        promptsError: 'Erro ao gerar prompt do protagonista: ${e.toString()}',
+      );
+      rethrow;
+    }
+  }
+
+  Future<String> generateScenarioPrompt(GenerationConfig config, String scriptText) async {
+    state = state.copyWith(isGeneratingScenario: true, scenarioError: null);
+    
+    try {
+      final geminiService = GeminiService();
+      
+      final scenarioPrompt = '''
+Com base no seguinte roteiro, gere um prompt em inglês para criar uma imagem do cenário principal no Midjourney:
+
+**Título:** ${config.title}
+**Roteiro:**
+$scriptText
+
+**Instruções:**
+- Gere um prompt do cenário principal onde a história acontece
+- Baseado no contexto e ambientação do roteiro
+- O prompt deve ser em inglês para melhor compreensão da IA
+- Inclua detalhes de localização, atmosfera, iluminação e elementos visuais
+- Use estilo realista e cinematográfico
+- Foque no ambiente, não em pessoas
+
+**Formato:** Apenas o prompt em inglês, sem explicações adicionais.
+''';
+
+      final result = await geminiService.generateText(
+        prompt: scenarioPrompt,
+        apiKey: config.apiKey,
+        model: config.model,
+      );
+      
+      state = state.copyWith(
+        isGeneratingScenario: false,
+        generatedScenario: result,
+      );
+
+      return result;
+    } catch (e) {
+      state = state.copyWith(
+        isGeneratingScenario: false,
+        scenarioError: 'Erro ao gerar prompt do cenário: ${e.toString()}',
       );
       rethrow;
     }
@@ -163,6 +230,7 @@ Responda em ${config.language} com prompts detalhados e criativos.
       final response = await geminiService.generateText(
         prompt: promptsTemplate,
         apiKey: config.apiKey,
+        model: 'gemini-1.5-flash', // Usar Flash para auxiliary tools por ser mais confiável
       );
 
       state = state.copyWith(
@@ -201,46 +269,58 @@ class ExtraToolsState {
   final bool isGeneratingSRT;
   final bool isGeneratingYouTube;
   final bool isGeneratingPrompts;
+  final bool isGeneratingScenario;
   final String? generatedSRT;
   final String? generatedYouTube;
   final String? generatedPrompts;
+  final String? generatedScenario;
   final String? srtError;
   final String? youtubeError;
   final String? promptsError;
+  final String? scenarioError;
 
   const ExtraToolsState({
     this.isGeneratingSRT = false,
     this.isGeneratingYouTube = false,
     this.isGeneratingPrompts = false,
+    this.isGeneratingScenario = false,
     this.generatedSRT,
     this.generatedYouTube,
     this.generatedPrompts,
+    this.generatedScenario,
     this.srtError,
     this.youtubeError,
     this.promptsError,
+    this.scenarioError,
   });
 
   ExtraToolsState copyWith({
     bool? isGeneratingSRT,
     bool? isGeneratingYouTube,
     bool? isGeneratingPrompts,
+    bool? isGeneratingScenario,
     String? generatedSRT,
     String? generatedYouTube,
     String? generatedPrompts,
+    String? generatedScenario,
     String? srtError,
     String? youtubeError,
     String? promptsError,
+    String? scenarioError,
   }) {
     return ExtraToolsState(
       isGeneratingSRT: isGeneratingSRT ?? this.isGeneratingSRT,
       isGeneratingYouTube: isGeneratingYouTube ?? this.isGeneratingYouTube,
       isGeneratingPrompts: isGeneratingPrompts ?? this.isGeneratingPrompts,
+      isGeneratingScenario: isGeneratingScenario ?? this.isGeneratingScenario,
       generatedSRT: generatedSRT ?? this.generatedSRT,
       generatedYouTube: generatedYouTube ?? this.generatedYouTube,
       generatedPrompts: generatedPrompts ?? this.generatedPrompts,
+      generatedScenario: generatedScenario ?? this.generatedScenario,
       srtError: srtError ?? this.srtError,
       youtubeError: youtubeError ?? this.youtubeError,
       promptsError: promptsError ?? this.promptsError,
+      scenarioError: scenarioError ?? this.scenarioError,
     );
   }
 }

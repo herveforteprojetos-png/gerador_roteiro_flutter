@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:pdf/widgets.dart' as pw;
@@ -120,9 +121,40 @@ class ScriptResultView extends StatelessWidget {
                                 context: context,
                                 builder: (_) => SrtGeneratorDialog(
                                   scriptController: scriptController,
-                                  onGenerateSrt: () {
-                                    // TODO: Implementar geração de SRT
-                                    Navigator.of(context).pop();
+                                  onGenerateSrt: (srtContent) {
+                                    // Criar um novo dialog para mostrar o resultado SRT
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) => AlertDialog(
+                                        title: const Text('SRT Gerado'),
+                                        content: SizedBox(
+                                          width: 500,
+                                          height: 400,
+                                          child: SingleChildScrollView(
+                                            child: SelectableText(
+                                              srtContent,
+                                              style: const TextStyle(fontFamily: 'monospace'),
+                                            ),
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(),
+                                            child: const Text('Fechar'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () async {
+                                              // Copiar para clipboard
+                                              await Clipboard.setData(ClipboardData(text: srtContent));
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('SRT copiado para a área de transferência!')),
+                                              );
+                                            },
+                                            child: const Text('Copiar'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
                                   },
                                 ),
                               );

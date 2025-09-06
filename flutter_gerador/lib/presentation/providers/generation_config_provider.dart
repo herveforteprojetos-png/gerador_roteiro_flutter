@@ -4,7 +4,7 @@ import '../../data/models/generation_config.dart';
 class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
   GenerationConfigNotifier() : super(const GenerationConfig(
     apiKey: '',
-    model: 'gemini-1.5-pro',
+    model: 'gemini-2.5-pro',
     title: '',
   ));
 
@@ -47,7 +47,7 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
   void clearAll() {
     state = const GenerationConfig(
       apiKey: '',
-      model: 'gemini-1.5-pro',
+      model: 'gemini-2.5-pro',
       title: '',
     );
   }

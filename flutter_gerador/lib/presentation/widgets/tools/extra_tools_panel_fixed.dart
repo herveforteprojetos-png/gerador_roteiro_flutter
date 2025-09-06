@@ -268,10 +268,11 @@ class ExtraToolsPanel extends ConsumerWidget {
       if (context.mounted) {
         showDialog(
           context: context,
-          builder: (context) => DownloadDialog(
+          builder: (context) => DownloadManager(
             title: title,
+            description: description,
             content: content,
-            fileName: _getFileName(title),
+            extension: _getFileExtension(title),
           ),
         );
       }
@@ -284,20 +285,6 @@ class ExtraToolsPanel extends ConsumerWidget {
           ),
         );
       }
-    }
-  }
-
-  String _getFileName(String title) {
-    if (title.contains('SRT')) {
-      return 'legendas.srt';
-    } else if (title.contains('YouTube')) {
-      return 'descricao_youtube.txt';
-    } else if (title.contains('Protagonista')) {
-      return 'prompt_protagonista.txt';
-    } else if (title.contains('Cenário')) {
-      return 'prompt_cenario.txt';
-    } else {
-      return 'conteudo.txt';
     }
   }
 

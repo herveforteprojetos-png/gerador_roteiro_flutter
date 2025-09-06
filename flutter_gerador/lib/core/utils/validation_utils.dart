@@ -4,7 +4,7 @@ class ValidationUtils {
     
     switch (model) {
       case 'gemini-pro':
-      case 'gemini-1.5-pro':
+      case 'gemini-2.5-pro':
       case 'gemini-1.5-flash':
         // Gemini API keys geralmente começam com "AIza" e têm 39 caracteres
         return apiKey.startsWith('AIza') && apiKey.length == 39;
@@ -28,7 +28,7 @@ class ValidationUtils {
     if (!isValidApiKey(value, model)) {
       switch (model) {
         case 'gemini-pro':
-        case 'gemini-1.5-pro':
+        case 'gemini-2.5-pro':
         case 'gemini-1.5-flash':
           return 'Chave Gemini inválida (deve começar com "AIza")';
         case 'gpt-4':

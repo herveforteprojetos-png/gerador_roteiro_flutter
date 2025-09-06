@@ -81,8 +81,8 @@ class _ApiConfigSectionState extends State<ApiConfigSection> {
           value: widget.selectedModel,
           decoration: InputDecoration(labelText: AppStrings.modelLabel),
           items: const [
-            DropdownMenuItem(value: 'gemini-1.5-pro', child: Text('Gemini 1.5 Pro')),
-            DropdownMenuItem(value: 'gemini-1.5-flash', child: Text('Gemini 1.5 Flash')),
+            DropdownMenuItem(value: 'gemini-2.5-pro', child: Text('Gemini 2.5 Pro')),
+            DropdownMenuItem(value: 'gemini-1.5-flash', child: Text('Gemini 1.5 Flash (Rápido)')),
           ],
           onChanged: widget.onModelChanged,
         ),

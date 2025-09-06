@@ -14,7 +14,7 @@ class GenerationConfig {
     required this.title,
     this.measureType = 'palavras',
     this.quantity = 1000,
-    this.language = 'português',
+    this.language = 'Português',
     this.perspective = 'terceira_pessoa',
     this.includeCallToAction = false,
   });
@@ -43,16 +43,17 @@ class GenerationConfig {
 
   // Opções disponíveis
   static const List<String> availableLanguages = [
-    'alemão',
-    'búlgaro',
-    'mexicano',
-    'francês',
-    'inglês',
-    'italiano',
-    'polonês',
-    'português',
-    'turco',
-    'romeno',
+    'Alemão',
+    'Búlgaro',
+    'Croata',
+    'Espanhol(mexicano)',
+    'Francês',
+    'Inglês',
+    'Italiano',
+    'Polonês',
+    'Português',
+    'Turco',
+    'Romeno',
   ];
 
   static const List<String> availablePerspectives = [
@@ -72,16 +73,17 @@ class GenerationConfig {
   };
 
   static const Map<String, String> languageLabels = {
-    'alemão': 'Alemão',
-    'búlgaro': 'Búlgaro',
-    'mexicano': 'Mexicano',
-    'francês': 'Francês',
-    'inglês': 'Inglês',
-    'italiano': 'Italiano',
-    'polonês': 'Polonês',
-    'português': 'Português',
-    'turco': 'Turco',
-    'romeno': 'Romeno',
+    'Alemão': 'Alemão',
+    'Búlgaro': 'Búlgaro',
+    'Croata': 'Croata',
+    'Espanhol(mexicano)': 'Espanhol (Mexicano)',
+    'Francês': 'Francês',
+    'Inglês': 'Inglês',
+    'Italiano': 'Italiano',
+    'Polonês': 'Polonês',
+    'Português': 'Português',
+    'Turco': 'Turco',
+    'Romeno': 'Romeno',
   };
 
   // Limites para sliders

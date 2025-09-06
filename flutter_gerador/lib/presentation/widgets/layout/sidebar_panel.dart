@@ -26,7 +26,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contextController = TextEditingController();
 
-  String selectedModel = 'gemini-1.5-pro';
+  String selectedModel = 'gemini-2.5-pro';
   String measureType = 'palavras';
   int quantity = 2000;
   late TextEditingController quantityController;

@@ -217,27 +217,34 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
 
   Widget _buildMetricCard(String title, String value, IconData icon) {
     return Container(
-      width: 120,
-      padding: const EdgeInsets.all(16),
+      width: 140, // Aumentado de 120 para 140
+      height: 110,
+      padding: const EdgeInsets.all(12), // Reduzido de 16 para 12 para mais espaço
       decoration: BoxDecoration(
         color: Colors.grey[850],
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             icon,
             color: AppColors.fireOrange,
             size: 24,
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          const SizedBox(height: 6), // Reduzido de 8 para 6
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(height: 4),
@@ -245,9 +252,11 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
             title,
             style: TextStyle(
               color: Colors.grey[400],
-              fontSize: 12,
+              fontSize: 11, // Reduzido de 12 para 11 para caber melhor
             ),
             textAlign: TextAlign.center,
+            maxLines: 2, // Aumentado de 1 para 2 linhas
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

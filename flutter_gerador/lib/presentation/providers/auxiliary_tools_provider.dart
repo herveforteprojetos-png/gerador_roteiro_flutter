@@ -35,6 +35,7 @@ Responda em ${config.language} e mantenha um contexto rico mas conciso para orie
       final response = await geminiService.generateText(
         prompt: contextPrompt,
         apiKey: config.apiKey,
+        model: 'gemini-1.5-flash', // Usar Flash para auxiliary tools por ser mais confiável
       );
 
       state = state.copyWith(
@@ -81,6 +82,7 @@ Responda apenas com o prompt final em inglês, sem explicações adicionais.
       final response = await geminiService.generateText(
         prompt: imagePromptTemplate,
         apiKey: config.apiKey,
+        model: 'gemini-1.5-flash', // Usar Flash para auxiliary tools por ser mais confiável
       );
 
       state = state.copyWith(
