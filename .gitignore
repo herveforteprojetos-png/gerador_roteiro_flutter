@@ -89,3 +89,14 @@ Gerador de Roteiro*/
 # Windows
 Thumbs.db
 Desktop.ini
+
+# Adicionar aqui novos padrões encontrados
+flutter_gerador_BACKUP*/
+*_BACKUP_*.dart
+gemini_service_BACKUP*.dart
+flutter_gerador/lib/data/utils/
+flutter_gerador/lib/presentation/widgets/dialogs/
+
+# Arquivos de teste na raiz
+test_*.dart
+teste_*.dart
