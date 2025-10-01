@@ -7,6 +7,9 @@ class ScriptSettingsSection extends StatelessWidget {
   final String selectedModel;
   final ValueChanged<String?> onModelChanged;
   final TextEditingController titleController;
+  final String selectedTema;
+  final ValueChanged<String?> onTemaChanged;
+  final TextEditingController localizacaoController;
   final TextEditingController contextController;
   final String measureType;
   final ValueChanged<String?> onMeasureTypeChanged;
@@ -28,6 +31,9 @@ class ScriptSettingsSection extends StatelessWidget {
     required this.selectedModel,
     required this.onModelChanged,
     required this.titleController,
+    required this.selectedTema,
+    required this.onTemaChanged,
+    required this.localizacaoController,
     required this.contextController,
     required this.measureType,
     required this.onMeasureTypeChanged,
@@ -104,8 +110,7 @@ class ScriptSettingsSection extends StatelessWidget {
                         border: OutlineInputBorder(),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'gemini-2.5-pro', child: Text('Gemini 2.5 Pro')),
-                        DropdownMenuItem(value: 'gemini-1.5-flash', child: Text('Gemini 1.5 Flash')),
+                        DropdownMenuItem(value: 'gemini-2.5-pro', child: Text('Gemini 2.5 Pro 🏆 (Qualidade Máxima - Único Disponível)')),
                       ],
                       onChanged: onModelChanged,
                     ),
@@ -131,6 +136,82 @@ class ScriptSettingsSection extends StatelessWidget {
                       controller: titleController,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.title),
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 150,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tema',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      value: selectedTema,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.category),
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        'História',
+                        'Ciência',
+                        'Saúde',
+                        'Tecnologia',
+                        'Natureza',
+                        'Mistério/Suspense',
+                        'Terror/Sobrenatural',
+                        'Ficção Científica',
+                        'Drama/Romance',
+                        'Comédia/Humor',
+                        'Curiosidades',
+                        'Biografias',
+                        'Viagens/Lugares',
+                      ].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value, style: TextStyle(fontSize: 13)),
+                        );
+                      }).toList(),
+                      onChanged: onTemaChanged,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 200,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Onde se passa a história:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: localizacaoController,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.location_on),
+                        hintText: 'Ex: Tokyo, Japão / Sertão da Bahia...',
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                         border: OutlineInputBorder(),
@@ -286,6 +367,7 @@ class ScriptSettingsSection extends StatelessWidget {
                         DropdownMenuItem(value: 'it', child: Text('Italiano')),
                         DropdownMenuItem(value: 'pl', child: Text('Polonês')),
                         DropdownMenuItem(value: 'pt', child: Text('Português')),
+                        DropdownMenuItem(value: 'ru', child: Text('Russo')),
                         DropdownMenuItem(value: 'tr', child: Text('Turco')),
                         DropdownMenuItem(value: 'ro', child: Text('Romeno')),
                       ],
@@ -296,7 +378,7 @@ class ScriptSettingsSection extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               SizedBox(
-                width: 200,
+                width: 160,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -311,47 +393,72 @@ class ScriptSettingsSection extends StatelessWidget {
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       value: perspective,
-                      decoration: const InputDecoration(
-                        isDense: false,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                         border: OutlineInputBorder(),
                       ),
                       items: const [
                         DropdownMenuItem(
-                          value: 'terceira',
-                          child: Text('Terceira Pessoa', style: TextStyle(fontSize: 16)),
+                          value: 'terceira_pessoa',
+                          child: Text('Terceira Pessoa'),
                         ),
                         DropdownMenuItem(
-                          value: 'primeira_homem_idoso',
-                          child: Text('Primeira pessoa Homem idoso', style: TextStyle(fontSize: 16)),
+                          value: 'primeira_pessoa_homem_idoso',
+                          child: Text('1ª P. Homem Idoso'),
                         ),
                         DropdownMenuItem(
-                          value: 'primeira_homem_jovem',
-                          child: Text('Primeira pessoa Homem Jovem de 25 a 40', style: TextStyle(fontSize: 16)),
+                          value: 'primeira_pessoa_homem_jovem',
+                          child: Text('1ª P. Homem Jovem'),
                         ),
                         DropdownMenuItem(
-                          value: 'primeira_mulher_idosa',
-                          child: Text('Primeira pessoa Mulher Idosa', style: TextStyle(fontSize: 16)),
+                          value: 'primeira_pessoa_mulher_idosa',
+                          child: Text('1ª P. Mulher Idosa'),
                         ),
                         DropdownMenuItem(
-                          value: 'primeira_mulher_jovem',
-                          child: Text('Primeira pessoa Mulher jovem de 25 a 40', style: TextStyle(fontSize: 16)),
+                          value: 'primeira_pessoa_mulher_jovem',
+                          child: Text('1ª P. Mulher Jovem'),
                         ),
                       ],
                       onChanged: onPerspectiveChanged,
-                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 16),
               SizedBox(
-                width: 160,
-                child: CheckboxListTile(
-                  title: Text(AppStrings.callToActionLabel),
-                  value: includeCallToAction,
-                  activeColor: AppColors.fireOrange,
-                  onChanged: onIncludeCallToActionChanged,
+                width: 140,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Call-to-Action',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 40,
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: includeCallToAction,
+                            activeColor: AppColors.fireOrange,
+                            onChanged: onIncludeCallToActionChanged,
+                          ),
+                          Text('Incluir CTA'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

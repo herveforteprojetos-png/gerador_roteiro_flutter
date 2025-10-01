@@ -12,6 +12,5 @@ class AppStrings {
   static const String generating = 'Gerando...';
   static const String cancelGeneration = 'Cancelar Geração';
   static const String downloadTxt = 'Download TXT';
-  static const String downloadPdf = 'Download PDF';
   static const String extraTools = 'Ferramentas Extras';
 }

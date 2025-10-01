@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-
-
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gerador/presentation/widgets/script_output/generation_progress_view.dart';
 import 'package:flutter_gerador/presentation/widgets/script_output/script_result_view.dart';
@@ -18,11 +15,7 @@ class MainContentArea extends ConsumerWidget {
     if (state.isGenerating && state.progress != null) {
       final progress = state.progress!;
       return GenerationProgressView(
-        progress: progress.progress,
-        generatedBlocks: progress.generatedBlocks,
-        wordCount: progress.wordCount,
-        currentPhase: progress.currentPhase,
-        logs: progress.logs,
+        progress: progress,
         onCancel: () {
           // TODO: Cancelar geração via provider
         },
@@ -39,7 +32,7 @@ class MainContentArea extends ConsumerWidget {
           // TODO: Implementar download TXT
         },
         onDownloadFormatted: () {
-          // TODO: Implementar download PDF
+          // TODO: Implementar download formatado
         },
         context: context,
         onShowExtraTools: () {},

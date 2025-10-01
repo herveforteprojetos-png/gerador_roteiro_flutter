@@ -1,42 +1,124 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/generation_config.dart';
 import '../../data/services/gemini_service.dart';
+import '../../data/services/name_generator_service.dart';
+import 'script_generation_provider.dart'; // Para acessar defaultGeminiServiceProvider
 
 class AuxiliaryToolsNotifier extends StateNotifier<AuxiliaryToolsState> {
-  AuxiliaryToolsNotifier() : super(const AuxiliaryToolsState());
+  final GeminiService _geminiService;
+  
+  AuxiliaryToolsNotifier(this._geminiService) : super(const AuxiliaryToolsState());
 
   Future<String> generateContext(GenerationConfig config) async {
     state = state.copyWith(isGeneratingContext: true, contextError: null);
     
     try {
-      final geminiService = GeminiService();
+      // CORREÇÃO: Usar instância injetada em vez de criar nova
+      // final geminiService = GeminiService(); // <- VAZAMENTO DE MEMÓRIA!
       
-      // Prompt especializado para geração de contexto
+      // 🎭 SISTEMA COMPLETO: Detectar gênero e idade por TODAS as perspectivas
+      String protagonistGender = 'masculino'; // padrão para terceira_pessoa
+      String protagonistAge = 'maduro'; // padrão
+      
+      // MAPEAMENTO COMPLETO DE TODAS AS PERSPECTIVAS
+      switch (config.perspective) {
+        case 'primeira_pessoa_homem_idoso':
+          protagonistGender = 'masculino';
+          protagonistAge = 'idoso';
+          break;
+        case 'primeira_pessoa_homem_jovem':
+          protagonistGender = 'masculino';
+          protagonistAge = 'jovem';
+          break;
+        case 'primeira_pessoa_mulher_idosa':
+          protagonistGender = 'feminino';
+          protagonistAge = 'idoso';
+          break;
+        case 'primeira_pessoa_mulher_jovem':
+          protagonistGender = 'feminino';
+          protagonistAge = 'jovem';
+          break;
+        case 'terceira_pessoa':
+        default:
+          // Para terceira pessoa, usar tema para determinar se mais apropriado masculino/feminino
+          if (config.tema.toLowerCase().contains('vingança') && config.title.toLowerCase().contains('nora')) {
+            protagonistGender = 'feminino'; // Sogra vs nora = protagonista feminina
+            protagonistAge = 'idoso';
+          } else {
+            protagonistGender = 'masculino'; // padrão
+            protagonistAge = 'maduro';
+          }
+          break;
+      }
+      
+      final protagonistName = config.protagonistName.trim().isNotEmpty 
+          ? config.protagonistName.trim()
+          : NameGeneratorService.generateName(
+              gender: protagonistGender, // CORRIGIDO: Baseado na perspectiva
+              ageGroup: 'maduro', // jovem, maduro, idoso
+              language: config.language.toLowerCase() == 'português' ? 'pt' : 'en'
+            );
+      
+      // 🎭 PERSONAGEM SECUNDÁRIO: Gênero oposto e faixa etária complementar
+      String secondaryGender = protagonistGender == 'masculino' ? 'feminino' : 'masculino';
+      String secondaryAge = protagonistAge == 'jovem' ? 'idoso' : 'jovem'; // Contraste interessante
+      
+      final secondaryName = config.secondaryCharacterName.trim().isNotEmpty
+          ? config.secondaryCharacterName.trim()
+          : NameGeneratorService.generateName(
+              gender: secondaryGender,
+              ageGroup: secondaryAge, 
+              language: config.language.toLowerCase() == 'português' ? 'pt' : 'en'
+            );
+      
+      // 🎯 PROMPT MELHORADO: Sistema completo de perspectivas
+      final perspectiveLabel = GenerationConfig.perspectiveLabels[config.perspective] ?? config.perspective;
+      final genderDescription = protagonistGender == 'masculino' ? 'HOMEM' : 'MULHER';
+      final ageDescription = protagonistAge == 'jovem' ? 'JOVEM' : (protagonistAge == 'idoso' ? 'IDOSO(A)' : 'ADULTO(A)');
+      
       final contextPrompt = '''
-Gere um contexto detalhado para um roteiro com as seguintes especificações:
+Crie um contexto COMPLETO em PORTUGUÊS para uma história YouTube baseada nas especificações EXATAS:
 
-**Título:** ${config.title}
-**Idioma:** ${config.language}
-**Perspectiva:** ${GenerationConfig.perspectiveLabels[config.perspective] ?? config.perspective}
-**Extensão:** ${config.quantity} ${config.measureType}
+**CONFIGURAÇÃO OBRIGATÓRIA:**
+- Título: ${config.title}
+- Tema: ${config.tema}  
+- Perspectiva: $perspectiveLabel
+- Idioma: ${config.language}
 
-Por favor, crie um contexto que inclua:
+🎭 **PERSONAGENS DEFINIDOS:**
+- PROTAGONISTA: "$protagonistName" - $genderDescription $ageDescription (conforme perspectiva $perspectiveLabel)
+- PERSONAGEM RELACIONADO: "$secondaryName"
 
-1. **Gênero e Tom:** Defina o gênero principal e o tom desejado
-2. **Protagonista:** Descreva o personagem principal, suas motivações e conflitos
-3. **Cenário:** Estabeleça onde e quando a história se passa
-4. **Conflito Central:** Identifique o problema principal que move a narrativa
-5. **Arco Narrativo:** Esboce a jornada do protagonista
-6. **Elementos Únicos:** Adicione detalhes que tornem a história interessante
+📋 **ESTRUTURA OBRIGATÓRIA:**
 
-Responda em ${config.language} e mantenha um contexto rico mas conciso para orientar a criação do roteiro.
+**PROTAGONISTA "$protagonistName":**
+Gênero: $genderDescription | Idade: $ageDescription | Personalidade marcante relacionada ao tema "${config.tema}" | Motivação clara e interessante para YouTube.
+
+**CENÁRIO REALISTA:**
+Localização brasileira atual, ambiente onde a história acontece, detalhes que tornam a situação believável.
+
+**CONFLITO CENTRAL:**
+Situação dramática específica envolvendo "${config.tema}" que cria tensão e interesse para o público YouTube.
+
+**ATMOSFERA:**
+Tom envolvente mas adequado para YouTube - interessante sem ser excessivamente pesado.
+
+🔥 **CRÍTICO:** O protagonista "$protagonistName" DEVE ser exatamente um(a) $genderDescription $ageDescription conforme a perspectiva "$perspectiveLabel". Use os nomes EXATOS fornecidos. Crie contexto envolvente para narrativa YouTube.
 ''';
 
-      final response = await geminiService.generateText(
+      final response = await _geminiService.generateTextWithApiKey(
         prompt: contextPrompt,
         apiKey: config.apiKey,
-        model: 'gemini-1.5-flash', // Usar Flash para auxiliary tools por ser mais confiável
+        model: 'gemini-2.5-pro', // CORREÇÃO: Apenas Pro 2.5 para qualidade máxima
       );
+
+      debugPrint('AuxiliaryTools: Resposta recebida - Length: ${response.length}');
+      debugPrint('AuxiliaryTools: Primeiros 100 chars: ${response.length > 100 ? response.substring(0, 100) : response}');
+
+      if (response.isEmpty) {
+        throw Exception('Resposta vazia do servidor Gemini');
+      }
 
       state = state.copyWith(
         isGeneratingContext: false,
@@ -45,9 +127,25 @@ Responda em ${config.language} e mantenha um contexto rico mas conciso para orie
 
       return response;
     } catch (e) {
+      // Melhorar mensagem de erro baseada no tipo de erro
+      String errorMessage;
+      final errorStr = e.toString().toLowerCase();
+      
+      if (errorStr.contains('503')) {
+        errorMessage = 'Servidor do Gemini temporariamente indisponível. Tente novamente em alguns minutos.';
+      } else if (errorStr.contains('429')) {
+        errorMessage = 'Muitas solicitações. Aguarde um momento antes de tentar novamente.';
+      } else if (errorStr.contains('timeout') || errorStr.contains('connection')) {
+        errorMessage = 'Problema de conexão. Verifique sua internet e tente novamente.';
+      } else if (errorStr.contains('api')) {
+        errorMessage = 'Verifique se sua chave API está configurada corretamente.';
+      } else {
+        errorMessage = 'Erro inesperado ao gerar contexto. Tente novamente.';
+      }
+      
       state = state.copyWith(
         isGeneratingContext: false,
-        contextError: 'Erro ao gerar contexto: ${e.toString()}',
+        contextError: errorMessage,
       );
       rethrow;
     }
@@ -57,7 +155,8 @@ Responda em ${config.language} e mantenha um contexto rico mas conciso para orie
     state = state.copyWith(isGeneratingImagePrompt: true, imagePromptError: null);
     
     try {
-      final geminiService = GeminiService();
+      // CORREÇÃO: Usar instância injetada
+      // final geminiService = GeminiService(); // <- VAZAMENTO DE MEMÓRIA!
       
       // Prompt especializado para geração de prompt de imagem
       final imagePromptTemplate = '''
@@ -79,10 +178,10 @@ Formato do prompt: Uma descrição concisa e rica em detalhes visuais, otimizada
 Responda apenas com o prompt final em inglês, sem explicações adicionais.
 ''';
 
-      final response = await geminiService.generateText(
+      final response = await _geminiService.generateTextWithApiKey(
         prompt: imagePromptTemplate,
         apiKey: config.apiKey,
-        model: 'gemini-1.5-flash', // Usar Flash para auxiliary tools por ser mais confiável
+        model: 'gemini-2.5-pro', // CORREÇÃO: Apenas Pro 2.5 para qualidade máxima
       );
 
       state = state.copyWith(
@@ -155,6 +254,8 @@ class AuxiliaryToolsState {
   }
 }
 
+// Provider para auxiliary tools
 final auxiliaryToolsProvider = StateNotifierProvider<AuxiliaryToolsNotifier, AuxiliaryToolsState>((ref) {
-  return AuxiliaryToolsNotifier();
+  final geminiService = ref.watch(defaultGeminiServiceProvider);
+  return AuxiliaryToolsNotifier(geminiService);
 });

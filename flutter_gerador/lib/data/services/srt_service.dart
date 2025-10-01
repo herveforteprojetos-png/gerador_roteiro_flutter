@@ -49,38 +49,7 @@ class SrtService {
   }
 
   /// Cria segmentos de texto respeitando limites de caracteres e linhas
-  static List<String> _createSegments(String text, int maxChars, int maxLines) {
-    List<String> words = text.split(' ');
-    List<String> segments = [];
-    String currentSegment = '';
-    
-    for (String word in words) {
-      String testSegment = currentSegment.isEmpty ? word : '$currentSegment $word';
-      
-      // Verifica se excede o limite de caracteres
-      if (testSegment.length > maxChars) {
-        if (currentSegment.isNotEmpty) {
-          // Verifica se pode quebrar em linhas
-          String optimizedSegment = _optimizeSegmentBreaks(currentSegment, maxChars, maxLines);
-          segments.add(optimizedSegment);
-          currentSegment = word;
-        } else {
-          // Palavra muito longa, força a quebra
-          segments.add(word);
-          currentSegment = '';
-        }
-      } else {
-        currentSegment = testSegment;
-      }
-    }
-    
-    if (currentSegment.isNotEmpty) {
-      String optimizedSegment = _optimizeSegmentBreaks(currentSegment, maxChars, maxLines);
-      segments.add(optimizedSegment);
-    }
-    
-    return segments;
-  }
+  // Removed legacy _createSegments (não utilizada após versão CapCut)
 
   /// Otimiza quebras de linha dentro de um segmento
   static String _optimizeSegmentBreaks(String segment, int maxChars, int maxLines) {
@@ -113,44 +82,7 @@ class SrtService {
   }
 
   /// Calcula os tempos de início e fim para cada segmento
-  static List<SrtSegment> _calculateTimings(
-    List<String> segments,
-    int wordsPerMinute,
-    double minDisplayTime,
-    double maxDisplayTime,
-    double gapBetweenSubtitles,
-  ) {
-    List<SrtSegment> timedSegments = [];
-    double currentTime = 0.0;
-    
-    for (int i = 0; i < segments.length; i++) {
-      String segment = segments[i];
-      
-      // Calcula duração baseada no número de palavras
-      int wordCount = segment.split(' ').length;
-      double readingTime = (wordCount / wordsPerMinute) * 60; // em segundos
-      
-      // Aplica limites mínimos e máximos
-      double duration = readingTime.clamp(minDisplayTime, maxDisplayTime);
-      
-      // Ajusta para legendas muito curtas
-      if (segment.length < 20) {
-        duration = max(duration, minDisplayTime);
-      }
-      
-      SrtSegment timedSegment = SrtSegment(
-        index: i + 1,
-        startTime: currentTime,
-        endTime: currentTime + duration,
-        text: segment,
-      );
-      
-      timedSegments.add(timedSegment);
-      currentTime += duration + gapBetweenSubtitles;
-    }
-    
-    return timedSegments;
-  }
+  // Removed legacy _calculateTimings (não utilizada após versão CapCut)
 
   /// Cria segmentos de texto otimizados para CapCut
   static List<String> _createCapCutSegments(

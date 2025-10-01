@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/extra_tools_provider.dart';
 import '../../providers/generation_config_provider.dart';
+import '../../providers/auxiliary_tools_provider.dart';
 import 'package:flutter_gerador/core/theme/app_colors.dart';
 import '../download/download_manager.dart';
+import 'package:flutter_gerador/core/utils/color_extensions.dart';
+import '../dialogs/cta_config_dialog.dart';
 
 class ExtraToolsPanel extends ConsumerWidget {
   final String scriptText;
+  final TextEditingController? contextController;
 
   const ExtraToolsPanel({
     super.key,
     required this.scriptText,
+    this.contextController,
   });
 
   @override
@@ -18,11 +23,16 @@ class ExtraToolsPanel extends ConsumerWidget {
     final extraState = ref.watch(extraToolsProvider);
     final extraNotifier = ref.read(extraToolsProvider.notifier);
     final config = ref.watch(generationConfigProvider);
+    
+    // 🔄 Verificar automaticamente se o SRT precisa ser invalidado
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      extraNotifier.invalidateSrtIfTextChanged(scriptText);
+    });
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.darkBackground,
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+  border: Border.all(color: AppColors.fireOrange.o(0.3)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -32,13 +42,13 @@ class ExtraToolsPanel extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.fireOrange.withOpacity(0.1),
+              color: AppColors.fireOrange.o(0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
               border: Border(
-                bottom: BorderSide(color: AppColors.fireOrange.withOpacity(0.3)),
+                bottom: BorderSide(color: AppColors.fireOrange.o(0.3)),
               ),
             ),
             child: Row(
@@ -72,9 +82,12 @@ class ExtraToolsPanel extends ConsumerWidget {
                     _buildToolButton(
                       context: context,
                       icon: Icons.subtitles,
-                      title: 'Gerar SRT',
-                      description: 'Legendas para vídeo',
+                      title: extraState.isSrtValid ? 'Gerar SRT' : 'Atualizar SRT',
+                      description: extraState.isSrtValid 
+                          ? 'Legendas para vídeo' 
+                          : 'SRT precisa ser atualizado',
                       isLoading: extraState.isGeneratingSRT,
+                      needsUpdate: !extraState.isSrtValid && extraState.generatedSRT != null,
                       onPressed: config.apiKey.isEmpty
                           ? null
                           : () => _generateAndShow(
@@ -147,18 +160,37 @@ class ExtraToolsPanel extends ConsumerWidget {
                               ),
                     ),
 
+                    const SizedBox(height: 12),
+
+                    // Botão CTAs Personalizados
+                    _buildToolButton(
+                      context: context,
+                      icon: Icons.campaign,
+                      title: 'CTAs Personalizados',
+                      description: 'Gerenciar call-to-actions',
+                      isLoading: false,
+                      onPressed: () => _openCtaDialog(context, ref),
+                    ),
+
                     const SizedBox(height: 24),
 
                     // Botão Limpar Todas as Ferramentas
                     OutlinedButton.icon(
                       onPressed: () {
                         extraNotifier.clearAll();
+                        // Limpar também o campo de contexto se disponível
+                        if (contextController != null) {
+                          contextController!.clear();
+                        }
+                        // Limpar também o contexto gerado automaticamente
+                        final auxiliaryNotifier = ref.read(auxiliaryToolsProvider.notifier);
+                        auxiliaryNotifier.clearContext();
                       },
                       icon: const Icon(Icons.clear_all, size: 16),
                       label: const Text('Limpar Tudo'),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.red.withOpacity(0.7)),
-                        foregroundColor: Colors.red.withOpacity(0.8),
+                        side: BorderSide(color: Colors.red.o(0.7)),
+                        foregroundColor: Colors.red.o(0.8),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                     ),
@@ -179,6 +211,7 @@ class ExtraToolsPanel extends ConsumerWidget {
     required String description,
     required bool isLoading,
     required VoidCallback? onPressed,
+    bool needsUpdate = false, // 🔄 Novo parâmetro
   }) {
     return Container(
       width: double.infinity,
@@ -188,15 +221,21 @@ class ExtraToolsPanel extends ConsumerWidget {
         style: OutlinedButton.styleFrom(
           side: BorderSide(
             color: onPressed == null 
-              ? Colors.grey.withOpacity(0.5)
-              : AppColors.fireOrange.withOpacity(0.7)
+              ? Colors.grey.o(0.5)
+              : needsUpdate
+                ? Colors.orange.o(0.8) // 🔄 Destaque quando precisa atualizar
+                : AppColors.fireOrange.o(0.7)
           ),
           foregroundColor: onPressed == null 
             ? Colors.grey
-            : AppColors.fireOrange,
+            : needsUpdate
+              ? Colors.orange // 🔄 Cor diferente quando precisa atualizar
+              : AppColors.fireOrange,
           backgroundColor: onPressed == null 
-            ? Colors.grey.withOpacity(0.1)
-            : AppColors.fireOrange.withOpacity(0.05),
+            ? Colors.grey.o(0.1)
+            : needsUpdate
+              ? Colors.orange.o(0.1) // 🔄 Fundo diferente quando precisa atualizar
+              : AppColors.fireOrange.o(0.05),
           padding: const EdgeInsets.all(12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -219,14 +258,25 @@ class ExtraToolsPanel extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      // 🔄 Ícone de aviso quando precisa atualizar
+                      if (needsUpdate) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 16,
+                          color: Colors.orange,
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -235,7 +285,7 @@ class ExtraToolsPanel extends ConsumerWidget {
                       fontSize: 12,
                       color: onPressed == null 
                         ? Colors.grey
-                        : Colors.white.withOpacity(0.7),
+                        : Colors.white.o(0.7),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -259,20 +309,26 @@ class ExtraToolsPanel extends ConsumerWidget {
   ) async {
     try {
       String content;
-      if (existingContent != null) {
+      
+      // 🔄 Para SRT, sempre verificar se é válido antes de usar conteúdo existente
+      final extraState = ref.read(extraToolsProvider);
+      final isSrtRequest = title.contains('SRT');
+      
+      if (existingContent != null && (!isSrtRequest || extraState.isSrtValid)) {
+        // Use conteúdo existente apenas se não for SRT ou se SRT for válido
         content = existingContent;
       } else {
+        // Regenera sempre se for SRT inválido ou se não há conteúdo
         content = await generator();
       }
 
       if (context.mounted) {
-        showDialog(
+        await DownloadManager.showDownloadDialog(
           context: context,
-          builder: (context) => DownloadDialog(
-            title: title,
-            content: content,
-            fileName: _getFileName(title),
-          ),
+          title: title,
+          content: content,
+          fileName: _sanitizeFileName(title),
+          fileExtension: _getFileExtension(title),
         );
       }
     } catch (e) {
@@ -287,20 +343,6 @@ class ExtraToolsPanel extends ConsumerWidget {
     }
   }
 
-  String _getFileName(String title) {
-    if (title.contains('SRT')) {
-      return 'legendas.srt';
-    } else if (title.contains('YouTube')) {
-      return 'descricao_youtube.txt';
-    } else if (title.contains('Protagonista')) {
-      return 'prompt_protagonista.txt';
-    } else if (title.contains('Cenário')) {
-      return 'prompt_cenario.txt';
-    } else {
-      return 'conteudo.txt';
-    }
-  }
-
   String _getFileExtension(String title) {
     if (title.contains('SRT')) {
       return 'srt';
@@ -309,5 +351,24 @@ class ExtraToolsPanel extends ConsumerWidget {
     } else {
       return 'txt';
     }
+  }
+
+  String _sanitizeFileName(String title) {
+    final sanitized = title
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9_\- ]'), '')
+        .replaceAll(' ', '_')
+        .replaceAll('__', '_');
+    
+    // Usar o tamanho da string já processada para evitar RangeError
+    return sanitized.substring(0, sanitized.length.clamp(0, 40));
+  }
+
+  void _openCtaDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => const CtaConfigDialog(),
+      barrierDismissible: false,
+    );
   }
 }

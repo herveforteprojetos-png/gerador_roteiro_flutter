@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_gerador/data/services/gemini_service.dart';
 import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/presentation/providers/script_generation_provider.dart';
@@ -12,6 +12,7 @@ import 'package:flutter_gerador/presentation/widgets/layout/expanded_header_widg
 import 'package:flutter_gerador/presentation/widgets/tools/extra_tools_panel.dart';
 import 'package:flutter_gerador/presentation/widgets/download/download_manager.dart';
 import 'package:flutter_gerador/core/theme/app_colors.dart';
+import 'package:flutter_gerador/core/services/storage_service.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -22,12 +23,391 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final TextEditingController contextController = TextEditingController();
-  bool _isGeneratingContext = false;
+  final ScrollController _mainScrollController = ScrollController();
+  final ScrollController _scriptScrollController = ScrollController();
+  bool _isScriptScrollLocked = true; // Começa bloqueado
+  bool _isHoveringScriptArea = false; // Para efeito visual
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedSettings();
+  }
 
   @override
   void dispose() {
+    _mainScrollController.dispose();
+    _scriptScrollController.dispose();
     contextController.dispose();
     super.dispose();
+  }
+
+  /// Carrega as configurações salvas
+  Future<void> _loadSavedSettings() async {
+    try {
+      final configNotifier = ref.read(generationConfigProvider.notifier);
+
+      // Carregar chave API
+      final savedApiKey = await StorageService.getApiKey();
+      if (savedApiKey != null && savedApiKey.isNotEmpty) {
+        configNotifier.updateApiKey(savedApiKey);
+      }
+
+      // Carregar modelo selecionado
+      final savedModel = await StorageService.getSelectedModel();
+      if (savedModel != null) {
+        configNotifier.updateModel(savedModel);
+      }
+
+      // Carregar preferências do usuário
+      final preferences = await StorageService.getUserPreferences();
+      configNotifier.updateQuantity(preferences['quantity'] ?? 2000);
+      configNotifier.updateMeasureType(
+        preferences['measureType'] ?? 'palavras',
+      );
+      configNotifier.updateLanguage(preferences['language'] ?? 'Português');
+      configNotifier.updatePerspective(
+        preferences['perspective'] ?? 'terceira',
+      );
+      configNotifier.updateIncludeCallToAction(
+        preferences['includeCta'] ?? false,
+      );
+      configNotifier.updatePersonalizedTheme(
+        preferences['personalizedTheme'] ?? '',
+      );
+      configNotifier.updateUsePersonalizedTheme(
+        preferences['usePersonalizedTheme'] ?? false,
+      );
+    } catch (e) {
+      debugPrint('Erro ao carregar configurações salvas: $e');
+    }
+  }
+
+  /// Salva a chave API e preferências quando alteradas
+  Future<void> _saveSettings() async {
+    final config = ref.read(generationConfigProvider);
+
+    if (config.apiKey.isNotEmpty) {
+      await StorageService.saveApiKey(config.apiKey);
+      await StorageService.saveSelectedModel(config.model);
+      await StorageService.saveUserPreferences(
+        language: config.language,
+        perspective: config.perspective,
+        measureType: config.measureType,
+        quantity: config.quantity,
+        includeCta: config.includeCallToAction,
+        personalizedTheme: config.personalizedTheme,
+        usePersonalizedTheme: config.usePersonalizedTheme,
+      );
+    }
+  }
+
+  /// Gera o roteiro com base nas configurações
+  void _generateScript() async {
+    debugPrint('\n');
+    debugPrint('════════════════════════════════════════════════════════════');
+    debugPrint('🎬 HOME_PAGE: _generateScript() CHAMADO');
+    debugPrint('════════════════════════════════════════════════════════════');
+    
+    final config = ref.read(generationConfigProvider);
+    final configNotifier = ref.read(generationConfigProvider.notifier);
+    final generationNotifier = ref.read(scriptGenerationProvider.notifier);
+
+    debugPrint('📋 HOME_PAGE: Validando configuração...');
+    
+    if (!configNotifier.isValid) {
+      debugPrint('❌ HOME_PAGE: Configuração INVÁLIDA');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, preencha todos os campos obrigatórios.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    debugPrint('✅ HOME_PAGE: Configuração VÁLIDA');
+    
+    // 🚨 DEBUG: Verificando language antes de usar config
+    debugPrint('🚨 HOME_PAGE: config.language = "${config.language}"');
+    debugPrint('🚨 HOME_PAGE: config.language.codeUnits = ${config.language.codeUnits}');
+    
+    // Atualizar o context no config se necessário
+    final finalConfig = config.copyWith(
+      context: contextController.text.isNotEmpty
+          ? contextController.text
+          : 'Gerar contexto automaticamente',
+    );
+
+    // 🚨 DEBUG: Verificando language depois de criar final config
+    debugPrint('🚨 HOME_PAGE: finalConfig.language = "${finalConfig.language}"');
+    debugPrint('🚨 HOME_PAGE: finalConfig.language.codeUnits = ${finalConfig.language.codeUnits}');
+
+    try {
+      debugPrint('🚀 HOME_PAGE: Chamando generationNotifier.generateScript()...');
+      
+      await generationNotifier.generateScript(finalConfig);
+      
+      debugPrint('✅ HOME_PAGE: generationNotifier.generateScript() retornou');
+      
+      await _saveSettings(); // Salvar configurações após geração bem-sucedida
+      
+      debugPrint('💾 HOME_PAGE: Configurações salvas');
+    } catch (e) {
+      debugPrint('❌ HOME_PAGE: EXCEÇÃO capturada: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao gerar roteiro: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+    
+    debugPrint('🏁 HOME_PAGE: _generateScript() FINALIZADO');
+    debugPrint('════════════════════════════════════════════════════════════');
+    debugPrint('\n');
+  }
+
+  /// Gera contexto automaticamente com IA baseado nas configurações
+  void _generateContextAutomatically() async {
+    final config = ref.read(generationConfigProvider);
+    final configNotifier = ref.read(generationConfigProvider.notifier);
+    final auxiliaryNotifier = ref.read(auxiliaryToolsProvider.notifier);
+
+    // Verificar se os campos mínimos estão preenchidos
+    if (config.apiKey.isEmpty) {
+      _showErrorDialog('Por favor, configure sua API Key primeiro.');
+      return;
+    }
+
+    if (config.title.isEmpty) {
+      _showErrorDialog('Por favor, preencha o título do roteiro.');
+      return;
+    }
+
+    if (!configNotifier.isValid) {
+      _showErrorDialog(
+        'Por favor, preencha todos os campos obrigatórios antes de gerar o contexto.',
+      );
+      return;
+    }
+
+    // Mostrar dialog de loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.darkCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.fireOrange.withOpacity(0.3)),
+          ),
+          content: Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.fireOrange),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Gerando contexto automaticamente...',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Aguarde enquanto a IA cria um contexto baseado no seu título e tema.',
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      // Usar a configuração atual para gerar o contexto
+      final generatedContext = await auxiliaryNotifier.generateContext(config);
+
+      // Fechar dialog de loading
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (generatedContext.isNotEmpty) {
+        debugPrint('🔍 HOME_PAGE: Contexto gerado recebido - ${generatedContext.length} chars');
+        debugPrint('🔍 HOME_PAGE: Primeiros 100 chars: ${generatedContext.length > 100 ? generatedContext.substring(0, 100) : generatedContext}');
+        debugPrint('🔍 HOME_PAGE: Bytes UTF-8 primeiros 50 chars: ${utf8.encode(generatedContext.length > 50 ? generatedContext.substring(0, 50) : generatedContext)}');
+        contextController.text = generatedContext;
+        debugPrint('🔍 HOME_PAGE: Controller atualizado - texto tem ${contextController.text.length} chars');
+
+        // Mostrar dialog de sucesso
+        _showSuccessDialog('Contexto gerado com sucesso!');
+      } else {
+        // Mostrar dialog de erro
+        _showErrorDialog('Erro: Contexto vazio retornado pela IA.');
+      }
+    } catch (e) {
+      // Fechar dialog de loading
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Mostrar dialog de erro
+      _showErrorDialog('Erro ao gerar contexto: ${e.toString()}');
+    }
+  }
+
+  /// Limpa o campo de contexto
+  void _clearContext() {
+    contextController.clear();
+  }
+
+  /// Alterna o bloqueio do scroll do roteiro
+  void _toggleScriptScrollLock() {
+    print('🔄 Alternando scroll lock de $_isScriptScrollLocked para ${!_isScriptScrollLocked}');
+    setState(() {
+      _isScriptScrollLocked = !_isScriptScrollLocked;
+    });
+    print('✅ Novo estado: $_isScriptScrollLocked');
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.darkCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.red.withOpacity(0.3)),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.red, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'Erro',
+                style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'OK',
+                style: TextStyle(
+                    color: AppColors.fireOrange, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.darkCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.green.withOpacity(0.3)),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: Colors.green, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'Sucesso',
+                style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'OK',
+                style: TextStyle(
+                    color: AppColors.fireOrange, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showExpandedContextEditor(BuildContext context) async {
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return _ExpandedContextDialog(initialText: contextController.text);
+      },
+    );
+
+    // Se o usuário salvou, atualizar o controller principal
+    if (result != null) {
+      debugPrint('🔍 INTERFACE: Salvando resultado manual - ${result.length} chars');
+      debugPrint('🔍 INTERFACE: Primeiros 200 chars do resultado: ${result.length > 200 ? result.substring(0, 200) : result}');
+      contextController.text = result;
+    }
+  }
+
+  Future<void> _showExpandedScriptEditor(BuildContext context, String scriptText) async {
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return _ExpandedScriptDialog(initialText: scriptText);
+      },
+    );
+
+    // Se o usuário salvou, atualizar o resultado
+    if (result != null) {
+      // Atualizar o resultado do script no provider
+      ref.read(scriptGenerationProvider.notifier).updateScriptText(result);
+    }
   }
 
   @override
@@ -40,149 +420,502 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     // Listener para contexto gerado automaticamente
     ref.listen(auxiliaryToolsProvider, (previous, current) {
-      if (previous?.generatedContext != current.generatedContext && 
+      if (previous?.generatedContext != current.generatedContext &&
           current.generatedContext != null &&
-          contextController.text.isEmpty) {
+          contextController.text.isEmpty &&
+          !generationState.isGenerating) {
+        debugPrint('🔍 INTERFACE: Atualizando contextController com ${current.generatedContext!.length} chars');
+        debugPrint('🔍 INTERFACE: Primeiros 200 chars: ${current.generatedContext!.length > 200 ? current.generatedContext!.substring(0, 200) : current.generatedContext!}');
+        debugPrint('🔍 INTERFACE: Bytes UTF-8: ${utf8.encode(current.generatedContext!.substring(0, current.generatedContext!.length > 50 ? 50 : current.generatedContext!.length))}');
         contextController.text = current.generatedContext!;
+        debugPrint('🔍 INTERFACE: Controller atualizado - texto atual tem ${contextController.text.length} chars');
       }
     });
 
-    void _generateScript() async {
-      if (!configNotifier.isValid) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Por favor, preencha todos os campos obrigatórios.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      final scriptConfig = ScriptConfig(
-        apiKey: config.apiKey,
-        model: config.model,
-        title: config.title,
-        context: contextController.text.isNotEmpty ? contextController.text : 'Gerar contexto automaticamente',
-        measureType: config.measureType,
-        quantity: config.quantity,
-        language: config.language,
-        perspective: config.perspective,
-        includeCallToAction: config.includeCallToAction,
-      );
-
-      try {
-        await generationNotifier.generateScript(scriptConfig);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao gerar roteiro: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
-      body: Column(
-        children: [
-          // HEADER HORIZONTAL EXPANDIDO
-          const ExpandedHeaderWidget(),
-          
-          // ÁREA PRINCIPAL
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: generationState.isGenerating
-                  ?
-                  // PROGRESSO DE GERAÇÃO
-                  GenerationProgressView(
-                    progress: generationState.progress ?? GenerationProgress(
-                      percentage: 0.0,
-                      currentPhase: 'Preparando...',
-                      phaseIndex: 0,
-                      totalPhases: 6,
-                      currentBlock: 0,
-                      totalBlocks: 10,
-                      logs: ['Iniciando geração...'],
-                      wordsGenerated: 0,
-                    ),
-                    onCancel: () {
-                      generationNotifier.cancelGeneration();
-                    },
-                  )
-                  : generationState.result != null && generationState.result!.scriptText.isNotEmpty
-                  ? 
-                  // ÁREA DE RESULTADO COM PAINEL DE FERRAMENTAS
-                  Container(
-                    height: MediaQuery.of(context).size.height - 300, // Altura fixa para evitar overflow
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        controller: _mainScrollController,
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            // HEADER COMPACTO
+            ExpandedHeaderWidget(contextController: contextController),
+
+            // ÁREA PRINCIPAL UNIFICADA
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // SEÇÃO: PROGRESSO OU RESULTADO
+                  if (generationState.isGenerating)
+                    GenerationProgressView(
+                      progress:
+                          generationState.progress ??
+                          GenerationProgress(
+                            percentage: 0.0,
+                            currentPhase: 'Preparando...',
+                            phaseIndex: 0,
+                            totalPhases: 6,
+                            currentBlock: 0,
+                            totalBlocks: 10,
+                            logs: ['Iniciando geração...'],
+                            wordsGenerated: 0,
+                          ),
+                      onCancel: () => generationNotifier.cancelGeneration(),
+                    )
+                  else if (generationState.result != null &&
+                      generationState.result!.scriptText.isNotEmpty)
+                    Column(
                       children: [
-                        // Resultado do roteiro (área principal)
-                        Expanded(
-                          flex: 2,
-                          child: Container(
-                            height: double.infinity,
-                            child: Column(
-                              children: [
-                                // Resultado do roteiro
-                                Expanded(
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(20),
-                                    margin: const EdgeInsets.only(right: 16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.3),
-                                      border: Border.all(color: AppColors.fireOrange),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: SingleChildScrollView(
-                                      child: SelectableText(
-                                        generationState.result!.scriptText,
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                        // RESULTADO DO ROTEIRO
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.article,
+                                        color: AppColors.fireOrange,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Roteiro Gerado',
+                                        style: TextStyle(
+                                          color: AppColors.fireOrange,
                                           fontSize: 16,
-                                          height: 1.5,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  // Botão de expandir roteiro
+                                  IconButton(
+                                    onPressed: () => _showExpandedScriptEditor(
+                                      context,
+                                      generationState.result!.scriptText,
+                                    ),
+                                    icon: Icon(
+                                      Icons.open_in_full,
+                                      color: AppColors.fireOrange,
+                                      size: 20,
+                                    ),
+                                    tooltip: 'Expandir e editar roteiro',
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: AppColors.fireOrange.withOpacity(0.1),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                height: 320,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  border: Border.all(
+                                    color: _isHoveringScriptArea && !_isScriptScrollLocked
+                                        ? Colors.green.withOpacity(0.6)
+                                        : _isScriptScrollLocked
+                                            ? Colors.red.withOpacity(0.4)
+                                            : AppColors.fireOrange.withOpacity(0.3),
+                                    width: _isHoveringScriptArea ? 2 : 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: MouseRegion(
+                                  onEnter: (_) => setState(() => _isHoveringScriptArea = true),
+                                  onExit: (_) => setState(() => _isHoveringScriptArea = false),
+                                  child: Stack(
+                                    children: [
+                                      // Área do roteiro com scroll controlado
+                                      Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: NotificationListener<ScrollNotification>(
+                                          onNotification: (ScrollNotification notification) {
+                                            // Se estiver bloqueado, não permite scroll
+                                            return _isScriptScrollLocked;
+                                          },
+                                          child: Scrollbar(
+                                            controller: _scriptScrollController,
+                                            thumbVisibility: !_isScriptScrollLocked,
+                                            child: SingleChildScrollView(
+                                              controller: _scriptScrollController,
+                                              physics: _isScriptScrollLocked 
+                                                  ? const NeverScrollableScrollPhysics()
+                                                  : const ClampingScrollPhysics(),
+                                              scrollDirection: Axis.vertical,
+                                              child: SelectableText(
+                                                generationState.result!.scriptText,
+                                                style: TextStyle(
+                                                  color: _isScriptScrollLocked 
+                                                      ? Colors.white.withOpacity(0.7)
+                                                      : Colors.white,
+                                                  fontSize: 14,
+                                                  height: 1.4,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      // Botão de cadeado estilo moderno
+                                      Positioned(
+                                        top: 12,
+                                        right: 12,
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          borderRadius: BorderRadius.circular(12),
+                                          elevation: 4,
+                                          child: InkWell(
+                                            onTap: _toggleScriptScrollLock,
+                                            borderRadius: BorderRadius.circular(12),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: _isScriptScrollLocked 
+                                                    ? const Color(0xFF2D1B1B) // Fundo escuro para vermelho
+                                                    : const Color(0xFF1B2D1B), // Fundo escuro para verde
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: _isScriptScrollLocked 
+                                                      ? const Color(0xFFFF4444) // Vermelho vibrante
+                                                      : const Color(0xFF44FF44), // Verde vibrante
+                                                  width: 2,
+                                                ),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: (_isScriptScrollLocked 
+                                                        ? const Color(0xFFFF4444)
+                                                        : const Color(0xFF44FF44)).withOpacity(0.4),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Tooltip(
+                                                message: _isScriptScrollLocked 
+                                                    ? 'Clique para DESBLOQUEAR o scroll'
+                                                    : 'Clique para BLOQUEAR o scroll',
+                                                child: Icon(
+                                                  _isScriptScrollLocked 
+                                                      ? Icons.lock
+                                                      : Icons.lock_open,
+                                                  color: _isScriptScrollLocked 
+                                                      ? const Color(0xFFFF6666) // Vermelho claro
+                                                      : const Color(0xFF66FF66), // Verde claro
+                                                  size: 20,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      // Indicador de status minimalista
+                                      Positioned(
+                                        bottom: 12,
+                                        left: 12,
+                                        child: AnimatedOpacity(
+                                          opacity: _isHoveringScriptArea ? 1.0 : 0.7,
+                                          duration: const Duration(milliseconds: 200),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, 
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: _isScriptScrollLocked 
+                                                  ? const Color(0xFF2D1B1B).withOpacity(0.9)
+                                                  : const Color(0xFF1B2D1B).withOpacity(0.9),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: _isScriptScrollLocked 
+                                                    ? const Color(0xFFFF4444).withOpacity(0.7)
+                                                    : const Color(0xFF44FF44).withOpacity(0.7),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  _isScriptScrollLocked 
+                                                      ? Icons.block
+                                                      : Icons.mouse,
+                                                  color: _isScriptScrollLocked 
+                                                      ? const Color(0xFFFF6666)
+                                                      : const Color(0xFF66FF66),
+                                                  size: 14,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  _isScriptScrollLocked 
+                                                      ? 'BLOQUEADO'
+                                                      : 'SCROLLÁVEL',
+                                                  style: TextStyle(
+                                                    color: _isScriptScrollLocked 
+                                                        ? const Color(0xFFFF6666)
+                                                        : const Color(0xFF66FF66),
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      // Overlay leve quando bloqueado (NÃO bloqueia cliques)
+                                      if (_isScriptScrollLocked)
+                                        Positioned.fill(
+                                          child: IgnorePointer(
+                                            ignoring: true, // IMPORTANTE: ignora todos os cliques no overlay
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF000000).withOpacity(0.05),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // MÉTRICAS
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: _buildScriptMetrics(
+                            generationState.result!.scriptText,
+                          ),
+                        ),
+
+                        // BOTÕES DE AÇÃO
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: _buildActionButtons(
+                            generationState.result!.scriptText,
+                          ),
+                        ),
+
+                        // BOTÃO NOVA GERAÇÃO
+                        Row(
+                          children: [
+                            // Ferramentas Extras (lado esquerdo)
+                            Expanded(
+                              flex: 2,
+                              child: Container(
+                                height: 400,
+                                padding: const EdgeInsets.all(16),
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  border: Border.all(
+                                    color: AppColors.fireOrange.withOpacity(0.3),
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: ExtraToolsPanel(
+                                  scriptText: generationState.result!.scriptText,
+                                ),
+                              ),
+                            ),
+                            // Botão Gerar Novo (lado direito)
+                            Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 400,
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.refresh,
+                                      color: AppColors.fireOrange,
+                                      size: 48,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Pronto para\ncriar outro\nroteiro?',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 50,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          generationNotifier.cancelGeneration();
+                                          ref
+                                              .read(auxiliaryToolsProvider.notifier)
+                                              .clearContext();
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.fireOrange,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Gerar Novo Roteiro',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  else
+                    // CAMPO CONTEXTO E BOTÃO GERAR (estado inicial)
+                    Container(
+                      height: 400,
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Título do campo
+                          Text(
+                            'Contexto do Roteiro',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.fireOrange,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Campo de contexto com botão sobreposto
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                // TextField principal
+                                TextField(
+                                  controller: contextController,
+                                  maxLines: null,
+                                  expands: true,
+                                  textAlignVertical: TextAlignVertical.top,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText:
+                                        'Descreva o enredo, personagens principais, cenário, tom da história...',
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 16,
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.black.withOpacity(0.3),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: AppColors.fireOrange,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: AppColors.fireOrange.withOpacity(
+                                          0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: AppColors.fireOrange,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.fromLTRB(
+                                      20,
+                                      20,
+                                      60,
+                                      20,
+                                    ), // Espaço para o botão
+                                  ),
+                                ),
+                                // Botão da engrenagem sobreposto
+                                Positioned(
+                                  top: 12,
+                                  right: 12,
+                                  child: InkWell(
+                                    onTap: _generateContextAutomatically,
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.fireOrange.withOpacity(
+                                          0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: AppColors.fireOrange
+                                              .withOpacity(0.3),
+                                        ),
+                                      ),
+                                      child: Tooltip(
+                                        message:
+                                            'Gerar contexto automaticamente com IA',
+                                        child: Icon(
+                                          Icons.settings,
+                                          color: AppColors.fireOrange,
+                                          size: 20,
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 16),
-                                // Métricas do roteiro
-                                Container(
-                                  margin: const EdgeInsets.only(right: 16),
-                                  child: _buildScriptMetrics(generationState.result!.scriptText),
-                                ),
-                                const SizedBox(height: 16),
-                                // Botões de ação (copiar e download)
-                                Container(
-                                  margin: const EdgeInsets.only(right: 16),
-                                  child: _buildActionButtons(generationState.result!.scriptText),
-                                ),
-                                const SizedBox(height: 16),
-                                // Botão para nova geração
-                                Container(
-                                  margin: const EdgeInsets.only(right: 16),
-                                  child: SizedBox(
-                                    width: 200,
-                                    height: 45,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        // Reset do estado para permitir nova geração
-                                        generationNotifier.cancelGeneration();
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.fireOrange,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(25),
+                                // Botão da vassoura para limpar contexto
+                                Positioned(
+                                  top: 60, // Posicionado abaixo da engrenagem
+                                  right: 12,
+                                  child: InkWell(
+                                    onTap: _clearContext,
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: Colors.red.withOpacity(0.3),
                                         ),
                                       ),
-                                      child: const Text(
-                                        'Gerar Novo Roteiro',
-                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                      child: Tooltip(
+                                        message: 'Limpar contexto',
+                                        child: Icon(
+                                          Icons.cleaning_services,
+                                          color: Colors.red,
+                                          size: 20,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -190,161 +923,92 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ],
                             ),
                           ),
-                        ),
-                        // Painel de Ferramentas Extras
-                        Container(
-                          width: 280,
-                          height: double.infinity,
-                          child: ExtraToolsPanel(scriptText: generationState.result!.scriptText),
-                        ),
-                      ],
-                    ),
-                  )
-                  :
-                  // TEXTAREA E BOTÃO GERAR (estado inicial)
-                  Column(
-                    children: [
-                      // Campo Contexto (textarea grande)
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Contexto do Roteiro',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.fireOrange,
-                                fontSize: 18,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Expanded(
-                              child: TextField(
-                                controller: contextController,
-                                maxLines: null,
-                                expands: true,
-                                textAlignVertical: TextAlignVertical.top,
-                                style: const TextStyle(color: Colors.white, fontSize: 16),
-                                decoration: InputDecoration(
-                                  hintText: 'Descreva o enredo, personagens principais, cenário, tom da história...\n\nExemplo:\n- Gênero: Ficção científica\n- Protagonista: Jovem cientista\n- Cenário: Futuro distópico\n- Conflito: Descoberta de conspiração...',
-                                  hintStyle: TextStyle(color: Colors.grey[600], fontSize: 16),
-                                  filled: true,
-                                  fillColor: Colors.black.withOpacity(0.3),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: AppColors.fireOrange),
+                          const SizedBox(height: 20),
+                          // Botão Gerar Roteiro
+                          Center(
+                            child: SizedBox(
+                              width: 200,
+                              height: 50,
+                              child: ElevatedButton(
+                                onPressed:
+                                    generationState.isGenerating ||
+                                        !configNotifier.isValid
+                                    ? null
+                                    : _generateScript,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.fireOrange,
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor: Colors.grey[700],
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
                                   ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: AppColors.fireOrange.withOpacity(0.5)),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: AppColors.fireOrange, width: 2),
-                                  ),
-                                  contentPadding: const EdgeInsets.all(20),
                                 ),
+                                child: generationState.isGenerating
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'Gerar Roteiro',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Botão Gerar Roteiro (centralizado)
-                      Center(
-                        child: SizedBox(
-                          width: 200,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: generationState.isGenerating || !configNotifier.isValid ? null : _generateScript,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.fireOrange,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: Colors.grey[700],
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                            ),
-                            child: generationState.isGenerating
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Gerar Roteiro',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
                           ),
-                        ),
+                        ],
                       ),
-                      if (generationState.isGenerating)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: OutlinedButton(
-                            onPressed: () {
-                              generationNotifier.cancelGeneration();
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.red),
-                              foregroundColor: Colors.red,
-                            ),
-                            child: const Text('Cancelar Geração'),
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildScriptMetrics(String scriptText) {
     final characterCount = scriptText.length;
-    final wordCount = scriptText.trim().split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
-    
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.fireOrange.withOpacity(0.1),
-              border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildMetricCard(
-                      icon: Icons.text_fields,
-                      label: 'Caracteres',
-                      value: characterCount.toString(),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 40,
-                      color: AppColors.fireOrange.withOpacity(0.3),
-                    ),
-                    _buildMetricCard(
-                      icon: Icons.article,
-                      label: 'Palavras',
-                      value: wordCount.toString(),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    final wordCount = scriptText
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .length;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.fireOrange.withOpacity(0.1),
+        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildMetricCard(
+            icon: Icons.text_fields,
+            label: 'Caracteres',
+            value: characterCount.toString(),
           ),
-        ),
-      ],
+          Container(
+            width: 1,
+            height: 30,
+            color: AppColors.fireOrange.withOpacity(0.3),
+          ),
+          _buildMetricCard(
+            icon: Icons.article,
+            label: 'Palavras',
+            value: wordCount.toString(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -355,27 +1019,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   }) {
     return Column(
       children: [
-        Icon(
-          icon,
-          color: AppColors.fireOrange,
-          size: 24,
-        ),
-        const SizedBox(height: 8),
+        Icon(icon, color: AppColors.fireOrange, size: 18),
+        const SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
             color: AppColors.fireOrange,
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12),
         ),
       ],
     );
@@ -387,29 +1044,29 @@ class _HomePageState extends ConsumerState<HomePage> {
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () => _copyToClipboard(scriptText),
-            icon: const Icon(Icons.copy, size: 18),
-            label: const Text('Copiar Roteiro'),
+            icon: const Icon(Icons.copy, size: 16),
+            label: const Text('Copiar'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white.withOpacity(0.1),
               foregroundColor: Colors.white,
               side: BorderSide(color: Colors.white.withOpacity(0.3)),
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () => _downloadScript(scriptText),
-            icon: const Icon(Icons.download, size: 18),
+            icon: const Icon(Icons.download, size: 16),
             label: const Text('Download'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.fireOrange,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -428,9 +1085,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           content: const Text('Roteiro copiado para a área de transferência!'),
           backgroundColor: AppColors.fireOrange,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
     }
@@ -439,7 +1094,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _downloadScript(String scriptText) async {
     final config = ref.read(generationConfigProvider);
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final fileName = config.title.isNotEmpty 
+    final fileName = config.title.isNotEmpty
         ? '${config.title.replaceAll(RegExp(r'[^\w\s-]'), '')}_$timestamp'
         : 'roteiro_$timestamp';
 
@@ -449,6 +1104,445 @@ class _HomePageState extends ConsumerState<HomePage> {
       content: scriptText,
       fileName: fileName,
       fileExtension: 'txt',
+    );
+  }
+}
+
+// Widget separado para o dialog expandido com contador dinâmico
+class _ExpandedContextDialog extends StatefulWidget {
+  final String initialText;
+
+  const _ExpandedContextDialog({required this.initialText});
+
+  @override
+  State<_ExpandedContextDialog> createState() => _ExpandedContextDialogState();
+}
+
+class _ExpandedContextDialogState extends State<_ExpandedContextDialog> {
+  late TextEditingController expandedController;
+  int characterCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    expandedController = TextEditingController(text: widget.initialText);
+    characterCount = widget.initialText.length;
+    expandedController.addListener(_updateCharacterCount);
+  }
+
+  @override
+  void dispose() {
+    expandedController.removeListener(_updateCharacterCount);
+    expandedController.dispose();
+    super.dispose();
+  }
+
+  void _updateCharacterCount() {
+    setState(() {
+      characterCount = expandedController.text.length;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: BoxDecoration(
+          color: AppColors.darkBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.fireOrange, width: 2),
+        ),
+        child: Column(
+          children: [
+            // Header do modal
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.fireOrange.withOpacity(0.1),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  topRight: Radius.circular(14),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.edit_note, color: AppColors.fireOrange, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Editor Expandido - Contexto do Roteiro',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  // Contador de caracteres dinâmico
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: AppColors.fireOrange.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Text(
+                      '$characterCount caracteres',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Editor de texto expandido
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: TextField(
+                  controller: expandedController,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    height: 1.5,
+                  ),
+                  decoration: InputDecoration(
+                    hintText:
+                        'Descreva o enredo, personagens principais, cenário, tom da história...\n\n💡 Este editor expandido permite:\n\n• Escrever textos longos com mais facilidade\n• Ver todo o contexto de uma só vez\n• Editar com mais precisão\n• Acompanhar o contador de caracteres em tempo real\n• Usar Ctrl+A para selecionar tudo\n• Usar Ctrl+Z para desfazer\n\nDigite à vontade! 📝',
+                    hintStyle: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 15,
+                      height: 1.4,
+                    ),
+                    filled: true,
+                    fillColor: Colors.black.withOpacity(0.3),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.fireOrange.withOpacity(0.3),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.fireOrange.withOpacity(0.3),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.fireOrange,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.all(20),
+                  ),
+                ),
+              ),
+            ),
+            // Botões de ação
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.2),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(14),
+                  bottomRight: Radius.circular(14),
+                ),
+              ),
+              child: Row(
+                children: [
+                  // Informações adicionais
+                  Expanded(
+                    child: Text(
+                      'Use este espaço para detalhar sua história com mais conforto',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  // Botões
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(null),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white.withOpacity(0.7),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text('Cancelar'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        Navigator.of(context).pop(expandedController.text),
+                    icon: const Icon(Icons.save, size: 18),
+                    label: const Text('Salvar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.fireOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Widget separado para o dialog expandido de edição de roteiro
+class _ExpandedScriptDialog extends StatefulWidget {
+  final String initialText;
+
+  const _ExpandedScriptDialog({required this.initialText});
+
+  @override
+  State<_ExpandedScriptDialog> createState() => _ExpandedScriptDialogState();
+}
+
+class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
+  late TextEditingController expandedController;
+  int characterCount = 0;
+  int wordCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    expandedController = TextEditingController(text: widget.initialText);
+    _updateCounts();
+    expandedController.addListener(_updateCounts);
+  }
+
+  @override
+  void dispose() {
+    expandedController.removeListener(_updateCounts);
+    expandedController.dispose();
+    super.dispose();
+  }
+
+  void _updateCounts() {
+    setState(() {
+      characterCount = expandedController.text.length;
+      wordCount = expandedController.text
+          .trim()
+          .split(RegExp(r'\s+'))
+          .where((word) => word.isNotEmpty)
+          .length;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.95,
+        height: MediaQuery.of(context).size.height * 0.9,
+        decoration: BoxDecoration(
+          color: AppColors.darkBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.fireOrange, width: 2),
+        ),
+        child: Column(
+          children: [
+            // Header do modal
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.fireOrange.withOpacity(0.1),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  topRight: Radius.circular(14),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.edit_note, color: AppColors.fireOrange, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Editor Expandido - Roteiro Gerado',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  // Contadores dinâmicos
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$characterCount chars',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 1,
+                          height: 12,
+                          color: AppColors.fireOrange.withOpacity(0.3),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$wordCount palavras',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Editor de texto expandido
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: TextField(
+                  controller: expandedController,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    height: 1.5,
+                  ),
+                  decoration: InputDecoration(
+                    hintText:
+                        'Edite seu roteiro aqui...\n\n💡 Este editor expandido permite:\n\n• Editar o roteiro gerado com facilidade\n• Ver todo o texto de uma só vez\n• Fazer correções e ajustes precisos\n• Acompanhar contadores de caracteres e palavras\n• Usar Ctrl+A para selecionar tudo\n• Usar Ctrl+Z para desfazer\n• Usar Ctrl+F para buscar texto\n\nFaça os ajustes necessários! ✏️',
+                    hintStyle: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 15,
+                      height: 1.4,
+                    ),
+                    filled: true,
+                    fillColor: Colors.black.withOpacity(0.3),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.fireOrange.withOpacity(0.3),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.fireOrange.withOpacity(0.3),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.fireOrange,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.all(20),
+                  ),
+                ),
+              ),
+            ),
+            // Botões de ação
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.2),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(14),
+                  bottomRight: Radius.circular(14),
+                ),
+              ),
+              child: Row(
+                children: [
+                  // Informações adicionais
+                  Expanded(
+                    child: Text(
+                      'Faça os ajustes necessários no seu roteiro e salve as alterações',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  // Botões
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(null),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white.withOpacity(0.7),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text('Cancelar'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        Navigator.of(context).pop(expandedController.text),
+                    icon: const Icon(Icons.save, size: 18),
+                    label: const Text('Salvar Alterações'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.fireOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

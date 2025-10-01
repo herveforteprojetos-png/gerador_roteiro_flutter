@@ -4,6 +4,7 @@ import '../../providers/extra_tools_provider.dart';
 import '../../providers/generation_config_provider.dart';
 import 'package:flutter_gerador/core/theme/app_colors.dart';
 import '../download/download_manager.dart';
+import 'package:flutter_gerador/core/utils/color_extensions.dart';
 
 class ExtraToolsPanel extends ConsumerWidget {
   final String scriptText;
@@ -22,7 +23,7 @@ class ExtraToolsPanel extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.darkBackground,
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+  border: Border.all(color: AppColors.fireOrange.o(0.3)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -32,13 +33,13 @@ class ExtraToolsPanel extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.fireOrange.withOpacity(0.1),
+              color: AppColors.fireOrange.o(0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
               border: Border(
-                bottom: BorderSide(color: AppColors.fireOrange.withOpacity(0.3)),
+                bottom: BorderSide(color: AppColors.fireOrange.o(0.3)),
               ),
             ),
             child: Row(
@@ -157,8 +158,8 @@ class ExtraToolsPanel extends ConsumerWidget {
                       icon: const Icon(Icons.clear_all, size: 16),
                       label: const Text('Limpar Tudo'),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.red.withOpacity(0.7)),
-                        foregroundColor: Colors.red.withOpacity(0.8),
+                        side: BorderSide(color: Colors.red.o(0.7)),
+                        foregroundColor: Colors.red.o(0.8),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                     ),
@@ -188,15 +189,15 @@ class ExtraToolsPanel extends ConsumerWidget {
         style: OutlinedButton.styleFrom(
           side: BorderSide(
             color: onPressed == null 
-              ? Colors.grey.withOpacity(0.5)
-              : AppColors.fireOrange.withOpacity(0.7)
+              ? Colors.grey.o(0.5)
+              : AppColors.fireOrange.o(0.7)
           ),
           foregroundColor: onPressed == null 
             ? Colors.grey
             : AppColors.fireOrange,
           backgroundColor: onPressed == null 
-            ? Colors.grey.withOpacity(0.1)
-            : AppColors.fireOrange.withOpacity(0.05),
+            ? Colors.grey.o(0.1)
+            : AppColors.fireOrange.o(0.05),
           padding: const EdgeInsets.all(12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -235,7 +236,7 @@ class ExtraToolsPanel extends ConsumerWidget {
                       fontSize: 12,
                       color: onPressed == null 
                         ? Colors.grey
-                        : Colors.white.withOpacity(0.7),
+                        : Colors.white.o(0.7),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -266,14 +267,12 @@ class ExtraToolsPanel extends ConsumerWidget {
       }
 
       if (context.mounted) {
-        showDialog(
+        await DownloadManager.showDownloadDialog(
           context: context,
-          builder: (context) => DownloadManager(
-            title: title,
-            description: description,
-            content: content,
-            extension: _getFileExtension(title),
-          ),
+          title: title,
+          content: content,
+          fileName: _sanitizeFileName(title),
+          fileExtension: _getFileExtension(title),
         );
       }
     } catch (e) {
@@ -296,5 +295,16 @@ class ExtraToolsPanel extends ConsumerWidget {
     } else {
       return 'txt';
     }
+  }
+
+  String _sanitizeFileName(String title) {
+    final sanitized = title
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9_\- ]'), '')
+        .replaceAll(' ', '_')
+        .replaceAll('__', '_');
+    
+    // Usar o tamanho da string já processada para evitar RangeError
+    return sanitized.substring(0, sanitized.length.clamp(0, 40));
   }
 }

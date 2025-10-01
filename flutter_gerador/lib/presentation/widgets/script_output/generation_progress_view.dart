@@ -17,354 +17,214 @@ class GenerationProgressView extends ConsumerStatefulWidget {
   ConsumerState<GenerationProgressView> createState() => _GenerationProgressViewState();
 }
 
-class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _progressAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: widget.progress.percentage,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-    _animationController.forward();
-  }
-
-  @override
-  void didUpdateWidget(GenerationProgressView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.progress.percentage != widget.progress.percentage) {
-      _progressAnimation = Tween<double>(
-        begin: _progressAnimation.value,
-        end: widget.progress.percentage,
-      ).animate(CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ));
-      _animationController.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
+class _GenerationProgressViewState extends ConsumerState<GenerationProgressView> {
+  
   @override
   Widget build(BuildContext context) {
-    return _buildProgressView();
-  }
-
-  Widget _buildProgressView() {
-    return AnimatedBuilder(
-      animation: _progressAnimation,
-      builder: (context, child) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height - 200,
-            ),
+    return Container(
+      width: double.infinity,
+      color: AppColors.darkBackground,
+      child: SingleChildScrollView(
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 600),
+            padding: const EdgeInsets.all(32),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildTerminalHeader(),
+                // Título simples
+                Text(
+                  'Gerando Roteiro',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Informações de progresso
+                _buildProgressInfo(),
+                
                 const SizedBox(height: 16),
-                _buildProgressBar(),
+                
+                // Barra horizontal de progresso
+                _buildHorizontalProgressBar(),
+                
                 const SizedBox(height: 20),
-                _buildMetricsCards(),
+                
+                // Console detalhado
+                _buildDetailedConsole(),
+                
                 const SizedBox(height: 20),
-                _buildPhaseIndicator(),
-                const SizedBox(height: 20),
-                _buildTerminalConsole(),
-                const SizedBox(height: 20),
+                
+                // Botão cancelar
                 _buildCancelButton(),
               ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildTerminalHeader() {
+  // Informações de progresso detalhadas
+  Widget _buildProgressInfo() {
     return Container(
-      width: 600,
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.grey[900],
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(8),
-          topRight: Radius.circular(8),
-        ),
-        border: Border.all(color: AppColors.fireOrange),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
       ),
-      child: Row(
-        children: [
-          // Terminal window buttons
-          Container(
-            width: 12,
-            height: 12,
-            decoration: const BoxDecoration(
-              color: Colors.red,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 12,
-            height: 12,
-            decoration: const BoxDecoration(
-              color: Colors.yellow,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 12,
-            height: 12,
-            decoration: const BoxDecoration(
-              color: Colors.green,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              'Gerador de Roteiros - Terminal Avançado',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressBar() {
-    return Container(
-      width: 600,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Percentual principal
           Text(
-            'Progresso Geral',
+            '${(widget.progress.percentage * 100).toInt()}%',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontSize: 36,
+              fontWeight: FontWeight.w300,
             ),
           ),
           const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: _progressAnimation.value,
-              minHeight: 8,
-              backgroundColor: Colors.grey[800],
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.fireOrange),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${(_progressAnimation.value * 100).toInt()}% Concluído',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
+          
+          // Informações detalhadas
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildInfoCard('Bloco', '${widget.progress.currentBlock}/${widget.progress.totalBlocks}'),
+              _buildInfoCard('Fase', widget.progress.currentPhase),
+              _buildInfoCard('Palavras', '${widget.progress.wordsGenerated}'),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMetricsCards() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildInfoCard(String label, String value) {
+    return Column(
       children: [
-        _buildMetricCard(
-          'Blocos Gerados',
-          '${widget.progress.currentBlock}/${widget.progress.totalBlocks}',
-          Icons.build,
+        Text(
+          value,
+          style: TextStyle(
+            color: AppColors.fireOrange,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-        const SizedBox(width: 16),
-        _buildMetricCard(
-          'Palavras',
-          '${widget.progress.wordsGenerated}',
-          Icons.text_fields,
-        ),
-        const SizedBox(width: 16),
-        _buildMetricCard(
-          'Fase Atual',
-          widget.progress.currentPhase,
-          Icons.timeline,
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey[400],
+            fontSize: 12,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildMetricCard(String title, String value, IconData icon) {
-    return Container(
-      width: 140, // Aumentado de 120 para 140
-      height: 110,
-      padding: const EdgeInsets.all(12), // Reduzido de 16 para 12 para mais espaço
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: AppColors.fireOrange,
-            size: 24,
-          ),
-          const SizedBox(height: 6), // Reduzido de 8 para 6
-          Flexible(
-            child: Text(
-              value,
+  // Barra horizontal de progresso
+  Widget _buildHorizontalProgressBar() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label da barra
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Progresso Geral',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              '${(widget.progress.percentage * 100).toInt()}%',
+              style: TextStyle(
+                color: AppColors.fireOrange,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 8),
+        
+        // Barra de progresso
+        Container(
+          width: double.infinity,
+          height: 8,
+          decoration: BoxDecoration(
+            color: Colors.grey[800],
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: widget.progress.percentage,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.fireOrange.withOpacity(0.8),
+                    AppColors.fireOrange,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 11, // Reduzido de 12 para 11 para caber melhor
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2, // Aumentado de 1 para 2 linhas
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPhaseIndicator() {
-    return Container(
-      width: 600,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Fases Narrativas',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: _buildPhaseSteps(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildPhaseSteps() {
-    final phases = [
-      'Preparação',
-      'Introdução',
-      'Desenvolvimento',
-      'Clímax',
-      'Resolução',
-      'Finalização',
-    ];
-
-    return phases.asMap().entries.map((entry) {
-      final index = entry.key;
-      final phase = entry.value;
-      final isActive = index <= widget.progress.phaseIndex;
-      final isCurrent = index == widget.progress.phaseIndex;
-
-      return Column(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isActive ? AppColors.fireOrange : Colors.grey[600],
-              shape: BoxShape.circle,
-              border: isCurrent
-                  ? Border.all(color: Colors.white, width: 2)
-                  : null,
-            ),
-            child: Center(
-              child: Text(
-                '${index + 1}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Indicadores de bloco
+        Row(
+          children: [
+            for (int i = 1; i <= widget.progress.totalBlocks; i++)
+              Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(right: i < widget.progress.totalBlocks ? 4 : 0),
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: i <= widget.progress.currentBlock 
+                        ? AppColors.fireOrange 
+                        : Colors.grey[700],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: 60,
-            child: Text(
-              phase,
-              style: TextStyle(
-                color: isActive ? Colors.white : Colors.grey[500],
-                fontSize: 10,
-                fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      );
-    }).toList();
+          ],
+        ),
+      ],
+    );
   }
 
-  Widget _buildTerminalConsole() {
+  // Console detalhado mostrando informações específicas
+  Widget _buildDetailedConsole() {
     return Container(
-      width: 600,
+      width: double.infinity,
       height: 200,
       decoration: BoxDecoration(
         color: Colors.black,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.fireOrange),
+        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header do console
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.grey[900],
               borderRadius: const BorderRadius.only(
@@ -372,32 +232,52 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
                 topRight: Radius.circular(7),
               ),
             ),
-            child: Text(
-              'Console de Geração',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.terminal,
+                  color: AppColors.fireOrange,
+                  size: 14,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Console de Geração',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  'Bloco ${widget.progress.currentBlock}/${widget.progress.totalBlocks}',
+                  style: TextStyle(
+                    color: AppColors.fireOrange,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
+          
+          // Content do console
           Expanded(
-            child: ListView.builder(
+            child: Container(
               padding: const EdgeInsets.all(8),
-              itemCount: widget.progress.logs.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text(
-                    widget.progress.logs[index],
-                    style: TextStyle(
-                      color: Color(0xFF00FF41),
-                      fontFamily: 'monospace',
-                      fontSize: 11,
-                    ),
+              child: Column(
+                children: [
+                  // Status atual compacto
+                  _buildCurrentStatus(),
+                  
+                  const SizedBox(height: 6),
+                  
+                  // Logs scrolláveis
+                  Expanded(
+                    child: _buildScrollableLogs(),
                   ),
-                );
-              },
+                ],
+              ),
             ),
           ),
         ],
@@ -405,21 +285,117 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
     );
   }
 
-  Widget _buildCancelButton() {
-    return OutlinedButton(
-      onPressed: widget.onCancel,
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Colors.red),
-        foregroundColor: Colors.red,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+  Widget _buildCurrentStatus() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey[900]?.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.fireOrange.withOpacity(0.2)),
       ),
-      child: Text(
-        'Cancelar Geração',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+      child: Row(
+        children: [
+          Icon(
+            Icons.autorenew,
+            color: AppColors.fireOrange,
+            size: 12,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              '${widget.progress.currentPhase} - Bloco ${widget.progress.currentBlock}/${widget.progress.totalBlocks}',
+              style: const TextStyle(
+                color: Color(0xFF00FF41),
+                fontFamily: 'monospace',
+                fontSize: 10,
+              ),
+            ),
+          ),
+          Text(
+            '${((widget.progress.percentage) * 100).toInt()}%',
+            style: TextStyle(
+              color: AppColors.fireOrange,
+              fontFamily: 'monospace',
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScrollableLogs() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(8),
+        itemCount: _getDetailedLogs().length,
+        itemBuilder: (context, index) {
+          final log = _getDetailedLogs()[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 1),
+            child: Text(
+              log,
+              style: const TextStyle(
+                color: Color(0xFF00FF41),
+                fontFamily: 'monospace',
+                fontSize: 11,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  List<String> _getDetailedLogs() {
+    List<String> detailedLogs = [];
+    
+    // Adicionar logs de sistema
+    detailedLogs.add('🚀 Sistema de geração iniciado');
+    detailedLogs.add('🔧 Configuração carregada: ${widget.progress.totalBlocks} blocos planejados');
+    
+    // Adicionar logs baseados no progresso atual
+    for (int i = 1; i <= widget.progress.currentBlock; i++) {
+      if (i < widget.progress.currentBlock) {
+        detailedLogs.add('✅ Bloco $i/${{widget.progress.totalBlocks}} concluído');
+      } else {
+        detailedLogs.add('⚡ Gerando bloco $i/${widget.progress.totalBlocks}...');
+      }
+    }
+    
+    // Adicionar logs originais do progress
+    for (String log in widget.progress.logs) {
+      detailedLogs.add('📋 $log');
+    }
+    
+    // Adicionar informações de restante
+    int remaining = widget.progress.totalBlocks - widget.progress.currentBlock;
+    if (remaining > 0) {
+      detailedLogs.add('📈 Restam $remaining blocos para conclusão');
+    }
+    
+    return detailedLogs;
+  }
+
+  // Botão cancelar simples
+  Widget _buildCancelButton() {
+    return ElevatedButton(
+      onPressed: widget.onCancel,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red[600],
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
         ),
       ),
+      child: const Text('Cancelar'),
     );
   }
 }

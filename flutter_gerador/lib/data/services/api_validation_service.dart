@@ -22,15 +22,35 @@ class ApiValidationService {
     }
 
     try {
-      // Teste real da API com uma requisição simples
+      // Teste real da API com uma requisição simples - tenta v1beta primeiro, depois v1
       final client = HttpClient();
-      final request = await client.getUrl(
-        Uri.parse('https://generativelanguage.googleapis.com/v1/models?key=$apiKey'),
-      );
+      HttpClientResponse? response;
       
-      request.headers.set('Content-Type', 'application/json');
+      // Lista de endpoints para testar em ordem de preferência
+      final endpoints = [
+        'https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey',
+        'https://generativelanguage.googleapis.com/v1/models?key=$apiKey', 
+      ];
       
-      final response = await request.close();
+      Exception? lastError;
+      for (final endpoint in endpoints) {
+        try {
+          final request = await client.getUrl(Uri.parse(endpoint));
+          request.headers.set('Content-Type', 'application/json');
+          
+          response = await request.close();
+          if (response.statusCode == 200) {
+            break; // Endpoint funcionou, sair do loop
+          }
+        } catch (e) {
+          lastError = e as Exception?;
+          continue; // Tentar próximo endpoint
+        }
+      }
+      
+      if (response == null || response.statusCode != 200) {
+        throw lastError ?? Exception('Todos os endpoints falharam');
+      }
       final responseBody = await response.transform(utf8.decoder).join();
       
       client.close();

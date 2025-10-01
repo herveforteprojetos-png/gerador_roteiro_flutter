@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gerador/core/theme/app_colors.dart';
 import 'package:flutter_gerador/data/services/srt_service.dart';
+import 'package:flutter_gerador/core/utils/color_extensions.dart';
 
 class SrtGeneratorDialog extends StatefulWidget {
   final TextEditingController scriptController;
@@ -108,7 +109,7 @@ class _SrtGeneratorDialogState extends State<SrtGeneratorDialog> {
                 decoration: BoxDecoration(
                   color: Colors.grey[800],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.fireOrange.o(0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,7 +194,7 @@ class _SrtGeneratorDialogState extends State<SrtGeneratorDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.fireOrange.withOpacity(0.2),
+                color: AppColors.fireOrange.o(0.2),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(

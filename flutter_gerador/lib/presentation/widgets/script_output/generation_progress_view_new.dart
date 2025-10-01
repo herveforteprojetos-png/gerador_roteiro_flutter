@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/generation_progress.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:flutter_gerador/core/utils/color_extensions.dart';
 
 class GenerationProgressView extends ConsumerStatefulWidget {
   final GenerationProgress progress;
@@ -18,7 +19,6 @@ class GenerationProgressView extends ConsumerStatefulWidget {
 }
 
 class _GenerationProgressViewState extends ConsumerState<GenerationProgressView> 
-    with TickerProviderStateMixin {
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _progressAnimation;
@@ -217,7 +217,7 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
       decoration: BoxDecoration(
         color: Colors.grey[850],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+  border: Border.all(color: AppColors.fireOrange.o(0.3)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -264,7 +264,7 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
       decoration: BoxDecoration(
         color: Colors.grey[850],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+  border: Border.all(color: AppColors.fireOrange.o(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

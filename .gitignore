@@ -1,0 +1,91 @@
+﻿# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+flutter_gerador/build/
+
+# Distribuições
+FlutterGerador_Cliente_v*/
+FlutterGerador_CORRIGIDO_v*/
+FlutterGerador_CONTEXTO_*/
+FlutterGerador_Executavel_*/
+FlutterGerador_FINAL_*/
+FlutterGerador_FUNCIONAL_v*/
+FlutterGerador_GEMINI_*/
+FlutterGerador_v*_Release/
+FlutterGerador_v*.0_PRONTO/
+*.zip
+
+# Documentação temporária
+ANALISE_*.md
+FIX_*.md
+CORRECAO_*.md
+AJUSTE*.md
+AVALIACAO_*.md
+CHECKPOINT_*.md
+RESUMO_*.md
+OTIMIZACAO_*.md
+IMPLEMENTACAO_*.md
+MELHORIAS_*.md
+VERIFICACAO_*.md
+CONFIGURACAO_*.md
+DOCUMENTACAO_VERSAO_*.md
+DASHBOARD_*.md
+FEEDBACK_*.md
+GUIA_*.md
+LICENCIAMENTO.md
+RELEASE_*.md
+ROTEIRO_*.md
+SUPORTE_*.md
+TEMPLATE_*.md
+VERSIONING.md
+
+# Scripts temporários
+test_*.dart
+count_names*.dart
+teste_*.dart
+criar_*.bat
+limpar_*.bat
+hot_reload.*
+run_*.bat
+run_*.ps1
+gerar_licencas.bat
+
+# Licenças de clientes
+licenca_*.json
+
+# Proteção temporária
+device_protection.dart
+simple_license_protection.dart
+test_protection.dart
+gerador_licencas*.dart
+home_page_fix.dart
+
+# Backups
+*_BACKUP_*/
+*_backup.*
+*_backup_*.dart
+gemini_service_BACKUP*.dart
+
+# Análises
+flutter_gerador/analyze_*.txt
+flutter_gerador/count_names.dart
+flutter_gerador/test_*.dart
+flutter_gerador/criar_*.bat
+
+# Pasta lib na raiz (não deve existir)
+/lib/
+
+# Gerador de Roteiro
+Gerador de Roteiro*/
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db
+Desktop.ini

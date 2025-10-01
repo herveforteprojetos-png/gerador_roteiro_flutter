@@ -1,5 +1,3 @@
-import 'package:flutter_gerador/core/constants/app_colors.dart';
-import 'package:flutter_gerador/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 
 class CharacterPromptDialog extends StatelessWidget {

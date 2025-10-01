@@ -48,8 +48,6 @@ class GenreDetectionService {
   };
 
   static String detectGenre(String title, String context) {
-    final combinedText = '${title.toLowerCase()} ${context.toLowerCase()}';
-    
     final scores = <String, int>{};
     
     // Calcular pontuação para cada gênero

@@ -8,7 +8,6 @@ final ThemeData appTheme = ThemeData(
   colorScheme: ColorScheme.dark(
     primary: AppColors.fireOrange,
     secondary: AppColors.fireRed,
-    background: AppColors.darkBackground,
     surface: AppColors.cardBackground,
   ),
   inputDecorationTheme: InputDecorationTheme(
