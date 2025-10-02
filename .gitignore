@@ -119,3 +119,8 @@ flutter_gerador/count_names.dart
 
 # Scripts de versão
 flutter_gerador/criar_versao_*.bat
+
+# Flutter ephemeral (arquivos temporários de build)
+flutter_gerador/windows/flutter/ephemeral/
+flutter_gerador/linux/flutter/ephemeral/
+flutter_gerador/macos/Flutter/ephemeral/
