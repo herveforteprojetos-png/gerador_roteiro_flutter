@@ -100,3 +100,22 @@ flutter_gerador/lib/presentation/widgets/dialogs/
 # Arquivos de teste na raiz
 test_*.dart
 teste_*.dart
+
+# Análises e logs do Flutter
+flutter_gerador/analyze_*.txt
+flutter_gerador/*.log
+flutter_gerador/CAPCUT_*.md
+flutter_gerador/NOVOS_*.md
+
+# Build e cache
+flutter_gerador/build/
+flutter_gerador/.dart_tool/
+flutter_gerador/.idea/
+flutter_gerador/.vscode/
+
+# Testes temporários dentro do flutter_gerador
+flutter_gerador/test_*.dart
+flutter_gerador/count_names.dart
+
+# Scripts de versão
+flutter_gerador/criar_versao_*.bat
