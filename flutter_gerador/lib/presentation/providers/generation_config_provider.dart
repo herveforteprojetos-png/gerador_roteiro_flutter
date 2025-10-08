@@ -98,6 +98,10 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
     state = state.copyWith(secondaryCharacterName: value);
   }
 
+  void updateGenre(String? value) {
+    state = state.copyWith(genre: value);
+  }
+
   void clearAll() {
     // Preservar a API key e modelo ao limpar
     final currentApiKey = state.apiKey;
@@ -120,9 +124,9 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
     return state.apiKey.isNotEmpty && 
            state.title.isNotEmpty &&
            state.quantity > 0 &&
-           // Validar se há tema (predefinido ou personalizado)
+           // Validar tema: predefinido deve ter tema, personalizado PODE estar vazio (= sem tema)
            ((!state.usePersonalizedTheme && state.tema.isNotEmpty) ||
-            (state.usePersonalizedTheme && state.personalizedTheme.isNotEmpty));
+            state.usePersonalizedTheme); // ✅ Permite tema personalizado vazio
   }
 
   int get minQuantity {

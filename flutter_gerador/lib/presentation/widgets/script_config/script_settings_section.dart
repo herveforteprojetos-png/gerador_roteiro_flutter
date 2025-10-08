@@ -23,6 +23,8 @@ class ScriptSettingsSection extends StatelessWidget {
   final ValueChanged<String?> onPerspectiveChanged;
   final bool includeCallToAction;
   final ValueChanged<bool?> onIncludeCallToActionChanged;
+  final String? genre; // NOVO: Tipo temático (null, 'western', 'business', 'family')
+  final ValueChanged<String?> onGenreChanged; // NOVO: Callback
   final VoidCallback? onGenerateContext;
 
   const ScriptSettingsSection({
@@ -47,6 +49,8 @@ class ScriptSettingsSection extends StatelessWidget {
     required this.onPerspectiveChanged,
     required this.includeCallToAction,
     required this.onIncludeCallToActionChanged,
+    this.genre, // NOVO: Opcional
+    required this.onGenreChanged, // NOVO: Required
     this.onGenerateContext,
   });
 
@@ -168,6 +172,7 @@ class ScriptSettingsSection extends StatelessWidget {
                         border: OutlineInputBorder(),
                       ),
                       items: [
+                        'Livre (Sem Tema)',
                         'História',
                         'Ciência',
                         'Saúde',
@@ -372,6 +377,52 @@ class ScriptSettingsSection extends StatelessWidget {
                         DropdownMenuItem(value: 'ro', child: Text('Romeno')),
                       ],
                       onChanged: onLanguageChanged,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 180,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tipo de História 🎭',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String?>(
+                      value: genre,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: null, child: Text('Normal (usar nomes do idioma)')),
+                        DropdownMenuItem(value: 'western', child: Text('🤠 Western/Faroeste')),
+                        DropdownMenuItem(value: 'business', child: Text('💼 Corporativo (Em breve)')),
+                        DropdownMenuItem(value: 'family', child: Text('👨‍👩‍👧‍👦 Familiar (Em breve)')),
+                      ],
+                      onChanged: (value) {
+                        // Bloquear seleção de opções "Em breve"
+                        if (value == 'business' || value == 'family') {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('⚠️ Esta opção estará disponível em breve!'),
+                              backgroundColor: Colors.orange,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                          return;
+                        }
+                        onGenreChanged(value);
+                      },
                     ),
                   ],
                 ),

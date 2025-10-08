@@ -32,6 +32,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
 
   String selectedModel = 'gemini-2.5-pro';
   String selectedTema = 'História';
+  String? selectedGenre; // Tipo temático (null, 'western', 'business', 'family')
   String measureType = 'palavras';
   int quantity = 2000;
   late TextEditingController quantityController;
@@ -203,6 +204,12 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                     onTemaChanged: (value) {
                       setState(() {
                         selectedTema = value ?? selectedTema;
+                      });
+                    },
+                    genre: selectedGenre,
+                    onGenreChanged: (value) {
+                      setState(() {
+                        selectedGenre = value;
                       });
                     },
                     localizacaoController: localizacaoController,

@@ -6,6 +6,180 @@ import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/models/script_result.dart';
 import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/data/models/localization_level.dart';
+import 'package:flutter_gerador/data/services/name_generator_service.dart';
+
+/// 🌍 Mapa de traduções de termos de parentesco por idioma
+const Map<String, Map<String, String>> _familyTermsTranslations = {
+  'português': {
+    'Pai': 'pai', 'pai': 'pai',
+    'Mãe': 'mãe', 'mãe': 'mãe',
+    'Filho': 'filho', 'filho': 'filho',
+    'Filha': 'filha', 'filha': 'filha',
+    'Avô': 'avô', 'avô': 'avô',
+    'Avó': 'avó', 'avó': 'avó',
+    'Esposa': 'esposa', 'esposa': 'esposa',
+    'Marido': 'marido', 'marido': 'marido',
+    'Irmão': 'irmão', 'irmão': 'irmão',
+    'Irmã': 'irmã', 'irmã': 'irmã',
+    'Tio': 'tio', 'tio': 'tio',
+    'Tia': 'tia', 'tia': 'tia',
+  },
+  'inglês': {
+    'Pai': 'father', 'pai': 'father',
+    'Mãe': 'mother', 'mãe': 'mother',
+    'Filho': 'son', 'filho': 'son',
+    'Filha': 'daughter', 'filha': 'daughter',
+    'Avô': 'grandfather', 'avô': 'grandfather',
+    'Avó': 'grandmother', 'avó': 'grandmother',
+    'Esposa': 'wife', 'esposa': 'wife',
+    'Marido': 'husband', 'marido': 'husband',
+    'Irmão': 'brother', 'irmão': 'brother',
+    'Irmã': 'sister', 'irmã': 'sister',
+    'Tio': 'uncle', 'tio': 'uncle',
+    'Tia': 'aunt', 'tia': 'aunt',
+  },
+  'espanhol(mexicano)': {
+    'Pai': 'padre', 'pai': 'padre',
+    'Mãe': 'madre', 'mãe': 'madre',
+    'Filho': 'hijo', 'filho': 'hijo',
+    'Filha': 'hija', 'filha': 'hija',
+    'Avô': 'abuelo', 'avô': 'abuelo',
+    'Avó': 'abuela', 'avó': 'abuela',
+    'Esposa': 'esposa', 'esposa': 'esposa',
+    'Marido': 'esposo', 'marido': 'esposo',
+    'Irmão': 'hermano', 'irmão': 'hermano',
+    'Irmã': 'hermana', 'irmã': 'hermana',
+    'Tio': 'tío', 'tio': 'tío',
+    'Tia': 'tía', 'tia': 'tía',
+  },
+  'francês': {
+    'Pai': 'père', 'pai': 'père',
+    'Mãe': 'mère', 'mãe': 'mère',
+    'Filho': 'fils', 'filho': 'fils',
+    'Filha': 'fille', 'filha': 'fille',
+    'Avô': 'grand-père', 'avô': 'grand-père',
+    'Avó': 'grand-mère', 'avó': 'grand-mère',
+    'Esposa': 'épouse', 'esposa': 'épouse',
+    'Marido': 'mari', 'marido': 'mari',
+    'Irmão': 'frère', 'irmão': 'frère',
+    'Irmã': 'sœur', 'irmã': 'sœur',
+    'Tio': 'oncle', 'tio': 'oncle',
+    'Tia': 'tante', 'tia': 'tante',
+  },
+  'alemão': {
+    'Pai': 'Vater', 'pai': 'Vater',
+    'Mãe': 'Mutter', 'mãe': 'Mutter',
+    'Filho': 'Sohn', 'filho': 'Sohn',
+    'Filha': 'Tochter', 'filha': 'Tochter',
+    'Avô': 'Großvater', 'avô': 'Großvater',
+    'Avó': 'Großmutter', 'avó': 'Großmutter',
+    'Esposa': 'Ehefrau', 'esposa': 'Ehefrau',
+    'Marido': 'Ehemann', 'marido': 'Ehemann',
+    'Irmão': 'Bruder', 'irmão': 'Bruder',
+    'Irmã': 'Schwester', 'irmã': 'Schwester',
+    'Tio': 'Onkel', 'tio': 'Onkel',
+    'Tia': 'Tante', 'tia': 'Tante',
+  },
+  'italiano': {
+    'Pai': 'padre', 'pai': 'padre',
+    'Mãe': 'madre', 'mãe': 'madre',
+    'Filho': 'figlio', 'filho': 'figlio',
+    'Filha': 'figlia', 'filha': 'figlia',
+    'Avô': 'nonno', 'avô': 'nonno',
+    'Avó': 'nonna', 'avó': 'nonna',
+    'Esposa': 'moglie', 'esposa': 'moglie',
+    'Marido': 'marito', 'marido': 'marito',
+    'Irmão': 'fratello', 'irmão': 'fratello',
+    'Irmã': 'sorella', 'irmã': 'sorella',
+    'Tio': 'zio', 'tio': 'zio',
+    'Tia': 'zia', 'tia': 'zia',
+  },
+  'russo': {
+    'Pai': 'отец', 'pai': 'отец',
+    'Mãe': 'мать', 'mãe': 'мать',
+    'Filho': 'сын', 'filho': 'сын',
+    'Filha': 'дочь', 'filha': 'дочь',
+    'Avô': 'дедушка', 'avô': 'дедушка',
+    'Avó': 'бабушка', 'avó': 'бабушка',
+    'Esposa': 'жена', 'esposa': 'жена',
+    'Marido': 'муж', 'marido': 'муж',
+    'Irmão': 'брат', 'irmão': 'брат',
+    'Irmã': 'сестра', 'irmã': 'сестра',
+    'Tio': 'дядя', 'tio': 'дядя',
+    'Tia': 'тётя', 'tia': 'тётя',
+  },
+  'polonês': {
+    'Pai': 'ojciec', 'pai': 'ojciec',
+    'Mãe': 'matka', 'mãe': 'matka',
+    'Filho': 'syn', 'filho': 'syn',
+    'Filha': 'córka', 'filha': 'córka',
+    'Avô': 'dziadek', 'avô': 'dziadek',
+    'Avó': 'babcia', 'avó': 'babcia',
+    'Esposa': 'żona', 'esposa': 'żona',
+    'Marido': 'mąż', 'marido': 'mąż',
+    'Irmão': 'brat', 'irmão': 'brat',
+    'Irmã': 'siostra', 'irmã': 'siostra',
+    'Tio': 'wujek', 'tio': 'wujek',
+    'Tia': 'ciocia', 'tia': 'ciocia',
+  },
+  'croata': {
+    'Pai': 'otac', 'pai': 'otac',
+    'Mãe': 'majka', 'mãe': 'majka',
+    'Filho': 'sin', 'filho': 'sin',
+    'Filha': 'kći', 'filha': 'kći',
+    'Avô': 'djed', 'avô': 'djed',
+    'Avó': 'baka', 'avó': 'baka',
+    'Esposa': 'supruga', 'esposa': 'supruga',
+    'Marido': 'suprug', 'marido': 'suprug',
+    'Irmão': 'brat', 'irmão': 'brat',
+    'Irmã': 'sestra', 'irmã': 'sestra',
+    'Tio': 'ujak', 'tio': 'ujak',
+    'Tia': 'teta', 'tia': 'teta',
+  },
+  'búlgaro': {
+    'Pai': 'баща', 'pai': 'баща',
+    'Mãe': 'майка', 'mãe': 'майка',
+    'Filho': 'син', 'filho': 'син',
+    'Filha': 'дъщеря', 'filha': 'дъщеря',
+    'Avô': 'дядо', 'avô': 'дядо',
+    'Avó': 'баба', 'avó': 'баба',
+    'Esposa': 'съпруга', 'esposa': 'съпруга',
+    'Marido': 'съпруг', 'marido': 'съпруг',
+    'Irmão': 'брат', 'irmão': 'брат',
+    'Irmã': 'сестра', 'irmã': 'сестра',
+    'Tio': 'чичо', 'tio': 'чичо',
+    'Tia': 'леля', 'tia': 'леля',
+  },
+  'turco': {
+    'Pai': 'baba', 'pai': 'baba',
+    'Mãe': 'anne', 'mãe': 'anne',
+    'Filho': 'oğul', 'filho': 'oğul',
+    'Filha': 'kız', 'filha': 'kız',
+    'Avô': 'dede', 'avô': 'dede',
+    'Avó': 'nine', 'avó': 'nine',
+    'Esposa': 'eş', 'esposa': 'eş',
+    'Marido': 'koca', 'marido': 'koca',
+    'Irmão': 'erkek kardeş', 'irmão': 'erkek kardeş',
+    'Irmã': 'kız kardeş', 'irmã': 'kız kardeş',
+    'Tio': 'amca', 'tio': 'amca',
+    'Tia': 'teyze', 'tia': 'teyze',
+  },
+  'romeno': {
+    'Pai': 'tată', 'pai': 'tată',
+    'Mãe': 'mamă', 'mãe': 'mamă',
+    'Filho': 'fiu', 'filho': 'fiu',
+    'Filha': 'fiică', 'filha': 'fiică',
+    'Avô': 'bunic', 'avô': 'bunic',
+    'Avó': 'bunică', 'avó': 'bunică',
+    'Esposa': 'soție', 'esposa': 'soție',
+    'Marido': 'soț', 'marido': 'soț',
+    'Irmão': 'frate', 'irmão': 'frate',
+    'Irmã': 'soră', 'irmã': 'soră',
+    'Tio': 'unchi', 'tio': 'unchi',
+    'Tia': 'mătușă', 'tia': 'mătușă',
+  },
+  // Adicione mais idiomas conforme necessário
+};
 
 /// ImplementaÃ§Ã£o consolidada limpa do GeminiService
 class GeminiService {
@@ -20,6 +194,10 @@ class GeminiService {
   static const int _maxFailures = 5; // Aumentado de 3 para 5
   static const Duration _circuitResetTime = Duration(seconds: 30); // Reduzido de 2 min para 30s
 
+  // 🚨 Controle de bloqueio de conteúdo
+  int _consecutiveBlocks = 0;
+  static const int _maxConsecutiveBlocks = 3; // Após 3 bloqueios, reduzir contexto drasticamente
+
   // ===== RATE LIMITING GLOBAL OTIMIZADO PARA GEMINI BILLING =====
   // OTIMIZADO: ConfiguraÃ§Ã£o mais agressiva baseada nos limites reais do Gemini
   static int _globalRequestCount = 0;
@@ -31,7 +209,7 @@ class GeminiService {
   // Watchdog
   Timer? _watchdogTimer;
   bool _isOperationRunning = false;
-  static const Duration _maxOperationTime = Duration(minutes: 15); // REDUZIDO: Era 25, agora 15 min
+  static const Duration _maxOperationTime = Duration(minutes: 30); // Aumentado para 30 min para idiomas complexos (russo, chinês)
 
   GeminiService({String? instanceId})
       : _instanceId = instanceId ?? _genId(),
@@ -63,6 +241,10 @@ class GeminiService {
     ScriptConfig config,
     void Function(GenerationProgress) onProgress,
   ) async {
+    // 🔥 CORREÇÃO CRÍTICA: Resetar variáveis globais ANTES de verificar rate limit
+    // Isso garante que cada nova geração comece do zero
+    _resetGlobalRateLimit();
+    
     if (!_canMakeRequest()) {
       return ScriptResult.error(errorMessage: 'ServiÃ§o temporariamente indisponÃ­vel. Tente mais tarde.');
     }
@@ -100,10 +282,162 @@ class GeminiService {
           wordsGenerated: _countWords(acc),
         ));
         final targetForBlock = _calculateTargetForBlock(block, totalBlocks, config);
-        final added = await _retryOnRateLimit(() => _generateBlockContent(acc, targetForBlock, phase, config, persistentTracker, block));
-        acc += added;
+        var added = await _retryOnRateLimit(() => _generateBlockContent(acc, targetForBlock, phase, config, persistentTracker, block));
+        
+        // 🔥 RETRY PARA BLOCOS VAZIOS: Se bloco retornou vazio, tentar novamente até 3 vezes
+        if (added.trim().isEmpty && acc.length > 0) {
+          if (kDebugMode) {
+            debugPrint('⚠️ BLOCO $block VAZIO! Iniciando tentativas de retry...');
+          }
+          
+          for (int retry = 1; retry <= 3; retry++) {
+            if (kDebugMode) {
+              debugPrint('🔄 Retry $retry/3 para bloco $block...');
+            }
+            
+            // Aguardar 2 segundos antes de retry
+            await Future.delayed(Duration(seconds: 2));
+            
+            // Tentar novamente com contexto reduzido se retry > 1
+            final contextForRetry = retry > 1 && acc.length > 3000
+                ? acc.substring(acc.length - 3000)
+                : acc;
+            
+            added = await _retryOnRateLimit(() => _generateBlockContent(
+              contextForRetry, 
+              targetForBlock, 
+              phase, 
+              config, 
+              persistentTracker, 
+              block
+            ));
+            
+            if (added.trim().isNotEmpty) {
+              if (kDebugMode) {
+                debugPrint('✅ Retry $retry bem-sucedido! Bloco $block gerado.');
+              }
+              break;
+            }
+          }
+          
+          // Se após 3 tentativas ainda estiver vazio, logar aviso crítico
+          if (added.trim().isEmpty) {
+            if (kDebugMode) {
+              debugPrint('❌ CRÍTICO: Bloco $block permaneceu vazio após 3 retries!');
+              debugPrint('   Sistema continuará com próximo bloco...');
+            }
+          }
+        }
+        
+        // 🔥 VALIDAÇÃO ANTI-REPETIÇÃO: Verificar se bloco gerado é cópia de anteriores
+        if (added.trim().isNotEmpty && acc.length > 500) {
+          final isSimilar = _isTooSimilar(added, acc, threshold: 0.85); // 🔥 Threshold aumentado para 85%
+          
+          if (isSimilar) {
+            if (kDebugMode) {
+              debugPrint('❌ BLOCO $block REJEITADO: Muito similar ao conteúdo anterior!');
+              debugPrint('   📊 Tamanho do bloco: ${_countWords(added)} palavras');
+              debugPrint('   🔄 Regenerando com aviso explícito contra repetição...');
+            }
+            
+            // 🔥 TENTATIVA 1: Regenerar com prompt específico contra repetição
+            final regenerated = await _retryOnRateLimit(() => _generateBlockContent(
+              acc, 
+              targetForBlock, 
+              phase, 
+              config, 
+              persistentTracker, 
+              block,
+              avoidRepetition: true, // Flag especial
+            ));
+            
+            // Verificar novamente com threshold ainda mais alto (90%)
+            final stillSimilar = _isTooSimilar(regenerated, acc, threshold: 0.90);
+            
+            if (stillSimilar) {
+              if (kDebugMode) {
+                debugPrint('⚠️ TENTATIVA 1 FALHOU: Ainda há similaridade alta!');
+                debugPrint('   🔄 TENTATIVA 2: Regenerando novamente com contexto reduzido...');
+              }
+              
+              // 🔥 TENTATIVA 2: Reduzir contexto drasticamente e tentar novamente
+              final contextoPrevioReduzido = acc.length > 3000 
+                  ? acc.substring(acc.length - 3000) 
+                  : acc;
+              
+              final regenerated2 = await _retryOnRateLimit(() => _generateBlockContent(
+                contextoPrevioReduzido, 
+                targetForBlock, 
+                phase, 
+                config, 
+                persistentTracker, 
+                block,
+                avoidRepetition: true,
+              ));
+              
+              final stillSimilar2 = _isTooSimilar(regenerated2, acc, threshold: 0.90);
+              
+              if (stillSimilar2) {
+                if (kDebugMode) {
+                  debugPrint('⚠️ TENTATIVA 2 FALHOU: Similaridade persiste!');
+                  debugPrint('   ⚠️ DECISÃO: Usando versão menos similar (tentativa 1)');
+                }
+                acc += regenerated; // Usar primeira tentativa (menos similar que original)
+              } else {
+                if (kDebugMode) {
+                  debugPrint('✅ TENTATIVA 2 BEM-SUCEDIDA: Bloco único gerado!');
+                }
+                acc += regenerated2;
+              }
+            } else {
+              if (kDebugMode) {
+                debugPrint('✅ REGENERAÇÃO BEM-SUCEDIDA: Bloco agora é único!');
+              }
+              acc += regenerated;
+            }
+          } else {
+            acc += added; // Usar versão original
+          }
+        } else {
+          acc += added;
+        }
+        
         if (added.trim().isNotEmpty) {
           _updateTrackerFromContextSnippet(persistentTracker, config, added);
+          
+          // 🔒 TRACKING APRIMORADO: Extrair TODOS os nomes após cada bloco
+          // Isso captura personagens secundários que aparecem em blocos distantes (ex: Sônia no bloco 5, depois bloco 15)
+          final allNamesInBlock = _extractNamesFromSnippet(added);
+          for (final entry in allNamesInBlock.entries) {
+            final name = entry.key;
+            final count = entry.value;
+            // Threshold mais baixo (1+) para personagens secundários
+            if (count >= 1) {
+              // 🔥 BLOQUEIO DE REUSO: Se nome já existe, não adicionar novamente
+              if (persistentTracker.hasName(name)) {
+                if (kDebugMode && count >= 2) {
+                  debugPrint('✅ CONFIRMAÇÃO: "$name" reapareceu $count vez(es) no bloco $block');
+                }
+                continue; // Já rastreado, pular
+              }
+              
+              // Verificar se não é stopword ou localização
+              final normalized = name.toLowerCase();
+              if (!_nameStopwords.contains(normalized) && 
+                  normalized != config.localizacao.trim().toLowerCase()) {
+                // 🔥 VALIDAÇÃO EXTRA: Verificar se nome está no banco curado
+                if (NameGeneratorService.isValidName(name)) {
+                  // Adicionar com tentativa de extrair papel do contexto
+                  persistentTracker.addName(name);
+                  if (kDebugMode) {
+                    debugPrint('🔒 TRACKING SECUNDÁRIO (bloco $block): "$name" detectado $count vez(es)');
+                  }
+                } else if (kDebugMode) {
+                  debugPrint('⚠️ NOME IGNORADO (não está no banco): "$name" (bloco $block)');
+                }
+              }
+            }
+          }
         }
         
         // INSERIR GANCHO + CTA APÃ“S A INTRODUÃ‡ÃƒO (aproximadamente 20% do conteÃºdo)
@@ -164,6 +498,13 @@ class GeminiService {
 
       _stopWatchdog();
       
+      // 📊 LOG FINAL: Resumo de personagens rastreados
+      if (kDebugMode && persistentTracker.confirmedNames.isNotEmpty) {
+        debugPrint('📊 RESUMO FINAL DE PERSONAGENS:');
+        debugPrint('   Total rastreado: ${persistentTracker.confirmedNames.length} personagem(ns)');
+        debugPrint('   Nomes: ${persistentTracker.confirmedNames.join(", ")}');
+      }
+      
       // 🧹 LIMPAR MARCADORES DE DEBUG DO TEXTO FINAL
       final cleanedAcc = acc.replaceAll(RegExp(r'PERSONAGEM MENCIONADO:\s*'), '');
       
@@ -203,6 +544,7 @@ class GeminiService {
     }
   }
 
+
   // CORREÃ‡ÃƒO: MÃ©todo para resetar completamente o estado interno
   void resetState() {
     if (kDebugMode) debugPrint('[$_instanceId] Resetando estado interno...');
@@ -211,8 +553,22 @@ class GeminiService {
     _failureCount = 0;
     _isCircuitOpen = false;
     _lastFailureTime = null;
+    _consecutiveBlocks = 0;  // 🔧 NOVO: Resetar contador de bloqueios de conteúdo
     _stopWatchdog();
+    
+    // 🔧 NOVO: Resetar variáveis static também (rate limiting global)
+    _resetGlobalRateLimit();
+    
+    if (kDebugMode) debugPrint('[$_instanceId] ✅ Estado completamente resetado (incluindo rate limit global)');
   }
+  
+  // 🔧 NOVO: Método para resetar rate limiting global entre gerações
+  static void _resetGlobalRateLimit() {
+    _globalRequestCount = 0;
+    _globalLastRequestTime = DateTime.now();
+    _rateLimitBusy = false;
+  }
+
 
   Future<String> generateText(String prompt) async {
     try {
@@ -422,13 +778,13 @@ class GeminiService {
   
   int _getBlockDelay(int block, int total) { 
     final p = block / total; 
-    // OTIMIZADO: Delays menores para clientes com Gemini Billing
-    if(p <= 0.15) return 100;  // Era 200ms, agora 100ms 
-    if(p <= 0.30) return 150;  // Era 300ms, agora 150ms
-    if(p <= 0.65) return 200;  // Era 400ms, agora 200ms
-    if(p <= 0.80) return 250;  // Era 500ms, agora 250ms
-    if(p <= 0.95) return 150;  // Era 300ms, agora 150ms
-    return 100; // Era 200ms, agora 100ms
+    // OTIMIZADO: Delays mínimos para maximizar velocidade (sem afetar qualidade)
+    if(p <= 0.15) return 50;   // Reduzido de 100ms para 50ms
+    if(p <= 0.30) return 75;   // Reduzido de 150ms para 75ms
+    if(p <= 0.65) return 100;  // Reduzido de 200ms para 100ms
+    if(p <= 0.80) return 125;  // Reduzido de 250ms para 125ms
+    if(p <= 0.95) return 75;   // Reduzido de 150ms para 75ms
+    return 50; // Reduzido de 100ms para 50ms
   }
   
   bool _checkTargetMet(String text, ScriptConfig c) { 
@@ -444,41 +800,124 @@ class GeminiService {
   }
   
   int _calculateTotalBlocks(ScriptConfig c) { 
-    // ðŸ”¥ FIX: MUITO MAIS blocos para compensar IA gerando menos que o solicitado
-    if(c.measureType == 'caracteres') { 
-      if(c.quantity <= 5000) return 4;    // 1250 chars/bloco
-      if(c.quantity <= 15000) return 7;   // 2142 chars/bloco
-      if(c.quantity <= 30000) return 10;  // 3000 chars/bloco
-      if(c.quantity <= 50000) return 12;  // 4166 chars/bloco
-      if(c.quantity <= 80000) return 15;  // 5333 chars/bloco
-      return 18; // Para textos enormes, atÃ© 18 blocos
-    } else { 
-      if(c.quantity <= 1000) return 4;    // 250 palavras/bloco
-      if(c.quantity <= 3000) return 6;    // 500 palavras/bloco
-      if(c.quantity <= 6000) return 10;   // 600 palavras/bloco
-      if(c.quantity <= 10000) return 24;  // 555 palavras/bloco - ï¿½ OTIMIZADO: 8600 palavras = 18 blocos (era 14)
-      if(c.quantity <= 15000) return 22;  // 681 palavras/bloco - Aumentado de 16 para 22
-      if(c.quantity <= 20000) return 26;  // 769 palavras/bloco - Novo escalÃ£o
-      if(c.quantity <= 25000) return 30;  // 833 palavras/bloco - Aumentado de 20 para 30
-      return 36; // MÃ¡ximo 36 blocos para textos muito grandes (era 25)
-    } 
-  }
-  
-  int _calculateTargetForBlock(int current, int total, ScriptConfig c) {
-    // ï¿½ GEMINI 2.5 PRO: Com 32.768 tokens disponÃ­veis, voltamos ao 2.0x!
-    // IA gera ~60% do solicitado, entÃ£o 2.0x compensa perfeitamente
-    final baseTarget = (c.quantity * (current / total) * 3.5).round(); // AUMENTADO: 2.0x â†’ 3.5x
+    // 🎯 NORMALIZAÇÃO: Converter tudo para palavras equivalentes (5.5 chars = 1 palavra)
+    // Isso garante que quantidades equivalentes de conteúdo recebam blocos similares
+    int wordsEquivalent = c.measureType == 'caracteres' 
+        ? (c.quantity / 5.5).round()  // Conversão: chars → palavras
+        : c.quantity;
     
-    // LIMITES AUMENTADOS DRASTICAMENTE para garantir espaÃ§o
-    final maxBlockSize = c.measureType == 'caracteres' ? 25000 : 6000; // AUMENTADO: 18000â†’25000, 4000â†’6000
+    // 🌍 AJUSTE AUTOMÁTICO PARA IDIOMAS COM ALFABETOS PESADOS
+    // IMPORTANTE: Este ajuste só deve ser aplicado para medida em CARACTERES!
+    // Para medida em PALAVRAS, não aplicar redução (o multiplicador 1.20 já compensa)
+    // Diferentes alfabetos ocupam diferentes quantidades de bytes em UTF-8
+    // Ajustamos palavras equivalentes para evitar timeout de contexto em roteiros longos
     
-    // Para o Ãºltimo bloco, usar o mesmo multiplicador para consistÃªncia
-    if (current == total) {
-      return (c.quantity * 3.5).round(); // AUMENTADO: 2.0x â†’ 3.5x
+    // 🔴 NÍVEL 2: Cirílico e Alfabetos Pesados - 2-3 bytes/char → Redução de 12%
+    final cyrillicLanguages = [
+      'Russo', 'Búlgaro', 'Sérvio'  // Cirílico
+    ];
+    
+    // 🔴 NÍVEL 2B: Outros Não-Latinos - 2-3 bytes/char → Redução de 15%
+    final otherNonLatinLanguages = [
+      'Hebraico', 'Grego', 'Tailandês'  // Semíticos e outros
+    ];
+    
+    // 🟡 NÍVEL 1: Latinos com Diacríticos Pesados - 1.2-1.5 bytes/char → Redução de 8%
+    final heavyDiacriticLanguages = [
+      'Turco', 'Polonês', 'Tcheco', 'Vietnamita', 'Húngaro'
+    ];
+    
+    // 🔧 CORREÇÃO: Aplicar ajuste SOMENTE para 'caracteres', nunca para 'palavras'
+    // Motivo: O problema de timeout só ocorre com caracteres (tokens UTF-8)
+    // Para palavras, o multiplicador 1.20 já é suficiente para compensar variação
+    if (c.measureType == 'caracteres' && wordsEquivalent > 6000) {
+      double adjustmentFactor = 1.0;
+      String adjustmentLevel = '';
+      
+      if (cyrillicLanguages.contains(c.language)) {
+        adjustmentFactor = 0.88; // -12% (AJUSTADO: era -20%)
+        adjustmentLevel = 'CIRÍLICO';
+      } else if (otherNonLatinLanguages.contains(c.language)) {
+        adjustmentFactor = 0.85; // -15%
+        adjustmentLevel = 'NÃO-LATINO';
+      } else if (heavyDiacriticLanguages.contains(c.language)) {
+        adjustmentFactor = 0.92; // -8% (AJUSTADO: era -10%)
+        adjustmentLevel = 'DIACRÍTICOS';
+      }
+      
+      if (adjustmentFactor < 1.0) {
+        final originalWords = wordsEquivalent;
+        wordsEquivalent = (wordsEquivalent * adjustmentFactor).round();
+        if (kDebugMode) {
+          debugPrint('🌍 AJUSTE $adjustmentLevel (CARACTERES): ${c.language}');
+          debugPrint('   $originalWords → $wordsEquivalent palavras equiv. (${(adjustmentFactor * 100).toInt()}%)');
+        }
+      }
     }
     
-    return baseTarget > maxBlockSize ? maxBlockSize : baseTarget;
+    // 📊 CÁLCULO OTIMIZADO: Blocos maiores = mais rápido, mas deve completar meta
+    // Sistema TESTADO e VALIDADO - NÃO aumentar blocos sem testes extensivos!
+    
+    if(wordsEquivalent <= 1000) return 3;    // ~333 palavras/bloco
+    if(wordsEquivalent <= 3000) return 4;    // ~750 palavras/bloco  
+    if(wordsEquivalent <= 6000) return 5;    // ~1200 palavras/bloco
+    if(wordsEquivalent <= 10000) return 8;   // ~1250 palavras/bloco (9k usa 8 blocos - TESTADO!)
+    if(wordsEquivalent <= 15000) return 10;  // ~1500 palavras/bloco
+    if(wordsEquivalent <= 20000) return 12;  // ~1666 palavras/bloco
+    if(wordsEquivalent <= 25000) return 14;  // ~1785 palavras/bloco
+    return 16; // Máximo 16 blocos para textos enormes
   }
+
+  int _calculateTargetForBlock(int current, int total, ScriptConfig c) {
+  // AJUSTE CRÍTICO: Multiplicador de 1.20 para compensar variação natural do Gemini
+  // Análise dos logs mostra que Gemini gera 85-90% do pedido em média
+  // Pedindo 20% a mais, atingimos ~100% da meta real (1.15 gerou apenas 78%)
+  
+  // 🔧 CORREÇÃO: Usar a mesma lógica de normalização que _calculateTotalBlocks
+  int targetQuantity = c.measureType == 'caracteres' 
+      ? (c.quantity / 5.5).round()  // Conversão: chars → palavras
+      : c.quantity;
+  
+  // 🌍 Aplicar os mesmos ajustes de idioma que em _calculateTotalBlocks
+  // IMPORTANTE: Só aplicar para 'caracteres', nunca para 'palavras'
+  if (c.measureType == 'caracteres' && targetQuantity > 6000) {
+    final cyrillicLanguages = ['Russo', 'Búlgaro', 'Sérvio'];
+    final otherNonLatinLanguages = ['Hebraico', 'Grego', 'Tailandês'];
+    final heavyDiacriticLanguages = ['Turco', 'Polonês', 'Tcheco', 'Vietnamita', 'Húngaro'];
+    
+    if (cyrillicLanguages.contains(c.language)) {
+      targetQuantity = (targetQuantity * 0.88).round();
+    } else if (otherNonLatinLanguages.contains(c.language)) {
+      targetQuantity = (targetQuantity * 0.85).round();
+    } else if (heavyDiacriticLanguages.contains(c.language)) {
+      targetQuantity = (targetQuantity * 0.92).round();
+    }
+  }
+  
+  // Calcular target acumulado até este bloco (com margem de 20%)
+  final cumulativeTarget = (targetQuantity * (current / total) * 1.20).round();
+  
+  // Calcular target acumulado do bloco anterior
+  final previousCumulativeTarget = current > 1 
+      ? (targetQuantity * ((current - 1) / total) * 1.20).round() 
+      : 0;
+  
+  // DELTA = palavras necessárias NESTE bloco específico
+  final baseTarget = cumulativeTarget - previousCumulativeTarget;
+  
+  // LIMITES por bloco individual (aumentado para evitar cortes)
+  final maxBlockSize = c.measureType == 'caracteres' ? 15000 : 5000;
+  
+  // Para o último bloco, usar o mesmo multiplicador
+  // AJUSTE: Pedimos 20% a mais por bloco para compensar variação natural do Gemini
+  // (Gemini tende a gerar 85-90% do pedido, especialmente em blocos finais)
+  if (current == total) {
+    final wordsPerBlock = (targetQuantity / total).ceil();
+    return min((wordsPerBlock * 1.20).round(), maxBlockSize); // Multiplicador 1.20 (era 1.15)
+  }
+  
+  return baseTarget > maxBlockSize ? maxBlockSize : baseTarget;
+}
 
   // ===================== GeraÃ§Ã£o de Blocos =====================
   String _getCta(String l) { 
@@ -551,7 +990,7 @@ A introduÃ§Ã£o deve:
 - Criar suspense e curiosidade
 - Terminar com uma pergunta direta ao ouvinte
 - Criar um gancho psicolÃ³gico que desperta curiosidade e envolve emocionalmente
-- USAR LINGUAGEM SIMPLES E COTIDIANA: Evite palavras difÃ­ceis, termos rebuscados ou vocabulÃ¡rio erudito. Use palavras que qualquer pessoa entende no dia a dia.
+- USAR LINGUAGEM SIMPLES PARA TODAS AS IDADES (60+ anos): Use palavras que seus AVÓS entendem facilmente. Evite palavras difÃ­ceis, termos rebuscados ou vocabulÃ¡rio erudito. Teste mental: "Minha avó de 70 anos entenderia isso?"
 $localizationGuidance
 
 CONTEÃšDO DA HISTÃ“RIA:
@@ -566,9 +1005,9 @@ ${storyContent.length > 500 ? '${storyContent.substring(0, 500)}...' : storyCont
 IMPORTANTE: 
 - Responda APENAS as 4 linhas do gancho
 - Termine com uma pergunta direcionada ao ouvinte
-- Use linguagem envolvente, curiosa E SIMPLES
-- Mantenha o tom alinhado com: ${config.tema} - ${config.subtema}
-- SEMPRE use palavras fáceis de entender
+- Use linguagem envolvente, curiosa E MUITO SIMPLES (conversa familiar)
+${config.tema == 'Livre (Sem Tema)' ? '- Desenvolva o tom natural baseado APENAS no título e contexto fornecidos' : '- Mantenha o tom alinhado com: ${config.tema} - ${config.subtema}'}
+- SEMPRE use palavras que pessoas de 60-80 anos entendem facilmente
 ''';
 
     try {
@@ -584,33 +1023,390 @@ IMPORTANTE:
     }
   }
   
-  String _getLanguageInstruction(String l) { 
-    switch(l.toLowerCase()) { 
-      case 'português': 
-        return 'Português brasileiro natural e simples - use palavras que qualquer pessoa entende no dia a dia, evite vocabulário rebuscado ou erudito'; 
-      case 'inglês': 
-        return 'Simple, natural English - use everyday words that anyone can understand, avoid complex vocabulary'; 
-      case 'espanhol(mexicano)': 
-        return 'Español mexicano natural y sencillo - usa palabras cotidianas que cualquiera entiende, evita vocabulario rebuscado'; 
-      case 'francês': 
-        return 'Français naturel et simple - utilisez des mots quotidiens que tout le monde comprend, évitez le vocabulaire complexe'; 
-      case 'alemão': 
-        return 'Natürliches, einfaches Deutsch - verwenden Sie alltägliche Wörter, die jeder versteht, vermeiden Sie komplexes Vokabular'; 
-      case 'italiano': 
-        return 'Italiano naturale e semplice - usa parole quotidiane che tutti capiscono, evita vocabolario complesso'; 
-      case 'polonês': 
-        return 'Naturalny, prosty polski - używaj codziennych słów, które każdy rozumie, unikaj skomplikowanego słownictwa'; 
-      case 'búlgaro': 
-        return 'Естествен, прост български - използвайте ежедневни думи, които всеки разбира, избягвайте сложна лексика'; 
-      case 'croata': 
-        return 'Prirodni, jednostavan hrvatski - koristite svakodnevne riječi koje svatko razumije, izbjegavajte složen vokabular'; 
-      case 'turco': 
-        return 'Doğal, basit Türkçe - herkesin anlayabileceği günlük kelimeler kullanın, karmaşık kelime dağarcığından kaçının'; 
-      case 'romeno': 
-        return 'Română naturală și simplă - folosiți cuvinte de zi cu zi pe care oricine le înțelege, evitați vocabularul complicat'; 
-      default: 
-        return 'Português brasileiro natural e simples - use palavras que qualquer pessoa entende no dia a dia'; 
-    } 
+  String _getLanguageInstruction(String l) {
+    final normalized = l.toLowerCase().trim();
+    
+    if (kDebugMode) {
+      debugPrint('🌍 _getLanguageInstruction: input="$l" → normalized="$normalized"');
+      debugPrint('🌍 Code units: ${normalized.codeUnits}');
+    }
+    
+    // Normalizar variações de escrita
+    if (normalized.contains('portugu') || normalized == 'pt') {
+      return 'Português brasileiro natural e simples - use palavras que qualquer pessoa entende no dia a dia, evite vocabulário rebuscado ou erudito';
+    }
+    
+    if (normalized.contains('ingl') || normalized == 'en' || normalized == 'english') {
+      return 'Simple, natural English - use everyday words that anyone can understand, avoid complex vocabulary';
+    }
+    
+    if (normalized.contains('espanhol') || normalized.contains('spanish') || normalized.contains('español') || normalized == 'es' || normalized == 'es-mx') {
+      return 'Español mexicano natural y sencillo - usa palabras cotidianas que cualquiera entiende, evita vocabulario rebuscado';
+    }
+    
+    if (normalized.contains('franc') || normalized.contains('french') || normalized == 'fr') {
+      return 'Français naturel et simple - utilisez des mots quotidiens que tout le monde comprend, évitez le vocabulaire complexe';
+    }
+    
+    if (normalized.contains('alem') || normalized.contains('german') || normalized == 'de') {
+      return 'Natürliches, einfaches Deutsch - verwenden Sie alltägliche Wörter, die jeder versteht, vermeiden Sie komplexes Vokabular';
+    }
+    
+    if (normalized.contains('italia') || normalized.contains('italian') || normalized == 'it') {
+      return 'Italiano naturale e semplice - usa parole quotidiane che tutti capiscono, evita vocabolario complesso';
+    }
+    
+    if (normalized.contains('polon') || normalized.contains('polish') || normalized == 'pl') {
+      return 'Naturalny, prosty polski - używaj codziennych słów, które każdy rozumie, unikaj skomplikowanego słownictwa';
+    }
+    
+    if (normalized.contains('búlgar') || normalized.contains('bulgar') || normalized == 'bg') {
+      return 'Естествен, прост български - използвайте ежедневни думи, които всеки разбира, избягвайте сложна лексика';
+    }
+    
+    if (normalized.contains('croat') || normalized.contains('hrvat') || normalized == 'hr') {
+      return 'Prirodni, jednostavan hrvatski - koristite svakodnevne riječi koje svatko razumije, izbjegavajte složen vokabular';
+    }
+    
+    if (normalized.contains('turco') || normalized.contains('turk') || normalized == 'tr') {
+      return 'Doğal, basit Türkçe - herkesin anlayabileceği günlük kelimeler kullanın, karmaşık kelime dağarcığından kaçının';
+    }
+    
+    if (normalized.contains('romen') || normalized.contains('roman') || normalized == 'ro') {
+      return 'Română naturală și simplă - folosiți cuvinte de zi cu zi pe care oricine le înțelege, evitați vocabularul complicat';
+    }
+    
+    if (normalized.contains('russo') || normalized.contains('russian') || normalized == 'ru') {
+      return 'Естественный, простой русский - используйте повседневные слова, которые все понимают, избегайте сложной лексики';
+    }
+    
+    // Default para português
+    if (kDebugMode) {
+      debugPrint('⚠️ Idioma não reconhecido: "$l" → usando português como fallback');
+    }
+    return 'Português brasileiro natural e simples - use palavras que qualquer pessoa entende no dia a dia';
+  }
+
+  /// 🌍 Retorna instrução de início internacionalizada
+  String _getStartInstruction(String language, {required bool withTitle, String? title}) {
+    final normalized = language.toLowerCase().trim();
+    
+    // 🇺🇸 INGLÊS
+    if (normalized.contains('ingl') || normalized == 'en' || normalized == 'english') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'Begin a new story using EXACTLY this phrase as the opening hook: "$title". This phrase should start the first paragraph naturally and engagingly, as if it were part of the narrative';
+      }
+      return 'Begin a new story';
+    }
+    
+    // 🇲🇽 ESPANHOL
+    if (normalized.contains('espanhol') || normalized.contains('spanish') || normalized.contains('español') || normalized == 'es' || normalized == 'es-mx') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'Comienza una nueva historia usando EXACTAMENTE esta frase como gancho de apertura: "$title". Esta frase debe iniciar el primer párrafo de forma natural y envolvente, como si fuera parte de la narrativa';
+      }
+      return 'Comienza una nueva historia';
+    }
+    
+    // 🇫🇷 FRANCÊS
+    if (normalized.contains('franc') || normalized.contains('french') || normalized == 'fr') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'Commencez une nouvelle histoire en utilisant EXACTEMENT cette phrase comme accroche d\'ouverture: "$title". Cette phrase doit commencer le premier paragraphe de manière naturelle et engageante, comme si elle faisait partie du récit';
+      }
+      return 'Commencez une nouvelle histoire';
+    }
+    
+    // 🇩🇪 ALEMÃO
+    if (normalized.contains('alem') || normalized.contains('german') || normalized == 'de') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'Beginnen Sie eine neue Geschichte und verwenden Sie GENAU diesen Satz als Eröffnungshaken: "$title". Dieser Satz sollte den ersten Absatz auf natürliche und ansprechende Weise beginnen, als wäre er Teil der Erzählung';
+      }
+      return 'Beginnen Sie eine neue Geschichte';
+    }
+    
+    // 🇮🇹 ITALIANO
+    if (normalized.contains('italia') || normalized.contains('italian') || normalized == 'it') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'Inizia una nuova storia usando ESATTAMENTE questa frase come gancio di apertura: "$title". Questa frase dovrebbe iniziare il primo paragrafo in modo naturale e coinvolgente, come se facesse parte della narrativa';
+      }
+      return 'Inizia una nuova storia';
+    }
+    
+    // 🇵🇱 POLONÊS
+    if (normalized.contains('polon') || normalized.contains('polish') || normalized == 'pl') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'Rozpocznij nową historię używając DOKŁADNIE tego zdania jako haczyka otwierającego: "$title". To zdanie powinno rozpoczynać pierwszy akapit w naturalny i angażujący sposób, jakby było częścią narracji';
+      }
+      return 'Rozpocznij nową historię';
+    }
+    
+    // 🇧🇬 BÚLGARO
+    if (normalized.contains('búlgar') || normalized.contains('bulgar') || normalized == 'bg') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'Започнете нова история, използвайки ТОЧНО тази фраза като начална кука: "$title". Тази фраза трябва да започне първия параграф естествено и ангажиращо, сякаш е част от разказа';
+      }
+      return 'Започнете нова история';
+    }
+    
+    // 🇭🇷 CROATA
+    if (normalized.contains('croat') || normalized.contains('hrvat') || normalized == 'hr') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'Započnite novu priču koristeći TOČNO ovu frazu kao početnu kuku: "$title". Ova fraza bi trebala započeti prvi paragraf prirodno i privlačno, kao da je dio pripovijesti';
+      }
+      return 'Započnite novu priču';
+    }
+    
+    // 🇹🇷 TURCO
+    if (normalized.contains('turco') || normalized.contains('turk') || normalized == 'tr') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'TAM OLARAK bu cümleyi açılış kancası olarak kullanarak yeni bir hikaye başlatın: "$title". Bu cümle, anlatının bir parçasıymış gibi doğal ve ilgi çekici bir şekilde ilk paragrafı başlatmalıdır';
+      }
+      return 'Yeni bir hikaye başlatın';
+    }
+    
+    // 🇷🇴 ROMENO
+    if (normalized.contains('romen') || normalized.contains('roman') || normalized == 'ro') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'Începeți o nouă poveste folosind EXACT această frază ca cârlig de deschidere: "$title". Această frază ar trebui să înceapă primul paragraf în mod natural și captivant, ca și cum ar face parte din narațiune';
+      }
+      return 'Începeți o nouă poveste';
+    }
+    
+    // 🇷🇺 RUSSO
+    if (normalized.contains('russo') || normalized.contains('russian') || normalized == 'ru') {
+      if (withTitle && title != null && title.trim().isNotEmpty) {
+        return 'Начните новую историю, используя ТОЧНО эту фразу в качестве вступительного крючка: "$title". Эта фраза должна начинать первый абзац естественно и увлекательно, как будто она является частью повествования';
+      }
+      return 'Начните новую историю';
+    }
+    
+    // 🇧🇷 PORTUGUÊS (default)
+    if (withTitle && title != null && title.trim().isNotEmpty) {
+      return 'Comece uma nova história usando EXATAMENTE esta frase como gancho de abertura: "$title". Esta frase deve iniciar o primeiro parágrafo de forma natural e envolvente, como se fosse parte da narrativa';
+    }
+    return 'Comece uma nova história';
+  }
+
+  /// 🌍 Retorna instrução de continuação internacionalizada
+  String _getContinueInstruction(String language) {
+    final normalized = language.toLowerCase().trim();
+    
+    if (normalized.contains('ingl') || normalized == 'en' || normalized == 'english') return 'Continue the story';
+    if (normalized.contains('espanhol') || normalized.contains('spanish') || normalized.contains('español') || normalized == 'es' || normalized == 'es-mx') return 'Continúa la historia';
+    if (normalized.contains('franc') || normalized.contains('french') || normalized == 'fr') return 'Continuez l\'histoire';
+    if (normalized.contains('alem') || normalized.contains('german') || normalized == 'de') return 'Setzen Sie die Geschichte fort';
+    if (normalized.contains('italia') || normalized.contains('italian') || normalized == 'it') return 'Continua la storia';
+    if (normalized.contains('polon') || normalized.contains('polish') || normalized == 'pl') return 'Kontynuuj historię';
+    if (normalized.contains('búlgar') || normalized.contains('bulgar') || normalized == 'bg') return 'Продължете историята';
+    if (normalized.contains('croat') || normalized.contains('hrvat') || normalized == 'hr') return 'Nastavite priču';
+    if (normalized.contains('turco') || normalized.contains('turk') || normalized == 'tr') return 'Hikayeye devam edin';
+    if (normalized.contains('romen') || normalized.contains('roman') || normalized == 'ro') return 'Continuați povestea';
+    if (normalized.contains('russo') || normalized.contains('russian') || normalized == 'ru') return 'Продолжите историю';
+    
+    return 'Continue a história'; // Português (default)
+  }
+
+  /// 🌍 Traduz labels de metadados (TEMA, SUBTEMA, etc) para o idioma selecionado
+  Map<String, String> _getMetadataLabels(String language) {
+    final normalized = language.toLowerCase().trim();
+    
+    // 🇺🇸 INGLÊS
+    if (normalized.contains('ingl') || normalized == 'en' || normalized == 'english') {
+      return {
+        'theme': 'THEME',
+        'subtheme': 'SUBTHEME',
+        'location': 'LOCATION',
+        'locationNotSpecified': 'Not specified',
+        'additionalContext': 'ADDITIONAL CONTEXT',
+      };
+    }
+    
+    // 🇲🇽 ESPANHOL
+    if (normalized.contains('espanhol') || normalized.contains('spanish') || normalized.contains('español') || normalized == 'es' || normalized == 'es-mx') {
+      return {
+        'theme': 'TEMA',
+        'subtheme': 'SUBTEMA',
+        'location': 'UBICACIÓN',
+        'locationNotSpecified': 'No especificada',
+        'additionalContext': 'CONTEXTO ADICIONAL',
+      };
+    }
+    
+    // 🇫🇷 FRANCÊS
+    if (normalized.contains('franc') || normalized.contains('french') || normalized == 'fr') {
+      return {
+        'theme': 'THÈME',
+        'subtheme': 'SOUS-THÈME',
+        'location': 'LIEU',
+        'locationNotSpecified': 'Non spécifié',
+        'additionalContext': 'CONTEXTE SUPPLÉMENTAIRE',
+      };
+    }
+    
+    // 🇩🇪 ALEMÃO
+    if (normalized.contains('alem') || normalized.contains('german') || normalized == 'de') {
+      return {
+        'theme': 'THEMA',
+        'subtheme': 'UNTERTHEMA',
+        'location': 'ORT',
+        'locationNotSpecified': 'Nicht angegeben',
+        'additionalContext': 'ZUSÄTZLICHER KONTEXT',
+      };
+    }
+    
+    // 🇮🇹 ITALIANO
+    if (normalized.contains('italia') || normalized.contains('italian') || normalized == 'it') {
+      return {
+        'theme': 'TEMA',
+        'subtheme': 'SOTTOTEMA',
+        'location': 'POSIZIONE',
+        'locationNotSpecified': 'Non specificato',
+        'additionalContext': 'CONTESTO AGGIUNTIVO',
+      };
+    }
+    
+    // 🇵🇱 POLONÊS
+    if (normalized.contains('polon') || normalized.contains('polish') || normalized == 'pl') {
+      return {
+        'theme': 'TEMAT',
+        'subtheme': 'PODTEMAT',
+        'location': 'LOKALIZACJA',
+        'locationNotSpecified': 'Nie określono',
+        'additionalContext': 'DODATKOWY KONTEKST',
+      };
+    }
+    
+    // 🇧🇬 BÚLGARO
+    if (normalized.contains('búlgar') || normalized.contains('bulgar') || normalized == 'bg') {
+      return {
+        'theme': 'ТЕМА',
+        'subtheme': 'ПОДТЕМА',
+        'location': 'МЕСТОПОЛОЖЕНИЕ',
+        'locationNotSpecified': 'Не е посочено',
+        'additionalContext': 'ДОПЪЛНИТЕЛЕН КОНТЕКСТ',
+      };
+    }
+    
+    // 🇭🇷 CROATA
+    if (normalized.contains('croat') || normalized.contains('hrvat') || normalized == 'hr') {
+      return {
+        'theme': 'TEMA',
+        'subtheme': 'PODTEMA',
+        'location': 'LOKACIJA',
+        'locationNotSpecified': 'Nije navedeno',
+        'additionalContext': 'DODATNI KONTEKST',
+      };
+    }
+    
+    // 🇹🇷 TURCO
+    if (normalized.contains('turco') || normalized.contains('turk') || normalized == 'tr') {
+      return {
+        'theme': 'TEMA',
+        'subtheme': 'ALT TEMA',
+        'location': 'KONUM',
+        'locationNotSpecified': 'Belirtilmemiş',
+        'additionalContext': 'EK BAĞLAM',
+      };
+    }
+    
+    // 🇷🇴 ROMENO
+    if (normalized.contains('romen') || normalized.contains('roman') || normalized == 'ro') {
+      return {
+        'theme': 'TEMĂ',
+        'subtheme': 'SUBTEMĂ',
+        'location': 'LOCAȚIE',
+        'locationNotSpecified': 'Nespecificat',
+        'additionalContext': 'CONTEXT SUPLIMENTAR',
+      };
+    }
+    
+    // 🇷🇺 RUSSO
+    if (normalized.contains('russo') || normalized.contains('russian') || normalized == 'ru') {
+      return {
+        'theme': 'ТЕМА',
+        'subtheme': 'ПОДТЕМА',
+        'location': 'МЕСТОПОЛОЖЕНИЕ',
+        'locationNotSpecified': 'Не указано',
+        'additionalContext': 'ДОПОЛНИТЕЛЬНЫЙ КОНТЕКСТ',
+      };
+    }
+    
+    // 🇧🇷 PORTUGUÊS (default)
+    return {
+      'theme': 'TEMA',
+      'subtheme': 'SUBTEMA',
+      'location': 'LOCALIZAÇÃO',
+      'locationNotSpecified': 'Não especificada',
+      'additionalContext': 'CONTEXTO ADICIONAL',
+    };
+  }
+
+  /// Retorna instrução para traduzir contexto se idioma não for português
+  String _getContextTranslationInstruction(String language) {
+    final normalized = language.toLowerCase().trim();
+    
+    // Se é português, não precisa traduzir
+    if (normalized.contains('portugu') || normalized == 'pt' || normalized == 'portuguese') {
+      return '';
+    }
+    
+    // Para outros idiomas, instrui o Gemini a traduzir automaticamente
+    // 🇺🇸 INGLÊS
+    if (normalized.contains('ingl') || normalized == 'en' || normalized == 'english') {
+      return '⚠️ TRANSLATION NOTE: The context below is written in Portuguese. Automatically translate it to English and use the translated version in your narrative.\n';
+    }
+    
+    // 🇲🇽 ESPANHOL
+    if (normalized.contains('espanhol') || normalized.contains('spanish') || normalized.contains('español') || normalized == 'es' || normalized == 'es-mx') {
+      return '⚠️ NOTA DE TRADUCCIÓN: El contexto a continuación está escrito en portugués. Tradúcelo automáticamente al español y usa la versión traducida en tu narrativa.\n';
+    }
+    
+    // 🇫🇷 FRANCÊS
+    if (normalized.contains('franc') || normalized.contains('french') || normalized == 'fr') {
+      return '⚠️ NOTE DE TRADUCTION: Le contexte ci-dessous est écrit en portugais. Traduisez-le automatiquement en français et utilisez la version traduite dans votre récit.\n';
+    }
+    
+    // 🇩🇪 ALEMÃO
+    if (normalized.contains('alem') || normalized.contains('german') || normalized == 'de') {
+      return '⚠️ ÜBERSETZUNGSHINWEIS: Der untenstehende Kontext ist auf Portugiesisch geschrieben. Übersetzen Sie ihn automatisch ins Deutsche und verwenden Sie die übersetzte Version in Ihrer Erzählung.\n';
+    }
+    
+    // 🇮🇹 ITALIANO
+    if (normalized.contains('italia') || normalized.contains('italian') || normalized == 'it') {
+      return '⚠️ NOTA DI TRADUZIONE: Il contesto qui sotto è scritto in portoghese. Traducilo automaticamente in italiano e usa la versione tradotta nella tua narrativa.\n';
+    }
+    
+    // 🇵🇱 POLONÊS
+    if (normalized.contains('polon') || normalized.contains('polish') || normalized == 'pl') {
+      return '⚠️ UWAGA DOTYCZĄCA TŁUMACZENIA: Poniższy kontekst jest napisany w języku portugalskim. Automatycznie przetłumacz go na polski i użyj przetłumaczonej wersji w swojej narracji.\n';
+    }
+    
+    // 🇧🇬 BÚLGARO
+    if (normalized.contains('búlgar') || normalized.contains('bulgar') || normalized == 'bg') {
+      return '⚠️ БЕЛЕЖКА ЗА ПРЕВОД: Контекстът по-долу е написан на португалски. Преведете го автоматично на български и използвайте преведената версия в своето повествование.\n';
+    }
+    
+    // 🇭🇷 CROATA
+    if (normalized.contains('croat') || normalized.contains('hrvat') || normalized == 'hr') {
+      return '⚠️ NAPOMENA O PRIJEVODU: Kontekst u nastavku napisan je na portugalskom. Automatski ga prevedite na hrvatski i koristite prevedenu verziju u svojoj priči.\n';
+    }
+    
+    // 🇹🇷 TURCO
+    if (normalized.contains('turco') || normalized.contains('turk') || normalized == 'tr') {
+      return '⚠️ ÇEVİRİ NOTU: Aşağıdaki bağlam Portekizce yazılmıştır. Otomatik olarak Türkçe\'ye çevirin ve çevrilmiş versiyonu anlatınızda kullanın.\n';
+    }
+    
+    // 🇷🇴 ROMENO
+    if (normalized.contains('romen') || normalized.contains('roman') || normalized == 'ro') {
+      return '⚠️ NOTĂ DE TRADUCERE: Contextul de mai jos este scris în portugheză. Traduceți-l automat în română și folosiți versiunea tradusă în narațiunea dvs.\n';
+    }
+    
+    // 🇷🇺 RUSSO
+    if (normalized.contains('russo') || normalized.contains('russian') || normalized == 'ru') {
+      return '⚠️ ПРИМЕЧАНИЕ О ПЕРЕВОДЕ: Контекст ниже написан на португальском языке. Автоматически переведите его на русский и используйте переведённую версию в своём повествовании.\n';
+    }
+    
+    // Fallback (inglês)
+    return '⚠️ TRANSLATION NOTE: The context below is in Portuguese. Automatically translate it to the target language and use the translated version.\n';
   }
 
   String _buildLocalizationGuidance(ScriptConfig config) {
@@ -645,23 +1441,53 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
 
   void _bootstrapCharacterTracker(_CharacterTracker tracker, ScriptConfig config) {
     final names = <String>{};
+    final fromProtagonist = <String>{};
+    final fromSecondary = <String>{};
+    final fromContext = <String>{};
+    final fromTitle = <String>{};
+    
     if (config.protagonistName.trim().isNotEmpty) {
-      names.add(config.protagonistName.trim());
+      final name = config.protagonistName.trim();
+      names.add(name);
+      fromProtagonist.add(name);
     }
     if (config.secondaryCharacterName.trim().isNotEmpty) {
-      names.add(config.secondaryCharacterName.trim());
+      final name = config.secondaryCharacterName.trim();
+      names.add(name);
+      fromSecondary.add(name);
     }
-    names.addAll(_extractCharacterNamesFromContext(config.context));
+    
+    final contextNames = _extractCharacterNamesFromContext(config.context);
+    names.addAll(contextNames);
+    fromContext.addAll(contextNames);
     
     // 🎯 NOVO: Extrair gênero e relações de personagens do título
-    names.addAll(_extractCharacterHintsFromTitle(config.title, config.context));
+    final titleNames = _extractCharacterHintsFromTitle(config.title, config.context);
+    names.addAll(titleNames);
+    fromTitle.addAll(titleNames);
 
     for (final name in names) {
       tracker.addName(name);
     }
 
+    // 📊 LOG DETALHADO: Mostrar origem de cada nome carregado
     if (kDebugMode && tracker.confirmedNames.isNotEmpty) {
-      debugPrint('🔐 Tracker inicial: ${tracker.confirmedNames.join(", ")}');
+      debugPrint('🔐 TRACKER BOOTSTRAP - ${tracker.confirmedNames.length} nome(s) carregado(s):');
+      if (fromProtagonist.isNotEmpty) {
+        debugPrint('   📌 Protagonista: ${fromProtagonist.join(", ")}');
+      }
+      if (fromSecondary.isNotEmpty) {
+        debugPrint('   📌 Secundário: ${fromSecondary.join(", ")}');
+      }
+      if (fromContext.isNotEmpty) {
+        debugPrint('   📌 Do contexto: ${fromContext.join(", ")}');
+      }
+      if (fromTitle.isNotEmpty) {
+        debugPrint('   📌 Do título: ${fromTitle.join(", ")}');
+      }
+      debugPrint('   ✅ Total: ${tracker.confirmedNames.join(", ")}');
+    } else if (kDebugMode) {
+      debugPrint('⚠️ TRACKER BOOTSTRAP: Nenhum nome inicial fornecido (será detectado no bloco 1)');
     }
   }
 
@@ -683,11 +1509,52 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
       if (locationLower.isNotEmpty && normalized == locationLower) return;
       if (_nameStopwords.contains(normalized)) return;
 
+      // 🔥 VALIDAÇÃO RIGOROSA: Só adicionar se estiver no banco curado
+      if (!NameGeneratorService.isValidName(name)) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Tracker REJEITOU nome não validado: "$name" (não está no banco curado)');
+        }
+        return;
+      }
+
       tracker.addName(name);
       if (kDebugMode) {
         debugPrint('🔍 Tracker adicionou personagem detectado: $name (ocorrências: $count)');
       }
     });
+  }
+
+  /// 🌍 Traduz termos de parentesco do português para o idioma do roteiro
+  String _translateFamilyTerms(String text, String language) {
+    final lang = language.toLowerCase().trim();
+    
+    // Se for português, retornar original
+    if (lang.contains('portugu') || lang == 'pt') {
+      return text;
+    }
+    
+    // Obter mapa de traduções para o idioma
+    final translations = _familyTermsTranslations[lang];
+    if (translations == null) {
+      // Idioma não mapeado, retornar original
+      if (kDebugMode) {
+        debugPrint('⚠️ Traduções de termos familiares não encontradas para: $lang');
+      }
+      return text;
+    }
+    
+    // Substituir todos os termos encontrados
+    var result = text;
+    for (final entry in translations.entries) {
+      // Substituir tanto com inicial maiúscula quanto minúscula
+      result = result.replaceAll(entry.key, entry.value);
+    }
+    
+    if (kDebugMode && result != text) {
+      debugPrint('🌍 Termos familiares traduzidos para $lang');
+    }
+    
+    return result;
   }
 
   String _buildCharacterGuidance(ScriptConfig config, _CharacterTracker tracker) {
@@ -696,13 +1563,15 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
 
     final protagonist = config.protagonistName.trim();
     if (protagonist.isNotEmpty) {
-      lines.add('- Protagonista: "$protagonist" — mantenha exatamente este nome e sua função.');
+      final translatedProtagonist = _translateFamilyTerms(protagonist, config.language);
+      lines.add('- Protagonista: "$translatedProtagonist" — mantenha exatamente este nome e sua função.');
       baseNames.add(protagonist.toLowerCase());
     }
 
     final secondary = config.secondaryCharacterName.trim();
     if (secondary.isNotEmpty) {
-      lines.add('- Personagem secundário: "$secondary" — preserve o mesmo nome em todos os blocos.');
+      final translatedSecondary = _translateFamilyTerms(secondary, config.language);
+      lines.add('- Personagem secundário: "$translatedSecondary" — preserve o mesmo nome em todos os blocos.');
       baseNames.add(secondary.toLowerCase());
     }
 
@@ -714,11 +1583,13 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
     for (final name in additional) {
       // 🎯 CORRIGIDO: Adicionar personagens mencionados (não são hints de narrador)
       if (name.startsWith('PERSONAGEM MENCIONADO')) {
-        // Remover marcador antes de adicionar ao prompt
+        // Remover marcador e traduzir termo familiar antes de adicionar ao prompt
         final cleanName = name.replaceFirst('PERSONAGEM MENCIONADO: ', '');
-        lines.add('- Personagem mencionado: $cleanName (manter como referência familiar)');
+        final translatedName = _translateFamilyTerms(cleanName, config.language);
+        lines.add('- Personagem mencionado: $translatedName (manter como referência familiar)');
       } else {
-        lines.add('- Personagem estabelecido: "$name" — não altere este nome nem invente apelidos.');
+        final translatedName = _translateFamilyTerms(name, config.language);
+        lines.add('- Personagem estabelecido: "$translatedName" — não altere este nome nem invente apelidos.');
       }
     }
 
@@ -856,35 +1727,21 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
     final cleaned = value.trim();
     if (cleaned.isEmpty) return false;
 
-    // 🚫 Filtrar stopwords (palavras comuns que não são nomes)
-    if (_nameStopwords.contains(cleaned.toLowerCase())) return false;
-
-    final parts = cleaned.split(RegExp(r'\s+'));
-    if (parts.length > 3) return false; // Nomes raramente têm mais de 3 partes
-
-    // 🚫 REGRA ADICIONAL: Palavras isoladas muito curtas provavelmente não são nomes
-    if (parts.length == 1 && cleaned.length < 4) {
-      // Exceção: alguns nomes curtos são válidos (Ana, Lia, Eva, etc)
-      final validShortNames = {'ana', 'lia', 'eva', 'leo', 'rui', 'noa', 'ian', 'ivo', 'ada'};
-      if (!validShortNames.contains(cleaned.toLowerCase())) {
-        return false;
-      }
+    // 🔥 VALIDAÇÃO RIGOROSA E DEFINITIVA:
+    // 🎯 APENAS aceitar nomes que estão no banco de dados curado do NameGeneratorService
+    // Isso elimina TODOS os falsos positivos (verbos, advérbios, palavras comuns)
+    
+    // Verificar se está no banco curado
+    if (NameGeneratorService.isValidName(cleaned)) {
+      return true; // ✅ Nome 100% confirmado no banco de dados curado
     }
 
-    // Verificar cada parte do nome
-    for (final part in parts) {
-      // 🚫 Rejeitar se alguma parte está na lista de stopwords
-      if (_nameStopwords.contains(part.toLowerCase())) return false;
-      
-      final sanitized = part.replaceAll(RegExp(r'[^A-Za-zÁ-ú-]'), '');
-      if (sanitized.length < 2) return false; // Nome muito curto
-      if (!RegExp(r'^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ]').hasMatch(sanitized)) return false; // Deve começar com maiúscula
-      if (!RegExp(r'^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+(-[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)?$').hasMatch(sanitized)) {
-        return false; // Formato inválido
-      }
+    // 🚫 Se NÃO está no banco curado, REJEITAR imediatamente
+    // NÃO vamos mais aceitar "nomes" que a AI inventou
+    if (kDebugMode) {
+      debugPrint('⚠️ NOME REJEITADO (não está no banco curado): "$cleaned"');
     }
-
-    return true;
+    return false;
   }
 
   static final Set<String> _nameStopwords = {
@@ -899,6 +1756,7 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
     'meu', 'minha', 'meus', 'minhas', 'seu', 'sua', 'seus', 'suas', 'nosso', 'nossa',
     'esse', 'essa', 'esses', 'essas', 'aquele', 'aquela', 'aquilo', 'isto', 'isso',
     'tudo', 'nada', 'algo', 'alguem', 'ninguem', 'qualquer', 'outro', 'outra', 'mesmo', 'mesma',
+    'esta', 'este', 'estes', 'estas',
     
     // Substantivos comuns que podem ser capitalizados
     'filho', 'filha', 'filhos', 'pai', 'mae', 'pais', 'irmao', 'irma', 'tio', 'tia',
@@ -907,20 +1765,32 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
     'senhor', 'senhora', 'doutor', 'doutora', 'cliente', 'pessoa', 'pessoas', 'gente',
     'familia', 'casa', 'mundo', 'vida', 'tempo', 'dia', 'noite', 'momento',
     
-    // Advérbios/conjunções comuns no início de frase
+    // Advérbios/conjunções/preposições comuns no início de frase
     'entao', 'depois', 'antes', 'agora', 'hoje', 'ontem', 'amanha', 'sempre', 'nunca',
     'talvez', 'porem', 'contudo', 'entretanto', 'portanto', 'enquanto', 'quando', 'onde',
     'havia', 'houve', 'tinha', 'foram', 'eram', 'estava', 'estavam',
+    'dentro', 'fora', 'acima', 'abaixo', 'perto', 'longe', 'aqui', 'ali', 'alem',
+    'apenas', 'somente', 'tambem', 'inclusive', 'ate', 'ainda', 'logo', 'ja', 'nem',
     
     // Preposições e artigos (raramente, mas podem aparecer)
     'com', 'sem', 'sobre', 'para', 'pela', 'pelo', 'uma', 'umas', 'uns', 'por',
     
-    // Verbos comuns no início de frase (conjugados em vários tempos)
+    // 🔥 FIX CRÍTICO: Palavras que a AI usou como NOMES FANTASMA (do roteiro analisado)
+    'lagrimas', 'lágrimas', 'justica', 'justiça', 'ponto', 'semanas', 'aconteceu',
+    'todas', 'ajuda', 'consolo', 'vamos', 'conheço', 'conheco', 'lembra',
+    
+    // Verbos comuns no início de frase (EXPANDIDO)
     'era', 'foram', 'foi', 'seria', 'pode', 'podia', 'deve', 'devia',
     'senti', 'sentiu', 'pensei', 'pensou', 'vi', 'viu', 'ouvi', 'ouviu',
     'fiz', 'fez', 'disse', 'falou', 'quis', 'quiz', 'pude', 'pôde',
     'tive', 'teve', 'sabia', 'soube', 'imaginei', 'imaginou', 'acreditei', 'acreditou',
     'percebi', 'percebeu', 'notei', 'notou', 'lembrei', 'lembrou',
+    'passei', 'abri', 'olhei', 'escrevo', 'escreveu', 'podes', 'pode',
+    'queria', 'quer', 'quiz', 'quis', 'tinha', 'tenho', 'tem',
+    'levei', 'levou', 'trouxe', 'deixei', 'deixou', 'encontrei', 'encontrou',
+    'cheguei', 'chegou', 'sai', 'saiu', 'entrei', 'entrou',
+    'peguei', 'pegou', 'coloquei', 'colocou', 'tirei', 'tirou', 'guardei', 'guardou',
+    'voltei', 'voltou', 'segui', 'seguiu', 'comecei', 'começou', 'terminei', 'terminou',
   };
 
   static String perspectiveLabel(String perspective) {
@@ -981,19 +1851,37 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       return fullContext; // Blocos iniciais usam tudo
     }
     
+    // 🔥 LIMITE ABSOLUTO OTIMIZADO: Reduzido para evitar timeout em idiomas pesados
+    // 🚨 CRÍTICO: 5.6k palavras causava timeout API 503 nos blocos 7-8
+    // 3.5k palavras = ~21k caracteres cirílico (mais seguro para Gemini)
+    const maxContextWords = 3500; // REDUZIDO de 4500 para 3500
+    final currentWords = _countWords(fullContext);
+    
+    if (currentWords <= maxContextWords) {
+      return fullContext; // Contexto ainda está em tamanho seguro
+    }
+    
     // Separar em blocos (parágrafos duplos ou mais)
     final blocks = fullContext.split(RegExp(r'\n{2,}'));
     if (blocks.length <= maxRecentBlocks + 5) {
       return fullContext; // Ainda não tem muitos blocos
     }
     
-    // Pegar resumo inicial (primeiros 3-5 parágrafos)
-    final initialSummary = blocks.take(5).join('\n\n');
+    // Pegar resumo inicial (primeiros 3 parágrafos - REDUZIDO de 5 para 3)
+    final initialSummary = blocks.take(3).join('\n\n');
     
-    // Pegar últimos N blocos completos
-    final recentBlocks = blocks.skip(max(0, blocks.length - maxRecentBlocks * 5)).join('\n\n');
+    // Pegar últimos N blocos completos (REDUZIDO multiplicador de 5 para 3)
+    final recentBlocks = blocks.skip(max(0, blocks.length - maxRecentBlocks * 3)).join('\n\n');
     
-    return '$initialSummary\n\n[...]\n\n$recentBlocks';
+    final result = '$initialSummary\n\n[...]\n\n$recentBlocks';
+    
+    // Verificar se ainda está muito grande
+    if (_countWords(result) > maxContextWords) {
+      // Reduzir ainda mais - só últimos blocos (REDUZIDO multiplicador de 3 para 2)
+      return blocks.skip(max(0, blocks.length - maxRecentBlocks * 2)).join('\n\n');
+    }
+    
+    return result;
   }
 
   Future<String> _generateBlockContent(
@@ -1002,19 +1890,25 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     String phase, 
     ScriptConfig c,
     _CharacterTracker tracker,
-    int blockNumber,
-  ) async {
-    final needed = c.measureType == 'caracteres' ? target - previous.length : target - _countWords(previous);
+    int blockNumber, {
+    bool avoidRepetition = false, // 🔥 NOVO: Flag para regeneração anti-repetição
+  }) async {
+    // 🔧 IMPORTANTE: target vem SEMPRE em PALAVRAS de _calculateTargetForBlock()
+    // Mesmo quando measureType='caracteres', _calculateTargetForBlock já converteu caracteres→palavras
+    // O Gemini trabalha melhor com contagem de PALAVRAS, então sempre pedimos palavras no prompt
+    // Depois contamos caracteres no resultado final para validar se atingiu a meta do usuário
+    final needed = target;
     if (needed <= 0) return '';
     
-    // � OTIMIZAÇÃO: Limitar contexto aos últimos 3 blocos para evitar timeouts
+    // 🔥 OTIMIZAÇÃO CRÍTICA: Limitar contexto aos últimos 4 blocos (reduzido de 5)
+    // Para idiomas pesados (russo, chinês), contexto menor = menos timeout
     // Blocos iniciais (1-4): contexto completo
-    // Blocos médios/finais (5+): últimos 3 blocos + resumo inicial
-    String contextoPrevio = previous.isEmpty ? '' : _buildLimitedContext(previous, blockNumber, 3);
+    // Blocos médios/finais (5+): últimos 4 blocos apenas
+    String contextoPrevio = previous.isEmpty ? '' : _buildLimitedContext(previous, blockNumber, 4);
     
     if (kDebugMode && previous.isNotEmpty) {
       final contextUsed = contextoPrevio.length;
-      final contextType = blockNumber <= 4 ? 'COMPLETO' : 'LIMITADO (últimos 3 blocos)';
+      final contextType = blockNumber <= 4 ? 'COMPLETO' : 'LIMITADO (últimos 4 blocos)';
       debugPrint('📚 CONTEXTO $contextType: $contextUsed chars (${_countWords(contextoPrevio)} palavras)');
       if (blockNumber > 4) {
         debugPrint('   Original: ${previous.length} chars → Reduzido: $contextUsed chars (${((1 - contextUsed / previous.length) * 100).toStringAsFixed(0)}% menor)');
@@ -1025,15 +1919,30 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     String trackerInfo = '';
     if (tracker.confirmedNames.isNotEmpty) {
       trackerInfo = '\n⚠️ MANTENHA estes nomes exatamente como definidos: ${tracker.confirmedNames.join(", ")}\n';
+      // 🔥 NOVO: Adicionar mapeamento personagem-papel
+      final mapping = tracker.getCharacterMapping();
+      if (mapping.isNotEmpty) {
+        trackerInfo += mapping;
+        trackerInfo += '⚠️ NUNCA confunda ou reutilize estes nomes! Cada nome = 1 personagem!\n';
+      }
       if (kDebugMode) {
         debugPrint('🔥 Bloco $blockNumber - Nomes no tracker: ${tracker.confirmedNames.join(", ")}');
+        if (mapping.isNotEmpty) {
+          debugPrint('🎭 Mapeamento: ${tracker.confirmedNames.map((n) => "$n=${tracker.getRole(n) ?? '?'}").join(", ")}');
+        }
       }
     }
     final characterGuidance = _buildCharacterGuidance(c, tracker);
     
-    // Limitar target para manter estabilidade mas permitir qualidade
-    final limitedNeeded = min(needed, c.measureType == 'caracteres' ? 15000 : 3500); // AUMENTADO: Era 6000/1000, agora 15000/3500
-  final measure = c.measureType == 'caracteres' ? 'GERE EXATAMENTE $limitedNeeded caracteres' : 'GERE EXATAMENTE $limitedNeeded palavras';
+    // 🔧 IMPORTANTE: Limitar palavras por bloco para estabilidade
+    // O Gemini funciona melhor com targets de PALAVRAS, não caracteres
+    // Limite máximo: 3500 palavras/bloco (≈ 19.250 caracteres)
+    final limitedNeeded = min(needed, 3500); // Sempre limitar em palavras
+  
+  // 📊 SEMPRE pedir palavras no prompt (Gemini trabalha melhor assim)
+  // O sistema converterá caracteres→palavras antes de chegar aqui (_calculateTargetForBlock)
+  // E validará caracteres no resultado final
+  final measure = 'GERE EXATAMENTE $limitedNeeded palavras';
   final localizationGuidance = _buildLocalizationGuidance(c);
     
     // 🔍 DEBUG: Verificar se modo GLOBAL está sendo passado corretamente
@@ -1049,40 +1958,241 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     String instruction;
     if (previous.isEmpty) {
       if (c.startWithTitlePhrase && c.title.trim().isNotEmpty) {
-        instruction = 'Comece uma nova história usando EXATAMENTE esta frase como gancho de abertura: "${c.title}". Esta frase deve iniciar o primeiro parágrafo de forma natural e envolvente, como se fosse parte da narrativa';
+        instruction = _getStartInstruction(c.language, withTitle: true, title: c.title);
       } else {
-        instruction = 'Comece uma nova história';
+        instruction = _getStartInstruction(c.language, withTitle: false);
       }
     } else {
-      instruction = 'Continue a história';
+      instruction = _getContinueInstruction(c.language);
     }
     
+    // Gerar lista de nomes curados do banco de dados
+    final nameList = NameGeneratorService.getNameListForPrompt(
+      language: c.language,
+      genre: c.genre, // NOVO: Usa genre do config (null = nomes do idioma, 'western' = nomes western)
+      maxNamesPerCategory: 30,
+    );
+    
+    // 🌍 Obter labels traduzidos para os metadados
+    final labels = _getMetadataLabels(c.language);
+    
+    // 🌐 Preparar contexto com instrução de tradução se necessário
+    final contextTranslationNote = c.context.trim().isNotEmpty 
+        ? _getContextTranslationInstruction(c.language) 
+        : '';
+    
+    // 🎯 Definir se inclui tema/subtema ou modo livre
+    final temaSection = c.tema == 'Livre (Sem Tema)' 
+        ? '// Modo Livre: Desenvolva o roteiro baseado APENAS no título e contexto fornecidos\n'
+        : '${labels['theme']}: ${c.tema}\n${labels['subtheme']}: ${c.subtema}\n';
+    
     // Prompt otimizado para ROTEIRO DE NARRAÇÃO limpo e com target específico
-    final prompt = '${contextoPrevio.isNotEmpty ? 'CONTEXTO:\n$contextoPrevio\n\n' : ''}'
+    final prompt = '⭐ IDIOMA OBRIGATÓRIO: ${_getLanguageInstruction(c.language)}\n' // 🚀 IDIOMA NA PRIMEIRA LINHA!
+    '\n'
+    '${contextoPrevio.isNotEmpty ? 'CONTEXTO:\n$contextoPrevio\n\n' : ''}'
   '$trackerInfo'
+  '${avoidRepetition ? '\n🚨 AVISO URGENTE: O bloco anterior foi REJEITADO por repetição!\n⚠️ VOCÊ COPIOU PARÁGRAFOS DO CONTEXTO! Isso é PROIBIDO!\n✅ AGORA: Escreva conteúdo 100% NOVO, SEM copiar frases anteriores!\n   Use palavras DIFERENTES, estruturas DIFERENTES, avance a história!\n\n' : ''}'
   '${characterGuidance.isEmpty ? '' : characterGuidance}'
-        '$instruction${previous.isEmpty && !c.startWithTitlePhrase ? ' sobre "${c.title}"' : ''}.\n'
-        'TEMA: ${c.tema}\n'
-        'SUBTEMA: ${c.subtema}\n'
-    '${c.localizacao.trim().isEmpty ? 'LOCALIZAÇÃO: Não especificada' : 'LOCALIZAÇÃO: ${c.localizacao}'}\n'
-        'CONTEXTO ADICIONAL: ${c.context}\n'
+        '$instruction.\n' // ← Título JÁ está na instruction se withTitle=true
+        '$temaSection'
+    '${c.localizacao.trim().isEmpty ? '${labels['location']}: ${labels['locationNotSpecified']}' : '${labels['location']}: ${c.localizacao}'}\n'
+        '${contextTranslationNote}${labels['additionalContext']}: ${c.context}\n'
     '$localizationGuidance'
-        '⚠️ OBRIGATÓRIO: $measure - ESTE É UM REQUISITO ABSOLUTO!\n'
+    '\n'
+    '$nameList\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '🚨 ATENÇÃO: A lista de nomes acima é sua ÚNICA fonte de nomes!\n'
+    '   COPIE os nomes EXATAMENTE daquela lista ao criar personagens.\n'
+    '   Se você usar palavras como "Observei", "Quero", "Pergunte" como nomes,\n'
+    '   você está FALHANDO nesta tarefa. Esses são VERBOS, não NOMES!\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '\n'
+    '⚠️ OBRIGATÓRIO: $measure - ESTE É UM REQUISITO ABSOLUTO!\n'
         'FORMATO: ROTEIRO PARA NARRAÇÃO DE VÍDEO - apenas texto corrido para ser lido em voz alta.\n'
-        'PROIBIDO: Emojis, símbolos, formatação markdown, títulos, bullets, calls-to-action, hashtags, elementos visuais.\n'
-        'OBRIGATÓRIO: Texto limpo, narrativo, fluido, pronto para narração direta.\n'
+        'PROIBIDO: Emojis, símbolos, formatação markdown (incluindo backticks `), títulos, bullets, calls-to-action, hashtags, elementos visuais.\n'
+        'OBRIGATÓRIO: Texto limpo, narrativo, fluido, pronto para narração direta. NUNCA use backticks (`) ou qualquer marcação ao redor de palavras.\n'
+    '\n'
+    '📖 ESTILO DE NARRATIVA PARA VÍDEOS LONGOS:\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '✅ PERMITIDO E ENCORAJADO para roteiros longos e envolventes:\n'
+    '   • Reflexões profundas dos personagens sobre suas emoções e motivações\n'
+    '   • Descrições detalhadas de ambientes e atmosferas\n'
+    '   • Monólogos internos que revelam pensamentos complexos\n'
+    '   • Desenvolvimento gradual de tensão ao longo de múltiplos parágrafos\n'
+    '   • Digressões narrativas que enriquecem a história\n'
+    '   • Análises psicológicas dos personagens\n'
+    '   • Metáforas e simbolismos elaborados\n'
+    '\n'
+    '⏱️ TRANSIÇÕES TEMPORAIS: Use marcadores quando pular no tempo\n'
+    '   ✅ BOM: "Três dias depois...", "Na manhã seguinte...", "Semanas se passaram..."\n'
+    '\n'
+    '🎭 DESENVOLVIMENTO DE CENAS:\n'
+    '   • PODE descrever a mesma cena por vários parágrafos para criar imersão\n'
+    '   • PODE alternar entre ação e reflexão para variar o ritmo\n'
+    '   • PODE usar descrições longas para criar atmosfera\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '\n'
     'REGRAS DE CONSISTÊNCIA:\n'
     '- Continue exatamente do ponto onde o CONTEXTO parou; não reinicie a história.\n'
     '- Não repita parágrafos, cenas, diálogos ou cartas já escritos anteriormente.\n'
-    '- Preserve nomes e relações dos personagens confirmados sem apelidos ou variações.\n\n'
-    '⭐ NOMES DE PERSONAGENS SECUNDÁRIOS:\n'
-    '- Se precisar criar personagens secundários (advogados, médicos, funcionários, vizinhos, etc), DÊ A ELES NOMES PRÓPRIOS REALISTAS.\n'
-    '- EXEMPLOS CORRETOS: "Dr. Paulo, nosso contador", "senhor Magalhães, meu advogado", "Túlia, minha governanta", "Nonato, meu motorista", "Sérgio, o diretor".\n'
-    '- NUNCA use palavras comuns como nomes: "Por, nosso contador", "Imaginei, advogado", "Tudo, governanta", "Não, motorista", "Senti, diretor".\n'
-    '- Use nomes brasileiros comuns e realistas para todos os personagens com função definida na história.\n\n'
+    '- Desenvolva a narrativa de forma rica e detalhada.\n'
+    '- Use tanto AÇÃO quanto REFLEXÃO para criar uma narrativa completa e envolvente.\n'
+    '\n'
+    '🚨 PRESERVAÇÃO DE NOMES - REGRA ABSOLUTA E INEGOCIÁVEL:\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '⚠️ OS NOMES DE PERSONAGENS JÁ ESTABELECIDOS NO CONTEXTO ACIMA SÃO PERMANENTES!\n'
+    '⚠️ VOCÊ NÃO PODE MUDAR, ALTERAR, OU SUBSTITUIR ESSES NOMES EM HIPÓTESE ALGUMA!\n'
+    '⚠️ SE VOCÊ CRIAR NOVOS NOMES PARA PERSONAGENS JÁ EXISTENTES, O TEXTO SERÁ REJEITADO!\n'
+    '\n'
+    '✅ CORRETO: \"Daniela pegou o telefone\" (se Daniela já existe no contexto)\n'
+    '❌ ERRADO: \"Sofia pegou o telefone\" (mudou o nome de Daniela para Sofia - PROIBIDO!)\n'
+    '❌ ERRADO: \"A nora pegou o telefone\" (usou descrição genérica em vez do nome - PROIBIDO!)\n'
+    '\n'
+    '⚠️ ATENÇÃO ESPECIAL: PERSONAGENS SECUNDÁRIOS EM BLOCOS DISTANTES:\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    'Se um personagem secundário (advogado, amigo, vizinho, esposa de alguém, etc.)\n'
+    'foi mencionado em blocos anteriores com um nome específico, você DEVE usar\n'
+    'EXATAMENTE o mesmo nome se esse personagem aparecer novamente, MESMO que\n'
+    'seja muitos blocos depois!\n'
+    '\n'
+    '📌 EXEMPLOS DE ERROS QUE VOCÊ DEVE EVITAR:\n'
+    '\n'
+    '❌ ERRADO: Bloco 5 menciona \"Sônia, a esposa do vilão\" e no Bloco 15 você escreve\n'
+    '           \"Cláudia, a esposa do vilão\" — ISSO É PROIBIDO! Use \"Sônia\" novamente!\n'
+    '\n'
+    '❌ ERRADO: Bloco 3 apresenta \"Dr. Roberto, o médico\" e no Bloco 12 você escreve\n'
+    '           \"Dr. Carlos atendeu a ligação\" — PROIBIDO! Continue usando \"Dr. Roberto\"!\n'
+    '\n'
+    '❌ ERRADO: Bloco 7 menciona \"Ricardo, o advogado\" e no Bloco 17 você apresenta\n'
+    '           \"Ricardo, o arquiteto\" — PROIBIDO! Use OUTRO nome para o arquiteto!\n'
+    '\n'
+    '✅ CORRETO: Se \"Sônia\" apareceu no Bloco 5, use \"Sônia\" em TODOS os blocos seguintes\n'
+    '            onde essa personagem aparecer, mesmo que seja no Bloco 15 ou 18!\n'
+    '\n'
+    '✅ CORRETO: Se \"Ricardo\" já é o advogado, o novo namorado deve ter OUTRO nome\n'
+    '            (por exemplo: \"Fernando, o arquiteto\").\n'
+    '\n'
+    '🔍 ANTES DE CRIAR UM NOVO NOME: Releia o contexto acima e verifique se esse\n'
+    '   personagem já foi mencionado com outro nome. Se sim, USE O NOME ORIGINAL!\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
+    '🚨 NOMES DE PERSONAGENS - REGRA CRÍTICA E OBRIGATÓRIA:\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    'VOCÊ DEVE COPIAR E COLAR os nomes EXATAMENTE da lista "NOMES DISPONÍVEIS" acima.\n'
+    '⚠️ ESTA É UMA REGRA ABSOLUTA - NÃO HÁ EXCEÇÕES!\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '\n'
+    '✅ CORRETO - Exemplos de como usar:\n'
+    '  • "Helena pegou o casaco" (Helena está na lista)\n'
+    '  • "Lucas entrou na sala" (Lucas está na lista)\n'
+    '  • "Sofia olhou para mim" (Sofia está na lista)\n'
+    '\n'
+    '❌ PROIBIDO - NUNCA faça isso:\n'
+    '  • "Observei o casaco" → "Observei" NÃO é nome! Use "Marta observou"\n'
+    '  • "Quero saber a verdade" → "Quero" NÃO é nome! Use "Carlos quer saber"\n'
+    '  • "Pergunte a ele" → "Pergunte" NÃO é verbo! Use "Roberto perguntou"\n'
+    '  • "Apenas sorriu" → "Apenas" NÃO é nome! Use "Ana apenas sorriu"\n'
+    '  • "Imaginei que era tarde" → "Imaginei" é verbo! Use "Eu imaginei"\n'
+    '\n'
+    '🚨 ERROS REAIS QUE VOCÊ COMETEU ANTES (NUNCA REPITA):\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '❌ "Lágrimas" como nome de pessoa → É uma PALAVRA COMUM! Use "Marina" ou "Júlia"\n'
+    '❌ "Justiça" como nome de pessoa → É um SUBSTANTIVO! Use "Beatriz" ou "Fernanda"\n'
+    '❌ "Vamos" como nome de pessoa → É um VERBO! Use "Rafael" ou "André"\n'
+    '❌ "Aconteceu" como nome de pessoa → É um VERBO! Use "Carlos" ou "Miguel"\n'
+    '❌ "Ponto" como nome de pessoa → É uma PALAVRA! Use "Paulo" ou "Antônio"\n'
+    '❌ "Semanas" como nome de pessoa → É uma PALAVRA! Use "Pedro" ou "José"\n'
+    '❌ "Todas" como nome de pessoa → É um PRONOME! Use "Manuel" ou "Luís"\n'
+    '❌ "Ajuda" e "Consolo" como nomes de irmãs → São SUBSTANTIVOS! Use "Rita e Clara"\n'
+    '\n'
+    '⚠️ REGRA: Se uma palavra NÃO está na lista "NOMES DISPONÍVEIS", NÃO É NOME!\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '\n'
+    '📋 PROCESSO OBRIGATÓRIO para nomear personagens:\n'
+    '1. PAUSE e OLHE para a lista "NOMES DISPONÍVEIS" acima\n'
+    '2. IDENTIFIQUE: personagem é masculino ou feminino? Jovem, maduro ou idoso?\n'
+    '3. ESCOLHA um nome da categoria apropriada\n'
+    '4. COPIE o nome EXATAMENTE como está escrito na lista\n'
+    '5. VERIFIQUE: este nome já foi usado para OUTRO personagem? Se SIM, escolha outro!\n'
+    '\n'
+    '⚠️ REGRA CRÍTICA: NUNCA use o mesmo nome para dois personagens diferentes!\n'
+    '   ❌ ERRADO: \"Ricardo, o advogado\" (bloco 3) e depois \"Ricardo, o namorado\" (bloco 17)\n'
+    '   ✅ CORRETO: \"Ricardo, o advogado\" (bloco 3) e depois \"Fernando, o namorado\" (bloco 17)\n'
+    '\n'
+    '🚨 ERROS GRAVÍSSIMOS DE DUPLICAÇÃO QUE VOCÊ JÁ COMETEU:\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '❌ "Ricardo" usado para DOIS personagens: cobrador + gangster = PROIBIDO!\n'
+    '   → Se Ricardo já é o cobrador, o gangster deve ser "Marcos" ou "Fernando"\n'
+    '\n'
+    '❌ "Sérgio" usado para DOIS personagens: policial + criminoso = ABSURDO!\n'
+    '   → Se Sérgio é o policial gentil, o criminoso deve ser "Carlos" ou "Renato"\n'
+    '\n'
+    '❌ "Roberto" usado para DOIS personagens: taxista + médico = IMPOSSÍVEL!\n'
+    '   → Se Roberto é o taxista, o médico deve ser "Dr. Alberto" ou "Dr. Henrique"\n'
+    '\n'
+    '🔥 ERRO NOVO DETECTADO - CONFUSÃO DE NOMES ENTRE PERSONAGENS:\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '❌ Bloco 7: Introduziu \"Daniela\" como estudante universitária\n'
+    '❌ Bloco 13: Introduziu \"Larissa\" como ex-noiva de Theo\n'
+    '❌ Bloco 14: Chamou a ex-noiva de \"Daniela\" (ERRADO! É \"Larissa\")\n'
+    '❌ Bloco 18: Reutilizou \"Larissa\" para uma criança (JÁ USADO!)\n'
+    '\n'
+    '✅ SOLUÇÃO CORRETA:\n'
+    '   • Daniela = sempre estudante universitária (nunca mudar!)\n'
+    '   • Larissa = sempre ex-noiva de Theo (nunca mudar!)\n'
+    '   • Criança do bloco 18 = usar \"Mariana\" ou \"Isabela\" (nome NOVO!)\n'
+    '\n'
+    '⚠️ REGRA DE OURO: Cada nome pertence a UM personagem ESPECÍFICO!\n'
+    '   Se você introduziu \"Larissa\" como ex-noiva no bloco 13,\n'
+    '   ela SEMPRE será a ex-noiva. NUNCA chame outro personagem de \"Larissa\"!\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '\n'
+    '✅ SOLUÇÃO GERAL: Antes de dar um nome a um personagem novo, RELEIA o contexto\n'
+    '   e verifique se esse nome JÁ FOI USADO. Se sim, escolha OUTRO nome!\n'
+    '   E NUNCA confunda qual nome pertence a qual personagem!\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '\n'
+    '🚨 ERRO CRÍTICO DETECTADO - REPETIÇÃO LITERAL DE PARÁGRAFOS:\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '❌ NUNCA copie parágrafos inteiros do contexto anterior!\n'
+    '❌ NUNCA repita frases ou descrições que já foram escritas!\n'
+    '\n'
+    '📋 EXEMPLOS DE REPETIÇÕES PROIBIDAS:\n'
+    '❌ ERRADO: Copiar "Depois que Ian se foi, o quarto ficou mergulhado..."\n'
+    '           palavra por palavra de um bloco anterior\n'
+    '✅ CORRETO: Parafrasear com palavras DIFERENTES:\n'
+    '           "Ian havia partido. Agora, apenas o silêncio preenchia..."\n'
+    '\n'
+    '❌ ERRADO: Repetir reflexões já feitas:\n'
+    '           "O carrinho era sólido, real..." (se já escreveu isso antes)\n'
+    '✅ CORRETO: Avançar a narrativa com NOVOS eventos:\n'
+    '           "Guardei o carrinho na gaveta e fui preparar o jantar..."\n'
+    '\n'
+    '⚠️ REGRA ABSOLUTA: Cada bloco deve ter conteúdo 100% NOVO!\n'
+    '   • Se já descreveu um objeto → Não descreva novamente\n'
+    '   • Se já fez uma reflexão → Avance para a próxima cena\n'
+    '   • Se já narrou um evento → Conte o que aconteceu DEPOIS\n'
+    '\n'
+    '✅ TÉCNICAS PARA EVITAR REPETIÇÃO:\n'
+    '   1. Ler o contexto e RESUMIR mentalmente o que já foi dito\n'
+    '   2. Perguntar: "Este parágrafo avança a história?"\n'
+    '   3. Usar sinônimos e estruturas de frase DIFERENTES\n'
+    '   4. Focar em AÇÃO e DIÁLOGO, não apenas reflexões\n'
+    '   5. Introduzir novos elementos: personagens, locais, eventos\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '\n'
+    '⚠️ TESTE ANTES DE ESCREVER:\n'
+    'Antes de usar qualquer palavra como nome, pergunte:\n'
+    '"Esta palavra está na lista NOMES DISPONÍVEIS acima?"\n'
+    'Se a resposta é NÃO → NÃO USE como nome!\n'
+    '\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
         '${_getPerspectiveInstruction(c.perspective, c)}\n\n'
-        '⚠️ LINGUAGEM ACESSÍVEL (OBRIGATÓRIO):\n'
-        'Use APENAS vocabulário SIMPLES, nível ensino fundamental. O público-alvo são pessoas comuns que assistem YouTube.\n'
+        '⚠️ LINGUAGEM ACESSÍVEL PARA TODAS AS IDADES (OBRIGATÓRIO):\n'
+        '🎯 PÚBLICO-ALVO: Pessoas de 60+ anos, nível ensino fundamental\n'
+        'Use APENAS vocabulário que seus AVÓS entendem facilmente!\n'
+        '\n'
+        '📌 REGRA DE OURO:\n'
+        'Se você não usaria essa palavra conversando com sua AVÓ de 70 anos → NÃO USE!\n'
         '\n'
         '🚫 PALAVRAS PROIBIDAS (substitua por alternativas simples):\n'
         '- "embargada" → "trêmula", "falhando"\n'
@@ -1096,13 +2206,19 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         '- "sibilar" → "sussurrar com raiva"\n'
         '- "carnificina" → "destruição", "massacre"\n'
         '- "estridência" → "barulho alto", "grito agudo"\n'
+        '- "metodologia" → "jeito de fazer", "método"\n'
+        '- "espécime" → "exemplo", "caso"\n'
+        '- "catalisador" → "causa", "motivo"\n'
+        '- "titã" → "gigante", "pessoa poderosa"\n'
+        '- "fissura" → "rachadura", "brecha"\n'
         '\n'
-        '✅ REGRAS DE SIMPLICIDADE:\n'
-        '1. FRASES CURTAS: Máximo 25-30 palavras por frase\n'
-        '2. VOCABULÁRIO: Apenas palavras que você usaria conversando com um amigo\n'
-        '3. VERBOS SIMPLES: Prefira presente/passado simples, evite futuro do pretérito\n'
-        '4. SEM TERMOS TÉCNICOS: "advogado" OK, "obstrução da justiça" NÃO\n'
-        '5. TESTE MENTAL: "Uma pessoa que só vê YouTube entenderia esta palavra?"\n'
+        '✅ REGRAS DE SIMPLICIDADE (SEMPRE):\n'
+        '1. FRASES CURTAS: Máximo 20-25 palavras por frase (mais fácil de acompanhar)\n'
+        '2. VOCABULÁRIO DO DIA A DIA: Palavras de conversa com família, não de livro\n'
+        '3. VERBOS SIMPLES: "eu fiz", "ele disse", "nós vimos" (sem complicação)\n'
+        '4. SEM TERMOS TÉCNICOS: Explique tudo com palavras comuns\n'
+        '5. TESTE MENTAL: "Minha avó de 70 anos entenderia facilmente?"\n'
+        '6. EVITE: Palavras literárias, filosóficas, poéticas demais\n'
         '\n'
         '📝 EXEMPLOS DE SIMPLIFICAÇÃO:\n'
         '❌ "A confissão foi proferida com uma solenidade que beirava o absurdo"\n'
@@ -1111,16 +2227,117 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         '❌ "Ela sibilou uma resposta embargada pela emoção"\n'
         '✅ "Ela sussurrou com raiva, a voz tremendo de emoção"\n'
         '\n'
-        'Idioma: ${_getLanguageInstruction(c.language)}\n\n'
-        '⭐ IMPORTANTE: Desenvolva a narrativa com riqueza de detalhes, diálogos, descrições e desenvolvimento de personagens para atingir EXATAMENTE o número de ${c.measureType} solicitado. SEMPRE use frases curtas, palavras simples e linguagem de conversa natural.';
+        '❌ "Minha metodologia era simples e metódica"\n'
+        '✅ "Comecei devagar, do jeito que aprendi no arquivo"\n'
+        '\n'
+        '❌ "A dor foi engolida por uma clareza fria e assustadora"\n'
+        '✅ "Doeu muito. Mas logo virou raiva. Uma raiva gelada"\n'
+        '\n'
+        '❌ "Éramos curadores de um museu particular de dor"\n'
+        '✅ "Nós dois vivíamos presos naquela dor, cada um no seu canto"\n'
+        '\n'
+        '❌ "Todo titã tem fissuras em sua armadura"\n'
+        '✅ "Todo mundo tem um ponto fraco. Eu só precisava achar o dele"\n'
+        '\n'
+        '⭐ IMPORTANTE: Desenvolva a narrativa com riqueza de detalhes, diálogos, descrições e desenvolvimento de personagens para atingir EXATAMENTE o número de ${c.measureType} solicitado. SEMPRE use frases curtas (máximo 20-25 palavras), palavras simples que seus avós entendem, e linguagem de conversa natural familiar.\n'
+        '\n'
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+        '🎭 REGRAS PARA TWISTS E REVELAÇÕES (CRÍTICO PARA YOUTUBE):\n'
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+        '\n'
+        '⚠️ ATENÇÃO: Público do YouTube precisa de CLAREZA, não ambiguidade filosófica!\n'
+        '\n'
+        '✅ SE VOCÊ INCLUIR UM TWIST (revelação surpreendente):\n'
+        '\n'
+        '1️⃣ PREPARE O TERRENO (Foreshadowing):\n'
+        '   ❌ ERRADO: Revelar do nada no final que "tudo era mentira"\n'
+        '   ✅ CORRETO: Plantar 2-3 pistas sutis nos blocos anteriores\n'
+        '   \n'
+        '   Exemplo de pista sutil:\n'
+        '   - "Ele parecia nervoso ultimamente, mas eu ignorei"\n'
+        '   - "Encontrei um recibo estranho, mas não dei importância"\n'
+        '   - "Seus amigos novos me pareciam suspeitos"\n'
+        '\n'
+        '2️⃣ DÊ POSIÇÃO CLARA AO NARRADOR:\n'
+        '   ❌ ERRADO: "Eu não sei mais o que pensar... talvez ele fosse culpado... ou não..."\n'
+        '   ✅ CORRETO: "Agora eu sei a verdade. Ele errou, mas isso não justifica o que fizeram"\n'
+        '   \n'
+        '   O narrador DEVE ter uma conclusão clara, mesmo que dolorosa:\n'
+        '   - "Mesmo sabendo disso, minha dor continua válida"\n'
+        '   - "A verdade mudou como vejo, mas não mudou meu amor"\n'
+        '   - "Ambos eram culpados, cada um à sua maneira"\n'
+        '\n'
+        '3️⃣ RESOLUÇÃO EMOCIONAL OBRIGATÓRIA:\n'
+        '   ❌ ERRADO: Terminar com "...e eu fiquei pensando nisso" [fim abrupto]\n'
+        '   ✅ CORRETO: "Aprendi que a verdade não é simples, mas encontrei minha paz"\n'
+        '   \n'
+        '   O espectador PRECISA saber:\n'
+        '   - Como o narrador se sente AGORA sobre tudo\n'
+        '   - Qual lição foi aprendida (mesmo que dolorosa)\n'
+        '   - Se há paz, aceitação, ou continuação da luta\n'
+        '\n'
+        '4️⃣ EVITE CONTRADIÇÕES COM O INÍCIO:\n'
+        '   ❌ ERRADO: \n'
+        '   - Blocos 1-6: "Ele era inocente, vou vingar!"\n'
+        '   - Bloco 7: "Na verdade ele era culpado e mereceu"\n'
+        '   [Espectador se sente ENGANADO]\n'
+        '   \n'
+        '   ✅ CORRETO:\n'
+        '   - Blocos 1-6: "Ele era inocente... ou eu pensava isso"\n'
+        '   - Bloco 7: "Descobri que havia mais na história"\n'
+        '   [Espectador se sente INTRIGADO, não traído]\n'
+        '\n'
+        '5️⃣ TESTE DO "ESPECTADOR SATISFEITO":\n'
+        '   Antes de finalizar, pergunte:\n'
+        '   - ✅ "O espectador entende CLARAMENTE o que aconteceu?"\n'
+        '   - ✅ "O narrador tem uma POSIÇÃO DEFINIDA sobre os eventos?"\n'
+        '   - ✅ "Há um FECHAMENTO EMOCIONAL (paz, aceitação, ou decisão clara)?"\n'
+        '   - ✅ "A jornada do início ao fim faz SENTIDO COMPLETO?"\n'
+        '   \n'
+        '   Se QUALQUER resposta for NÃO → Reescreva o final!\n'
+        '\n'
+        '📌 REGRA DE OURO PARA YOUTUBE:\n'
+        'Complexidade moral é BEM-VINDA, mas AMBIGUIDADE SEM RESOLUÇÃO é PROIBIDA!\n'
+        'O espectador pode aceitar "a verdade era complicada", mas NÃO aceita "não sei o que pensar".\n'
+        '\n'
+        '✅ EXEMPLO BOM de final com twist:\n'
+        '"Descobri que meu filho tinha culpa também. Isso não apaga minha dor,\n'
+        'mas mudou minha raiva. Ele errou, mas não merecia morrer. E ela,\n'
+        'mesmo tendo razões, escolheu o pior caminho. Ambos pagaram o preço\n'
+        'de suas escolhas. Eu aprendi que a verdade raramente é simples,\n'
+        'mas isso não significa que devo viver na dúvida. Fiz as pazes com\n'
+        'a memória imperfeita do meu filho. E essa é a minha paz."\n'
+        '\n'
+        '❌ EXEMPLO RUIM de final ambíguo:\n'
+        '"Agora não sei mais o que pensar. Talvez ele fosse culpado, talvez não.\n'
+        'Talvez ela fosse vítima, talvez não. Fico aqui pensando nisso."\n'
+        '[ESPECTADOR FRUSTRANDO - NÃO FAÇA ISSO!]\n'
+        '\n'
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
         
     if (kDebugMode) debugPrint('[$_instanceId] Gerando bloco balanceado: $limitedNeeded ${c.measureType}');
     
     try {
       // 🚀 GEMINI 2.5 PRO: Suporta até 65.535 tokens de saída!
-      // Usando 32.768 (50%) para ter margem de segurança
-      final maxTokensCalculated = c.measureType == 'caracteres' ? (needed * 2.0).ceil() : (needed * 10).ceil();
-      final maxTokensLimit = 32768; // Gemini 2.5 Pro permite até 65.535 tokens de saída
+      // Aumentado para 50.000 tokens (76% da capacidade) para idiomas cirílicos
+      
+      // 🌐 AJUSTE: Idiomas não-latinos (cirílico, etc.) consomem mais tokens
+      final languageNormalized = c.language.toLowerCase().trim();
+      final isCyrillic = languageNormalized.contains('russo') || 
+                         languageNormalized.contains('búlgar') || 
+                         languageNormalized.contains('bulgar') ||
+                         languageNormalized == 'ru' || 
+                         languageNormalized == 'bg';
+      final isTurkish = languageNormalized.contains('turco') || languageNormalized == 'tr';
+      
+      // Cirílico e turco precisam de 5x mais tokens por caractere (aumentado de 4x)
+      // Idiomas latinos mantêm 2.5x (aumentado de 2x) para mais margem
+      final tokenMultiplier = c.measureType == 'caracteres' 
+          ? (isCyrillic || isTurkish ? 5.0 : 2.5) 
+          : 12.0; // Aumentado de 10.0 para 12.0 para palavras
+      
+      final maxTokensCalculated = (needed * tokenMultiplier).ceil();
+      final maxTokensLimit = 50000; // Aumentado de 32.768 para 50.000 tokens
       final finalMaxTokens = maxTokensCalculated > maxTokensLimit ? maxTokensLimit : maxTokensCalculated;
       
       final data = await _makeApiRequest(
@@ -1131,8 +2348,27 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       );
   final text = data ?? '';
   final filtered = text.isNotEmpty ? _filterDuplicateParagraphs(previous, text) : '';
+  
+  // 🔥 LOGGING: Detectar quando bloco retorna vazio
+  if (filtered.isEmpty) {
+    if (kDebugMode) {
+      debugPrint('⚠️ BLOCO $blockNumber VAZIO DETECTADO!');
+      if (data == null) {
+        debugPrint('   Causa: API retornou null (bloqueio de conteúdo ou erro)');
+      } else if (text.isEmpty) {
+        debugPrint('   Causa: Resposta da API estava vazia');
+      } else {
+        debugPrint('   Causa: Conteúdo filtrado como duplicado');
+        debugPrint('   Texto original: ${text.length} chars');
+      }
+    }
+  }
+  
   return filtered.isNotEmpty ? '\n$filtered' : '';
-    } catch (_) { 
+    } catch (e) { 
+      if (kDebugMode) {
+        debugPrint('❌ ERRO no bloco $blockNumber: $e');
+      }
       return ''; 
     }
   }
@@ -1164,17 +2400,44 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     
   final measure = c.measureType == 'caracteres' ? 'Adicione EXATAMENTE $needed caracteres ou mais' : 'Adicione EXATAMENTE $needed palavras ou mais';
   final localizationGuidance = _buildLocalizationGuidance(c);
+  
+  // Gerar lista de nomes curados do banco de dados
+  final nameList = NameGeneratorService.getNameListForPrompt(
+    language: c.language,
+    genre: c.genre, // NOVO: Usa genre do config (null = nomes do idioma, 'western' = nomes western)
+    maxNamesPerCategory: 30,
+  );
+  
+  // 🌍 Obter labels traduzidos para os metadados
+  final labels = _getMetadataLabels(c.language);
+  
     final prompt = 'Continue a narrativa de forma natural e fluida:\n\n$contextoExpansao\n\n'
   '$trackerInfo'
   '${characterGuidance.isEmpty ? '' : characterGuidance}'
         '$measure\n'
-        'TEMA: ${c.tema}\n'
-        'SUBTEMA: ${c.subtema}\n'
-    '${c.localizacao.trim().isEmpty ? 'LOCALIZAÇÃO: Não especificada' : 'LOCALIZAÇÃO: ${c.localizacao}'}\n'
+        '${labels['theme']}: ${c.tema}\n'
+        '${labels['subtheme']}: ${c.subtema}\n'
+    '${c.localizacao.trim().isEmpty ? '${labels['location']}: ${labels['locationNotSpecified']}' : '${labels['location']}: ${c.localizacao}'}\n'
     '$localizationGuidance'
-        '⚠️ IMPORTANTE: Continue a história mantendo exatamente os mesmos nomes e relações dos personagens confirmados. Novos personagens só se forem indispensáveis, mas nunca renomeie os já existentes.\n'
-        '⭐ NOMES DE PERSONAGENS: Se criar novos personagens secundários, use NOMES PRÓPRIOS REALISTAS (Paulo, Magalhães, Túlia, etc), NUNCA palavras comuns (Por, Imaginei, Tudo, Não, Senti).\n'
-        '\n'
+    '\n'
+    '⭐ IDIOMA OBRIGATÓRIO: ${_getLanguageInstruction(c.language)}\n'
+    '\n'
+    '$nameList\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '🚨 ATENÇÃO: A lista de nomes acima é sua ÚNICA fonte de nomes!\n'
+    '   COPIE os nomes EXATAMENTE daquela lista ao criar personagens.\n'
+    '   Se você usar palavras como "Observei", "Quero", "Pergunte" como nomes,\n'
+    '   você está FALHANDO nesta tarefa. Esses são VERBOS, não NOMES!\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '\n'
+    '⚠️ IMPORTANTE: Continue a história mantendo exatamente os mesmos nomes e relações dos personagens confirmados. Novos personagens só se forem indispensáveis, mas nunca renomeie os já existentes.\n'
+    '\n'
+    '🚨 NOMES DE PERSONAGENS - REGRA CRÍTICA:\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '✅ CORRETO: "Helena pegou", "Lucas entrou", "Sofia olhou" (nomes da lista)\n'
+    '❌ PROIBIDO: "Observei o casaco", "Quero saber", "Pergunte a ele" (são VERBOS!)\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '\n'
         '⚠️ LINGUAGEM ACESSÍVEL (OBRIGATÓRIO):\n'
         '- Use APENAS palavras SIMPLES que pessoas comuns conhecem\n'
         '- Frases CURTAS: máximo 25-30 palavras por frase\n'
@@ -1182,12 +2445,13 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         '- PREFIRA: presente simples, passado simples, palavras do dia a dia\n'
         '- Exemplos de substituição: "embargada"→"trêmula", "filantropo"→"pessoa que ajuda", "pária"→"rejeitado"\n'
         '- Teste: "Alguém que só vê YouTube entenderia essa palavra?" Se não, troque por uma mais simples.\n'
+        '- PROIBIDO: Usar backticks (`) ou qualquer marcação de formatação no texto narrativo.\n'
         '\n'
         'Mantenha a consistência com o tema, subtema e localização estabelecidos.\n'
         'REGRAS DE CONSISTÊNCIA:\n'
         '- Não repita parágrafos, cenas, diálogos ou cartas já presentes no texto original.\n'
         '- Nunca reinicie a história; avance a partir do ponto atual.\n'
-        'Idioma: ${_getLanguageInstruction(c.language)}\n\n'
+        '\n'
         'Continue escrevendo sem usar títulos, marcadores ou palavras como "CONTINUAÇÃO". Apenas prossiga com a história de forma natural usando frases curtas e palavras simples.';
     
     try {
@@ -1237,6 +2501,17 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     if (resp.data['error'] != null) {
       debugPrint('GeminiService: API Error: ${resp.data['error']}');
       throw Exception('API Error: ${resp.data['error']['message']}');
+    }
+    
+    // 🚨 VERIFICAR BLOQUEIO DE CONTEÚDO
+    final promptFeedback = resp.data['promptFeedback'];
+    if (promptFeedback != null && promptFeedback['blockReason'] != null) {
+      final blockReason = promptFeedback['blockReason'];
+      debugPrint('🚫 GeminiService: CONTEÚDO BLOQUEADO - Razão: $blockReason');
+      debugPrint('⚠️ GeminiService: Contexto contém conteúdo sensível detectado pela API');
+      // Retornar null para que o sistema continue sem este bloco
+      // O sistema vai tentar continuar com contexto reduzido
+      return null;
     }
     
     // Verificar finish reason
@@ -1320,6 +2595,158 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         throw Exception('Erro ao gerar texto: ${e.toString()}');
       }
     });
+  }
+
+  // ===================== SISTEMA ANTI-REPETIÇÃO =====================
+
+  /// Verifica se há duplicação LITERAL de blocos inteiros (cópia exata)
+  /// Retorna true se encontrar blocos de 200+ palavras duplicados
+  bool _hasLiteralDuplication(String newBlock, String previousContent) {
+    if (previousContent.isEmpty || newBlock.isEmpty) return false;
+    
+    // Dividir em blocos de 200 palavras
+    final newWords = newBlock.trim().split(RegExp(r'\s+'));
+    final prevWords = previousContent.trim().split(RegExp(r'\s+'));
+    
+    if (newWords.length < 200 || prevWords.length < 200) return false;
+    
+    // Verificar se há sequências de 200+ palavras idênticas
+    for (int i = 0; i <= newWords.length - 200; i++) {
+      final newSequence = newWords.sublist(i, i + 200).join(' ').toLowerCase();
+      
+      for (int j = 0; j <= prevWords.length - 200; j++) {
+        final prevSequence = prevWords.sublist(j, j + 200).join(' ').toLowerCase();
+        
+        // Se encontrar sequência idêntica de 200+ palavras = DUPLICAÇÃO LITERAL
+        if (newSequence == prevSequence) {
+          if (kDebugMode) {
+            debugPrint('🚨 DUPLICAÇÃO LITERAL DETECTADA!');
+            debugPrint('   Sequência de 200 palavras copiada exatamente!');
+            debugPrint('   Preview: ${newSequence.substring(0, min(100, newSequence.length))}...');
+          }
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  /// Calcula similaridade entre dois textos usando n-grams
+  /// Retorna valor entre 0.0 (totalmente diferente) e 1.0 (idêntico)
+  double _calculateSimilarity(String text1, String text2) {
+    if (text1.isEmpty || text2.isEmpty) return 0.0;
+    
+    // Normalizar textos (remover espaços extras, lowercase)
+    final normalized1 = text1.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
+    final normalized2 = text2.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
+    
+    if (normalized1 == normalized2) return 1.0; // Idênticos
+    
+    // Criar n-grams (sequências de N palavras)
+    const nGramSize = 8; // 🔥 AUMENTADO: Era 5, agora 8 para detectar blocos maiores
+    final words1 = normalized1.split(' ');
+    final words2 = normalized2.split(' ');
+    
+    if (words1.length < nGramSize || words2.length < nGramSize) {
+      // Textos muito curtos, comparar palavra por palavra
+      final commonWords = words1.toSet().intersection(words2.toSet()).length;
+      return commonWords / max(words1.length, words2.length);
+    }
+    
+    // Gerar n-grams
+    final ngrams1 = <String>{};
+    for (int i = 0; i <= words1.length - nGramSize; i++) {
+      ngrams1.add(words1.sublist(i, i + nGramSize).join(' '));
+    }
+    
+    final ngrams2 = <String>{};
+    for (int i = 0; i <= words2.length - nGramSize; i++) {
+      ngrams2.add(words2.sublist(i, i + nGramSize).join(' '));
+    }
+    
+    // Calcular interseção (n-grams em comum)
+    final intersection = ngrams1.intersection(ngrams2).length;
+    final union = ngrams1.union(ngrams2).length;
+    
+    return union > 0 ? intersection / union : 0.0;
+  }
+
+  /// Verifica se novo bloco é muito similar aos blocos anteriores
+  /// Retorna true se similaridade > threshold (padrão 85%) OU se há duplicação literal
+  bool _isTooSimilar(String newBlock, String previousContent, {double threshold = 0.85}) {
+    if (previousContent.isEmpty) return false;
+    
+    // 🔥 PRIORIDADE 1: Verificar duplicação literal de blocos grandes (cópia exata)
+    if (_hasLiteralDuplication(newBlock, previousContent)) {
+      if (kDebugMode) {
+        debugPrint('🚨 BLOQUEIO CRÍTICO: Duplicação literal de bloco inteiro detectada!');
+      }
+      return true; // Bloquear imediatamente
+    }
+    
+    // 🚀 OTIMIZAÇÃO: Limitar contexto anterior para comparação
+    // 🚨 CRÍTICO: 20k caracteres ainda causava timeout nos blocos finais
+    // Reduzido para 12k caracteres (~2k palavras) - suficiente para detectar repetições
+    final limitedPrevious = previousContent.length > 12000 
+        ? previousContent.substring(previousContent.length - 12000)
+        : previousContent;
+    
+    // Dividir conteúdo anterior em parágrafos
+    final paragraphs = limitedPrevious.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    
+    // 🚀 OTIMIZAÇÃO CRÍTICA: Limitar a 10 últimos parágrafos (era 20)
+    // Reduzido para eliminar travamentos "não respondendo"
+    final recentParagraphs = paragraphs.length > 10 
+        ? paragraphs.sublist(paragraphs.length - 10)
+        : paragraphs;
+    
+    // Dividir novo bloco em parágrafos
+    final newParagraphs = newBlock.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+    
+    // Verificar cada parágrafo novo contra os RECENTES (não todos)
+    int highSimilarityCount = 0;
+    
+    for (final newPara in newParagraphs) {
+      if (newPara.trim().length < 100) continue; // Ignorar parágrafos muito curtos
+      
+      // 🚀 OTIMIZAÇÃO: Parar se já encontrou repetição suficiente
+      if (highSimilarityCount >= 2) break;
+      
+      for (final oldPara in recentParagraphs) {
+        if (oldPara.trim().length < 100) continue;
+        
+        final similarity = _calculateSimilarity(newPara, oldPara);
+        
+        if (similarity >= threshold) {
+          highSimilarityCount++;
+          if (kDebugMode) {
+            debugPrint('⚠️ REPETIÇÃO DETECTADA (parágrafo $highSimilarityCount)!');
+            debugPrint('   Similaridade: ${(similarity * 100).toStringAsFixed(1)}% (threshold: ${(threshold * 100).toInt()}%)');
+          }
+          
+          // 🔥 Se encontrar 2+ parágrafos muito similares = bloco repetido
+          if (highSimilarityCount >= 2) {
+            if (kDebugMode) {
+              debugPrint('🚨 BLOQUEIO: $highSimilarityCount parágrafos com alta similaridade!');
+            }
+            return true;
+          }
+          break; // Não precisa comparar esse parágrafo com outros
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  /// Extrai frases únicas do contexto para evitar repetição
+  Set<String> _extractUniqueSentences(String text) {
+    final sentences = text.split(RegExp(r'[.!?]\s+'))
+        .map((s) => s.trim().toLowerCase())
+        .where((s) => s.length > 20) // Apenas frases com mais de 20 chars
+        .toSet();
+    return sentences;
   }
 
   int _countWords(String text) => text.trim().isEmpty ? 0 : text.trim().split(RegExp(r'\s+')).length;
@@ -1555,10 +2982,30 @@ REQUISITOS OBRIGATÓRIOS:
 // 🔥 SOLUÇÃO 3: Tracker GLOBAL para manter personagens entre blocos
 class _CharacterTracker {
   final Set<String> _confirmedNames = {};
+  // 🔥 NOVO: Mapear cada nome ao seu papel para prevenir confusão e reuso
+  final Map<String, String> _characterRoles = {};
   
-  void addName(String name) {
-    if (name.isNotEmpty && name.length > 2) {
-      _confirmedNames.add(name);
+  void addName(String name, {String? role}) {
+    if (name.isEmpty || name.length <= 2) return;
+    
+    // 🔒 VALIDAÇÃO CRÍTICA: Bloquear reuso de nomes
+    if (_confirmedNames.contains(name)) {
+      if (kDebugMode) {
+        final existingRole = _characterRoles[name] ?? 'desconhecido';
+        debugPrint('❌ BLOQUEIO DE REUSO: "$name" já usado como "$existingRole"!');
+        if (role != null && role != existingRole) {
+          debugPrint('   ⚠️ Tentativa de reusar "$name" como "$role" → REJEITADO!');
+        }
+      }
+      return; // Bloqueia adição
+    }
+    
+    _confirmedNames.add(name);
+    if (role != null && role.isNotEmpty) {
+      _characterRoles[name] = role;
+      if (kDebugMode) {
+        debugPrint('✅ MAPEAMENTO: "$name" = "$role"');
+      }
     }
   }
   
@@ -1572,5 +3019,20 @@ class _CharacterTracker {
   
   bool hasName(String name) => _confirmedNames.contains(name);
   
-  void clear() => _confirmedNames.clear();
+  String? getRole(String name) => _characterRoles[name];
+  
+  // 🔥 NOVO: Obter mapeamento completo de personagens
+  String getCharacterMapping() {
+    if (_characterRoles.isEmpty) return '';
+    final mappings = _characterRoles.entries
+        .map((e) => '"${e.key}" = ${e.value}')
+        .join(', ');
+    return '\n🎭 PERSONAGENS JÁ DEFINIDOS: $mappings\n';
+  }
+  
+  void clear() {
+    _confirmedNames.clear();
+    _characterRoles.clear();
+  }
 }
+

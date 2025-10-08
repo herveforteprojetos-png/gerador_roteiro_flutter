@@ -452,8 +452,8 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                           : _buildTemaDropdown(config, configNotifier),
                     ),
                     AppDesignSystem.horizontalSpaceM,
-                    // Campo Subtema (apenas se não estiver usando tema personalizado)
-                    if (!config.usePersonalizedTheme)
+                    // Campo Subtema (apenas se não estiver usando tema personalizado E tema não for "Livre (Sem Tema)")
+                    if (!config.usePersonalizedTheme && config.tema != 'Livre (Sem Tema)')
                       Expanded(
                         flex: 1,
                         child: _buildSubtemaDropdown(config, configNotifier),
@@ -503,6 +503,23 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                         config,
                         configNotifier,
                       ),
+                    ),
+                  ],
+                ),
+                AppDesignSystem.verticalSpaceM,
+                // Linha com Tipo de História (Genre)
+                Row(
+                  children: [
+                    // Tipo de História
+                    Expanded(
+                      flex: 2,
+                      child: _buildGenreDropdown(config, configNotifier),
+                    ),
+                    AppDesignSystem.horizontalSpaceL,
+                    // Espaço vazio para manter alinhamento
+                    Expanded(
+                      flex: 5,
+                      child: Container(),
                     ),
                   ],
                 ),
@@ -903,6 +920,12 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             ),
           ),
           items: const [
+            // 🎯 MODO LIVRE (SEM TEMA)
+            DropdownMenuItem(
+              value: 'Livre (Sem Tema)', 
+              child: Text('🆓 Livre (Sem Tema)'),
+            ),
+            
             // Narrativas Dramáticas e Intensas
             DropdownMenuItem(value: 'Vingança', child: Text('🔥 Vingança')),
             DropdownMenuItem(value: 'Traição', child: Text('💔 Traição')),
@@ -1374,6 +1397,101 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
               }
               StorageService.saveUserPreferences(language: langCode);
             }
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGenreDropdown(
+    GenerationConfig config,
+    GenerationConfigNotifier configNotifier,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tipo de História 🎭',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.fireOrange,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String?>(
+          value: config.genre,
+          style: const TextStyle(color: Colors.white, fontSize: 12),
+          dropdownColor: AppColors.darkBackground,
+          isDense: true,
+          isExpanded: true,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.black.o(0.3),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 6,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide(color: AppColors.fireOrange),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide(color: AppColors.fireOrange.o(0.5)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide(color: AppColors.fireOrange, width: 1),
+            ),
+          ),
+          items: const [
+            DropdownMenuItem(
+              value: null,
+              child: Text(
+                'Normal (usar nomes do idioma)',
+                style: TextStyle(fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'western',
+              child: Text(
+                '🤠 Western/Faroeste',
+                style: TextStyle(fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'business',
+              child: Text(
+                '💼 Corporativo (Em breve)',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'family',
+              child: Text(
+                '👨‍👩‍👧‍👦 Familiar (Em breve)',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+          onChanged: (value) {
+            // Bloquear seleção de opções "Em breve"
+            if (value == 'business' || value == 'family') {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('⚠️ Esta opção estará disponível em breve!'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+              return;
+            }
+            configNotifier.updateGenre(value);
           },
         ),
       ],

@@ -21,6 +21,7 @@ class GenerationConfig {
   final String protagonistName; // Nome do protagonista
   final String secondaryCharacterName; // Nome do personagem secundário
   final String qualityMode; // Modo de qualidade: 'balanced', 'quality', 'speed'
+  final String? genre; // Tipo temático da história: null (normal), 'western', 'business', 'family'
 
   const GenerationConfig({
     required this.apiKey,
@@ -43,6 +44,7 @@ class GenerationConfig {
     this.protagonistName = '',
     this.secondaryCharacterName = '',
     this.qualityMode = 'balanced',
+    this.genre, // Opcional: null = nomes do idioma
   });
 
   GenerationConfig copyWith({
@@ -66,6 +68,7 @@ class GenerationConfig {
     String? protagonistName,
     String? secondaryCharacterName,
     String? qualityMode,
+    String? genre,
   }) {
     return GenerationConfig(
       apiKey: apiKey ?? this.apiKey,
@@ -88,6 +91,7 @@ class GenerationConfig {
       protagonistName: protagonistName ?? this.protagonistName,
       secondaryCharacterName: secondaryCharacterName ?? this.secondaryCharacterName,
       qualityMode: qualityMode ?? this.qualityMode,
+      genre: genre ?? this.genre,
     );
   }
 
@@ -113,6 +117,7 @@ class GenerationConfig {
       'protagonistName': protagonistName,
       'secondaryCharacterName': secondaryCharacterName,
       'qualityMode': qualityMode,
+      'genre': genre,
     };
   }
 
@@ -141,6 +146,7 @@ class GenerationConfig {
       protagonistName: json['protagonistName'] ?? '',
       secondaryCharacterName: json['secondaryCharacterName'] ?? '',
       qualityMode: json['qualityMode'] ?? 'balanced',
+      genre: json['genre'], // Nullable: null = nomes do idioma
     );
   }
 
@@ -199,6 +205,9 @@ class GenerationConfig {
 
   // Mapeamento TEMA → SUBTEMAS
   static const Map<String, List<String>> temaSubtemas = {
+    // 🎯 MODO LIVRE (SEM TEMA)
+    'Livre (Sem Tema)': [], // Sem subtemas disponíveis
+    
     // TEMAS DRAMÁTICOS E INTENSOS
     'Vingança': [
       'Vingança Destrutiva',
