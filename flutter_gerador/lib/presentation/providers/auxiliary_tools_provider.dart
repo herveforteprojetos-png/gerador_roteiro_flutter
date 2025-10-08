@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/generation_config.dart';
+import '../../data/models/localization_level.dart';
 import '../../data/services/gemini_service.dart';
 import '../../data/services/name_generator_service.dart';
 import 'script_generation_provider.dart'; // Para acessar defaultGeminiServiceProvider
@@ -74,38 +75,223 @@ class AuxiliaryToolsNotifier extends StateNotifier<AuxiliaryToolsState> {
       
       // 🎯 PROMPT MELHORADO: Sistema completo de perspectivas
       final perspectiveLabel = GenerationConfig.perspectiveLabels[config.perspective] ?? config.perspective;
-      final genderDescription = protagonistGender == 'masculino' ? 'HOMEM' : 'MULHER';
-      final ageDescription = protagonistAge == 'jovem' ? 'JOVEM' : (protagonistAge == 'idoso' ? 'IDOSO(A)' : 'ADULTO(A)');
+      final genderDescription = protagonistGender == 'masculino' ? 'homem' : 'mulher';
+      final ageDescription = protagonistAge == 'jovem' ? 'jovem' : (protagonistAge == 'idoso' ? 'idoso(a)' : 'adulto(a)');
+      
+      // 🌍 Detectar localização e época baseada no tema e configurações
+      String locationGuidance = '';
+      String eraGuidance = '';
+      String technologyGuidance = '';
+      
+      // Análise do tema para detectar época histórica
+      final temaLower = config.tema.toLowerCase();
+      final localizacaoLower = config.localizacao.toLowerCase();
+      final tituloLower = config.title.toLowerCase();
+      
+      // 🕰️ DETECÇÃO AUTOMÁTICA DE ÉPOCA HISTÓRICA
+      bool isHistorical = false;
+      String detectedEra = '';
+      
+      // Detectar Velho Oeste / Western
+      if (temaLower.contains('velho oeste') || temaLower.contains('western') || 
+          temaLower.contains('cowboy') || temaLower.contains('vaquero') ||
+          localizacaoLower.contains('1800') || localizacaoLower.contains('1880') ||
+          localizacaoLower.contains('1890') || tituloLower.contains('vaquero') ||
+          tituloLower.contains('cowboy')) {
+        isHistorical = true;
+        detectedEra = 'Velho Oeste (1850-1900)';
+        eraGuidance = 'A história se passa durante o período do Velho Oeste (entre 1850-1900).';
+        technologyGuidance = 'Tecnologia da época: cavalos, revólveres, rifles, chapéus de couro, saloons/cantinas, telégrafos. NÃO há carros, telefones, eletricidade, internet ou qualquer tecnologia moderna.';
+      }
+      
+      // Detectar Piratas / Era da Pirataria
+      else if (temaLower.contains('pirata') || temaLower.contains('piracy') || 
+               temaLower.contains('corsário') || temaLower.contains('buccaneer') ||
+               localizacaoLower.contains('1500') || localizacaoLower.contains('1600') ||
+               localizacaoLower.contains('1700') || tituloLower.contains('pirate') ||
+               tituloLower.contains('pirata')) {
+        isHistorical = true;
+        detectedEra = 'Era da Pirataria (1500-1730)';
+        eraGuidance = 'A história se passa durante a Era Dourada da Pirataria (entre 1500-1730).';
+        technologyGuidance = 'Tecnologia da época: navios de madeira com velas, pistolas de pederneira, espadas/cutelos, canhões, bússolas, mapas do tesouro, tavernas. NÃO há motores, rádios, GPS ou tecnologia moderna.';
+      }
+      
+      // Detectar Era Medieval
+      else if (temaLower.contains('medieval') || temaLower.contains('cavaleiro') || 
+               temaLower.contains('knight') || temaLower.contains('castelo') ||
+               localizacaoLower.contains('1200') || localizacaoLower.contains('1300') ||
+               localizacaoLower.contains('1400')) {
+        isHistorical = true;
+        detectedEra = 'Era Medieval (1000-1500)';
+        eraGuidance = 'A história se passa durante a Idade Média (entre 1000-1500).';
+        technologyGuidance = 'Tecnologia da época: espadas, armaduras, castelos de pedra, cavalos, arcos e flechas, catapultas. NÃO há armas de fogo, eletricidade ou tecnologia moderna.';
+      }
+      
+      // Detectar Samurai / Japão Feudal
+      else if (temaLower.contains('samurai') || temaLower.contains('feudal') || 
+               localizacaoLower.contains('japão') || localizacaoLower.contains('japan') ||
+               localizacaoLower.contains('edo') || localizacaoLower.contains('1600') ||
+               localizacaoLower.contains('1700') || localizacaoLower.contains('1800')) {
+        isHistorical = true;
+        detectedEra = 'Japão Feudal (1600-1868)';
+        eraGuidance = 'A história se passa durante o período feudal do Japão (entre 1600-1868).';
+        technologyGuidance = 'Tecnologia da época: katanas, arcos, castelos japoneses, quimonos, código bushido. NÃO há tecnologia ocidental moderna ou eletricidade.';
+      }
+      
+      // Detectar Segunda Guerra Mundial
+      else if (temaLower.contains('guerra mundial') || temaLower.contains('world war') || 
+               temaLower.contains('wwii') || temaLower.contains('1940') ||
+               localizacaoLower.contains('1940') || localizacaoLower.contains('1944') ||
+               localizacaoLower.contains('1945')) {
+        isHistorical = true;
+        detectedEra = 'Segunda Guerra Mundial (1939-1945)';
+        eraGuidance = 'A história se passa durante a Segunda Guerra Mundial (1939-1945).';
+        technologyGuidance = 'Tecnologia da época: rifles, tanques, aviões de guerra, rádios, uniformes militares, bunkers. NÃO há internet, celulares, computadores ou drones.';
+      }
+      
+      // Detectar Era Vitoriana
+      else if (temaLower.contains('vitoriana') || temaLower.contains('victorian') || 
+               localizacaoLower.contains('1800') || localizacaoLower.contains('1850') ||
+               localizacaoLower.contains('1880') || localizacaoLower.contains('1890')) {
+        isHistorical = true;
+        detectedEra = 'Era Vitoriana (1837-1901)';
+        eraGuidance = 'A história se passa durante a Era Vitoriana (1837-1901).';
+        technologyGuidance = 'Tecnologia da época: lampiões a gás, carruagens, trens a vapor, telégrafos, vestuário formal (cartolas, vestidos longos). NÃO há carros, aviões, eletricidade doméstica ou tecnologia moderna.';
+      }
+      
+      // 🌍 APLICAR NÍVEL DE REGIONALISMO à localização
+      // Se tem localização customizada, usar ela COM FILTRO de regionalismo
+      if (config.localizacao.trim().isNotEmpty) {
+        final customLocation = config.localizacao.trim();
+        
+        // Aplicar filtro baseado no nível de regionalismo
+        switch (config.localizationLevel) {
+          case LocalizationLevel.global:
+            // Transformar localização específica em descrição genérica
+            locationGuidance = 'um cenário urbano genérico, sem mencionar países, cidades ou regiões específicas. Use descrições universais (ex: "uma grande cidade", "a periferia urbana", "um bairro operário")';
+            break;
+          case LocalizationLevel.national:
+            // Manter apenas o país, sem cidade
+            locationGuidance = _extractCountryOnly(customLocation, config.language);
+            break;
+          case LocalizationLevel.regional:
+            // Pode usar a localização completa
+            locationGuidance = customLocation;
+            break;
+        }
+      } else {
+        // Sem localização configurada: aplicar regras baseadas no regionalismo
+        switch (config.localizationLevel) {
+          case LocalizationLevel.global:
+            // MODO GLOBAL: Sem mencionar país nenhum
+            locationGuidance = 'um cenário genérico e universal, sem mencionar países, cidades ou culturas específicas. Use descrições que funcionem em QUALQUER lugar do mundo';
+            break;
+          case LocalizationLevel.national:
+            // MODO NACIONAL: Pode mencionar o país do idioma
+            switch (config.language.toLowerCase()) {
+              case 'português':
+              case 'portugues':
+              case 'portuguese':
+                locationGuidance = 'em um país de língua portuguesa (Brasil ou Portugal), sem mencionar cidades específicas';
+                break;
+              case 'español':
+              case 'espanhol':
+              case 'spanish':
+                locationGuidance = 'em um país hispanohablante, sem mencionar cidades específicas';
+                break;
+              case 'english':
+              case 'inglês':
+              case 'ingles':
+                locationGuidance = 'em um país anglófono, sem mencionar cidades específicas';
+                break;
+              default:
+                locationGuidance = 'apropriada ao idioma ${config.language}, sem mencionar cidades específicas';
+            }
+            break;
+          case LocalizationLevel.regional:
+            // MODO REGIONAL: Pode escolher uma região/cidade coerente
+            switch (config.language.toLowerCase()) {
+              case 'português':
+              case 'portugues':
+              case 'portuguese':
+                locationGuidance = 'brasileira ou portuguesa (pode escolher uma cidade/região específica coerente com o tema)';
+                break;
+              case 'español':
+              case 'espanhol':
+              case 'spanish':
+                locationGuidance = 'mexicana, colombiana, argentina, espanhola ou de outro país hispanohablante (pode escolher uma cidade/região específica)';
+                break;
+              case 'english':
+              case 'inglês':
+              case 'ingles':
+                locationGuidance = 'americana, inglesa ou de outro país anglófono (pode escolher uma cidade/região específica)';
+                break;
+              default:
+                locationGuidance = 'apropriada ao idioma ${config.language}';
+            }
+            break;
+        }
+      }
+      
+      // 🎯 EXEMPLO ADAPTADO AO NÍVEL DE REGIONALISMO
+      String exampleContext;
+      if (isHistorical) {
+        exampleContext = '"A história se passa no México em 1880, durante o período do Velho Oeste. O protagonista Alejandro é um vaqueiro mexicano de 45 anos, seguindo o código de honra dos vaqueiros. Isabella é uma jovem que ele salva. O cenário inclui desertos áridos do norte do México, pequenos pueblos com cantinas de madeira, ranchos isolados. Tecnologia da época: cavalos como transporte principal, revólveres Colt, rifles Winchester, chapéus de couro, botas com esporas. Não há carros, telefones, eletricidade ou tecnologia moderna - apenas telégrafos nas cidades maiores. A comunicação é por mensageiros a cavalo. O conflito envolve bandidos que ameaçam a comunidade. Dois dias após salvar Isabella, Alejandro retorna com toda sua tribo de vaqueiros para um confronto. A atmosfera é de western clássico com tensão, honra e justiça pela própria mão."';
+      } else {
+        switch (config.localizationLevel) {
+          case LocalizationLevel.global:
+            exampleContext = '"O protagonista Carlos é um homem de 45 anos, trabalhador rural experiente. Ele é paciente mas determinado. Sandra, uma executiva sem escrúpulos, usou documentos fraudulentos para roubar a propriedade rural da família de Carlos. O cenário são planícies vastas e terrenos alagadiços da região rural. Carlos encontra Sandra presa em um atoleiro e, seguindo seu código de honra, a salva. Mas dois dias depois, ele retorna com toda a comunidade de trabalhadores rurais prejudicados por ela, não para violência, mas para um cerco estratégico usando conhecimento do terreno e exposição pública dos crimes dela. A atmosfera é de suspense e justiça."';
+            break;
+          case LocalizationLevel.national:
+            exampleContext = '"O protagonista Carlos é um homem de 45 anos, trabalhador rural do país. Ele é paciente mas determinado. Sandra, uma executiva sem escrúpulos, usou documentos fraudulentos para roubar a propriedade rural da família de Carlos. O cenário é uma região rural do país, com suas planícies vastas. Carlos encontra Sandra presa em um atoleiro e, seguindo o código de honra local, a salva. Mas dois dias depois, ele retorna com toda a comunidade de trabalhadores prejudicados por ela, não para violência, mas para um cerco estratégico. A atmosfera é de suspense e justiça."';
+            break;
+          case LocalizationLevel.regional:
+            exampleContext = '"O protagonista Carlos é um homem de 45 anos, vaqueiro do Pantanal. Ele é paciente mas determinado. Sandra, uma executiva sem escrúpulos, usou documentos fraudulentos para roubar a fazenda da família de Carlos. O cenário é o Pantanal brasileiro, com suas planícies vastas e atoleiros traiçoeiros. Carlos encontra Sandra presa em um atoleiro e, seguindo o código de honra dos vaqueiros, a salva. Mas dois dias depois, ele retorna com toda a comunidade de fazendeiros prejudicados por ela, não para violência, mas para um cerco estratégico usando conhecimento do terreno e exposição pública dos crimes ambientais dela. A atmosfera é de western moderno com suspense."';
+            break;
+        }
+      }
       
       final contextPrompt = '''
-Crie um contexto COMPLETO em PORTUGUÊS para uma história YouTube baseada nas especificações EXATAS:
+Crie um contexto limpo e direto para uma história baseada nestas especificações:
 
-**CONFIGURAÇÃO OBRIGATÓRIA:**
-- Título: ${config.title}
-- Tema: ${config.tema}  
-- Perspectiva: $perspectiveLabel
-- Idioma: ${config.language}
+TÍTULO: ${config.title}
+TEMA: ${config.tema}
+${isHistorical ? 'ÉPOCA DETECTADA: $detectedEra' : ''}
+LOCALIZAÇÃO: $locationGuidance
+PERSPECTIVA: $perspectiveLabel
+IDIOMA DO ROTEIRO: ${config.language}
+PROTAGONISTA: $protagonistName ($genderDescription, $ageDescription)
+PERSONAGEM RELACIONADO: $secondaryName
 
-🎭 **PERSONAGENS DEFINIDOS:**
-- PROTAGONISTA: "$protagonistName" - $genderDescription $ageDescription (conforme perspectiva $perspectiveLabel)
-- PERSONAGEM RELACIONADO: "$secondaryName"
+${isHistorical ? '⚠️ HISTÓRIA DE ÉPOCA: $eraGuidance' : ''}
+${isHistorical ? technologyGuidance : ''}
 
-📋 **ESTRUTURA OBRIGATÓRIA:**
+INSTRUÇÕES:
+1. ${isHistorical ? 'COMECE especificando a época/ano exato (ex: "A história se passa em 1880...")' : 'Descreva quando e onde a história acontece RESPEITANDO a LOCALIZAÇÃO acima'}
+2. Descreva o protagonista $protagonistName: personalidade, profissão típica da época, como se relaciona com o tema "${config.tema}"
+3. ${isHistorical ? 'Descreva o cenário de época: ambiente, arquitetura, vestimentas, costumes da época' : 'Descreva o cenário RESPEITANDO EXATAMENTE a LOCALIZAÇÃO indicada acima (se for genérica, use descrições universais; se for nacional, mencione apenas o país; se for regional, pode usar cidade/região)'}
+4. ${isHistorical ? 'Liste a TECNOLOGIA DISPONÍVEL na época (transporte, armas, comunicação) e o que NÃO existe ainda' : 'Descreva o ambiente e contexto'}
+5. Descreva o conflito central: situação dramática envolvendo "${config.tema}"
+6. Explique a motivação do protagonista e relação com $secondaryName
+7. Defina a atmosfera: tom emocional da narrativa
 
-**PROTAGONISTA "$protagonistName":**
-Gênero: $genderDescription | Idade: $ageDescription | Personalidade marcante relacionada ao tema "${config.tema}" | Motivação clara e interessante para YouTube.
+⚠️ CRÍTICO:
+- Escreva APENAS o contexto puro, SEM formatação markdown
+- SEM emojis, asteriscos, hashtags ou símbolos especiais
+- SEM títulos ou seções marcadas (como "### Título" ou "**Negrito**")
+- APENAS texto corrido, natural e descritivo
+- Use os nomes EXATOS: $protagonistName e $secondaryName
+${isHistorical ? '- SEJA ESPECÍFICO sobre a época, tecnologia disponível e o que NÃO existe' : ''}
+- RESPEITE RIGOROSAMENTE a LOCALIZAÇÃO indicada acima - não invente cidades ou países se não for permitido
+- Mantenha conciso: máximo 500-800 palavras
+- Responda em PORTUGUÊS (você traduzirá isso depois para orientar a geração no idioma ${config.language})
 
-**CENÁRIO REALISTA:**
-Localização brasileira atual, ambiente onde a história acontece, detalhes que tornam a situação believável.
+EXEMPLO DE FORMATO CORRETO${isHistorical ? ' PARA ÉPOCA HISTÓRICA' : ''} (sem formatação):
+$exampleContext
 
-**CONFLITO CENTRAL:**
-Situação dramática específica envolvendo "${config.tema}" que cria tensão e interesse para o público YouTube.
-
-**ATMOSFERA:**
-Tom envolvente mas adequado para YouTube - interessante sem ser excessivamente pesado.
-
-🔥 **CRÍTICO:** O protagonista "$protagonistName" DEVE ser exatamente um(a) $genderDescription $ageDescription conforme a perspectiva "$perspectiveLabel". Use os nomes EXATOS fornecidos. Crie contexto envolvente para narrativa YouTube.
+Escreva o contexto agora:
 ''';
+
 
       final response = await _geminiService.generateTextWithApiKey(
         prompt: contextPrompt,
@@ -120,12 +306,18 @@ Tom envolvente mas adequado para YouTube - interessante sem ser excessivamente p
         throw Exception('Resposta vazia do servidor Gemini');
       }
 
+      // 🧹 LIMPAR FORMATAÇÃO MARKDOWN E ELEMENTOS INDESEJADOS
+      String cleanedResponse = _cleanContextResponse(response);
+      
+      debugPrint('AuxiliaryTools: Contexto limpo - Length: ${cleanedResponse.length}');
+      debugPrint('AuxiliaryTools: Primeiros 100 chars limpos: ${cleanedResponse.length > 100 ? cleanedResponse.substring(0, 100) : cleanedResponse}');
+
       state = state.copyWith(
         isGeneratingContext: false,
-        generatedContext: response,
+        generatedContext: cleanedResponse,
       );
 
-      return response;
+      return cleanedResponse;
     } catch (e) {
       // Melhorar mensagem de erro baseada no tipo de erro
       String errorMessage;
@@ -196,6 +388,104 @@ Responda apenas com o prompt final em inglês, sem explicações adicionais.
         imagePromptError: 'Erro ao gerar prompt de imagem: ${e.toString()}',
       );
       rethrow;
+    }
+  }
+
+  /// 🧹 Remove formatação markdown e elementos indesejados do contexto gerado
+  String _cleanContextResponse(String response) {
+    String cleaned = response;
+    
+    // 1. Remover linhas que começam com # (títulos markdown)
+    cleaned = cleaned.replaceAll(RegExp(r'^#{1,6}\s+.*$', multiLine: true), '');
+    
+    // 2. Remover linhas com apenas --- ou === (separadores markdown)
+    cleaned = cleaned.replaceAll(RegExp(r'^[\-=]{3,}$', multiLine: true), '');
+    
+    // 3. Remover emojis (Unicode emoji ranges)
+    cleaned = cleaned.replaceAll(
+      RegExp(
+        r'[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{1F100}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F910}-\u{1F96B}]|[\u{1F980}-\u{1F9E0}]',
+        unicode: true,
+      ),
+      '',
+    );
+    
+    // 4. Remover formatação em negrito (**texto** ou __texto__)
+    cleaned = cleaned.replaceAll(RegExp(r'\*\*(.+?)\*\*'), r'$1');
+    cleaned = cleaned.replaceAll(RegExp(r'__(.+?)__'), r'$1');
+    
+    // 5. Remover formatação em itálico (*texto* ou _texto_)
+    cleaned = cleaned.replaceAll(RegExp(r'\*(.+?)\*'), r'$1');
+    cleaned = cleaned.replaceAll(RegExp(r'_(.+?)_'), r'$1');
+    
+    // 6. Remover bullets e listas (linhas que começam com -, *, números)
+    cleaned = cleaned.replaceAll(RegExp(r'^[\*\-\+]\s+', multiLine: true), '');
+    cleaned = cleaned.replaceAll(RegExp(r'^\d+\.\s+', multiLine: true), '');
+    
+    // 7. Remover linhas em branco excessivas (mais de 2 seguidas)
+    cleaned = cleaned.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    
+    // 8. Remover espaços em branco no início e fim
+    cleaned = cleaned.trim();
+    
+    // 9. Remover frases introdutórias comuns da IA
+    final introPatterns = [
+      RegExp(r'^Com certeza[!.]?\s*', caseSensitive: false, multiLine: true),
+      RegExp(r'^Claro[!.]?\s*', caseSensitive: false, multiLine: true),
+      RegExp(r'^Aqui está.*?:\s*', caseSensitive: false, multiLine: true),
+      RegExp(r'^Vou criar.*?:\s*', caseSensitive: false, multiLine: true),
+      RegExp(r'^Segue o contexto.*?:\s*', caseSensitive: false, multiLine: true),
+    ];
+    
+    for (final pattern in introPatterns) {
+      cleaned = cleaned.replaceFirst(pattern, '');
+    }
+    
+    // 10. Limpar novamente após remoções
+    cleaned = cleaned.trim();
+    
+    return cleaned;
+  }
+  
+  // 🌍 Método auxiliar para extrair apenas o país de uma localização
+  String _extractCountryOnly(String location, String language) {
+    final locationLower = location.toLowerCase();
+    
+    // Padrões comuns de localizações com cidade + país
+    if (locationLower.contains('brasil') || locationLower.contains('brazil')) {
+      return 'em um local no Brasil, sem mencionar cidades ou estados específicos';
+    } else if (locationLower.contains('portugal')) {
+      return 'em um local em Portugal, sem mencionar cidades específicas';
+    } else if (locationLower.contains('méxico') || locationLower.contains('mexico')) {
+      return 'em um local no México, sem mencionar cidades ou estados específicos';
+    } else if (locationLower.contains('espanha') || locationLower.contains('spain')) {
+      return 'em um local na Espanha, sem mencionar cidades específicas';
+    } else if (locationLower.contains('argentina')) {
+      return 'em um local na Argentina, sem mencionar cidades específicas';
+    } else if (locationLower.contains('colômbia') || locationLower.contains('colombia')) {
+      return 'em um local na Colômbia, sem mencionar cidades específicas';
+    } else if (locationLower.contains('estados unidos') || locationLower.contains('eua') || locationLower.contains('usa')) {
+      return 'em um local nos Estados Unidos, sem mencionar cidades ou estados específicos';
+    } else if (locationLower.contains('inglaterra') || locationLower.contains('england') || locationLower.contains('uk')) {
+      return 'em um local no Reino Unido, sem mencionar cidades específicas';
+    }
+    
+    // Se não reconheceu, retornar descrição genérica do país baseada no idioma
+    switch (language.toLowerCase()) {
+      case 'português':
+      case 'portugues':
+      case 'portuguese':
+        return 'em um país de língua portuguesa, sem mencionar cidades específicas';
+      case 'español':
+      case 'espanhol':
+      case 'spanish':
+        return 'em um país hispanohablante, sem mencionar cidades específicas';
+      case 'english':
+      case 'inglês':
+      case 'ingles':
+        return 'em um país anglófono, sem mencionar cidades específicas';
+      default:
+        return 'em um local apropriado ao idioma $language, sem mencionar cidades específicas';
     }
   }
 

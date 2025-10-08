@@ -920,6 +920,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     ),
                                   ),
                                 ),
+                                // Botão de expandir o editor de contexto
+                                Positioned(
+                                  top: 108, // Posicionado abaixo da vassoura
+                                  right: 12,
+                                  child: InkWell(
+                                    onTap: () => _showExpandedContextEditor(context),
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: Colors.blue.withOpacity(0.3),
+                                        ),
+                                      ),
+                                      child: Tooltip(
+                                        message: 'Expandir editor',
+                                        child: Icon(
+                                          Icons.open_in_full,
+                                          color: Colors.blue,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),

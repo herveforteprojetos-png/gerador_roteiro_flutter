@@ -297,7 +297,8 @@ class NameGeneratorService {
         ]
       }
     },
-    'ru': { // RUSSO - NOMES AUTÊNTICOS RUSSOS
+
+      'ru': { // RUSSO - NOMES AUTÊNTICOS RUSSOS
       'masculino': {
         'jovem': [
           'Aleksandr', 'Dmitri', 'Sergei', 'Andrei', 'Aleksei', 'Pavel', 'Ivan', 'Mikhail',
@@ -593,6 +594,256 @@ class NameGeneratorService {
           'Ganga', 'Yamuna', 'Saraswati', 'Godavari', 'Narmada', 'Kaveri', 'Sindhu', 'Tapi'
         ]
       }
+    },
+    'tr': { // TURCO - NOMES AUTÊNTICOS TURCOS
+      'masculino': {
+        'jovem': [
+          'Mehmet', 'Mustafa', 'Ahmet', 'Ali', 'Hüseyin', 'Hasan', 'İbrahim', 'İsmail',
+          'Yusuf', 'Ömer', 'Emre', 'Burak', 'Murat', 'Can', 'Cem', 'Deniz',
+          'Eren', 'Efe', 'Barış', 'Kaan', 'Onur', 'Serkan', 'Tolga', 'Volkan',
+          'Kerem', 'Oğuz', 'Tuncay', 'Arda', 'Bora', 'Ege', 'Kaya', 'Kemal',
+          'Koray', 'Mert', 'Orhan', 'Selim', 'Sinan', 'Tan', 'Tarık', 'Umut',
+          'Yiğit', 'Alp', 'Berk', 'Çağatay', 'Doğan', 'Emrah', 'Furkan', 'Gökhan'
+        ],
+        'maduro': [
+          'Mehmet', 'Mustafa', 'Ahmet', 'Ali', 'Hüseyin', 'Hasan', 'İbrahim', 'İsmail',
+          'Yusuf', 'Ömer', 'Murat', 'Kemal', 'Orhan', 'Selim', 'Tarık', 'Cemal',
+          'Erdoğan', 'Osman', 'Ramazan', 'Recep', 'Salih', 'Süleyman', 'Şevket', 'Taner',
+          'Tevfik', 'Vedat', 'Yılmaz', 'Zeki', 'Adnan', 'Aydın', 'Bayram', 'Cengiz',
+          'Dursun', 'Ekrem', 'Faruk', 'Gürsel', 'Hakan', 'İlhan', 'Kenan', 'Metin'
+        ],
+        'idoso': [
+          'Mehmet', 'Mustafa', 'Ahmet', 'Ali', 'Hüseyin', 'Hasan', 'İbrahim', 'İsmail',
+          'Yusuf', 'Ömer', 'Osman', 'Süleyman', 'Mahmut', 'İsmet', 'Celâl', 'Cemal',
+          'Nuri', 'Sabri', 'Şükrü', 'Tevfik', 'Vahit', 'Ziya', 'Bekir', 'Hamdi',
+          'Hilmi', 'Kemal', 'Lütfi', 'Nazif', 'Rasim', 'Rıfat', 'Sadık', 'Salih',
+          'Şeref', 'Tahir', 'Veli', 'Yaşar', 'Zühtü', 'Arif', 'Fahri', 'Naci'
+        ]
+      },
+      'feminino': {
+        'jovem': [
+          'Fatma', 'Ayşe', 'Emine', 'Hatice', 'Zeynep', 'Elif', 'Merve', 'Büşra',
+          'Esra', 'İrem', 'Rabia', 'Sümeyye', 'Yasemin', 'Cansu', 'Defne', 'Ece',
+          'Gizem', 'İpek', 'Melis', 'Özge', 'Pınar', 'Selin', 'Tuğçe', 'Yağmur',
+          'Aylin', 'Begüm', 'Ceren', 'Deniz', 'Eda', 'Gamze', 'Gül', 'Havva',
+          'İlayda', 'Naz', 'Nehir', 'Nur', 'Simge', 'Su', 'Tuba', 'Zehra',
+          'Asya', 'Azra', 'Duru', 'Ela', 'Lara', 'Mira', 'Nehir', 'Rüya'
+        ],
+        'maduro': [
+          'Fatma', 'Ayşe', 'Emine', 'Hatice', 'Zeynep', 'Meryem', 'Fadime', 'Hanife',
+          'Sultan', 'Şerife', 'Hacer', 'Gülsüm', 'Aysel', 'Filiz', 'Gül', 'Hülya',
+          'Leyla', 'Melek', 'Neslihan', 'Nurhan', 'Pınar', 'Sabriye', 'Sevgi', 'Sinem',
+          'Türkan', 'Ülkü', 'Vesile', 'Yıldız', 'Zübeyde', 'Döndü', 'Emel', 'Gonca',
+          'Gülnur', 'Handan', 'İnci', 'Lale', 'Nuriye', 'Pembe', 'Reyhan', 'Seher'
+        ],
+        'idoso': [
+          'Fatma', 'Ayşe', 'Emine', 'Hatice', 'Zeynep', 'Meryem', 'Fadime', 'Hanife',
+          'Sultan', 'Şerife', 'Hacer', 'Gülsüm', 'Sabriye', 'Şükrüye', 'Hayriye', 'Münire',
+          'Fevziye', 'Cemile', 'Nazife', 'Havva', 'Huriye', 'Fahriye', 'Mukaddes', 'Zahide',
+          'Zübeyde', 'Mediha', 'Saime', 'Şadiye', 'Vesile', 'Döndü', 'Dudu', 'Şefika',
+          'Zeliha', 'Nazmiye', 'Remziye', 'Şemsemin', 'Türkan', 'Ülker', 'Nevzat', 'Perihan'
+        ]
+      }
+    },
+    'pl': { // POLONÊS - NOMES AUTÊNTICOS POLONESES
+      'masculino': {
+        'jovem': [
+          'Jakub', 'Kacper', 'Filip', 'Szymon', 'Wojciech', 'Jan', 'Bartosz', 'Mikołaj',
+          'Krzysztof', 'Mateusz', 'Piotr', 'Kamil', 'Dawid', 'Dominik', 'Paweł', 'Łukasz',
+          'Adrian', 'Marcin', 'Tomasz', 'Bartłomiej', 'Maciej', 'Oskar', 'Igor', 'Hubert',
+          'Sebastian', 'Patryk', 'Karol', 'Michał', 'Maksymilian', 'Franciszek', 'Antoni', 'Aleksander',
+          'Nikodem', 'Tymoteusz', 'Wiktor', 'Oliwier', 'Marcel', 'Alan', 'Leon', 'Natan',
+          'Gabriel', 'Tymon', 'Igor', 'Ksawery', 'Miłosz', 'Borys', 'Julian', 'Adam'
+        ],
+        'maduro': [
+          'Stanisław', 'Andrzej', 'Józef', 'Tadeusz', 'Jerzy', 'Zbigniew', 'Krzysztof', 'Henryk',
+          'Ryszard', 'Kazimierz', 'Marek', 'Marian', 'Piotr', 'Janusz', 'Władysław', 'Adam',
+          'Wiesław', 'Zdzisław', 'Edward', 'Mieczysław', 'Roman', 'Grzegorz', 'Czesław', 'Leszek',
+          'Dariusz', 'Mariusz', 'Jacek', 'Tomasz', 'Robert', 'Paweł', 'Marcin', 'Wojciech',
+          'Bogdan', 'Eugeniusz', 'Jarosław', 'Zenon', 'Franciszek', 'Stefan', 'Bolesław', 'Witold'
+        ],
+        'idoso': [
+          'Stanisław', 'Jan', 'Józef', 'Tadeusz', 'Andrzej', 'Władysław', 'Kazimierz', 'Henryk',
+          'Bronisław', 'Zbigniew', 'Mieczysław', 'Czesław', 'Zdzisław', 'Wiesław', 'Bolesław', 'Marian',
+          'Eugeniusz', 'Franciszek', 'Zygmunt', 'Stefan', 'Ryszard', 'Roman', 'Bogdan', 'Edmund',
+          'Jerzy', 'Leszek', 'Władysław', 'Witold', 'Lucjan', 'Tadeusz', 'Antoni', 'Feliks',
+          'Julian', 'Konstanty', 'Leon', 'Maksymilian', 'Nikodem', 'Romuald', 'Sylwester', 'Walenty'
+        ]
+      },
+      'feminino': {
+        'jovem': [
+          'Julia', 'Zuzanna', 'Maja', 'Lena', 'Zofia', 'Hanna', 'Natalia', 'Oliwia',
+          'Amelia', 'Wiktoria', 'Alicja', 'Maria', 'Aleksandra', 'Karolina', 'Nikola', 'Martyna',
+          'Paulina', 'Agnieszka', 'Joanna', 'Ewa', 'Małgorzata', 'Anna', 'Katarzyna', 'Magdalena',
+          'Monika', 'Barbara', 'Iwona', 'Beata', 'Dorota', 'Danuta', 'Sylwia', 'Justyna',
+          'Klaudia', 'Patrycja', 'Natalia', 'Marta', 'Kinga', 'Kamila', 'Aneta', 'Ewelina',
+          'Emilia', 'Liliana', 'Weronika', 'Gabriela', 'Kornelia', 'Laura', 'Michalina', 'Klara'
+        ],
+        'maduro': [
+          'Maria', 'Anna', 'Katarzyna', 'Małgorzata', 'Agnieszka', 'Krystyna', 'Barbara', 'Ewa',
+          'Elżbieta', 'Zofia', 'Janina', 'Teresa', 'Joanna', 'Magdalena', 'Monika', 'Danuta',
+          'Irena', 'Grażyna', 'Halina', 'Helena', 'Beata', 'Dorota', 'Iwona', 'Jolanta',
+          'Renata', 'Bożena', 'Wanda', 'Urszula', 'Jadwiga', 'Aleksandra', 'Alicja', 'Marta',
+          'Paulina', 'Sylwia', 'Aneta', 'Karolina', 'Natalia', 'Justyna', 'Edyta', 'Agata'
+        ],
+        'idoso': [
+          'Maria', 'Anna', 'Janina', 'Zofia', 'Krystyna', 'Barbara', 'Teresa', 'Helena',
+          'Stanisława', 'Jadwiga', 'Danuta', 'Irena', 'Halina', 'Elżbieta', 'Wanda', 'Genowefa',
+          'Stefania', 'Marianna', 'Józefa', 'Bronisława', 'Władysława', 'Cecylia', 'Kazimiera', 'Leokadia',
+          'Pelagia', 'Rozalia', 'Weronika', 'Aniela', 'Eugenia', 'Franciszka', 'Helena', 'Joanna',
+          'Katarzyna', 'Małgorzata', 'Łucja', 'Regina', 'Salomea', 'Tekla', 'Urszula', 'Waleria'
+        ]
+      }
+    },
+    'bg': { // BÚLGARO - NOMES AUTÊNTICOS BÚLGAROS (Cirílico)
+      'masculino': {
+        'jovem': [
+          'Александър', 'Георги', 'Иван', 'Димитър', 'Николай', 'Петър', 'Христо', 'Стоян',
+          'Васил', 'Тодор', 'Илия', 'Красимир', 'Любомир', 'Мартин', 'Виктор', 'Деян',
+          'Бойко', 'Борис', 'Валентин', 'Владимир', 'Георги', 'Добромир', 'Емил', 'Живко',
+          'Иванов', 'Калоян', 'Кирил', 'Любен', 'Методи', 'Найден', 'Огнян', 'Пламен',
+          'Радослав', 'Симеон', 'Тодор', 'Цветан', 'Явор', 'Асен', 'Божидар', 'Веселин',
+          'Данаил', 'Здравко', 'Ивайло', 'Йордан', 'Кольо', 'Любомир', 'Младен', 'Никола'
+        ],
+        'maduro': [
+          'Иван', 'Георги', 'Димитър', 'Петър', 'Николай', 'Стоян', 'Христо', 'Васил',
+          'Тодор', 'Илия', 'Красимир', 'Стефан', 'Асен', 'Борис', 'Владимир', 'Добромир',
+          'Емил', 'Живко', 'Калоян', 'Кирил', 'Любен', 'Методи', 'Огнян', 'Пламен',
+          'Радослав', 'Симеон', 'Тодор', 'Цветан', 'Явор', 'Божидар', 'Веселин', 'Георги',
+          'Данаил', 'Здравко', 'Ивайло', 'Йордан', 'Кольо', 'Любомир', 'Младен', 'Никола'
+        ],
+        'idoso': [
+          'Иван', 'Георги', 'Димитър', 'Петър', 'Николай', 'Стоян', 'Христо', 'Васил',
+          'Тодор', 'Илия', 'Стефан', 'Асен', 'Борис', 'Владимир', 'Добри', 'Евгени',
+          'Захари', 'Иван', 'Йордан', 'Константин', 'Любен', 'Методи', 'Никола', 'Панайот',
+          'Рангел', 'Сава', 'Тодор', 'Христо', 'Цанко', 'Янко', 'Атанас', 'Благой',
+          'Веселин', 'Генчо', 'Димитър', 'Желязко', 'Златан', 'Иванов', 'Кирил', 'Марин'
+        ]
+      },
+      'feminino': {
+        'jovem': [
+          'Мария', 'Елена', 'Йорданка', 'Иванка', 'Надежда', 'Пенка', 'Румяна', 'Светла',
+          'Теодора', 'Цветанка', 'Величка', 'Виолета', 'Гергана', 'Даниела', 'Елисавета', 'Жана',
+          'Зорница', 'Ива', 'Калина', 'Красимира', 'Любов', 'Милена', 'Невена', 'Петя',
+          'Радка', 'Силвия', 'Стела', 'Татяна', 'Христина', 'Десислава', 'Добрина', 'Емилия',
+          'Здравка', 'Йоана', 'Лиляна', 'Магдалена', 'Николина', 'Пламена', 'Росица', 'Снежана',
+          'Теменужка', 'Цветелина', 'Яна', 'Ася', 'Боряна', 'Веселина', 'Галина', 'Дарина'
+        ],
+        'maduro': [
+          'Мария', 'Елена', 'Йорданка', 'Иванка', 'Надежда', 'Пенка', 'Стоянка', 'Величка',
+          'Гергана', 'Даниела', 'Елисавета', 'Зорница', 'Калина', 'Красимира', 'Любов', 'Милена',
+          'Невена', 'Петя', 'Радка', 'Силвия', 'Стела', 'Татяна', 'Христина', 'Цветанка',
+          'Емилия', 'Здравка', 'Йоана', 'Лиляна', 'Магдалена', 'Николина', 'Пламена', 'Росица',
+          'Снежана', 'Теменужка', 'Цветелина', 'Яна', 'Боряна', 'Веселина', 'Галина', 'Дарина'
+        ],
+        'idoso': [
+          'Мария', 'Елена', 'Йорданка', 'Стоянка', 'Надежда', 'Пенка', 'Румяна', 'Величка',
+          'Донка', 'Екатерина', 'Зора', 'Иванка', 'Калинка', 'Лиляна', 'Марийка', 'Нена',
+          'Петя', 'Райна', 'Стойка', 'Тодорка', 'Христина', 'Цвета', 'Янка', 'Анка',
+          'Благовеста', 'Васка', 'Гинка', 'Дойна', 'Елка', 'Жана', 'Здравка', 'Илийка',
+          'Катя', 'Лиляна', 'Мита', 'Невена', 'Паунка', 'Радка', 'Славка', 'Тинка'
+        ]
+      }
+    },
+    'hr': { // CROATA - NOMES AUTÊNTICOS CROATAS
+      'masculino': {
+        'jovem': [
+          'Luka', 'Matej', 'Marko', 'Ivan', 'Josip', 'Ante', 'Petar', 'Tomislav',
+          'Dario', 'Miroslav', 'Stjepan', 'Nikola', 'Filip', 'David', 'Karlo', 'Dominik',
+          'Leon', 'Noa', 'Liam', 'Jakov', 'Gabriel', 'Mihael', 'Rafael', 'Samuel',
+          'Adrian', 'Bruno', 'Emanuel', 'Fran', 'Hrvoje', 'Krešimir', 'Lovro', 'Marin',
+          'Niko', 'Patrik', 'Roko', 'Tin', 'Vid', 'Zvonimir', 'Domagoj', 'Goran',
+          'Igor', 'Kristijan', 'Luka', 'Mateo', 'Niko', 'Oliver', 'Pavel', 'Robert'
+        ],
+        'maduro': [
+          'Ivan', 'Marko', 'Josip', 'Ante', 'Petar', 'Tomislav', 'Dario', 'Miroslav',
+          'Stjepan', 'Nikola', 'Damir', 'Zoran', 'Dragan', 'Goran', 'Ivica', 'Željko',
+          'Branko', 'Davor', 'Hrvoje', 'Igor', 'Krešimir', 'Mario', 'Mladen', 'Nenad',
+          'Slaven', 'Vladimir', 'Zvonimir', 'Alen', 'Boris', 'Dražen', 'Franjo', 'Gordan',
+          'Jadranko', 'Krunoslav', 'Mato', 'Neven', 'Predrag', 'Rade', 'Slavko', 'Tihomir'
+        ],
+        'idoso': [
+          'Ivan', 'Josip', 'Ante', 'Marko', 'Petar', 'Stjepan', 'Tomislav', 'Franjo',
+          'Nikola', 'Miroslav', 'Drago', 'Zdravko', 'Zlatko', 'Milan', 'Vladimir', 'Branko',
+          'Dušan', 'Ivo', 'Jure', 'Krešimir', 'Ljubomir', 'Marin', 'Nikica', 'Pero',
+          'Stipe', 'Tihomir', 'Vjekoslav', 'Zvonimir', 'Andrija', 'Božidar', 'Damir', 'Grgo',
+          'Hrvoje', 'Jadran', 'Karlo', 'Luka', 'Mate', 'Niko', 'Pavao', 'Ratko'
+        ]
+      },
+      'feminino': {
+        'jovem': [
+          'Ana', 'Marija', 'Ivana', 'Petra', 'Katarina', 'Lucija', 'Mia', 'Sara',
+          'Ema', 'Lana', 'Paula', 'Elena', 'Nika', 'Sofia', 'Laura', 'Tea',
+          'Iva', 'Lara', 'Nina', 'Anja', 'Marta', 'Nikolina', 'Dora', 'Lea',
+          'Ema', 'Franka', 'Hana', 'Klara', 'Maja', 'Noa', 'Petra', 'Roza',
+          'Tena', 'Una', 'Vita', 'Zara', 'Andrea', 'Barbara', 'Dina', 'Eva',
+          'Gordana', 'Helena', 'Irena', 'Jasna', 'Kristina', 'Lidija', 'Mirna', 'Nada'
+        ],
+        'maduro': [
+          'Ana', 'Marija', 'Ivana', 'Petra', 'Katarina', 'Vesna', 'Maja', 'Andrea',
+          'Barbara', 'Danijela', 'Gordana', 'Helena', 'Irena', 'Jasmina', 'Kristina', 'Lidija',
+          'Mirjana', 'Nada', 'Renata', 'Sanja', 'Tanja', 'Višnja', 'Željka', 'Anica',
+          'Branka', 'Darinka', 'Dubravka', 'Emilija', 'Grozdana', 'Inga', 'Jagoda', 'Katica',
+          'Ljiljana', 'Manda', 'Natalija', 'Olga', 'Pavla', 'Ranka', 'Slavica', 'Tatjana'
+        ],
+        'idoso': [
+          'Ana', 'Marija', 'Kata', 'Anka', 'Mara', 'Jela', 'Manda', 'Ruža',
+          'Stana', 'Cvijeta', 'Danica', 'Dragica', 'Eva', 'Milka', 'Nada', 'Perica',
+          'Roza', 'Slava', 'Toma', 'Vera', 'Zora', 'Anica', 'Barica', 'Dara',
+          'Đurđa', 'Grozdana', 'Ivka', 'Jaga', 'Katica', 'Ljubica', 'Marta', 'Nevenka',
+          'Olga', 'Pavla', 'Ružica', 'Slavka', 'Tonka', 'Veronika', 'Zlatica', 'Zorka'
+        ]
+      }
+    },
+    'ro': { // ROMENO - NOMES AUTÊNTICOS ROMENOS
+      'masculino': {
+        'jovem': [
+          'Andrei', 'Alexandru', 'Mihai', 'David', 'Gabriel', 'Ștefan', 'Adrian', 'Cristian',
+          'Daniel', 'Florin', 'George', 'Ion', 'Lucian', 'Marian', 'Nicolae', 'Paul',
+          'Radu', 'Sorin', 'Tudor', 'Vasile', 'Bogdan', 'Cosmin', 'Darius', 'Emil',
+          'Ionuț', 'Laurențiu', 'Marius', 'Octavian', 'Petrică', 'Robert', 'Sebastian', 'Teodor',
+          'Valentin', 'Victor', 'Vlad', 'Alexandru', 'Călin', 'Dan', 'Dorin', 'Eduard',
+          'Gheorghe', 'Horea', 'Ilie', 'Liviu', 'Marcel', 'Nicu', 'Ovidiu', 'Petre'
+        ],
+        'maduro': [
+          'Ion', 'Gheorghe', 'Vasile', 'Nicolae', 'Constantin', 'Mihai', 'Alexandru', 'Andrei',
+          'Dumitru', 'Florin', 'Marian', 'Adrian', 'Cristian', 'Dan', 'Emil', 'George',
+          'Ilie', 'Laurențiu', 'Lucian', 'Marcel', 'Nicu', 'Ovidiu', 'Paul', 'Petru',
+          'Radu', 'Sorin', 'Ștefan', 'Traian', 'Tudor', 'Valentin', 'Victor', 'Vlad',
+          'Augustin', 'Bogdan', 'Călin', 'Dorin', 'Eduard', 'Grigore', 'Horea', 'Ionuț'
+        ],
+        'idoso': [
+          'Ion', 'Gheorghe', 'Vasile', 'Nicolae', 'Constantin', 'Dumitru', 'Mihai', 'Petru',
+          'Ștefan', 'Traian', 'Alexandru', 'Andrei', 'Anton', 'Aurel', 'Corneliu', 'Costel',
+          'Dan', 'Dimitrie', 'Emil', 'Florea', 'Grigore', 'Ilie', 'Ioan', 'Liviu',
+          'Marcel', 'Marin', 'Mircea', 'Nae', 'Niculae', 'Petre', 'Roman', 'Sandu',
+          'Simion', 'Toma', 'Tudor', 'Vasile', 'Victor', 'Viorel', 'Virgil', 'Zamfir'
+        ]
+      },
+      'feminino': {
+        'jovem': [
+          'Maria', 'Elena', 'Ana', 'Ioana', 'Gabriela', 'Andreea', 'Alexandra', 'Cristina',
+          'Mihaela', 'Daniela', 'Alina', 'Roxana', 'Simona', 'Monica', 'Claudia', 'Diana',
+          'Laura', 'Raluca', 'Oana', 'Nicoleta', 'Adriana', 'Carmen', 'Camelia', 'Corina',
+          'Florina', 'Georgiana', 'Iulia', 'Larisa', 'Madalina', 'Nicoleta', 'Paula', 'Ramona',
+          'Sabina', 'Teodora', 'Valentina', 'Violeta', 'Bianca', 'Denisa', 'Ecaterina', 'Florentina',
+          'Irina', 'Lavinia', 'Liliana', 'Luminița', 'Marcela', 'Natalia', 'Otilia', 'Patricia'
+        ],
+        'maduro': [
+          'Maria', 'Elena', 'Ana', 'Ioana', 'Gabriela', 'Mihaela', 'Daniela', 'Cristina',
+          'Andreea', 'Alexandra', 'Rodica', 'Florica', 'Vasilica', 'Lucia', 'Aurelia', 'Cornelia',
+          'Adriana', 'Alina', 'Carmen', 'Claudia', 'Diana', 'Florina', 'Georgiana', 'Iulia',
+          'Laura', 'Monica', 'Nicoleta', 'Oana', 'Paula', 'Raluca', 'Roxana', 'Simona',
+          'Camelia', 'Corina', 'Doina', 'Floarea', 'Geta', 'Ileana', 'Lidia', 'Mariana'
+        ],
+        'idoso': [
+          'Maria', 'Elena', 'Ana', 'Ioana', 'Ecaterina', 'Floarea', 'Vasilica', 'Rodica',
+          'Florica', 'Lucia', 'Aurelia', 'Cornelia', 'Dumitra', 'Gherghina', 'Ileana', 'Mărioara',
+          'Paraschiva', 'Sanda', 'Stanca', 'Tatiana', 'Aneta', 'Anica', 'Aura', 'Catrina',
+          'Domnica', 'Elisabeta', 'Floare', 'Georgeta', 'Ioana', 'Leana', 'Marcela', 'Marta',
+          'Niculina', 'Păuna', 'Petrița', 'Profira', 'Saveta', 'Smaranda', 'Tudora', 'Varvara'
+        ]
+      }
     }
   };
 
@@ -802,5 +1053,189 @@ class NameGeneratorService {
     }
     
     return stats;
+  }
+
+  /// NOVO: Valida se um nome está no banco de dados curado
+  /// Usado para eliminar falsos positivos (como "Passei", "Abri")
+  static bool isValidName(String candidate, {String? language}) {
+    final normalizedCandidate = candidate.trim();
+    
+    // Se language especificado, buscar apenas nele
+    if (language != null && _namesDatabase.containsKey(language)) {
+      final langData = _namesDatabase[language]!;
+      for (final genderData in langData.values) {
+        for (final ageGroupList in genderData.values) {
+          if (ageGroupList.contains(normalizedCandidate)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    
+    // Senão, buscar em TODOS os idiomas
+    for (final langData in _namesDatabase.values) {
+      for (final genderData in langData.values) {
+        for (final ageGroupList in genderData.values) {
+          if (ageGroupList.contains(normalizedCandidate)) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    // Também verificar nomes western
+    for (final genderData in _westernNames.values) {
+      for (final categoryList in genderData.values) {
+        if (categoryList.contains(normalizedCandidate)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  /// NOVO: Retorna lista de TODOS os nomes válidos (para debugging/análise)
+  static List<String> getAllValidNames({String? language}) {
+    final allNames = <String>{};
+    
+    if (language != null && _namesDatabase.containsKey(language)) {
+      final langData = _namesDatabase[language]!;
+      for (final genderData in langData.values) {
+        for (final ageGroupList in genderData.values) {
+          allNames.addAll(ageGroupList);
+        }
+      }
+    } else {
+      // Todos os idiomas
+      for (final langData in _namesDatabase.values) {
+        for (final genderData in langData.values) {
+          for (final ageGroupList in genderData.values) {
+            allNames.addAll(ageGroupList);
+          }
+        }
+      }
+      
+      // Western
+      for (final genderData in _westernNames.values) {
+        for (final categoryList in genderData.values) {
+          allNames.addAll(categoryList);
+        }
+      }
+    }
+    
+    return allNames.toList()..sort();
+  }
+
+  /// NOVO: Gera lista formatada de nomes para usar nos prompts da AI
+  /// Retorna string com nomes organizados por categoria para facilitar escolha da AI
+  
+  /// Mapeia nome do idioma para código ISO 639-1
+  static String _getLanguageCode(String language) {
+    final normalized = language.toLowerCase().trim();
+    
+    // Mapeamento de nomes de idiomas para códigos ISO
+    if (normalized.contains('português') || normalized.contains('portugues') || normalized == 'pt') return 'pt';
+    if (normalized.contains('inglês') || normalized.contains('ingles') || normalized.contains('english') || normalized == 'en') return 'en';
+    if (normalized.contains('espanhol') || normalized.contains('spanish') || normalized.contains('español') || normalized == 'es') return 'es';
+    if (normalized.contains('francês') || normalized.contains('frances') || normalized.contains('french') || normalized.contains('français') || normalized == 'fr') return 'fr';
+    if (normalized.contains('alemão') || normalized.contains('alemao') || normalized.contains('german') || normalized.contains('deutsch') || normalized == 'de') return 'de';
+    if (normalized.contains('italiano') || normalized.contains('italian') || normalized == 'it') return 'it';
+    if (normalized.contains('russo') || normalized.contains('russian') || normalized == 'ru') return 'ru';
+    if (normalized.contains('turco') || normalized.contains('turkish') || normalized.contains('türk') || normalized == 'tr') return 'tr';
+    if (normalized.contains('croata') || normalized.contains('croatian') || normalized.contains('hrvatski') || normalized == 'hr') return 'hr';
+    if (normalized.contains('polonês') || normalized.contains('polones') || normalized.contains('polish') || normalized.contains('polski') || normalized == 'pl') return 'pl';
+    if (normalized.contains('búlgaro') || normalized.contains('bulgaro') || normalized.contains('bulgarian') || normalized == 'bg') return 'bg';
+    if (normalized.contains('romeno') || normalized.contains('romanian') || normalized.contains('română') || normalized == 'ro') return 'ro';
+    
+    // Fallback para português
+    return 'pt';
+  }
+
+  static String getNameListForPrompt({
+    required String language,
+    String? genre,
+    int maxNamesPerCategory = 30, // Limitar para não sobrecarregar prompt
+  }) {
+    final buffer = StringBuffer();
+    
+    // Se for western, usar apenas nomes temáticos
+    if (genre == 'western') {
+      buffer.writeln('NOMES WESTERN (use APENAS estes para histórias de faroeste):');
+      
+      if (_westernNames.containsKey('masculino')) {
+        final maleNames = _westernNames['masculino']!['todos']!.take(maxNamesPerCategory).toList();
+        buffer.writeln('  Masculinos: ${maleNames.join(', ')}');
+      }
+      
+      if (_westernNames.containsKey('feminino')) {
+        final femaleNames = _westernNames['feminino']!['todos']!.take(maxNamesPerCategory).toList();
+        buffer.writeln('  Femininos: ${femaleNames.join(', ')}');
+      }
+      
+      return buffer.toString();
+    }
+    
+    // 🌍 MAPEAR NOME DO IDIOMA PARA CÓDIGO ISO
+    var languageCode = _getLanguageCode(language);
+    
+    // Nomes normais por idioma
+    if (!_namesDatabase.containsKey(languageCode)) {
+      languageCode = 'pt'; // Fallback para português
+    }
+    
+    final langData = _namesDatabase[languageCode]!;
+    
+    buffer.writeln('NOMES DISPONÍVEIS (use APENAS nomes desta lista):');
+    buffer.writeln('');
+    
+    // Masculino
+    if (langData.containsKey('masculino')) {
+      buffer.writeln('MASCULINO:');
+      
+      if (langData['masculino']!.containsKey('jovem')) {
+        final youngMale = langData['masculino']!['jovem']!.take(maxNamesPerCategory).toList();
+        buffer.writeln('  Jovens (15-35 anos): ${youngMale.join(', ')}');
+      }
+      
+      if (langData['masculino']!.containsKey('maduro')) {
+        final matureMale = langData['masculino']!['maduro']!.take(maxNamesPerCategory).toList();
+        buffer.writeln('  Maduros (36-60 anos): ${matureMale.join(', ')}');
+      }
+      
+      if (langData['masculino']!.containsKey('idoso')) {
+        final elderlyMale = langData['masculino']!['idoso']!.take(maxNamesPerCategory).toList();
+        buffer.writeln('  Idosos (60+ anos): ${elderlyMale.join(', ')}');
+      }
+      
+      buffer.writeln('');
+    }
+    
+    // Feminino
+    if (langData.containsKey('feminino')) {
+      buffer.writeln('FEMININO:');
+      
+      if (langData['feminino']!.containsKey('jovem')) {
+        final youngFemale = langData['feminino']!['jovem']!.take(maxNamesPerCategory).toList();
+        buffer.writeln('  Jovens (15-35 anos): ${youngFemale.join(', ')}');
+      }
+      
+      if (langData['feminino']!.containsKey('maduro')) {
+        final matureFemale = langData['feminino']!['maduro']!.take(maxNamesPerCategory).toList();
+        buffer.writeln('  Maduras (36-60 anos): ${matureFemale.join(', ')}');
+      }
+      
+      if (langData['feminino']!.containsKey('idoso')) {
+        final elderlyFemale = langData['feminino']!['idoso']!.take(maxNamesPerCategory).toList();
+        buffer.writeln('  Idosas (60+ anos): ${elderlyFemale.join(', ')}');
+      }
+    }
+    
+    buffer.writeln('');
+    buffer.writeln('⚠️ IMPORTANTE: NUNCA invente nomes! Use APENAS nomes desta lista.');
+    buffer.writeln('⚠️ Escolha nomes apropriados para a idade do personagem.');
+    
+    return buffer.toString();
   }
 }

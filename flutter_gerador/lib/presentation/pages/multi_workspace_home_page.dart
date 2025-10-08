@@ -575,12 +575,14 @@ class _MultiWorkspaceHomePageState extends ConsumerState<MultiWorkspaceHomePage>
     String? model,
     String? title,
     String? context,
+    String? genre,
   }) {
     final updatedConfig = activeSession.config.copyWith(
       apiKey: apiKey,
       model: model,
       title: title,
       context: context,
+      genre: genre,
     );
     
     ref.read(workspaceSessionsProvider.notifier).updateSessionConfig(
