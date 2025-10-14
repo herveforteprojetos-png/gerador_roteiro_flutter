@@ -16,8 +16,6 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
           quantity: 2000,
           language: 'Português',
           perspective: 'terceira_pessoa',
-          includeCallToAction: false,
-          includeFinalCta: false,
           localizationLevel: LocalizationLevel.national,
           startWithTitlePhrase: false, // NOVO: Default false
           protagonistName: '',
@@ -106,39 +104,20 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
     }
   }
 
+  void updateQualityMode(String mode) {
+    // Atualizar qualityMode que será usado pelo gemini_service
+    state = state.copyWith(qualityMode: mode);
+    print('🤖 ScriptConfig: Modelo alterado para ${mode == "pro" ? "2.5-PRO (Qualidade Máxima)" : "2.5-FLASH (4x Mais Rápido)"}');
+  }
+
   void updatePerspective(String value) {
     state = state.copyWith(perspective: value);
   }
-
-  void updateIncludeCallToAction(bool value) {
-    state = state.copyWith(includeCallToAction: value);
-  }
-
-  void updateSubtema(String value) {
-    state = state.copyWith(subtema: value);
-  }
-
-  void updateIncludeFinalCta(bool value) {
-    state = state.copyWith(includeFinalCta: value);
-  }
-
-  void updateStartWithTitlePhrase(bool value) {
-    state = state.copyWith(startWithTitlePhrase: value);
-  }
-
-  void updateProtagonistName(String value) {
-    state = state.copyWith(protagonistName: value);
-  }
-
-  void updateSecondaryCharacterName(String value) {
-    state = state.copyWith(secondaryCharacterName: value);
-  }
-
-  // Métodos para atualizar cada campo...
 }
 
 final scriptConfigProvider = StateNotifierProvider<ScriptConfigNotifier, ScriptConfig>((ref) {
   return ScriptConfigNotifier();
 });
+
 
 

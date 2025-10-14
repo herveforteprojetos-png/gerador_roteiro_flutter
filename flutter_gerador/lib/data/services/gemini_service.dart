@@ -8,6 +8,132 @@ import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/data/models/localization_level.dart';
 import 'package:flutter_gerador/data/services/name_generator_service.dart';
 
+/// 🚀 FUNÇÃO TOP-LEVEL para execução em Isolate separado
+/// Evita travar UI thread durante verificação de repetição
+Map<String, dynamic> _isTooSimilarInIsolate(Map<String, dynamic> params) {
+  final String newBlock = params['newBlock'] as String;
+  final String previousContent = params['previousContent'] as String;
+  final double threshold = params['threshold'] as double;
+  
+  if (previousContent.isEmpty) {
+    return {'isSimilar': false, 'reason': 'No previous content'};
+  }
+  
+  // 🔥 PRIORIDADE 1: Verificar duplicação literal de blocos grandes
+  final hasLiteral = _hasLiteralDuplicationStatic(newBlock, previousContent);
+  if (hasLiteral) {
+    return {'isSimilar': true, 'reason': 'Literal duplication detected'};
+  }
+  
+  // 🚀 OTIMIZAÇÃO: Limitar contexto anterior para comparação
+  final limitedPrevious = previousContent.length > 12000 
+      ? previousContent.substring(previousContent.length - 12000)
+      : previousContent;
+  
+  // Dividir conteúdo anterior em parágrafos
+  final paragraphs = limitedPrevious.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+  
+  // 🚀 OTIMIZAÇÃO CRÍTICA: Limitar a 10 últimos parágrafos
+  final recentParagraphs = paragraphs.length > 10 
+      ? paragraphs.sublist(paragraphs.length - 10)
+      : paragraphs;
+  
+  // Dividir novo bloco em parágrafos
+  final newParagraphs = newBlock.split('\n\n').where((p) => p.trim().isNotEmpty).toList();
+  
+  // 🎯 AJUSTE FINO: Verificar cada parágrafo novo contra os RECENTES
+  int highSimilarityCount = 0;
+  
+  for (final newPara in newParagraphs) {
+    // 🔥 AJUSTE: Detectar parágrafos de 50+ palavras (era 100)
+    final wordCount = newPara.trim().split(RegExp(r'\s+')).length;
+    if (wordCount < 50) continue; // Ignorar parágrafos muito curtos
+    
+    if (highSimilarityCount >= 2) break;
+    
+    for (final oldPara in recentParagraphs) {
+      final oldWordCount = oldPara.trim().split(RegExp(r'\s+')).length;
+      if (oldWordCount < 50) continue; // Ignorar parágrafos muito curtos
+      
+      final similarity = _calculateSimilarityStatic(newPara, oldPara);
+      
+      // 🔥 AJUSTE: Threshold reduzido de 85% para 80%
+      if (similarity >= threshold) {
+        highSimilarityCount++;
+        
+        if (highSimilarityCount >= 2) {
+          return {
+            'isSimilar': true, 
+            'reason': '$highSimilarityCount paragraphs with ${(similarity * 100).toStringAsFixed(1)}% similarity'
+          };
+        }
+        break;
+      }
+    }
+  }
+  
+  return {'isSimilar': false, 'reason': 'Content is unique'};
+}
+
+/// Versão estática de _hasLiteralDuplication para usar em Isolate
+bool _hasLiteralDuplicationStatic(String newBlock, String previousContent) {
+  if (previousContent.length < 1000) return false;
+  
+  final newWords = newBlock.split(RegExp(r'\s+'));
+  if (newWords.length < 200) return false;
+  
+  final prevWords = previousContent.split(RegExp(r'\s+'));
+  if (prevWords.length < 200) return false;
+  
+  for (int i = 0; i <= newWords.length - 200; i++) {
+    final newSequence = newWords.sublist(i, i + 200).join(' ').toLowerCase();
+    
+    for (int j = 0; j <= prevWords.length - 200; j++) {
+      final prevSequence = prevWords.sublist(j, j + 200).join(' ').toLowerCase();
+      
+      if (newSequence == prevSequence) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+/// Versão estática de _calculateSimilarity para usar em Isolate
+double _calculateSimilarityStatic(String text1, String text2) {
+  if (text1.isEmpty || text2.isEmpty) return 0.0;
+  
+  final normalized1 = text1.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
+  final normalized2 = text2.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
+  
+  if (normalized1 == normalized2) return 1.0;
+  
+  const nGramSize = 8;
+  final words1 = normalized1.split(' ');
+  final words2 = normalized2.split(' ');
+  
+  if (words1.length < nGramSize || words2.length < nGramSize) {
+    final commonWords = words1.toSet().intersection(words2.toSet()).length;
+    return commonWords / max(words1.length, words2.length);
+  }
+  
+  final ngrams1 = <String>{};
+  for (int i = 0; i <= words1.length - nGramSize; i++) {
+    ngrams1.add(words1.sublist(i, i + nGramSize).join(' '));
+  }
+  
+  final ngrams2 = <String>{};
+  for (int i = 0; i <= words2.length - nGramSize; i++) {
+    ngrams2.add(words2.sublist(i, i + nGramSize).join(' '));
+  }
+  
+  final intersection = ngrams1.intersection(ngrams2).length;
+  final union = ngrams1.union(ngrams2).length;
+  
+  return union > 0 ? intersection / union : 0.0;
+}
+
 /// 🌍 Mapa de traduções de termos de parentesco por idioma
 const Map<String, Map<String, String>> _familyTermsTranslations = {
   'português': {
@@ -298,9 +424,9 @@ class GeminiService {
             // Aguardar 2 segundos antes de retry
             await Future.delayed(Duration(seconds: 2));
             
-            // Tentar novamente com contexto reduzido se retry > 1
-            final contextForRetry = retry > 1 && acc.length > 3000
-                ? acc.substring(acc.length - 3000)
+            // 🔥 AUMENTADO: Contexto de 3000 para 8000 chars para manter nomes em memória
+            final contextForRetry = retry > 1 && acc.length > 8000
+                ? acc.substring(acc.length - 8000)
                 : acc;
             
             added = await _retryOnRateLimit(() => _generateBlockContent(
@@ -329,14 +455,22 @@ class GeminiService {
           }
         }
         
-        // 🔥 VALIDAÇÃO ANTI-REPETIÇÃO: Verificar se bloco gerado é cópia de anteriores
+        // � VALIDAÇÃO ANTI-REPETIÇÃO EM ISOLATE: Verificar sem travar UI
         if (added.trim().isNotEmpty && acc.length > 500) {
-          final isSimilar = _isTooSimilar(added, acc, threshold: 0.85); // 🔥 Threshold aumentado para 85%
+          // Executar em isolate separado para não bloquear UI thread
+          final result = await compute(_isTooSimilarInIsolate, {
+            'newBlock': added,
+            'previousContent': acc,
+            'threshold': 0.80, // 🔥 AJUSTADO: Era 0.85, agora 0.80 para maior sensibilidade
+          });
+          
+          final isSimilar = result['isSimilar'] as bool;
           
           if (isSimilar) {
             if (kDebugMode) {
               debugPrint('❌ BLOCO $block REJEITADO: Muito similar ao conteúdo anterior!');
               debugPrint('   📊 Tamanho do bloco: ${_countWords(added)} palavras');
+              debugPrint('   🔍 Motivo: ${result['reason']}');
               debugPrint('   🔄 Regenerando com aviso explícito contra repetição...');
             }
             
@@ -352,7 +486,13 @@ class GeminiService {
             ));
             
             // Verificar novamente com threshold ainda mais alto (90%)
-            final stillSimilar = _isTooSimilar(regenerated, acc, threshold: 0.90);
+            final retryResult = await compute(_isTooSimilarInIsolate, {
+              'newBlock': regenerated,
+              'previousContent': acc,
+              'threshold': 0.85, // 🔥 AJUSTADO: Era 0.90, agora 0.85
+            });
+            
+            final stillSimilar = retryResult['isSimilar'] as bool;
             
             if (stillSimilar) {
               if (kDebugMode) {
@@ -360,9 +500,9 @@ class GeminiService {
                 debugPrint('   🔄 TENTATIVA 2: Regenerando novamente com contexto reduzido...');
               }
               
-              // 🔥 TENTATIVA 2: Reduzir contexto drasticamente e tentar novamente
-              final contextoPrevioReduzido = acc.length > 3000 
-                  ? acc.substring(acc.length - 3000) 
+              // 🔥 AUMENTADO: Contexto de 3000 para 8000 chars para manter nomes em memória
+              final contextoPrevioReduzido = acc.length > 8000 
+                  ? acc.substring(acc.length - 8000) 
                   : acc;
               
               final regenerated2 = await _retryOnRateLimit(() => _generateBlockContent(
@@ -403,6 +543,12 @@ class GeminiService {
         }
         
         if (added.trim().isNotEmpty) {
+          // 🚨 VALIDAÇÃO CRÍTICA 1: Verificar se nome da protagonista mudou
+          _validateProtagonistName(added, config, block);
+          
+          // 🚨 VALIDAÇÃO CRÍTICA 2: Verificar se algum nome foi reutilizado
+          _validateNameReuse(added, persistentTracker, block);
+          
           _updateTrackerFromContextSnippet(persistentTracker, config, added);
           
           // 🔒 TRACKING APRIMORADO: Extrair TODOS os nomes após cada bloco
@@ -438,18 +584,6 @@ class GeminiService {
               }
             }
           }
-        }
-        
-        // INSERIR GANCHO + CTA APÃ“S A INTRODUÃ‡ÃƒO (aproximadamente 20% do conteÃºdo)
-        if (config.includeCallToAction && block == 2 && totalBlocks >= 5) {
-          // Gerar gancho de 4 linhas
-          final hook = await _generateHook(acc, config);
-          acc += '\n\n$hook\n\n';
-          _updateTrackerFromContextSnippet(persistentTracker, config, hook);
-          
-          // Adicionar CTA depois do gancho
-          final cta = _getCta(config.language);
-          acc += '$cta\n\n';
         }
         
         // OTIMIZADO: Checkpoint de estabilidade mais rÃ¡pido para Gemini Billing
@@ -490,11 +624,7 @@ class GeminiService {
 
       if (_isCancelled) return ScriptResult.error(errorMessage: 'GeraÃ§Ã£o cancelada');
 
-      // Adicionar CTA Final se habilitado
-      if (config.includeFinalCta) {
-        final ctaFinal = _getCtaFinal(config.language);
-        acc += '\n\n$ctaFinal';
-      }
+
 
       _stopWatchdog();
       
@@ -508,12 +638,17 @@ class GeminiService {
       // 🧹 LIMPAR MARCADORES DE DEBUG DO TEXTO FINAL
       final cleanedAcc = acc.replaceAll(RegExp(r'PERSONAGEM MENCIONADO:\s*'), '');
       
+      // � DETECÇÃO FINAL: Verificar se há parágrafos duplicados (apenas LOG, não remove)
+      if (kDebugMode) {
+        _detectDuplicateParagraphsInFinalScript(cleanedAcc);
+      }
+      
       return ScriptResult(
         scriptText: cleanedAcc,
         wordCount: _countWords(cleanedAcc),
         charCount: cleanedAcc.length,
         paragraphCount: cleanedAcc.split('\n').length,
-        readingTime: (_countWords(acc) / 150).ceil(),
+        readingTime: (_countWords(cleanedAcc) / 150).ceil(),
       );
     } catch (e) {
       _stopWatchdog();
@@ -919,110 +1054,8 @@ class GeminiService {
   return baseTarget > maxBlockSize ? maxBlockSize : baseTarget;
 }
 
-  // ===================== GeraÃ§Ã£o de Blocos =====================
-  String _getCta(String l) { 
-    switch(l.toLowerCase()) { 
-      case 'portuguÃªs': 
-        return 'Antes de continuar, nÃ£o esqueÃ§a de curtir este Ã¡udio e se inscrever no canal clicando no Ã­cone que aparece no canto inferior direito da sua tela! E me conta nos comentÃ¡rios: de onde vocÃª estÃ¡ nos ouvindo? Eu adoro saber com quem estou compartilhando este momento. Agora, vamos com a histÃ³ria.'; 
-      case 'inglÃªs': 
-        return 'Before we continue, don\'t forget to like this audio and subscribe to the channel by clicking the icon that appears in the bottom right corner of your screen! And tell me in the comments: where are you listening from? I love knowing who I\'m sharing this moment with. Now, let\'s get to the story.'; 
-      case 'espanhol(mexicano)': 
-        return 'Â¡Antes de continuar, no olvides dar like a este audio y suscribirte al canal haciendo clic en el Ã­cono que aparece en la esquina inferior derecha de tu pantalla! Y cuÃ©ntame en los comentarios: Â¿desde dÃ³nde nos estÃ¡s oyendo? Me encanta saber con quiÃ©n estoy compartiendo este momento. Ahora, vamos con el cuento.'; 
-      case 'francÃªs': 
-        return 'Avant de continuer, n\'oubliez pas d\'aimer cet audio et de vous abonner Ã  la chaÃ®ne en cliquant sur l\'icÃ´ne qui apparaÃ®t dans le coin infÃ©rieur droit de votre Ã©cran ! Et dites-moi dans les commentaires : d\'oÃ¹ nous Ã©coutez-vous ? J\'adore savoir avec qui je partage ce moment. Maintenant, passons Ã  l\'histoire.'; 
-      case 'alemÃ£o': 
-        return 'Bevor wir fortfahren, vergessen Sie nicht, dieses Audio zu liken und den Kanal zu abonnieren, indem Sie auf das Symbol klicken, das in der unteren rechten Ecke Ihres Bildschirms erscheint! Und sagen Sie mir in den Kommentaren: Von wo hÃ¶ren Sie uns zu? Ich liebe es zu wissen, mit wem ich diesen Moment teile. Jetzt zur Geschichte.'; 
-      case 'italiano': 
-        return 'Prima di continuare, non dimenticare di mettere like a questo audio e iscriverti al canale cliccando sull\'icona che appare nell\'angolo in basso a destra del tuo schermo! E dimmi nei commenti: da dove ci stai ascoltando? Adoro sapere con chi sto condividendo questo momento. Ora, andiamo con la storia.'; 
-      case 'polonÃªs': 
-        return 'Zanim przejdziemy dalej, nie zapomnij polubiÄ‡ tego nagrania i zasubskrybowaÄ‡ kanaÅ‚, klikajÄ…c ikonÄ™, ktÃ³ra pojawia siÄ™ w prawym dolnym rogu ekranu! I powiedz mi w komentarzach: skÄ…d nas sÅ‚uchasz? Uwielbiam wiedzieÄ‡, z kim dzielÄ™ tÄ™ chwilÄ™. Teraz przejdÅºmy do historii.'; 
-      case 'bÃºlgaro': 
-        return 'ÐŸÑ€ÐµÐ´Ð¸ Ð´Ð° Ð¿Ñ€Ð¾Ð´ÑŠÐ»Ð¶Ð¸Ð¼, Ð½Ðµ Ð·Ð°Ð±Ñ€Ð°Ð²ÑÐ¹Ñ‚Ðµ Ð´Ð° Ñ…Ð°Ñ€ÐµÑÐ°Ñ‚Ðµ Ñ‚Ð¾Ð²Ð° Ð°ÑƒÐ´Ð¸Ð¾ Ð¸ Ð´Ð° ÑÐµ Ð°Ð±Ð¾Ð½Ð¸Ñ€Ð°Ñ‚Ðµ Ð·Ð° ÐºÐ°Ð½Ð°Ð»Ð°, ÐºÐ°Ñ‚Ð¾ Ñ‰Ñ€Ð°ÐºÐ½ÐµÑ‚Ðµ Ð²ÑŠÑ€Ñ…Ñƒ Ð¸ÐºÐ¾Ð½Ð°Ñ‚Ð°, ÐºÐ¾ÑÑ‚Ð¾ ÑÐµ Ð¿Ð¾ÑÐ²ÑÐ²Ð° Ð² Ð´Ð¾Ð»Ð½Ð¸Ñ Ð´ÐµÑÐµÐ½ ÑŠÐ³ÑŠÐ» Ð½Ð° ÐµÐºÑ€Ð°Ð½Ð° Ð²Ð¸! Ð˜ Ð¼Ð¸ ÐºÐ°Ð¶ÐµÑ‚Ðµ Ð² ÐºÐ¾Ð¼ÐµÐ½Ñ‚Ð°Ñ€Ð¸Ñ‚Ðµ: Ð¾Ñ‚ÐºÑŠÐ´Ðµ Ð½Ð¸ ÑÐ»ÑƒÑˆÐ°Ñ‚Ðµ? ÐžÐ±Ð¾Ð¶Ð°Ð²Ð°Ð¼ Ð´Ð° Ð·Ð½Ð°Ð¼ Ñ ÐºÐ¾Ð³Ð¾ ÑÐ¿Ð¾Ð´ÐµÐ»ÑÐ¼ Ñ‚Ð¾Ð·Ð¸ Ð¼Ð¾Ð¼ÐµÐ½Ñ‚. Ð¡ÐµÐ³Ð° Ð½ÐµÐºÐ° Ð¿Ñ€ÐµÐ¼Ð¸Ð½ÐµÐ¼ ÐºÑŠÐ¼ Ð¸ÑÑ‚Ð¾Ñ€Ð¸ÑÑ‚Ð°.'; 
-      case 'croata': 
-        return 'Prije nego Å¡to nastavimo, ne zaboravite lajkati ovaj audio i pretplatiti se na kanal klikom na ikonu koja se pojavljuje u donjem desnom uglu vaÅ¡eg ekrana! I recite mi u komentarima: odakle nas sluÅ¡ate? Volim da znam s kim dijeljim ovaj trenutak. Sada, idemo na priÄu.'; 
-      case 'turco': 
-        return 'Devam etmeden Ã¶nce, bu sesi beÄŸenmeyi ve ekranÄ±nÄ±zÄ±n saÄŸ alt kÃ¶ÅŸesinde gÃ¶rÃ¼nen simgeye tÄ±klayarak kanala abone olmayÄ± unutmayÄ±n! Ve yorumlarda bana sÃ¶yleyin: bizi nereden dinliyorsunuz? Bu anÄ± kiminle paylaÅŸtÄ±ÄŸÄ±mÄ± bilmeyi seviyorum. Åžimdi, hikayeye geÃ§elim.'; 
-      case 'romeno': 
-        return 'ÃŽnainte de a continua, nu uitaÈ›i sÄƒ daÈ›i like acestui audio È™i sÄƒ vÄƒ abonaÈ›i la canal fÄƒcÃ¢nd clic pe iconiÈ›a care apare Ã®n colÈ›ul din dreapta jos al ecranului! È˜i spuneÈ›i-mi Ã®n comentarii: de unde ne ascultaÈ›i? ÃŽmi place sÄƒ È™tiu cu cine Ã®mpart acest moment. Acum, sÄƒ trecem la poveste.'; 
-      default: 
-        return 'Before we continue, don\'t forget to like this audio and subscribe to the channel by clicking the icon that appears in the bottom right corner of your screen! And tell me in the comments: where are you listening from? I love knowing who I\'m sharing this moment with. Now, let\'s get to the story.'; 
-    } 
-  }
+// ===================== Geração de Blocos =====================
 
-  // ===================== CTA Final =====================
-  String _getCtaFinal(String l) { 
-    switch(l.toLowerCase()) { 
-      case 'portuguÃªs': 
-        return 'E aÃ­, o que achou? Se curtiu a histÃ³ria, deixa o like e se inscreve no canal! Nos vemos no prÃ³ximo episÃ³dio!'; 
-      case 'inglÃªs': 
-        return 'So, what did you think? If you enjoyed the story, hit that like button and subscribe to the channel! See you in the next episode!'; 
-      case 'espanhol(mexicano)': 
-        return 'Â¿Y bien, quÃ© te pareciÃ³? Si te gustÃ³ la historia, Â¡dale like y suscrÃ­bete al canal! Â¡Nos vemos en el prÃ³ximo episodio!'; 
-      case 'francÃªs': 
-        return 'Alors, qu\'est-ce que vous en avez pensÃ© ? Si vous avez aimÃ© l\'histoire, mettez un like et abonnez-vous Ã  la chaÃ®ne ! On se retrouve dans le prochain Ã©pisode !'; 
-      case 'alemÃ£o': 
-        return 'Na, was denkst du? Wenn dir die Geschichte gefallen hat, gib einen Like und abonniere den Kanal! Wir sehen uns in der nÃ¤chsten Folge!'; 
-      case 'italiano': 
-        return 'Allora, che ne pensi? Se ti Ã¨ piaciuta la storia, metti like e iscriviti al canale! Ci vediamo nel prossimo episodio!'; 
-      case 'polonÃªs': 
-        return 'No i jak ci siÄ™ podobaÅ‚o? JeÅ›li historia ci siÄ™ spodobaÅ‚a, zostaw like i subskrybuj kanaÅ‚! Do zobaczenia w nastÄ™pnym odcinku!'; 
-      case 'bÃºlgaro': 
-        return 'Ð•, ÐºÐ°ÐºÐ²Ð¾ Ð¼Ð¸ÑÐ»Ð¸Ñˆ? ÐÐºÐ¾ Ñ‚Ð¸ Ñ…Ð°Ñ€ÐµÑÐ° Ð¸ÑÑ‚Ð¾Ñ€Ð¸ÑÑ‚Ð°, Ð¾ÑÑ‚Ð°Ð²Ð¸ like Ð¸ ÑÐµ Ð°Ð±Ð¾Ð½Ð¸Ñ€Ð°Ð¹ Ð·Ð° ÐºÐ°Ð½Ð°Ð»Ð°! Ð”Ð¾ ÑÐºÐ¾Ñ€Ð¾ Ð² ÑÐ»ÐµÐ´Ð²Ð°Ñ‰Ð¸Ñ ÐµÐ¿Ð¸Ð·Ð¾Ð´!'; 
-      case 'croata': 
-        return 'Pa, Å¡to misliÅ¡? Ako ti se svidjela priÄa, stavi like i pretplati se na kanal! Vidimo se u sljedeÄ‡oj epizodi!'; 
-      case 'turco': 
-        return 'Peki, ne dÃ¼ÅŸÃ¼nÃ¼yorsun? Hikayeyi beÄŸendiysen, beÄŸen ve kanala abone ol! Bir sonraki bÃ¶lÃ¼mde gÃ¶rÃ¼ÅŸÃ¼rÃ¼z!'; 
-      case 'romeno': 
-        return 'Ei bine, ce pÄƒrere ai? DacÄƒ È›i-a plÄƒcut povestea, dÄƒ like È™i aboneazÄƒ-te la canal! Ne vedem Ã®n urmÄƒtorul episod!'; 
-      default: 
-        return 'So, what did you think? If you enjoyed the story, hit that like button and subscribe to the channel! See you in the next episode!'; 
-    } 
-  }
-
-  // ===================== GeraÃ§Ã£o de Gancho =====================
-  Future<String> _generateHook(String storyContent, ScriptConfig config) async {
-    final localizationGuidance = _buildLocalizationGuidance(config);
-    final hookPrompt = '''
-Com base no seguinte conteÃºdo da histÃ³ria, crie uma introduÃ§Ã£o de EXATAMENTE 4 linhas que captura os elementos mais intrigantes da narrativa DE MODO QUE O OUVINTE FIQUE BASTANTE CURIOSO EM CONTINUAR ESCUTANDO.
-
-A introduÃ§Ã£o deve:
-- Capturar os elementos mais dramÃ¡ticos e intrigantes
-- Criar suspense e curiosidade
-- Terminar com uma pergunta direta ao ouvinte
-- Criar um gancho psicolÃ³gico que desperta curiosidade e envolve emocionalmente
-- USAR LINGUAGEM SIMPLES PARA TODAS AS IDADES (60+ anos): Use palavras que seus AVÓS entendem facilmente. Evite palavras difÃ­ceis, termos rebuscados ou vocabulÃ¡rio erudito. Teste mental: "Minha avó de 70 anos entenderia isso?"
-$localizationGuidance
-
-CONTEÃšDO DA HISTÃ“RIA:
-${storyContent.length > 500 ? '${storyContent.substring(0, 500)}...' : storyContent}
-
-ðŸ”¤ REGRAS DE CAPITALIZAÃ‡ÃƒO:
-- MaiÃºsculas APENAS em: nomes prÃ³prios, inÃ­cio de frases
-- NUNCA capitalize substantivos comuns: marido, filho, avÃ³, pai, mÃ£e
-- NUNCA capitalize: apenas, nÃ³s, ele, ela
-- Conjugue corretamente: "eu vi" (NÃƒO "eu viu")
-
-IMPORTANTE: 
-- Responda APENAS as 4 linhas do gancho
-- Termine com uma pergunta direcionada ao ouvinte
-- Use linguagem envolvente, curiosa E MUITO SIMPLES (conversa familiar)
-${config.tema == 'Livre (Sem Tema)' ? '- Desenvolva o tom natural baseado APENAS no título e contexto fornecidos' : '- Mantenha o tom alinhado com: ${config.tema} - ${config.subtema}'}
-- SEMPRE use palavras que pessoas de 60-80 anos entendem facilmente
-''';
-
-    try {
-      final response = await generateTextWithApiKey(
-        prompt: hookPrompt,
-        apiKey: config.apiKey,
-        model: config.model,
-      );
-      return response.trim();
-    } catch (e) {
-      debugPrint('Erro ao gerar gancho: $e');
-      return 'Uma história que vai mudar tudo o que você pensa sobre ${config.tema.toLowerCase()}. Segredos serão revelados, verdades ocultas virão à tona. Você está preparado para descobrir o que realmente aconteceu? Fique comigo até o final desta narrativa.';
-    }
-  }
-  
   String _getLanguageInstruction(String l) {
     final normalized = l.toLowerCase().trim();
     
@@ -1723,6 +1756,125 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
     return buffer.join('\n\n');
   }
 
+  /// 🔍 Detecta parágrafos duplicados no roteiro final (apenas para LOG)
+  /// NÃO remove nada, apenas alerta no console para debugging
+  void _detectDuplicateParagraphsInFinalScript(String fullScript) {
+    final paragraphs = fullScript
+        .split(RegExp(r'\n{2,}'))
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .toList();
+    
+    final seen = <String, int>{};
+    var duplicateCount = 0;
+    
+    for (var i = 0; i < paragraphs.length; i++) {
+      final paragraph = paragraphs[i];
+      
+      if (seen.containsKey(paragraph)) {
+        duplicateCount++;
+        final firstIndex = seen[paragraph]!;
+        final preview = paragraph.length > 80 
+            ? '${paragraph.substring(0, 80)}...' 
+            : paragraph;
+        
+        debugPrint('⚠️ DUPLICAÇÃO DETECTADA:');
+        debugPrint('   📍 Parágrafo #${firstIndex + 1} repetido no parágrafo #${i + 1}');
+        debugPrint('   📝 Prévia: "$preview"');
+      } else {
+        seen[paragraph] = i;
+      }
+    }
+    
+    if (duplicateCount > 0) {
+      debugPrint('🚨 TOTAL: $duplicateCount parágrafo(s) duplicado(s) encontrado(s) no roteiro final!');
+      debugPrint('   💡 DICA: Fortaleça as instruções anti-repetição no prompt');
+    } else {
+      debugPrint('✅ VERIFICAÇÃO: Nenhuma duplicação de parágrafo detectada no roteiro final');
+    }
+  }
+
+  /// 🚨 VALIDAÇÃO CRÍTICA: Detecta reutilização de nomes de personagens
+  /// Cada personagem deve ter apenas 1 nome único
+  void _validateProtagonistName(String generatedText, ScriptConfig config, int blockNumber) {
+    final protagonistName = config.protagonistName.trim();
+    if (protagonistName.isEmpty) return;
+    
+    // 🔥 PARTE 1: Validar protagonista específica
+    final suspiciousNames = ['Wanessa', 'Carla', 'Beatriz', 'Fernanda', 'Juliana', 
+                             'Mariana', 'Patrícia', 'Roberta', 'Silvia', 'Tatiana',
+                             'Carlos', 'Eduardo', 'Fernando', 'Gustavo', 'Henrique',
+                             'Leonardo', 'Marcelo', 'Rafael', 'Rodrigo', 'Thiago'];
+    
+    final hasProtagonist = generatedText.contains(protagonistName);
+    
+    for (final suspiciousName in suspiciousNames) {
+      if (suspiciousName.toLowerCase() == protagonistName.toLowerCase()) continue;
+      
+      if (generatedText.contains(suspiciousName)) {
+        debugPrint('🚨 ERRO CRÍTICO DETECTADO NO BLOCO $blockNumber:');
+        debugPrint('   ❌ Protagonista deveria ser: "$protagonistName"');
+        debugPrint('   ❌ Mas encontrei nome suspeito: "$suspiciousName"');
+        debugPrint('   ⚠️ POSSÍVEL TROCA DE NOME DA PROTAGONISTA!');
+        break;
+      }
+    }
+    
+    if (!hasProtagonist && blockNumber <= 2) {
+      debugPrint('⚠️ AVISO: Protagonista "$protagonistName" não apareceu no bloco $blockNumber');
+    }
+  }
+  
+  /// � NOVA VALIDAÇÃO: Detecta quando um nome é reutilizado para outro personagem
+  /// Exemplo: "Marta" sendo usada para irmã da protagonista E irmã da antagonista
+  void _validateNameReuse(String generatedText, _CharacterTracker tracker, int blockNumber) {
+    // Extrair todos os nomes do texto gerado
+    final namePattern = RegExp(r'\b([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]{2,})\b');
+    final foundNames = <String>{};
+    
+    for (final match in namePattern.allMatches(generatedText)) {
+      final name = match.group(1)?.trim();
+      if (name != null && _looksLikePersonName(name)) {
+        foundNames.add(name);
+      }
+    }
+    
+    // Verificar se algum nome encontrado JÁ existe no tracker com papel diferente
+    for (final name in foundNames) {
+      if (tracker.hasName(name)) {
+        final existingRole = tracker.getRole(name);
+        
+        // Verificar se o nome aparece em contexto diferente no texto atual
+        // Exemplo: "Marta, irmã de Daniela" quando já existe "Marta, irmã de Angela"
+        final contexts = [
+          'irmã de', 'irmão de', 'filho de', 'filha de', 'pai de', 'mãe de',
+          'esposa de', 'esposo de', 'marido de', 'neto de', 'neta de',
+          'tio de', 'tia de', 'primo de', 'prima de', 'avô de', 'avó de'
+        ];
+        
+        for (final context in contexts) {
+          final pattern = RegExp('$name,?\\s+$context\\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)', caseSensitive: false);
+          final match = pattern.firstMatch(generatedText);
+          
+          if (match != null) {
+            final relatedPerson = match.group(1);
+            
+            // Se o papel existente não menciona essa pessoa, é reutilização!
+            if (existingRole != null && relatedPerson != null && !existingRole.contains(relatedPerson)) {
+              debugPrint('🚨🚨🚨 ERRO CRÍTICO DE REUTILIZAÇÃO DE NOME - BLOCO $blockNumber 🚨🚨🚨');
+              debugPrint('   ❌ Nome "$name" está sendo REUTILIZADO!');
+              debugPrint('   📋 Uso anterior: "$name" = $existingRole');
+              debugPrint('   ⚠️ Novo uso detectado: "$name, $context $relatedPerson"');
+              debugPrint('   💡 SOLUÇÃO: Cada personagem precisa de nome ÚNICO!');
+              debugPrint('   💡 Sugestão: Trocar segundo "$name" por outro nome diferente');
+              debugPrint('🚨🚨🚨 FIM DO ALERTA DE REUTILIZAÇÃO 🚨🚨🚨');
+            }
+          }
+        }
+      }
+    }
+  }
+
   bool _looksLikePersonName(String value) {
     final cleaned = value.trim();
     if (cleaned.isEmpty) return false;
@@ -1884,6 +2036,71 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     return result;
   }
 
+  // 🌍 MULTIPLICADORES DE VERBOSIDADE POR IDIOMA
+  // Baseado em análise de quantas palavras cada idioma precisa para expressar a mesma ideia
+  // Português = 1.0 (baseline) funciona perfeitamente
+  double _getLanguageVerbosityMultiplier(String language) {
+    final normalized = language.toLowerCase().trim();
+    
+    // 🇲🇽 ESPANHOL: Tende a ser ~15-20% mais verboso que português
+    if (normalized.contains('espanhol') || normalized.contains('spanish') || normalized.contains('español') || normalized == 'es' || normalized == 'es-mx') {
+      return 0.85; // Pedir 15% menos para compensar
+    }
+    
+    // 🇬🇧 INGLÊS: Tende a ser ~35% mais verboso que português (ajustado após testes reais)
+    if (normalized.contains('inglês') || normalized.contains('ingles') || normalized.contains('english') || normalized == 'en' || normalized == 'en-us') {
+      return 0.73; // Pedir 27% menos para compensar a verbosidade excessiva
+    }
+    
+    // 🇫🇷 FRANCÊS: Tende a ser ~10-15% mais verboso que português
+    if (normalized.contains('franc') || normalized.contains('french') || normalized == 'fr') {
+      return 0.90; // Pedir 10% menos para compensar
+    }
+    
+    // 🇮🇹 ITALIANO: Tende a ser ~10% mais verboso que português
+    if (normalized.contains('italia') || normalized.contains('italian') || normalized == 'it') {
+      return 0.92; // Pedir 8% menos para compensar
+    }
+    
+    // 🇩🇪 ALEMÃO: Similar ao português (palavras compostas compensam artigos)
+    if (normalized.contains('alem') || normalized.contains('german') || normalized == 'de') {
+      return 1.0; // Sem ajuste
+    }
+    
+    // 🇷🇺 RUSSO: Muito conciso (sem artigos, casos gramaticais)
+    if (normalized.contains('russo') || normalized.contains('russian') || normalized == 'ru') {
+      return 1.15; // Pedir 15% mais para compensar
+    }
+    
+    // 🇵🇱 POLONÊS: Ligeiramente mais conciso que português
+    if (normalized.contains('polon') || normalized.contains('polish') || normalized == 'pl') {
+      return 1.05; // Pedir 5% mais para compensar
+    }
+    
+    // 🇹🇷 TURCO: Muito conciso (aglutinação de palavras)
+    if (normalized.contains('turco') || normalized.contains('turk') || normalized == 'tr') {
+      return 1.20; // Pedir 20% mais para compensar
+    }
+    
+    // 🇧🇬 BÚLGARO: Similar ao russo, conciso
+    if (normalized.contains('búlgar') || normalized.contains('bulgar') || normalized == 'bg') {
+      return 1.12; // Pedir 12% mais para compensar
+    }
+    
+    // 🇭🇷 CROATA: Ligeiramente mais conciso
+    if (normalized.contains('croat') || normalized.contains('hrvat') || normalized == 'hr') {
+      return 1.08; // Pedir 8% mais para compensar
+    }
+    
+    // 🇷🇴 ROMENO: Similar ao português (língua latina)
+    if (normalized.contains('romen') || normalized.contains('roman') || normalized == 'ro') {
+      return 1.0; // Sem ajuste
+    }
+    
+    // 🇧🇷 PORTUGUÊS ou OUTROS: Baseline perfeito
+    return 1.0;
+  }
+
   Future<String> _generateBlockContent(
     String previous, 
     int target, 
@@ -1932,6 +2149,14 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         }
       }
     }
+    
+    // 🚨 CORREÇÃO CRÍTICA: SEMPRE injetar nome da protagonista, mesmo que não esteja no tracker
+    final protagonistName = c.protagonistName.trim();
+    if (protagonistName.isNotEmpty && !trackerInfo.contains(protagonistName)) {
+      trackerInfo += '\n🔥 ATENÇÃO ABSOLUTA: O NOME DA PROTAGONISTA É "$protagonistName"!\n';
+      trackerInfo += '   ❌ NUNCA mude para outro nome (Wanessa, Carla, etc)\n';
+      trackerInfo += '   ✅ SEMPRE use "$protagonistName" quando se referir à protagonista!\n';
+    }
     final characterGuidance = _buildCharacterGuidance(c, tracker);
     
     // 🔧 IMPORTANTE: Limitar palavras por bloco para estabilidade
@@ -1942,7 +2167,20 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
   // 📊 SEMPRE pedir palavras no prompt (Gemini trabalha melhor assim)
   // O sistema converterá caracteres→palavras antes de chegar aqui (_calculateTargetForBlock)
   // E validará caracteres no resultado final
-  final measure = 'GERE EXATAMENTE $limitedNeeded palavras';
+  
+  // 🔥 AJUSTE POR IDIOMA: Compensar verbosidade natural de cada idioma
+  // Português (baseline 1.0) funciona perfeitamente, outros ajustam proporcionalmente
+  final languageMultiplier = _getLanguageVerbosityMultiplier(c.language);
+  final adjustedTarget = (limitedNeeded * languageMultiplier).round();
+  
+  // Detectar se é espanhol para mensagem específica
+  final isSpanish = c.language.toLowerCase().contains('espanhol') || 
+                    c.language.toLowerCase().contains('spanish') || 
+                    c.language.toLowerCase().contains('español');
+  
+  final measure = isSpanish 
+      ? 'GERE EXATAMENTE $adjustedTarget palabras (NO MÁXIMO $limitedNeeded - SE ULTRAPASSAR SERÁ REJEITADO!)'
+      : 'GERE EXATAMENTE $adjustedTarget palavras';
   final localizationGuidance = _buildLocalizationGuidance(c);
     
     // 🔍 DEBUG: Verificar se modo GLOBAL está sendo passado corretamente
@@ -2008,6 +2246,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
     '\n'
     '⚠️ OBRIGATÓRIO: $measure - ESTE É UM REQUISITO ABSOLUTO!\n'
+    '${isSpanish ? '🚨 ESPAÑOL - CONTROL ESTRICTO DE EXTENSIÓN:\n   • Tu bloque NO PUEDE superar las $limitedNeeded palabras\n   • Si generas más de $limitedNeeded palabras, el bloque será RECHAZADO\n   • Cuenta mentalmente mientras escribes y PARA cuando llegues al límite\n   • Es MEJOR terminar con ${adjustedTarget} palabras que pasarte del límite\n\n' : ''}'
         'FORMATO: ROTEIRO PARA NARRAÇÃO DE VÍDEO - apenas texto corrido para ser lido em voz alta.\n'
         'PROIBIDO: Emojis, símbolos, formatação markdown (incluindo backticks `), títulos, bullets, calls-to-action, hashtags, elementos visuais.\n'
         'OBRIGATÓRIO: Texto limpo, narrativo, fluido, pronto para narração direta. NUNCA use backticks (`) ou qualquer marcação ao redor de palavras.\n'
@@ -2074,6 +2313,16 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     '\n'
     '🔍 ANTES DE CRIAR UM NOVO NOME: Releia o contexto acima e verifique se esse\n'
     '   personagem já foi mencionado com outro nome. Se sim, USE O NOME ORIGINAL!\n'
+    '\n'
+    '🚨 ATENÇÃO CRÍTICA - MEMBROS DA MESMA FAMÍLIA:\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '⚠️ NUNCA, EM HIPÓTESE ALGUMA, use o MESMO NOME para dois membros da família!\n'
+    '\n'
+    '❌ PROIBIDO: \"Mônica\" (protagonista) + \"minha irmã, Mônica\" = IMPOSSÍVEL!\n'
+    '❌ PROIBIDO: \"Carlos\" (pai) + \"meu filho Carlos\" = CONFUSO E ABSURDO!\n'
+    '❌ PROIBIDO: \"Helena\" (mãe) + \"minha sogra Helena\" = NÃO PODE!\n'
+    '\n'
+    '✅ REGRA: CADA personagem da família precisa de um nome ÚNICO e DIFERENTE!\n'
     '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
     '🚨 NOMES DE PERSONAGENS - REGRA CRÍTICA E OBRIGATÓRIA:\n'
     '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
@@ -2118,6 +2367,22 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     '   ❌ ERRADO: \"Ricardo, o advogado\" (bloco 3) e depois \"Ricardo, o namorado\" (bloco 17)\n'
     '   ✅ CORRETO: \"Ricardo, o advogado\" (bloco 3) e depois \"Fernando, o namorado\" (bloco 17)\n'
     '\n'
+    '🚨 REGRA ESPECIAL - PERSONAGENS DA MESMA FAMÍLIA:\n'
+    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '⚠️ ATENÇÃO MÁXIMA: Membros da mesma família NUNCA podem ter o mesmo nome!\n'
+    '\n'
+    '❌ ERRADO: \"Mônica\" (protagonista) + \"minha irmã, Mônica\" = IMPOSSÍVEL!\n'
+    '   → Se a narradora é Mônica, a irmã deve ser \"Sílvia\", \"Clara\" ou \"Maria\"\n'
+    '\n'
+    '❌ ERRADO: \"Carlos\" (pai) + \"meu filho Carlos\" = CONFUSO!\n'
+    '   → Se o pai é Carlos, o filho deve ser \"André\", \"Pedro\" ou \"Lucas\"\n'
+    '\n'
+    '❌ ERRADO: \"Helena\" (avó) + \"minha neta Helena\" = NÃO FAZ SENTIDO!\n'
+    '   → Se a avó é Helena, a neta deve ser \"Sofia\", \"Laura\" ou \"Julia\"\n'
+    '\n'
+    '✅ REGRA: Em uma mesma história, CADA PERSONAGEM precisa de um nome ÚNICO!\n'
+    '   Isso vale ESPECIALMENTE para familiares: pais, filhos, irmãos, tios, avós.\n'
+    '\n'
     '🚨 ERROS GRAVÍSSIMOS DE DUPLICAÇÃO QUE VOCÊ JÁ COMETEU:\n'
     '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
     '❌ "Ricardo" usado para DOIS personagens: cobrador + gangster = PROIBIDO!\n'
@@ -2153,8 +2418,14 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     '\n'
     '🚨 ERRO CRÍTICO DETECTADO - REPETIÇÃO LITERAL DE PARÁGRAFOS:\n'
     '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    '🔥 ATENÇÃO MÁXIMA: Antes de escrever QUALQUER parágrafo, verifique:\n'
+    '   "Eu JÁ escrevi algo parecido ou igual no contexto anterior?"\n'
+    '   Se a resposta for SIM → MUDE COMPLETAMENTE as palavras e estrutura!\n'
+    '\n'
     '❌ NUNCA copie parágrafos inteiros do contexto anterior!\n'
     '❌ NUNCA repita frases ou descrições que já foram escritas!\n'
+    '❌ NUNCA use "Os dias/meses/semanas que se seguiram" se já usou antes!\n'
+    '❌ NUNCA repita descrições de emoções ou ações já narradas!\n'
     '\n'
     '📋 EXEMPLOS DE REPETIÇÕES PROIBIDAS:\n'
     '❌ ERRADO: Copiar "Depois que Ian se foi, o quarto ficou mergulhado..."\n'
@@ -2166,6 +2437,17 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     '           "O carrinho era sólido, real..." (se já escreveu isso antes)\n'
     '✅ CORRETO: Avançar a narrativa com NOVOS eventos:\n'
     '           "Guardei o carrinho na gaveta e fui preparar o jantar..."\n'
+    '\n'
+    '❌ ERRADO: Repetir parágrafos de transição temporal:\n'
+    '           "Os meses que se seguiram foram..." → JÁ USADO? NÃO REPITA!\n'
+    '           "Os dias que se seguiram foram..." → JÁ USADO? NÃO REPITA!\n'
+    '           "As semanas que se seguiram..." → JÁ USADO? NÃO REPITA!\n'
+    '           "Pedro mal falava. Ele se movia..." → JÁ USADO? NÃO REPITA!\n'
+    '           QUALQUER parágrafo que você JÁ escreveu antes → NUNCA COPIE!\n'
+    '✅ CORRETO: Use uma nova forma de transição:\n'
+    '           "Aquele inverno foi diferente dos anteriores..."\n'
+    '           "Um ano depois, a rotina tinha mudado completamente..."\n'
+    '           "A primavera trouxe mudanças inesperadas..."\n'
     '\n'
     '⚠️ REGRA ABSOLUTA: Cada bloco deve ter conteúdo 100% NOVO!\n'
     '   • Se já descreveu um objeto → Não descreva novamente\n'
@@ -2340,14 +2622,43 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       final maxTokensLimit = 50000; // Aumentado de 32.768 para 50.000 tokens
       final finalMaxTokens = maxTokensCalculated > maxTokensLimit ? maxTokensLimit : maxTokensCalculated;
       
+      // 🤖 SELEÇÃO DE MODELO BASEADA EM qualityMode
+      final selectedModel = c.qualityMode == 'flash' ? 'gemini-2.5-flash' : 'gemini-2.5-pro';
+      
       final data = await _makeApiRequest(
         apiKey: c.apiKey,
-        model: c.model,
+        model: selectedModel,
         prompt: prompt,
         maxTokens: finalMaxTokens,
       );
   final text = data ?? '';
   final filtered = text.isNotEmpty ? _filterDuplicateParagraphs(previous, text) : '';
+  
+  // 🔥 VALIDAÇÃO DE TAMANHO: Rejeitar blocos que ultrapassem muito o limite
+  // Aplicável a TODOS os idiomas, não só espanhol
+  if (filtered.isNotEmpty && languageMultiplier != 1.0) {
+    final wordCount = _countWords(filtered);
+    final overage = wordCount - limitedNeeded;
+    final overagePercent = (overage / limitedNeeded) * 100;
+    
+    // Rejeitar se ultrapassar mais de 10% do limite
+    if (overagePercent > 10) {
+      if (kDebugMode) {
+        debugPrint('❌ BLOCO $blockNumber REJEITADO (${c.language.toUpperCase()}):');
+        debugPrint('   Multiplicador do idioma: ${languageMultiplier}x');
+        debugPrint('   Pedido: $adjustedTarget palavras (limite máximo: $limitedNeeded)');
+        debugPrint('   Recebido: $wordCount palavras (+${overagePercent.toStringAsFixed(1)}%)');
+        debugPrint('   🔄 Retornando vazio para forçar regeneração...');
+      }
+      return ''; // Forçar regeneração
+    }
+    
+    if (kDebugMode && overage > 0) {
+      debugPrint('✅ BLOCO $blockNumber ACEITO (${c.language.toUpperCase()}):');
+      debugPrint('   Multiplicador: ${languageMultiplier}x | Pedido: $adjustedTarget palavras');
+      debugPrint('   Recebido: $wordCount palavras (+${overagePercent.toStringAsFixed(1)}%)');
+    }
+  }
   
   // 🔥 LOGGING: Detectar quando bloco retorna vazio
   if (filtered.isEmpty) {
@@ -2455,9 +2766,12 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         'Continue escrevendo sem usar títulos, marcadores ou palavras como "CONTINUAÇÃO". Apenas prossiga com a história de forma natural usando frases curtas e palavras simples.';
     
     try {
+      // 🤖 SELEÇÃO DE MODELO BASEADA EM qualityMode
+      final selectedModel = c.qualityMode == 'flash' ? 'gemini-2.5-flash' : 'gemini-2.5-pro';
+      
       final data = await _makeApiRequest(
         apiKey: c.apiKey,
-        model: c.model,
+        model: selectedModel,
         prompt: prompt,
         maxTokens: max(8192, (targetAdd * 3.0).ceil()), // Gemini 2.5 Pro: Mínimo 8192, ou 3x o target
       );
@@ -2764,22 +3078,29 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     required List<String> ctaTypes,
     String? customTheme,
     String language = 'Português',
+    String perspective = 'terceira_pessoa', // PERSPECTIVA CONFIGURADA PELO USUÁRIO
   }) async {
     try {
-      // Detectar idioma do roteiro
-      final detectedLanguage = await _detectScriptLanguage(scriptContent, apiKey);
-      final finalLanguage = detectedLanguage.isNotEmpty ? detectedLanguage : 'Português';
+      // Usar idioma e perspectiva configurados pelo usuário (não detectar)
+      final finalLanguage = language;
       
       // Analisar contexto da história
       final scriptContext = await _analyzeScriptContext(scriptContent, apiKey, finalLanguage);
       
-      // Gerar CTAs contextualizados
-      final prompt = _buildAdvancedCtaPrompt(scriptContent, ctaTypes, customTheme, finalLanguage, scriptContext);
+      // Gerar CTAs contextualizados COM A PERSPECTIVA CONFIGURADA
+      final prompt = _buildAdvancedCtaPrompt(
+        scriptContent, 
+        ctaTypes, 
+        customTheme, 
+        finalLanguage, 
+        scriptContext,
+        perspective, // USAR PERSPECTIVA DO CONFIG
+      );
       
       final result = await generateTextWithApiKey(
         prompt: prompt,
         apiKey: apiKey,
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash-lite', // Flash-lite é mais rápido e OBEDECE melhor a instruções de perspectiva
         maxTokens: 3072,
       );
       
@@ -2807,7 +3128,7 @@ ${scriptContent.substring(0, scriptContent.length > 500 ? 500 : scriptContent.le
       final result = await generateTextWithApiKey(
         prompt: prompt,
         apiKey: apiKey,
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash-lite', // Ultra rápido para detecção simples
         maxTokens: 50,
       );
       return result.trim();
@@ -2833,7 +3154,7 @@ ${scriptContent.substring(0, scriptContent.length > 1000 ? 1000 : scriptContent.
       final result = await generateTextWithApiKey(
         prompt: prompt,
         apiKey: apiKey,
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-2.5-flash-lite', // Ultra rápido para análise simples
         maxTokens: 100,
       );
       return result.trim();
@@ -2842,43 +3163,144 @@ ${scriptContent.substring(0, scriptContent.length > 1000 ? 1000 : scriptContent.
     }
   }
 
-  String _buildAdvancedCtaPrompt(String scriptContent, List<String> ctaTypes, 
-                                 String? customTheme, String language, String scriptContext) {
+  String _buildAdvancedCtaPrompt(
+    String scriptContent, 
+    List<String> ctaTypes, 
+    String? customTheme, 
+    String language, 
+    String scriptContext,
+    String perspective, // PERSPECTIVA CONFIGURADA PELO USUÁRIO
+  ) {
     final ctaDescriptions = _getCtaTypeDescriptions(language);
     final requestedTypes = ctaTypes.map((type) => 
         '"$type": ${ctaDescriptions[type] ?? "Call-to-action personalizado"}').join('\n');
 
-    // Detectar perspectiva narrativa do roteiro
-    final isPrimeirapessoa = scriptContent.contains(RegExp(r'\b(eu|me|meu|minha|comigo)\b', caseSensitive: false));
-    final perspectiveInstruction = isPrimeirapessoa 
+    // ⚡ USAR PERSPECTIVA CONFIGURADA PELO USUÁRIO (não detectar)
+    final isPrimeiraPessoa = perspective.contains('primeira_pessoa');
+    
+    if (kDebugMode) {
+      debugPrint('🎯 Perspectiva Configurada pelo Usuário: $perspective');
+      debugPrint('   → ${isPrimeiraPessoa ? "PRIMEIRA PESSOA" : "TERCEIRA PESSOA"}');
+    }
+    
+    final perspectiveInstruction = isPrimeiraPessoa 
         ? '''
-PERSPECTIVA NARRATIVA: PRIMEIRA PESSOA
-- O narrador é um personagem da história que conta em primeira pessoa
-- CTAs devem manter essa perspectiva: use "EU", "MINHA história", "MEU relato"
-- Exemplo CORRETO: "Se minha história te tocou, inscreva-se para não perder os próximos capítulos"
-- Exemplo CORRETO: "O que você achou da minha decisão? Deixe seu comentário"
-- Exemplo ERRADO: "O que você achou do personagem?" (quebra a perspectiva narrativa)
+╔════════════════════════════════════════════════════════════════╗
+║ ⚠️ OBRIGATÓRIO: PRIMEIRA PESSOA - NARRADOR = PROTAGONISTA     ║
+╚════════════════════════════════════════════════════════════════╝
+
+O NARRADOR É O PROTAGONISTA CONTANDO SUA PRÓPRIA HISTÓRIA.
+
+🚨 REGRA ABSOLUTA: CTAs devem falar como se o PERSONAGEM estivesse pedindo apoio.
+
+✅ CAPITALIZAÇÃO CORRETA:
+- "eu", "meu/minha" (MINÚSCULAS no meio da frase!)
+- "Eu" (Maiúscula APENAS no início da frase)
+- ❌ ERRADO: "EU pensei", "MEU filho", "MINHA casa"
+- ✅ CERTO: "Eu pensei", "meu filho", "minha casa"
+
+✅ PALAVRAS OBRIGATÓRIAS:
+- "eu", "meu/minha", "minha história", "meu relato", "comigo", "me"
+
+✅ EXEMPLOS CORRETOS (Primeira Pessoa):
+• "Se minha jornada te emocionou, inscreva-se e deixe seu like para seguir meu caminho"
+• "O que você faria no meu lugar? Deixe sua opinião nos comentários"
+• "Minha história está só começando. Ative o sininho para não perder nada"
+• "Eu preciso da sua ajuda para continuar. Compartilhe meu relato"
+
+❌ PROIBIDO (quebra a perspectiva):
+• Falar sobre "o protagonista", "ele/ela", "a história dele/dela"
+• Usar "esta história" → Use "minha história"
+• Usar nomes próprios em 3ª pessoa → Use "eu/meu"
+• Capitalizar tudo: "EU/MEU/MINHA" → Use "eu/meu/minha"
 ''' 
         : '''
-PERSPECTIVA NARRATIVA: TERCEIRA PESSOA
-- O narrador é observador externo que conta a história
-- CTAs podem usar referência aos personagens de forma externa
-- Exemplo: "O que você achou da atitude do Alexandre?"
+╔════════════════════════════════════════════════════════════════╗
+║ ⚠️ OBRIGATÓRIO: TERCEIRA PESSOA - NARRADOR EXTERNO ENVOLVENTE ║
+╚════════════════════════════════════════════════════════════════╝
+
+O NARRADOR É UM OBSERVADOR EXTERNO contando a história de outras pessoas.
+
+🚨 REGRA ABSOLUTA: CTAs devem falar dos PERSONAGENS de forma externa, MAS mantendo a INTENSIDADE EMOCIONAL do roteiro!
+
+✅ CAPITALIZAÇÃO CORRETA:
+- "esta/esse/essa" (minúsculas no meio da frase!)
+- "Esta/Este/Essa" (Maiúscula APENAS no início da frase)
+- Nomes próprios sempre com inicial maiúscula: "Kátia", "William"
+
+✅ PALAVRAS OBRIGATÓRIAS:
+- Nomes dos personagens (Kátia, William, etc.)
+- "ela/dele", "esta história"
+- Tom DRAMÁTICO, não jornalístico!
+
+✅ EXEMPLOS CORRETOS (Terceira Pessoa ENVOLVENTE):
+• "Kátia descobriu que seu próprio filho transformou sua casa em uma arma. Se esta traição te chocou, inscreva-se e deixe seu like"
+• "William escondeu segredos nas paredes por anos. O que você faria no lugar de Kátia? Comente o que está achando"
+• "A história de Kátia chegou ao fim com um desfecho poderoso. O que você achou? Inscreva-se para mais histórias como esta"
+• "Esta família foi destroçada pela vingança. Compartilhe com quem entende dor de verdade"
+
+❌ EXEMPLOS RUINS (muito formais/distantes):
+• "A jornada de [personagem] revelou..." → Parece documentário chato
+• "Narrativas que exploram..." → Parece crítica literária
+• "Compartilhe esta história com quem aprecia..." → Muito genérico
+
+❌ PROIBIDO (quebra a perspectiva):
+• Usar "eu", "meu/minha", "comigo" → Isso é primeira pessoa!
+• "Se minha história te tocou" → Use "Se a história de [personagem] te tocou"
+• "O que você faria no meu lugar?" → Use "no lugar de [personagem]"
+
+🔥 REGRA DE OURO: Use DETALHES ESPECÍFICOS DO ROTEIRO nos CTAs!
+- Não diga "segredo chocante" → Diga "dispositivo de metal corrosivo nas paredes"
+- Não diga "decisão difícil" → Diga "expulsar o próprio filho de casa"
+- Não diga "jornada emocional" → Diga "descobrir que seu filho é um vingador"
 ''';
 
     return '''
+⚠️⚠️⚠️ ATENÇÃO CRÍTICA: PERSPECTIVA NARRATIVA É A REGRA #1 ⚠️⚠️⚠️
+
+$perspectiveInstruction
+
+═══════════════════════════════════════════════════════════════
+
 Gere CTAs (calls-to-action) personalizados em $language para este roteiro.
 
 CONTEXTO DO ROTEIRO: $scriptContext
 TEMA PERSONALIZADO: ${customTheme ?? 'Não especificado'}
 
-$perspectiveInstruction
-
 ROTEIRO (trecho inicial):
 ${scriptContent.substring(0, scriptContent.length > 2000 ? 2000 : scriptContent.length)}
 
+═══════════════════════════════════════════════════════════════
+🎯 PROPÓSITO ESPECÍFICO DE CADA TIPO DE CTA:
+═══════════════════════════════════════════════════════════════
+
+📌 "subscription" (CTA DE INÍCIO):
+   • Objetivo: Pedir INSCRIÇÃO no canal + LIKE
+   • Momento: Logo no INÍCIO da história, após o gancho inicial
+   • Estrutura: [Gancho emocional do início] + "Inscreva-se e deixe seu like"
+   • Exemplo (1ª pessoa): "Eu descobri algo nas paredes que mudou tudo. Se minha angústia te tocou, inscreva-se e deixe seu like para acompanhar."
+   • Exemplo (3ª pessoa): "Kátia descobriu algo nas paredes que mudou tudo. Inscreva-se e deixe seu like para não perder essa história."
+
+📌 "engagement" (CTA DE MEIO):
+   • Objetivo: Pedir COMENTÁRIOS sobre o que estão achando + COMPARTILHAMENTOS
+   • Momento: No MEIO da história, após uma reviravolta importante
+   • Estrutura: Pergunta direta sobre opinião + "comente o que está achando" + "compartilhe"
+   • Exemplo (1ª pessoa): "O que você faria no meu lugar? Comente o que está achando dessa situação e compartilhe com quem entenderia."
+   • Exemplo (3ª pessoa): "O que você acha da decisão de Kátia? Comente o que está achando e compartilhe com amigos."
+
+📌 "final" (CTA DE CONCLUSÃO):
+   • Objetivo: CTA CONCLUSIVO - história acabou, pedir FEEDBACK + INSCRIÇÃO para mais histórias
+   • Momento: No FINAL da história, após a resolução
+   • Estrutura: [Resumo do desfecho] + "O que você achou?" + "Inscreva-se para mais histórias como esta"
+   • Exemplo (1ª pessoa): "Minha jornada finalmente chegou ao fim. O que você achou do meu desfecho? Inscreva-se para acompanhar mais histórias emocionantes como esta."
+   • Exemplo (3ª pessoa): "A história de Kátia chegou ao fim. O que você achou desse desfecho? Inscreva-se para mais histórias impactantes como esta."
+
+═══════════════════════════════════════════════════════════════
+
 GERE OS SEGUINTES TIPOS DE CTA:
 $requestedTypes
+
+═══════════════════════════════════════════════════════════════
 
 FORMATO DE RESPOSTA (JSON):
 {
@@ -2888,32 +3310,48 @@ FORMATO DE RESPOSTA (JSON):
   "final": "texto do CTA aqui"
 }
 
+═══════════════════════════════════════════════════════════════
+
 REQUISITOS OBRIGATÓRIOS:
-- Cada CTA deve ter 20-40 palavras
-- Linguagem natural e persuasiva
-- Adequado ao contexto do roteiro
-- Em $language nativo
-- ⚠️ MANTENHA A MESMA PERSPECTIVA NARRATIVA DO ROTEIRO (primeira ou terceira pessoa)
-- Se o roteiro usa "EU", o CTA deve usar "MINHA história", "MEU relato"
-- ⚠️ MANTENHA O MESMO TOM EMOCIONAL DO ROTEIRO:
-  * Se o roteiro é elegante/estratégico, CTAs devem ser sofisticados, NÃO sensacionalistas
-  * Se o roteiro é dramático/intenso, CTAs podem ser mais emocionais
-  * Se o roteiro é humorístico/leve, CTAs devem ser descontraídos
-  * EVITE tom de clickbait sensacionalista ("explosivo", "chocante") se o roteiro é sutil
-  * EVITE fazer CTAs parecerem mais agressivos/vingativos do que o roteiro realmente é
-- ⚠️ CTAs devem REFLETIR a jornada emocional da história, não distorcê-la
-- ⚠️ PROTAGONISMO vs. VITIMIZAÇÃO:
-  * Se protagonista é FORTE/EMPODERADO, CTAs devem reforçar FORÇA ("minha estratégia", "minha jornada")
-  * EVITE tom vitimista ("minha dor", "meu sofrimento") quando roteiro é de superação
-  * EVITE "choramingar" quando personagem é estratégico/inteligente
-  * Protagonista = ATIVO. Vítima = PASSIVO. Mantenha protagonismo!
-- ⚠️ DESFECHO DO CTA = DESFECHO DA HISTÓRIA:
-  * Se história termina em PAZ/RECONSTRUÇÃO, CTA deve ser INSPIRADOR, não punitivo
-  * Se história termina em VINGANÇA, CTA pode ser mais assertivo
-  * NUNCA use tom de "alerta/punição" quando história termina em reconciliação
-  * CTA Final deve REFLETIR o estado emocional do FIM da história, não do meio
-- Se o roteiro terminou, NÃO prometa eventos futuros que já aconteceram
-- Formato JSON válido apenas
+1. ⚠️ PERSPECTIVA NARRATIVA É PRIORIDADE #1 - RELEIA AS INSTRUÇÕES NO TOPO AGORA!
+2. ⚠️ CAPITALIZAÇÃO CORRETA - "eu/meu/minha" em MINÚSCULAS (não "EU/MEU/MINHA")!
+3. 🎯 CADA CTA TEM UM PROPÓSITO ESPECÍFICO - Releia a seção "PROPÓSITO ESPECÍFICO" acima!
+   • subscription = inscrição + like
+   • engagement = comentários + compartilhamento
+   • final = feedback + inscrição para mais histórias
+4. 🔥 CTAs devem usar DETALHES ESPECÍFICOS do roteiro (objetos, ações, revelações CONCRETAS)
+5. 🚫 PROIBIDO usar palavras genéricas: "jornada", "narrativa", "explorar", "revelar"
+6. ✅ OBRIGATÓRIO mencionar ELEMENTOS CHOCANTES: nomes, objetos, ações específicas
+7. Cada CTA: 25-45 palavras (DIRETO E IMPACTANTE, com espaço para CTAs completos)
+8. Linguagem VISCERAL e DRAMÁTICA em $language (não formal/acadêmica)
+9. Tom emocional IGUAL ao do roteiro (se é intenso, CTA é intenso; se é suave, CTA é suave)
+10. Se protagonista tomou DECISÃO EXTREMA (expulsar filho, confrontar vilão), mencione isso!
+11. NÃO prometa eventos futuros que já aconteceram no roteiro
+12. Retorne JSON válido apenas
+
+⚠️⚠️⚠️ CHECKLIST FINAL - RESPONDA ANTES DE GERAR: ⚠️⚠️⚠️
+□ Reli as instruções de PERSPECTIVA NARRATIVA no topo?
+□ ${isPrimeiraPessoa ? "Vou usar 'eu/meu/minha' em MINÚSCULAS (não EU/MEU/MINHA)?" : "Vou usar nomes próprios/ela/ele/esta história?"}
+□ Cada CTA segue seu PROPÓSITO ESPECÍFICO?
+  • subscription = inscrição + like?
+  • engagement = comentários + compartilhamento?
+  • final = feedback + inscrição para mais histórias?
+□ Mencionei DETALHES ESPECÍFICOS do roteiro (nomes, objetos-chave, ações concretas)?
+□ EVITEI palavras genéricas ("jornada", "narrativa", "revelar", "explorar")?
+□ O tom do CTA está TÃO INTENSO quanto o roteiro?
+□ Formato JSON está correto?
+
+🚨 SE VOCÊ USAR LINGUAGEM GENÉRICA, CAPITALIZAÇÃO ERRADA OU QUEBRAR A PERSPECTIVA, O CTA SERÁ REJEITADO! 🚨
+
+EXEMPLOS DE DETALHES ESPECÍFICOS (use este nível de concretude):
+❌ RUIM: "A protagonista descobriu um segredo"
+✅ BOM: "Kátia encontrou um dispositivo corrosivo escondido nos canos por William"
+
+❌ RUIM: "Uma decisão difícil foi tomada"
+✅ BOM: "Kátia expulsou o próprio filho de casa após descobrir sua vingança"
+
+❌ RUIM: "Se esta história te impactou"
+✅ BOM: "Se a traição de William dentro das paredes te chocou"
 ''';
   }
 
@@ -3035,4 +3473,8 @@ class _CharacterTracker {
     _characterRoles.clear();
   }
 }
+
+
+
+
 

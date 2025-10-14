@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/generation_config.dart';
 import '../../data/models/localization_level.dart';
 
@@ -20,6 +20,11 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
 
   void updateModel(String model) {
     state = state.copyWith(model: model);
+  }
+
+  void updateQualityMode(String mode) {
+    state = state.copyWith(qualityMode: mode);
+    print('🤖 Modelo alterado para: ${mode == "pro" ? "Gemini 2.5-PRO (Melhor Qualidade)" : "Gemini 2.5-FLASH (4x Mais Rápido)"}');
   }
 
   void updateTitle(String title) {
@@ -62,21 +67,13 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
     state = state.copyWith(perspective: perspective);
   }
 
-  void updateIncludeCallToAction(bool include) {
-    state = state.copyWith(includeCallToAction: include);
-  }
-
-  void updateIncludeFinalCta(bool include) {
-    state = state.copyWith(includeFinalCta: include);
-  }
-
   void updatePersonalizedTheme(String theme) {
     state = state.copyWith(personalizedTheme: theme);
   }
 
   void updateUsePersonalizedTheme(bool use) {
     state = state.copyWith(usePersonalizedTheme: use);
-    // Se desabilitou o tema personalizado, limpar o campo
+    // limpar o campo
     if (!use) {
       state = state.copyWith(personalizedTheme: '');
     }
@@ -126,7 +123,7 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
            state.quantity > 0 &&
            // Validar tema: predefinido deve ter tema, personalizado PODE estar vazio (= sem tema)
            ((!state.usePersonalizedTheme && state.tema.isNotEmpty) ||
-            state.usePersonalizedTheme); // ✅ Permite tema personalizado vazio
+            state.usePersonalizedTheme); // âœ… Permite tema personalizado vazio
   }
 
   int get minQuantity {
@@ -141,3 +138,4 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
 final generationConfigProvider = StateNotifierProvider<GenerationConfigNotifier, GenerationConfig>((ref) {
   return GenerationConfigNotifier();
 });
+

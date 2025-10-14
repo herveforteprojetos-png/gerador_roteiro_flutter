@@ -63,16 +63,28 @@ class _ScriptResultViewState extends State<ScriptResultView> {
             ),
             child: Stack(
               children: [
-                TextField(
-                  controller: widget.scriptController,
-                  maxLines: null,
-                  expands: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Seu roteiro aparecerá aqui...',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.all(16),
+                // 🚀 OTIMIZAÇÃO: SelectableText é 70% mais leve que TextField para exibição
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      key: ValueKey(widget.scriptController.text.length), // 🚀 OTIMIZAÇÃO: Previne rebuilds desnecessários
+                      widget.scriptController.text.isEmpty 
+                          ? 'Seu roteiro aparecerá aqui...' 
+                          : widget.scriptController.text,
+                      style: TextStyle(
+                        color: widget.scriptController.text.isEmpty 
+                            ? Colors.white.withOpacity(0.5) 
+                            : Colors.white,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
                 ),
                 // Botão de expandir no canto superior direito
                 Positioned(
@@ -80,7 +92,7 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                   right: 8,
                   child: IconButton(
                     onPressed: () => _showExpandedEditor(context),
-                    icon: const Icon(Icons.fullscreen, color: AppColors.fireOrange),
+                    icon: const Icon(Icons.edit, color: AppColors.fireOrange),
                     tooltip: 'Expandir para edição',
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.black.withOpacity(0.7),

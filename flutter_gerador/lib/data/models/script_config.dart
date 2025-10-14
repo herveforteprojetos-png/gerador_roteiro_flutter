@@ -1,11 +1,11 @@
-import 'localization_level.dart';
+﻿import 'localization_level.dart';
 import 'generation_config.dart';
 
-// Formatos de vídeo disponíveis
+// Formatos de vÃ­deo disponÃ­veis
 enum VideoFormat {
-  standard,        // Sem otimização específica (padrão original)
-  youtubeShort,    // 1-3 min (200-600 palavras) - Ultra dinâmico
-  youtubeMedium,   // 8-15 min (1.500-3.000 palavras) - Dinâmico
+  standard,        // Sem otimizaÃ§Ã£o especÃ­fica (padrÃ£o original)
+  youtubeShort,    // 1-3 min (200-600 palavras) - Ultra dinÃ¢mico
+  youtubeMedium,   // 8-15 min (1.500-3.000 palavras) - DinÃ¢mico
   youtubeLong,     // 20-30 min (4.000-6.000 palavras) - Equilibrado
 }
 
@@ -13,11 +13,11 @@ extension VideoFormatExtension on VideoFormat {
   String get displayName {
     switch (this) {
       case VideoFormat.standard:
-        return 'Padrão';
+        return 'PadrÃ£o';
       case VideoFormat.youtubeShort:
         return 'YouTube Short (1-3 min)';
       case VideoFormat.youtubeMedium:
-        return 'YouTube Médio (8-15 min)';
+        return 'YouTube MÃ©dio (8-15 min)';
       case VideoFormat.youtubeLong:
         return 'YouTube Longo (20-30 min)';
     }
@@ -27,7 +27,7 @@ extension VideoFormatExtension on VideoFormat {
   int get recommendedWordCount {
     switch (this) {
       case VideoFormat.standard:
-        return 0; // Usa quantity do usuário
+        return 0; // Usa quantity do usuÃ¡rio
       case VideoFormat.youtubeShort:
         return 400; // ~2 min
       case VideoFormat.youtubeMedium:
@@ -37,11 +37,11 @@ extension VideoFormatExtension on VideoFormat {
     }
   }
   
-  // Duração aproximada em minutos
+  // DuraÃ§Ã£o aproximada em minutos
   String get approximateDuration {
     switch (this) {
       case VideoFormat.standard:
-        return 'Variável';
+        return 'VariÃ¡vel';
       case VideoFormat.youtubeShort:
         return '1-3 min';
       case VideoFormat.youtubeMedium:
@@ -65,15 +65,13 @@ class ScriptConfig {
   final int quantity;
   final String language;
   final String perspective;
-  final bool includeCallToAction;
-  final bool includeFinalCta;
   final LocalizationLevel localizationLevel;
-  final bool startWithTitlePhrase; // NOVO: Começar com frase do título
+  final bool startWithTitlePhrase; // NOVO: ComeÃ§ar com frase do tÃ­tulo
   final String qualityMode; // NOVO: Modo de qualidade (balanced, quality, speed)
   final String protagonistName;
   final String secondaryCharacterName;
-  final String? genre; // NOVO: Tipo temático da história ('western', 'business', 'family')
-  final VideoFormat videoFormat; // 🎬 NOVO: Formato de vídeo YouTube
+  final String? genre; // NOVO: Tipo temÃ¡tico da histÃ³ria ('western', 'business', 'family')
+  final VideoFormat videoFormat; // ðŸŽ¬ NOVO: Formato de vÃ­deo YouTube
 
   ScriptConfig({
     required this.apiKey,
@@ -87,27 +85,25 @@ class ScriptConfig {
     required this.quantity,
     required this.language,
     required this.perspective,
-    required this.includeCallToAction,
-    required this.includeFinalCta,
     required this.localizationLevel,
     this.startWithTitlePhrase = false, // NOVO: Default false
-    this.qualityMode = 'balanced', // NOVO: Padrão balanceado
+    this.qualityMode = 'balanced', // NOVO: PadrÃ£o balanceado
     this.protagonistName = '',
     this.secondaryCharacterName = '',
     this.genre, // NOVO: Opcional (null = nomes do idioma, 'western' = nomes western)
-    this.videoFormat = VideoFormat.standard, // 🎬 NOVO: Padrão é standard (sem otimização)
+    this.videoFormat = VideoFormat.standard, // ðŸŽ¬ NOVO: PadrÃ£o Ã© standard (sem otimizaÃ§Ã£o)
   });
 
-  // Factory para conversão de GenerationConfig
+  // Factory para conversÃ£o de GenerationConfig
   factory ScriptConfig.fromGenerationConfig(GenerationConfig config) {
-    // 🎯 Se usar tema personalizado, usar personalizedTheme (pode ser vazio = sem tema)
+    // ðŸŽ¯ Se usar tema personalizado, usar personalizedTheme (pode ser vazio = sem tema)
     // Se personalizedTheme estiver vazio, usar 'Livre (Sem Tema)' como indicador
     final temaFinal = config.usePersonalizedTheme
         ? (config.personalizedTheme.trim().isEmpty ? 'Livre (Sem Tema)' : config.personalizedTheme)
         : config.tema;
     
     final subtemFinal = config.usePersonalizedTheme
-        ? '' // Subtema não se aplica a temas personalizados
+        ? '' // Subtema nÃ£o se aplica a temas personalizados
         : config.subtema;
     
     return ScriptConfig(
@@ -122,15 +118,13 @@ class ScriptConfig {
       quantity: config.quantity,
       language: config.language,
       perspective: config.perspective,
-      includeCallToAction: config.includeCallToAction,
-      includeFinalCta: config.includeFinalCta,
       localizationLevel: config.localizationLevel,
       startWithTitlePhrase: config.startWithTitlePhrase,
       qualityMode: config.qualityMode ?? 'balanced', // NOVO: Suporte ao modo de qualidade
       protagonistName: config.protagonistName,
       secondaryCharacterName: config.secondaryCharacterName,
-      genre: config.genre, // NOVO: Tipo temático
-      videoFormat: VideoFormat.standard, // 🎬 NOVO: Por padrão usa standard (será adicionado ao GenerationConfig depois)
+      genre: config.genre, // NOVO: Tipo temÃ¡tico
+      videoFormat: VideoFormat.standard, // ðŸŽ¬ NOVO: Por padrÃ£o usa standard (serÃ¡ adicionado ao GenerationConfig depois)
     );
   }
 
@@ -146,15 +140,13 @@ class ScriptConfig {
     int? quantity,
     String? language,
     String? perspective,
-    bool? includeCallToAction,
-    bool? includeFinalCta,
     LocalizationLevel? localizationLevel,
     bool? startWithTitlePhrase,
     String? qualityMode,
     String? protagonistName,
     String? secondaryCharacterName,
     String? genre,
-    VideoFormat? videoFormat, // 🎬 NOVO
+    VideoFormat? videoFormat, // ðŸŽ¬ NOVO
   }) {
     return ScriptConfig(
       apiKey: apiKey ?? this.apiKey,
@@ -168,15 +160,14 @@ class ScriptConfig {
       quantity: quantity ?? this.quantity,
       language: language ?? this.language,
       perspective: perspective ?? this.perspective,
-      includeCallToAction: includeCallToAction ?? this.includeCallToAction,
-      includeFinalCta: includeFinalCta ?? this.includeFinalCta,
       localizationLevel: localizationLevel ?? this.localizationLevel,
       startWithTitlePhrase: startWithTitlePhrase ?? this.startWithTitlePhrase,
       qualityMode: qualityMode ?? this.qualityMode,
       protagonistName: protagonistName ?? this.protagonistName,
       secondaryCharacterName: secondaryCharacterName ?? this.secondaryCharacterName,
       genre: genre ?? this.genre,
-      videoFormat: videoFormat ?? this.videoFormat, // 🎬 NOVO
+      videoFormat: videoFormat ?? this.videoFormat, // ðŸŽ¬ NOVO
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import 'localization_level.dart';
+﻿import 'localization_level.dart';
 
 class GenerationConfig {
   final String apiKey;
@@ -12,16 +12,14 @@ class GenerationConfig {
   final int quantity;
   final String language;
   final String perspective;
-  final bool includeCallToAction;
-  final bool includeFinalCta;
-  final String personalizedTheme; // Tema personalizado do usuário
+  final String personalizedTheme; // Tema personalizado do usuÃ¡rio
   final bool usePersonalizedTheme; // Se deve usar tema personalizado
-  final LocalizationLevel localizationLevel; // Nível de regionalismo
+  final LocalizationLevel localizationLevel; // NÃ­vel de regionalismo
   final bool startWithTitlePhrase; // Se deve começar com a frase do título
   final String protagonistName; // Nome do protagonista
   final String secondaryCharacterName; // Nome do personagem secundário
-  final String qualityMode; // Modo de qualidade: 'balanced', 'quality', 'speed'
-  final String? genre; // Tipo temático da história: null (normal), 'western', 'business', 'family'
+  final String qualityMode; // Modelo IA: 'pro' (2.5-pro, mais lento/melhor) ou 'flash' (2.5-flash, 4x mais rápido)
+  final String? genre; // Tipo temático da História: null (normal), 'western', 'business', 'family'
 
   const GenerationConfig({
     required this.apiKey,
@@ -35,15 +33,13 @@ class GenerationConfig {
     this.quantity = 1000,
     this.language = 'Português',
     this.perspective = 'terceira_pessoa',
-    this.includeCallToAction = false,
-    this.includeFinalCta = false,
     this.personalizedTheme = '',
     this.usePersonalizedTheme = false,
     this.localizationLevel = LocalizationLevel.national,
     this.startWithTitlePhrase = false,
     this.protagonistName = '',
     this.secondaryCharacterName = '',
-    this.qualityMode = 'balanced',
+    this.qualityMode = 'pro', // Padrão: Qualidade Máxima (2.5-pro)
     this.genre, // Opcional: null = nomes do idioma
   });
 
@@ -59,8 +55,6 @@ class GenerationConfig {
     int? quantity,
     String? language,
     String? perspective,
-    bool? includeCallToAction,
-    bool? includeFinalCta,
     String? personalizedTheme,
     bool? usePersonalizedTheme,
     LocalizationLevel? localizationLevel,
@@ -82,8 +76,6 @@ class GenerationConfig {
       quantity: quantity ?? this.quantity,
       language: language ?? this.language,
       perspective: perspective ?? this.perspective,
-      includeCallToAction: includeCallToAction ?? this.includeCallToAction,
-      includeFinalCta: includeFinalCta ?? this.includeFinalCta,
       personalizedTheme: personalizedTheme ?? this.personalizedTheme,
       usePersonalizedTheme: usePersonalizedTheme ?? this.usePersonalizedTheme,
       localizationLevel: localizationLevel ?? this.localizationLevel,
@@ -108,8 +100,6 @@ class GenerationConfig {
       'quantity': quantity,
       'language': language,
       'perspective': perspective,
-      'includeCallToAction': includeCallToAction,
-      'includeFinalCta': includeFinalCta,
       'personalizedTheme': personalizedTheme,
       'usePersonalizedTheme': usePersonalizedTheme,
       'localizationLevel': localizationLevel.name,
@@ -134,8 +124,6 @@ class GenerationConfig {
       quantity: json['quantity'] ?? 1000,
       language: json['language'] ?? 'Português',
       perspective: json['perspective'] ?? 'terceira_pessoa',
-      includeCallToAction: json['includeCallToAction'] ?? false,
-      includeFinalCta: json['includeFinalCta'] ?? false,
       personalizedTheme: json['personalizedTheme'] ?? '',
       usePersonalizedTheme: json['usePersonalizedTheme'] ?? false,
       localizationLevel: LocalizationLevel.values.firstWhere(
@@ -145,12 +133,12 @@ class GenerationConfig {
       startWithTitlePhrase: json['startWithTitlePhrase'] ?? false,
       protagonistName: json['protagonistName'] ?? '',
       secondaryCharacterName: json['secondaryCharacterName'] ?? '',
-      qualityMode: json['qualityMode'] ?? 'balanced',
+      qualityMode: json['qualityMode'] ?? 'pro', // Padrão: Pro
       genre: json['genre'], // Nullable: null = nomes do idioma
     );
   }
 
-  // Opções disponíveis
+  // OpÃ§Ãµes disponíveis
   static const List<String> availableLanguages = [
     'Alemão',
     'Búlgaro',
@@ -203,12 +191,12 @@ class GenerationConfig {
     'caracteres': {'min': 1000, 'max': 100000, 'default': 5000},
   };
 
-  // Mapeamento TEMA → SUBTEMAS
+  // Mapeamento TEMA â†’ SUBTEMAS
   static const Map<String, List<String>> temaSubtemas = {
-    // 🎯 MODO LIVRE (SEM TEMA)
+    // ðŸŽ¯ MODO LIVRE (SEM TEMA)
     'Livre (Sem Tema)': [], // Sem subtemas disponíveis
     
-    // TEMAS DRAMÁTICOS E INTENSOS
+    // TEMAS DRAMÃTICOS E INTENSOS
     'Vingança': [
       'Vingança Destrutiva',
       'Vingança Construtiva', 
@@ -221,14 +209,14 @@ class GenerationConfig {
       'Traição Política',
       'Traição Familiar',
       'Traição Profissional',
-      'Autotraição',
+      'AutoTraição',
     ],
     'Redenção': [
       'Redenção Religiosa',
       'Redenção Social',
       'Redenção Familiar',
       'Redenção Profissional',
-      'Autorredenção',
+      'AutorRedenção',
     ],
     'Justiça': [
       'Justiça Legal',
@@ -237,174 +225,175 @@ class GenerationConfig {
       'Justiça Divina',
       'Justiça Restaurativa',
     ],
-    'Sacrifício': [
-      'Sacrifício Heroico',
-      'Sacrifício Familiar',
-      'Sacrifício Romântico',
-      'Sacrifício Profissional',
-      'Sacrifício Espiritual',
+    'SacrifÃ­cio': [
+      'SacrifÃ­cio Heroico',
+      'SacrifÃ­cio Familiar',
+      'SacrifÃ­cio romântico',
+      'SacrifÃ­cio Profissional',
+      'SacrifÃ­cio Espiritual',
     ],
     'Poder e Corrupção': [
       'Ascensão Política',
       'Corrupção Gradual',
-      'Império Empresarial',
+      'ImpÃ©rio Empresarial',
       'Poder Familiar',
       'Queda do Poder',
     ],
     'Sobrevivência': [
       'Sobrevivência Urbana',
       'Sobrevivência Natural',
-      'Sobrevivência Econômica',
+      'Sobrevivência EconÃ´mica',
       'Sobrevivência Emocional',
       'Sobrevivência Social',
     ],
     'Família Disfuncional': [
-      'Família Tóxica',
+      'Família TÃ³xica',
       'Segredos Familiares',
       'Rivalidade Fraternal',
       'Pais Ausentes',
-      'Herança Maldita',
+      'HeranÃ§a Maldita',
     ],
     'Segredos Obscuros': [
       'Segredos do Passado',
-      'Conspiração',
+      'ConspirAção',
       'Dupla Vida',
       'Segredos Corporativos',
       'Segredos Sobrenaturais',
     ],
     'Ascensão e Queda': [
       'Do Nada ao Tudo',
-      'Queda Trágica',
+      'Queda TrÃ¡gica',
       'Ciclos de Poder',
       'Legado Perdido',
-      'Ressurreição',
+      'RessurreiÃ§Ã£o',
     ],
 
-    // GÊNEROS CLÁSSICOS
+    // GÃŠNEROS CLÃSSICOS
     'Mistério/Suspense': [
       'Crime Investigation',
-      'Thriller Psicológico',
-      'Conspiração',
+      'Thriller PsicolÃ³gico',
+      'ConspirAção',
       'Mistério Sobrenatural',
       'Cold Case',
     ],
     'Terror/Sobrenatural': [
-      'Horror Psicológico',
+      'Horror PsicolÃ³gico',
       'Terror Sobrenatural',
       'Horror Corporal',
-      'Terror Cósmico',
+      'Terror CÃ³smico',
       'Survival Horror',
     ],
-    'Ficção Científica': [
+    'Ficção CientÃ­fica': [
       'Distopia Futurista',
-      'Exploração Espacial',
-      'Inteligência Artificial',
+      'ExplorAção Espacial',
+      'InteligÃªncia Artificial',
       'Viagem no Tempo',
       'Biotecnologia',
     ],
     'Drama/Romance': [
       'Amor Proibido',
       'Segunda Chance',
-      'Triângulo Amoroso',
-      'Amor Platônico',
+      'TriÃ¢ngulo Amoroso',
+      'Amor PlatÃ´nico',
       'Amor Eterno',
     ],
-    'Comédia/Humor': [
-      'Comédia Romântica',
-      'Sátira Social',
-      'Comédia de Erros',
+    'ComÃ©dia/Humor': [
+      'ComÃ©dia RomÃ¢ntica',
+      'SÃ¡tira Social',
+      'ComÃ©dia de Erros',
       'Humor Negro',
-      'Paródia',
+      'ParÃ³dia',
     ],
     'Ação/Aventura': [
-      'Missão Impossível',
-      'Jornada Épica',
-      'Perseguição',
+      'MissÃ£o ImpossÃ­vel',
+      'Jornada Ã‰pica',
+      'PerseguiÃ§Ã£o',
       'Heist',
-      'Aventura Histórica',
+      'Aventura HistÃ³rica',
     ],
 
     // TEMAS EDUCATIVOS
     'História': [
-      'Grandes Civilizações',
+      'Grandes CivilizaÃ§Ãµes',
       'Guerras Mundiais',
-      'Revoluções',
-      'Biografias Históricas',
+      'RevoluÃ§Ãµes',
+      'Biografias HistÃ³ricas',
       'História Local',
     ],
     'Ciência': [
-      'Descobertas Científicas',
+      'Descobertas CientÃ­ficas',
       'Experimentos Famosos',
       'Cientistas Pioneiros',
       'Ciência Aplicada',
       'Fronteiras da Ciência',
     ],
     'Saúde': [
-      'Prevenção',
-      'Doenças e Tratamentos',
+      'PrevenÃ§Ã£o',
+      'DoenÃ§as e Tratamentos',
       'Saúde Mental',
-      'Nutrição',
-      'Exercício e Fitness',
+      'NutriÃ§Ã£o',
+      'ExercÃ­cio e Fitness',
     ],
     'Tecnologia': [
-      'Inovações Tecnológicas',
+      'InovaÃ§Ãµes TecnolÃ³gicas',
       'Impacto Social da Tech',
-      'Programação e Desenvolvimento',
+      'ProgramAção e Desenvolvimento',
       'Startups e Empreendedorismo',
       'Futuro Digital',
     ],
     'Natureza': [
       'Ecossistemas',
-      'Conservação Ambiental',
+      'ConservAção Ambiental',
       'Vida Selvagem',
-      'Mudanças Climáticas',
+      'MudanÃ§as ClimÃ¡ticas',
       'Sustentabilidade',
     ],
     'Biografias': [
-      'Líderes Históricos',
+      'LÃ­deres HistÃ³ricos',
       'Artistas e Criativos',
       'Cientistas e Inventores',
       'Esportistas',
       'Empreendedores',
     ],
     'Curiosidades': [
-      'Fatos Históricos Inusitados',
-      'Mistérios Não Resolvidos',
-      'Coincidências Incríveis',
+      'Fatos HistÃ³ricos Inusitados',
+      'Mistérios NÃ£o Resolvidos',
+      'CoincidÃªncias IncrÃ­veis',
       'Recordes Mundiais',
-      'Tradições Culturais',
+      'TradiÃ§Ãµes Culturais',
     ],
     'Viagens/Lugares': [
-      'Destinos Exóticos',
+      'Destinos ExÃ³ticos',
       'Culturas Locais',
-      'Monumentos Históricos',
+      'Monumentos HistÃ³ricos',
       'Gastronomia Regional',
       'Aventuras de Viagem',
     ],
   };
 
-  /// Retorna o tema efetivo que deve ser usado na geração
+  /// Retorna o tema efetivo que deve ser usado na gerAção
   String get effectiveTheme {
     return usePersonalizedTheme && personalizedTheme.isNotEmpty 
         ? personalizedTheme 
         : tema;
   }
 
-  /// Retorna o subtema efetivo que deve ser usado na geração
+  /// Retorna o subtema efetivo que deve ser usado na gerAção
   String get effectiveSubtema {
     return usePersonalizedTheme && personalizedTheme.isNotEmpty 
-        ? '' // Quando usa tema personalizado, não usa subtema predefinido
+        ? '' // Quando usa tema personalizado, nÃ£o usa subtema predefinido
         : subtema;
   }
 
-  // Método para obter subtemas de um tema
+  // MÃ©todo para obter subtemas de um tema
   static List<String> getSubtemasForTema(String tema) {
     return temaSubtemas[tema] ?? [];
   }
 
-  // Método para obter o primeiro subtema de um tema (padrão)
+  // MÃ©todo para obter o primeiro subtema de um tema (padrÃ£o)
   static String getDefaultSubtema(String tema) {
     final subtemas = getSubtemasForTema(tema);
     return subtemas.isNotEmpty ? subtemas.first : '';
   }
 }
+

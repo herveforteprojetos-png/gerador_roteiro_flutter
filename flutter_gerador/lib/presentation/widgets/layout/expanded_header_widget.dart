@@ -79,6 +79,10 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
       final preferences = await StorageService.getUserPreferences();
       final configNotifier = ref.read(generationConfigProvider.notifier);
 
+      // Carregar qualityMode salvo
+      final qualityMode = preferences['qualityMode'] ?? 'pro';
+      configNotifier.updateQualityMode(qualityMode);
+
       configNotifier.updateQuantity(preferences['quantity'] ?? 2000);
       configNotifier.updateMeasureType(
         preferences['measureType'] ?? 'palavras',
@@ -803,7 +807,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Modelo',
+          'Modelo IA',
           style: AppDesignSystem.labelMedium.copyWith(
             color: AppColors.fireOrange,
           ),
@@ -812,7 +816,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
         SizedBox(
           height: AppDesignSystem.fieldHeight,
           child: DropdownButtonFormField<String>(
-            value: config.model,
+            value: config.qualityMode,
             style: AppDesignSystem.bodyMedium,
             dropdownColor: AppColors.darkBackground,
             decoration: AppDesignSystem.getInputDecoration(
@@ -820,15 +824,18 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             ),
             items: const [
               DropdownMenuItem(
-                value: 'gemini-2.5-pro',
-                child: Text('Gemini 2.5 Pro 🏆 (Qualidade Máxima - Único Disponível)'),
+                value: 'pro',
+                child: Text('🧠 Pro'),
+              ),
+              DropdownMenuItem(
+                value: 'flash',
+                child: Text('⚡ Flash'),
               ),
             ],
             onChanged: (value) {
               if (value != null) {
-                configNotifier.updateModel(value);
-                // Salvar modelo selecionado
-                StorageService.saveSelectedModel(value);
+                configNotifier.updateQualityMode(value);
+                StorageService.saveUserPreferences(qualityMode: value);
               }
             },
           ),

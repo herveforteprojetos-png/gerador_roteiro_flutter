@@ -5,6 +5,7 @@ import 'package:flutter_gerador/data/services/gemini_service.dart';
 import 'package:flutter_gerador/data/models/generation_config.dart';
 import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'cta_config_provider.dart';
 import 'generation_config_provider.dart';
 import 'script_config_provider.dart';
@@ -26,8 +27,39 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
   final GeminiService geminiService;
   final Ref ref;
   bool _cancelRequested = false;
+  
+  // 🚀 OTIMIZAÇÃO: Timer para debouncing de atualizações
+  Timer? _debounceTimer;
+  GenerationProgress? _pendingProgress;
 
   ScriptGenerationNotifier(this.geminiService, this.ref) : super(ScriptGenerationState());
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  // 🚀 OTIMIZAÇÃO CRÍTICA: Método para atualizar progresso com debounce aumentado
+  void _updateProgressDebounced(GenerationProgress progress) {
+    _pendingProgress = progress;
+    
+    // Cancelar timer anterior se existir
+    _debounceTimer?.cancel();
+    
+    // 🔥 AUMENTADO: 100ms → 300ms → 1500ms para reduzir sobrecarga de renderização
+    // Isso evita travamentos em 37-62% causados por rebuilds excessivos
+    // Atualiza UI apenas a cada 1.5 segundos = MUITO mais suave!
+    _debounceTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (_pendingProgress != null && !_cancelRequested) {
+        state = ScriptGenerationState(
+          isGenerating: true,
+          progress: _pendingProgress,
+        );
+        _pendingProgress = null;
+      }
+    });
+  }
 
   Future<void> generateScript(GenerationConfig config) async {
     if (kDebugMode) {
@@ -70,10 +102,8 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
           debugPrint('📈 PROVIDER: Progresso recebido: ${progress.currentPhase}');
         }
         
-        state = ScriptGenerationState(
-          isGenerating: true,
-          progress: progress,
-        );
+        // 🚀 OTIMIZAÇÃO: Usar debounce em vez de atualização imediata
+        _updateProgressDebounced(progress);
       });
       
       if (kDebugMode) {
@@ -331,6 +361,7 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
       }
       
       debugPrint('🎯 [Script Provider] Tipos de CTA mapeados: $ctaTypes');
+      debugPrint('🎯 [Script Provider] Perspectiva: ${generationConfig.perspective}');
       
       // Generate CTAs using Gemini service
       final ctaMap = await geminiService.generateCtasForScript(
@@ -338,6 +369,7 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
         apiKey: generationConfig.apiKey,
         ctaTypes: ctaTypes,
         language: generationConfig.language,
+        perspective: generationConfig.perspective, // 🔥 CORRIGIDO: Passar perspectiva configurada!
       );
       
       debugPrint('🎯 [Script Provider] CTAs recebidos: ${ctaMap.keys.toList()}');

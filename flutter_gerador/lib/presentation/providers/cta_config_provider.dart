@@ -288,6 +288,7 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
         ctaTypes: ctaTypes,
         customTheme: customTheme,
         language: scriptConfig.language,
+        perspective: scriptConfig.perspective, // ⚡ PASSAR PERSPECTIVA CONFIGURADA
       );
       
       print('🎯 [CTA Provider] CTAs recebidos do Gemini: ${generatedCtas.keys.toList()}');
@@ -374,6 +375,7 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
         ctaTypes: [ctaType],
         customTheme: customTheme,
         language: scriptConfig.language,
+        perspective: scriptConfig.perspective, // ⚡ PASSAR PERSPECTIVA CONFIGURADA
       );
       
       final generatedContent = generatedCtas[ctaType];

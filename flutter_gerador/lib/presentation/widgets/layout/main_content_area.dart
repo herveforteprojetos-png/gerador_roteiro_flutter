@@ -4,13 +4,37 @@ import 'package:flutter_gerador/presentation/widgets/script_output/generation_pr
 import 'package:flutter_gerador/presentation/widgets/script_output/script_result_view.dart';
 import 'package:flutter_gerador/presentation/providers/script_generation_provider.dart';
 
-class MainContentArea extends ConsumerWidget {
+class MainContentArea extends ConsumerStatefulWidget {
   const MainContentArea({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainContentArea> createState() => _MainContentAreaState();
+}
+
+class _MainContentAreaState extends ConsumerState<MainContentArea> {
+  // 🚀 OTIMIZAÇÃO: Controller persistente evita recriação a cada rebuild
+  late final TextEditingController _scriptController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scriptController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _scriptController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(scriptGenerationProvider);
-    final scriptController = TextEditingController(text: state.result?.scriptText ?? '');
+    
+    // 🚀 OTIMIZAÇÃO: Atualizar controller apenas quando resultado mudar
+    if (state.result != null && _scriptController.text != state.result!.scriptText) {
+      _scriptController.text = state.result!.scriptText;
+    }
 
     if (state.isGenerating && state.progress != null) {
       final progress = state.progress!;
@@ -27,7 +51,7 @@ class MainContentArea extends ConsumerWidget {
         charCount: result.charCount,
         paragraphCount: result.paragraphCount,
         readingTime: result.readingTime,
-        scriptController: scriptController,
+        scriptController: _scriptController,
         onDownloadTxt: () {
           // TODO: Implementar download TXT
         },

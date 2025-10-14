@@ -180,7 +180,7 @@ $scriptText
       final response = await _geminiService.generateTextWithApiKey(
         prompt: youtubePrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-pro', // CORREÇÃO: Apenas Pro 2.5 para qualidade máxima
+        model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
       );
       
       print('✅ Resposta recebida do Gemini');
@@ -230,7 +230,7 @@ $scriptText
       final result = await _geminiService.generateTextWithApiKey(
         prompt: protagonistPrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-pro', // CORREÇÃO: Apenas Pro 2.5 para qualidade máxima
+        model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
       );
       
       state = state.copyWith(
@@ -291,7 +291,7 @@ $scriptText
       final result = await _geminiService.generateTextWithApiKey(
         prompt: scenarioPrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-pro', // CORREÇÃO: Apenas Pro 2.5 para qualidade máxima
+        model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
       );
       
       print('✅ Resposta scenario recebida do Gemini');
@@ -359,7 +359,7 @@ Responda em ${config.language} com prompts detalhados e criativos.
       final response = await _geminiService.generateTextWithApiKey(
         prompt: promptsTemplate,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-pro', // CORREÇÃO: Apenas Pro 2.5 para qualidade máxima
+        model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
       );
 
       state = state.copyWith(

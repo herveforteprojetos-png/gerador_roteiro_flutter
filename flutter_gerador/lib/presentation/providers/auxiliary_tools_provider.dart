@@ -268,14 +268,16 @@ ${isHistorical ? technologyGuidance : ''}
 
 INSTRUÇÕES:
 1. ${isHistorical ? 'COMECE especificando a época/ano exato (ex: "A história se passa em 1880...")' : 'Descreva quando e onde a história acontece RESPEITANDO a LOCALIZAÇÃO acima'}
-2. Descreva o protagonista $protagonistName: personalidade, profissão típica da época, como se relaciona com o tema "${config.tema}"
-3. ${isHistorical ? 'Descreva o cenário de época: ambiente, arquitetura, vestimentas, costumes da época' : 'Descreva o cenário RESPEITANDO EXATAMENTE a LOCALIZAÇÃO indicada acima (se for genérica, use descrições universais; se for nacional, mencione apenas o país; se for regional, pode usar cidade/região)'}
-4. ${isHistorical ? 'Liste a TECNOLOGIA DISPONÍVEL na época (transporte, armas, comunicação) e o que NÃO existe ainda' : 'Descreva o ambiente e contexto'}
-5. Descreva o conflito central: situação dramática envolvendo "${config.tema}"
-6. Explique a motivação do protagonista e relação com $secondaryName
-7. Defina a atmosfera: tom emocional da narrativa
+2. INCORPORE os elementos do TÍTULO "${config.title}" na construção do contexto - o título deve fazer sentido dentro da história descrita
+3. Descreva o protagonista $protagonistName: personalidade, profissão típica da época, como se relaciona com o tema "${config.tema}"
+4. ${isHistorical ? 'Descreva o cenário de época: ambiente, arquitetura, vestimentas, costumes da época' : 'Descreva o cenário RESPEITANDO EXATAMENTE a LOCALIZAÇÃO indicada acima (se for genérica, use descrições universais; se for nacional, mencione apenas o país; se for regional, pode usar cidade/região)'}
+5. ${isHistorical ? 'Liste a TECNOLOGIA DISPONÍVEL na época (transporte, armas, comunicação) e o que NÃO existe ainda' : 'Descreva o ambiente e contexto'}
+6. Descreva o conflito central: situação dramática envolvendo "${config.tema}" e conectada ao TÍTULO
+7. Explique a motivação do protagonista e relação com $secondaryName
+8. Defina a atmosfera: tom emocional da narrativa
 
 ⚠️ CRÍTICO:
+- O contexto DEVE refletir os elementos do TÍTULO "${config.title}" - todos os componentes do título devem estar presentes na narrativa
 - Escreva APENAS o contexto puro, SEM formatação markdown
 - SEM emojis, asteriscos, hashtags ou símbolos especiais
 - SEM títulos ou seções marcadas (como "### Título" ou "**Negrito**")
@@ -296,7 +298,7 @@ Escreva o contexto agora:
       final response = await _geminiService.generateTextWithApiKey(
         prompt: contextPrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-pro', // CORREÇÃO: Apenas Pro 2.5 para qualidade máxima
+        model: 'gemini-2.5-flash-lite', // Ultra-rápido para geração de contexto
       );
 
       debugPrint('AuxiliaryTools: Resposta recebida - Length: ${response.length}');
@@ -373,7 +375,7 @@ Responda apenas com o prompt final em inglês, sem explicações adicionais.
       final response = await _geminiService.generateTextWithApiKey(
         prompt: imagePromptTemplate,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-pro', // CORREÇÃO: Apenas Pro 2.5 para qualidade máxima
+        model: 'gemini-2.5-flash-lite', // Ultra-rápido para prompts de imagem
       );
 
       state = state.copyWith(

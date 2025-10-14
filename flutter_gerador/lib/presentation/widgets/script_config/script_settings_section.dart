@@ -9,7 +9,14 @@ class ScriptSettingsSection extends StatelessWidget {
   final TextEditingController titleController;
   final String selectedTema;
   final ValueChanged<String?> onTemaChanged;
-  final TextEditingController localizacaoController;
+  final                       height: 40,
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    SizedBox(height: 4),ler localizacaoController;
   final TextEditingController contextController;
   final String measureType;
   final ValueChanged<String?> onMeasureTypeChanged;
@@ -21,8 +28,6 @@ class ScriptSettingsSection extends StatelessWidget {
   final ValueChanged<String?> onLanguageChanged;
   final String perspective;
   final ValueChanged<String?> onPerspectiveChanged;
-  final bool includeCallToAction;
-  final ValueChanged<bool?> onIncludeCallToActionChanged;
   final String? genre; // NOVO: Tipo temático (null, 'western', 'business', 'family')
   final ValueChanged<String?> onGenreChanged; // NOVO: Callback
   final VoidCallback? onGenerateContext;
@@ -47,8 +52,6 @@ class ScriptSettingsSection extends StatelessWidget {
     required this.onLanguageChanged,
     required this.perspective,
     required this.onPerspectiveChanged,
-    required this.includeCallToAction,
-    required this.onIncludeCallToActionChanged,
     this.genre, // NOVO: Opcional
     required this.onGenreChanged, // NOVO: Required
     this.onGenerateContext,
@@ -491,24 +494,6 @@ class ScriptSettingsSection extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Container(
-                      height: 40,
-                      padding: EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        children: [
-                          Checkbox(
-                            value: includeCallToAction,
-                            activeColor: AppColors.fireOrange,
-                            onChanged: onIncludeCallToActionChanged,
-                          ),
-                          Text('Incluir CTA'),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),

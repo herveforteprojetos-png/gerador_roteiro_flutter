@@ -1,4 +1,4 @@
-import 'package:flutter_gerador/data/models/script_config.dart';
+﻿import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/models/generation_config.dart';
 import 'package:flutter_gerador/data/models/localization_level.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_gerador/core/utils/color_extensions.dart';
 import 'package:flutter_gerador/core/services/storage_service.dart';
 
-// NOTE: Este arquivo não é mais utilizado após migração para layout horizontal
-// Mantido para referência histórica - Layout original com sidebar lateral
+// NOTE: Este arquivo nÃ£o Ã© mais utilizado apÃ³s migraÃ§Ã£o para layout horizontal
+// Mantido para referÃªncia histÃ³rica - Layout original com sidebar lateral
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gerador/presentation/providers/script_generation_provider.dart';
@@ -31,14 +31,13 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
   final TextEditingController contextController = TextEditingController();
 
   String selectedModel = 'gemini-2.5-pro';
-  String selectedTema = 'História';
-  String? selectedGenre; // Tipo temático (null, 'western', 'business', 'family')
+  String selectedTema = 'HistÃ³ria';
+  String? selectedGenre; // Tipo temÃ¡tico (null, 'western', 'business', 'family')
   String measureType = 'palavras';
   int quantity = 2000;
   late TextEditingController quantityController;
-  String language = 'Português';
+  String language = 'PortuguÃªs';
   String perspective = 'terceira_pessoa';
-  bool includeCallToAction = false;
 
   bool get isFormValid =>
       apiKeyController.text.isNotEmpty &&
@@ -53,7 +52,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
     _loadSavedSettings();
   }
 
-  /// Carrega as configurações salvas
+  /// Carrega as configuraÃ§Ãµes salvas
   Future<void> _loadSavedSettings() async {
     try {
       // Carregar chave API
@@ -68,20 +67,19 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
         selectedModel = savedModel;
       }
 
-      // Carregar preferências do usuário
+      // Carregar preferÃªncias do usuÃ¡rio
       final preferences = await StorageService.getUserPreferences();
       
       setState(() {
-        language = preferences['language'] ?? 'Português';
+        language = preferences['language'] ?? 'PortuguÃªs';
         perspective = preferences['perspective'] ?? 'terceira_pessoa';
         measureType = preferences['measureType'] ?? 'palavras';
         quantity = preferences['quantity'] ?? 2000;
-        includeCallToAction = preferences['includeCta'] ?? false;
         quantityController.text = quantity.toString();
       });
     } catch (e) {
-      // Se houver erro ao carregar, usar valores padrão
-      debugPrint('Erro ao carregar configurações salvas: $e');
+      // Se houver erro ao carregar, usar valores padrÃ£o
+      debugPrint('Erro ao carregar configuraÃ§Ãµes salvas: $e');
     }
   }
 
@@ -93,14 +91,13 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
     }
   }
 
-  /// Salva as preferências do usuário
+  /// Salva as preferÃªncias do usuÃ¡rio
   Future<void> _saveUserPreferences() async {
     await StorageService.saveUserPreferences(
       language: language,
       perspective: perspective,
       measureType: measureType,
       quantity: quantity,
-      includeCta: includeCallToAction,
     );
   }
 
@@ -119,48 +116,46 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
       if (apiKeyController.text.isEmpty || apiKeyController.text.length < 20) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Chave da API Gemini inválida ou ausente.'),
+            content: Text('Chave da API Gemini invÃ¡lida ou ausente.'),
             backgroundColor: Colors.red,
           ),
         );
         return;
       }
       
-      // Validação para localização
+      // ValidaÃ§Ã£o para localizaÃ§Ã£o
       if (localizacaoController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('⚠️ Por favor, preencha onde a história se passa.'),
+            content: Text('âš ï¸ Por favor, preencha onde a histÃ³ria se passa.'),
             backgroundColor: Colors.orange,
           ),
         );
         return;
       }
       
-      // 🚨 DEBUG: Verificando language antes de criar ScriptConfig (SIDEBAR)
-      debugPrint('🚨 SIDEBAR_PANEL: language = "$language"');
-      debugPrint('🚨 SIDEBAR_PANEL: language.codeUnits = ${language.codeUnits}');
+      // ðŸš¨ DEBUG: Verificando language antes de criar ScriptConfig (SIDEBAR)
+      debugPrint('ðŸš¨ SIDEBAR_PANEL: language = "$language"');
+      debugPrint('ðŸš¨ SIDEBAR_PANEL: language.codeUnits = ${language.codeUnits}');
       
       final config = GenerationConfig(
         apiKey: apiKeyController.text,
         model: selectedModel,
         title: titleController.text,
         tema: selectedTema,
-        subtema: 'Narrativa Básica', // Valor padrão para compatibilidade
+        subtema: 'Narrativa BÃ¡sica', // Valor padrÃ£o para compatibilidade
         localizacao: localizacaoController.text,
         context: contextController.text,
         measureType: measureType,
         quantity: quantity,
         language: language,
-        perspective: perspective,
-        includeCallToAction: includeCallToAction,
-        includeFinalCta: false, // Valor padrão para compatibilidade
-        localizationLevel: LocalizationLevel.national, // Valor padrão
+        perspective: perspective, // Valor padrÃ£o para compatibilidade
+        localizationLevel: LocalizationLevel.national, // Valor padrÃ£o
       );
 
-      // 🚨 DEBUG: Verificando language depois de criar GenerationConfig (SIDEBAR)
-      debugPrint('🚨 SIDEBAR_PANEL: config.language = "${config.language}"');
-      debugPrint('🚨 SIDEBAR_PANEL: config.language.codeUnits = ${config.language.codeUnits}');
+      // ðŸš¨ DEBUG: Verificando language depois de criar GenerationConfig (SIDEBAR)
+      debugPrint('ðŸš¨ SIDEBAR_PANEL: config.language = "${config.language}"');
+      debugPrint('ðŸš¨ SIDEBAR_PANEL: config.language.codeUnits = ${config.language.codeUnits}');
       try {
         await generationNotifier.generateScript(config);
       } catch (e) {
@@ -188,7 +183,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Configurações em linha horizontal no topo
+                // ConfiguraÃ§Ãµes em linha horizontal no topo
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ScriptSettingsSection(
@@ -256,31 +251,31 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                     language: language,
                     onLanguageChanged: (value) {
                       setState(() {
-                        // Converter códigos de idioma para nomes completos
+                        // Converter cÃ³digos de idioma para nomes completos
                         switch (value) {
                           case 'pt':
-                            language = 'Português';
+                            language = 'PortuguÃªs';
                             break;
                           case 'en':
-                            language = 'Inglês';
+                            language = 'InglÃªs';
                             break;
                           case 'es-mx':
                             language = 'Espanhol(mexicano)';
                             break;
                           case 'fr':
-                            language = 'Francês';
+                            language = 'FrancÃªs';
                             break;
                           case 'de':
-                            language = 'Alemão';
+                            language = 'AlemÃ£o';
                             break;
                           case 'it':
                             language = 'Italiano';
                             break;
                           case 'pl':
-                            language = 'Polonês';
+                            language = 'PolonÃªs';
                             break;
                           case 'bg':
-                            language = 'Búlgaro';
+                            language = 'BÃºlgaro';
                             break;
                           case 'ru':
                             language = 'Russo';
@@ -305,17 +300,11 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                         perspective = value ?? perspective;
                       });
                     },
-                    includeCallToAction: includeCallToAction,
-                    onIncludeCallToActionChanged: (value) {
-                      setState(() {
-                        includeCallToAction = value ?? false;
-                      });
-                    },
                     onGenerateContext: _isGeneratingContext ? null : () async {
                       if (titleController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Preencha o título para gerar o contexto automaticamente.'),
+                            content: Text('Preencha o tÃ­tulo para gerar o contexto automaticamente.'),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -343,15 +332,15 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                         final errorStr = e.toString().toLowerCase();
                         
                         if (errorStr.contains('503')) {
-                          errorMessage = '🔄 Servidor temporariamente indisponível. Tente em alguns minutos.';
+                          errorMessage = 'ðŸ”„ Servidor temporariamente indisponÃ­vel. Tente em alguns minutos.';
                         } else if (errorStr.contains('429')) {
-                          errorMessage = '⏱️ Muitas solicitações. Aguarde um momento.';
+                          errorMessage = 'â±ï¸ Muitas solicitaÃ§Ãµes. Aguarde um momento.';
                         } else if (errorStr.contains('timeout') || errorStr.contains('connection')) {
-                          errorMessage = '🌐 Problema de conexão. Verifique sua internet.';
+                          errorMessage = 'ðŸŒ Problema de conexÃ£o. Verifique sua internet.';
                         } else if (errorStr.contains('api')) {
-                          errorMessage = '🔑 Verifique sua chave API nas configurações.';
+                          errorMessage = 'ðŸ”‘ Verifique sua chave API nas configuraÃ§Ãµes.';
                         } else {
-                          errorMessage = '❌ Erro inesperado. Tente novamente.';
+                          errorMessage = 'âŒ Erro inesperado. Tente novamente.';
                         }
                         
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -403,7 +392,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                         side: const BorderSide(color: Colors.red),
                         foregroundColor: Colors.red,
                       ),
-                      child: const Text('Cancelar Geração'),
+                      child: const Text('Cancelar GeraÃ§Ã£o'),
                     ),
                   ),
               ],
@@ -414,3 +403,4 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
     );
   }
 }
+
