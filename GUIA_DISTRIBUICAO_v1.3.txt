@@ -1,0 +1,267 @@
+═══════════════════════════════════════════════════════════════════════════
+     GUIA DE DISTRIBUIÇÃO - GERADOR DE ROTEIROS v1.3
+═══════════════════════════════════════════════════════════════════════════
+
+📦 ARQUIVO PRONTO PARA ENVIAR AOS CLIENTES:
+   └─ Gerador_Roteiro_v1.3.zip (11.9 MB)
+
+📍 LOCALIZAÇÃO:
+   C:\Users\Guilherme\Desktop\Flutter Gerador\Gerador_Roteiro_v1.3.zip
+
+═══════════════════════════════════════════════════════════════════════════
+✅ CHECKLIST - ARQUIVO ESTÁ PRONTO!
+═══════════════════════════════════════════════════════════════════════════
+
+✔️ Executável compilado em Release (otimizado)
+✔️ Todas as DLLs e dependências incluídas
+✔️ README.md completo com instruções
+✔️ NOVIDADES_v1.3.txt com changelog detalhado
+✔️ Pasta data/ com recursos necessários
+✔️ Tamanho otimizado (11.9 MB)
+✔️ Compactação Optimal (melhor compressão)
+
+═══════════════════════════════════════════════════════════════════════════
+📤 COMO DISTRIBUIR
+═══════════════════════════════════════════════════════════════════════════
+
+OPÇÃO 1: Email
+───────────────
+   • Anexe o arquivo Gerador_Roteiro_v1.3.zip
+   • Tamanho: 11.9 MB (aceito pela maioria dos provedores)
+   • Use o texto modelo abaixo para o email
+
+
+OPÇÃO 2: Google Drive / Dropbox
+────────────────────────────────
+   1. Faça upload do arquivo ZIP
+   2. Gere link de compartilhamento
+   3. Configure como "Qualquer pessoa com o link"
+   4. Envie o link aos clientes
+
+
+OPÇÃO 3: WeTransfer
+────────────────────
+   1. Acesse wetransfer.com
+   2. Faça upload do ZIP
+   3. Envie para email dos clientes
+   4. Link válido por 7 dias (gratuito)
+
+
+OPÇÃO 4: Seu próprio servidor/site
+───────────────────────────────────
+   • Upload direto em área de download
+   • Controle total de acesso
+   • Analytics de downloads
+
+═══════════════════════════════════════════════════════════════════════════
+✉️ MODELO DE EMAIL PARA CLIENTES
+═══════════════════════════════════════════════════════════════════════════
+
+Assunto: Nova Versão Disponível - Gerador de Roteiros v1.3 🎬
+
+───────────────────────────────────────────────────────────────────────────
+
+Olá!
+
+Tenho o prazer de anunciar a versão 1.3 do Gerador de Roteiros para 
+YouTube, com novidades incríveis!
+
+🎉 PRINCIPAIS NOVIDADES:
+
+✨ MODO LIVRE (SEM TEMA) - NOVO!
+   → Gere roteiros sem tema predefinido
+   → IA tem liberdade total para criar
+   → Ideal para canais generalistas
+
+⚡ GERAÇÃO 40% MAIS RÁPIDA
+   → Otimização de idiomas
+   → Removidos idiomas lentos
+   → 12 idiomas perfeitamente sincronizados
+
+🐛 CORREÇÕES E MELHORIAS
+   → Tema personalizado aceita campo vazio
+   → Interface mais intuitiva
+   → Bugs corrigidos
+
+📦 COMO INSTALAR:
+
+1. Extraia o arquivo ZIP anexo
+2. Dê duplo clique em flutter_gerador.exe
+3. Configure sua API Key do Google Gemini
+4. Pronto para usar!
+
+📖 DOCUMENTAÇÃO COMPLETA:
+   → README.md (guia completo de uso)
+   → NOVIDADES_v1.3.txt (changelog detalhado)
+
+💡 REQUER:
+   • Windows 10/11
+   • API Key do Google Gemini (gratuita)
+   • Conexão com internet
+
+🔗 Obtenha API Key grátis:
+   https://makersuite.google.com/app/apikey
+
+Qualquer dúvida, estou à disposição!
+
+Boas criações! 🎬✨
+
+[Seu Nome]
+
+───────────────────────────────────────────────────────────────────────────
+
+═══════════════════════════════════════════════════════════════════════════
+💬 MODELO DE MENSAGEM WHATSAPP
+═══════════════════════════════════════════════════════════════════════════
+
+🎬 *NOVA VERSÃO DISPONÍVEL!*
+
+*Gerador de Roteiros v1.3* já está pronto! 🚀
+
+*Novidades:*
+✨ Modo Livre (sem tema) - IA 100% criativa
+⚡ Geração 40% mais rápida
+🐛 Bugs corrigidos
+
+*Download:* [link aqui]
+*Tamanho:* 11.9 MB
+*Windows 10/11*
+
+Precisa de API Key do Gemini (grátis):
+https://makersuite.google.com/app/apikey
+
+Dúvidas? Só chamar! 😊
+
+═══════════════════════════════════════════════════════════════════════════
+🎯 PERGUNTAS FREQUENTES DOS CLIENTES
+═══════════════════════════════════════════════════════════════════════════
+
+P: "Preciso desinstalar a versão antiga?"
+R: Não! Pode extrair em outra pasta e usar as duas.
+   Ou substitua os arquivos da versão antiga.
+
+P: "Meus roteiros salvos serão apagados?"
+R: Não! As configurações são mantidas se instalar na mesma pasta.
+
+P: "A API Key continua a mesma?"
+R: Sim! Se já configurou, a chave será mantida.
+
+P: "Quanto custa a API do Gemini?"
+R: Gratuito até 1500 requisições/dia (150-300 roteiros).
+   Mais que suficiente para uso profissional.
+
+P: "Posso usar roteiros gerados comercialmente?"
+R: Sim! Todos os roteiros gerados são 100% seus.
+   Use livremente em seus vídeos e monetize.
+
+P: "Funciona offline?"
+R: Não. Precisa de internet para comunicar com API Gemini.
+
+P: "Tem versão para Mac/Linux?"
+R: Ainda não. Apenas Windows por enquanto.
+
+═══════════════════════════════════════════════════════════════════════════
+📊 ESTATÍSTICAS DE GERAÇÃO
+═══════════════════════════════════════════════════════════════════════════
+
+TEMPOS MÉDIOS (Roteiro 10k palavras):
+
+Idiomas Rápidos (Português, Inglês, Espanhol):
+   └─ 8-12 minutos
+
+Idiomas Médios (Francês, Alemão, Italiano):
+   └─ 10-14 minutos
+
+Idiomas Pesados (Russo, Polonês, Croata, Búlgaro):
+   └─ 12-16 minutos
+
+Idiomas Muito Pesados (Turco, Romeno):
+   └─ 14-18 minutos
+
+* Removidos idiomas que levavam 21-23 minutos
+
+═══════════════════════════════════════════════════════════════════════════
+🔧 REQUISITOS TÉCNICOS
+═══════════════════════════════════════════════════════════════════════════
+
+SISTEMA OPERACIONAL:
+   • Windows 10 (64-bit) ou superior
+   • Windows 11 (64-bit)
+
+HARDWARE MÍNIMO:
+   • Processador: Intel Core i3 ou equivalente
+   • RAM: 4 GB (recomendado 8 GB)
+   • Espaço: 500 MB livres
+   • Internet: Conexão estável
+
+SOFTWARE:
+   • Google Gemini API Key (gratuita)
+   • Navegador para obter API Key
+
+═══════════════════════════════════════════════════════════════════════════
+🆕 RECURSOS DA v1.3
+═══════════════════════════════════════════════════════════════════════════
+
+GERAÇÃO DE CONTEÚDO:
+✔️ Modo Livre (sem tema) - NOVO!
+✔️ 14 temas predefinidos
+✔️ Tema personalizado customizável
+✔️ 12 idiomas otimizados
+✔️ 10k-30k+ caracteres por roteiro
+✔️ Sistema anti-repetição inteligente
+✔️ Tracking de personagens
+
+RECURSOS AVANÇADOS:
+✔️ Geração automática de contexto com IA
+✔️ Múltiplos formatos (YouTube, Shorts, Podcast)
+✔️ Legendas SRT automáticas
+✔️ Expansão de roteiros existentes
+✔️ CTAs personalizáveis
+✔️ Exportação em múltiplos formatos
+
+INTERFACE:
+✔️ Design moderno e intuitivo
+✔️ Acompanhamento de progresso em tempo real
+✔️ Preview instantâneo do roteiro
+✔️ Validação de campos automática
+✔️ Salvamento automático de preferências
+
+═══════════════════════════════════════════════════════════════════════════
+⚠️ AVISOS IMPORTANTES
+═══════════════════════════════════════════════════════════════════════════
+
+1. ANTIVÍRUS:
+   Alguns antivírus podem bloquear executáveis novos.
+   Adicione exceção se necessário.
+
+2. EXTRAÇÃO:
+   SEMPRE extraia TODOS os arquivos do ZIP.
+   Não execute direto do ZIP ou só o .exe
+
+3. API KEY:
+   Guarde sua chave com segurança.
+   Ela é pessoal e intransferível.
+
+4. LIMITES:
+   API gratuita tem limite diário.
+   Planeje suas gerações com antecedência.
+
+5. INTERNET:
+   Velocidade da internet impacta tempo de geração.
+   Conexão instável pode causar falhas.
+
+═══════════════════════════════════════════════════════════════════════════
+✅ TUDO PRONTO!
+═══════════════════════════════════════════════════════════════════════════
+
+O arquivo Gerador_Roteiro_v1.3.zip está PRONTO para distribuição!
+
+Você pode:
+✔️ Enviar por email
+✔️ Compartilhar link (Drive/Dropbox)
+✔️ Disponibilizar em site
+✔️ Enviar por WhatsApp/Telegram
+
+Boa distribuição e muito sucesso! 🎬✨
+
+═══════════════════════════════════════════════════════════════════════════

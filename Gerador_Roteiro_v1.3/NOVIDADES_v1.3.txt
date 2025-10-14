@@ -1,0 +1,214 @@
+═══════════════════════════════════════════════════════════════════════════
+          GERADOR DE ROTEIROS PARA YOUTUBE - VERSÃO 1.3
+                        CHANGELOG E NOVIDADES
+═══════════════════════════════════════════════════════════════════════════
+
+📅 DATA DE LANÇAMENTO: Outubro 2025
+
+═══════════════════════════════════════════════════════════════════════════
+🎉 PRINCIPAIS NOVIDADES DESTA VERSÃO
+═══════════════════════════════════════════════════════════════════════════
+
+✨ NOVO RECURSO: MODO LIVRE (SEM TEMA)
+───────────────────────────────────────────────────────────────────────────
+🆓 Agora você pode gerar roteiros SEM tema predefinido!
+
+   ➤ Nova opção no dropdown: "🆓 Livre (Sem Tema)"
+   ➤ IA cria histórias baseadas APENAS no título e contexto
+   ➤ Mais criatividade e imprevisibilidade
+   ➤ Mistura múltiplos gêneros automaticamente
+   ➤ Ideal para canais generalistas
+
+🔧 MODOS DE USO:
+   1️⃣  DROPDOWN COM TEMA: Escolha tema + subtema (ex: Vingança)
+   2️⃣  DROPDOWN LIVRE: Selecione "Livre (Sem Tema)" - sem restrições
+   3️⃣  TEMA PERSONALIZADO: Ative toggle e digite tema customizado
+   4️⃣  TEMA PERSONALIZADO VAZIO: Ative toggle e deixe em branco = livre
+
+
+🌍 OTIMIZAÇÃO DE IDIOMAS
+───────────────────────────────────────────────────────────────────────────
+✂️ Removidos 5 idiomas lentos (21-23 min de geração):
+   ✖ Japonês
+   ✖ Chinês Simplificado
+   ✖ Chinês Tradicional
+   ✖ Coreano
+   ✖ Hindi
+
+📊 RESULTADO: Geração 40% mais rápida nos idiomas restantes!
+
+🔧 Sincronização completa interface/código:
+   ✔️ 12 idiomas perfeitamente alinhados
+   ✔️ Removidos idiomas órfãos (Ucraniano, Árabe)
+   ✔️ Adicionada tradução completa do Romeno (corrigido bug)
+
+
+🐛 CORREÇÕES DE BUGS
+───────────────────────────────────────────────────────────────────────────
+✅ Corrigido: Tema personalizado obrigava preenchimento
+   → Agora permite campo vazio para modo livre
+
+✅ Corrigido: Subtema aparecia com "Livre (Sem Tema)"
+   → Agora subtema é ocultado automaticamente
+
+✅ Corrigido: Validação impedia geração sem tema
+   → Validação ajustada para permitir modo livre
+
+
+═══════════════════════════════════════════════════════════════════════════
+📋 IDIOMAS DISPONÍVEIS (12 TOTAL)
+═══════════════════════════════════════════════════════════════════════════
+
+1.  🇵🇹 Português           ⚡ 8-12 min
+2.  🇺🇸 Inglês               ⚡ 8-12 min
+3.  🇲🇽 Espanhol (Mexicano)  ⚡ 8-12 min
+4.  🇫🇷 Francês              ⚡ 10-14 min
+5.  🇩🇪 Alemão               ⚡ 10-14 min
+6.  🇮🇹 Italiano             ⚡ 10-14 min
+7.  🇷🇺 Russo                ⚡ 12-16 min
+8.  🇵🇱 Polonês              ⚡ 12-16 min
+9.  🇭🇷 Croata               ⚡ 12-16 min
+10. 🇧🇬 Búlgaro              ⚡ 12-16 min
+11. 🇹🇷 Turco                ⚡ 14-18 min
+12. 🇷🇴 Romeno               ⚡ 14-18 min
+
+
+═══════════════════════════════════════════════════════════════════════════
+🎬 RECURSOS MANTIDOS (FUNCIONALIDADES ANTERIORES)
+═══════════════════════════════════════════════════════════════════════════
+
+✔️ Geração de roteiros 10k-30k+ caracteres
+✔️ 14 temas predefinidos + subtemas
+✔️ Tema personalizado customizável
+✔️ Modo "começar com frase do título"
+✔️ Nível de regionalismo ajustável
+✔️ Múltiplos formatos de vídeo (Standard, Shorts, Podcast)
+✔️ Sistema de CTAs automáticos
+✔️ Geração de legendas SRT
+✔️ Expansão de roteiros existentes
+✔️ Sistema anti-repetição de termos
+✔️ Tracking detalhado de personagens
+✔️ Adaptação automática para idiomas não-latinos
+
+
+═══════════════════════════════════════════════════════════════════════════
+🚀 REQUISITOS DO SISTEMA
+═══════════════════════════════════════════════════════════════════════════
+
+Sistema Operacional: Windows 10/11 (64-bit)
+Memória RAM: Mínimo 4GB (recomendado 8GB)
+Espaço em Disco: 500MB livres
+Conexão Internet: Necessária (API Gemini)
+API Key: Google Gemini 2.0 Flash / 2.5 Pro
+
+
+═══════════════════════════════════════════════════════════════════════════
+📝 COMO USAR O NOVO MODO LIVRE
+═══════════════════════════════════════════════════════════════════════════
+
+MÉTODO 1: Dropdown "Livre (Sem Tema)"
+──────────────────────────────────────
+1. Certifique-se que toggle "Tema Personalizado" está DESATIVADO
+2. No dropdown de temas, selecione "🆓 Livre (Sem Tema)"
+3. Campo subtema desaparece automaticamente
+4. Preencha apenas: Título, Localização, Contexto
+5. Clique em "Gerar Roteiro"
+6. IA criará história baseada APENAS no título fornecido
+
+
+MÉTODO 2: Campo Personalizado Vazio
+────────────────────────────────────
+1. ATIVE o toggle "Tema Personalizado"
+2. DEIXE o campo de tema em branco (não digite nada)
+3. Preencha: Título, Localização, Contexto
+4. Clique em "Gerar Roteiro"
+5. Sistema converte automaticamente para modo livre
+
+
+💡 DICA: Qual método usar?
+──────────────────────────
+• Use DROPDOWN para alternar rapidamente entre temas
+• Use CAMPO VAZIO quando quiser testar sem trocar configurações
+
+
+═══════════════════════════════════════════════════════════════════════════
+📊 COMPARAÇÃO: COM TEMA vs SEM TEMA
+═══════════════════════════════════════════════════════════════════════════
+
+┌─────────────────┬──────────────────────┬──────────────────────┐
+│   CARACTERÍSTICA│      COM TEMA        │      SEM TEMA        │
+├─────────────────┼──────────────────────┼──────────────────────┤
+│ Direção         │ Focada e previsível  │ Livre e criativa     │
+│ Estrutura       │ Segue arco temático  │ Estrutura orgânica   │
+│ Gênero          │ 1 gênero principal   │ Mix de gêneros       │
+│ Público-alvo    │ Nicho específico     │ Abrangente           │
+│ Consistência    │ Alta (entre episódios│ Variável             │
+│ Surpresas       │ Poucas               │ Muitas               │
+│ Uso ideal       │ Canais especializados│ Canais generalistas  │
+└─────────────────┴──────────────────────┴──────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+🎯 RECOMENDAÇÕES DE USO
+═══════════════════════════════════════════════════════════════════════════
+
+PARA CANAIS DE NICHO:
+─────────────────────
+✔️ Use COM TEMA para manter identidade de marca
+   Exemplo: Canal "Histórias de Vingança" → sempre tema "Vingança"
+
+PARA CANAIS GENERALISTAS:
+──────────────────────────
+✔️ Use SEM TEMA para variedade e alcance maior
+   Exemplo: Canal "Causos Incríveis" → cada história diferente
+
+PARA TESTES:
+────────────
+✔️ Gere o MESMO título COM e SEM tema
+✔️ Compare qual funciona melhor com sua audiência
+✔️ Use analytics do YouTube para decidir estratégia
+
+
+═══════════════════════════════════════════════════════════════════════════
+⚠️ NOTAS IMPORTANTES
+═══════════════════════════════════════════════════════════════════════════
+
+• O modo livre gera roteiros de mesma QUALIDADE TÉCNICA
+• A única diferença é a DIREÇÃO CRIATIVA da IA
+• Tempo de geração é o MESMO (não há diferença de velocidade)
+• Modo livre pode criar histórias inesperadas (é intencional!)
+• Recomendado revisar roteiros livres antes de narrar
+
+
+═══════════════════════════════════════════════════════════════════════════
+📞 SUPORTE
+═══════════════════════════════════════════════════════════════════════════
+
+Em caso de dúvidas ou problemas:
+• Leia a documentação incluída (README.md)
+• Verifique se API Key está configurada corretamente
+• Certifique-se de ter conexão com internet ativa
+• Teste primeiro com roteiros pequenos (2000 palavras)
+
+
+═══════════════════════════════════════════════════════════════════════════
+🙏 AGRADECIMENTOS
+═══════════════════════════════════════════════════════════════════════════
+
+Obrigado por usar o Gerador de Roteiros para YouTube!
+Esta versão 1.3 traz melhorias significativas baseadas no feedback
+dos usuários. Continue enviando sugestões para futuras versões!
+
+Boas criações! 🎬✨
+
+
+═══════════════════════════════════════════════════════════════════════════
+📜 HISTÓRICO DE VERSÕES
+═══════════════════════════════════════════════════════════════════════════
+
+v1.3 (Out/2025) - Modo Livre + Otimização de Idiomas
+v1.2 (Set/2025) - Sistema anti-repetição aprimorado
+v1.1 (Ago/2025) - Adição de múltiplos formatos de vídeo
+v1.0 (Jul/2025) - Lançamento inicial
+
+═══════════════════════════════════════════════════════════════════════════

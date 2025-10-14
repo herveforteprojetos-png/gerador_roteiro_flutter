@@ -1,0 +1,137 @@
+═══════════════════════════════════════════════════════════════════════════════
+🎬 GERADOR DE ROTEIROS v1.4 - NOVIDADES E MELHORIAS
+═══════════════════════════════════════════════════════════════════════════════
+
+📅 Data de Lançamento: Outubro 2025
+🚀 Versão: 1.4.0 - "Perspectiva Narrativa & Otimização"
+
+═══════════════════════════════════════════════════════════════════════════════
+⭐ NOVIDADES PRINCIPAIS
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 1. SISTEMA DE PERSPECTIVA NARRATIVA INTELIGENTE
+   ✅ Detecção automática de perspectiva narrativa (1ª ou 3ª pessoa)
+   ✅ CTAs personalizados respeitam a perspectiva do roteiro
+   ✅ Análise quantitativa de pronomes para identificação precisa
+   
+   📖 Como funciona:
+   • Roteiro em 1ª pessoa → CTAs falam como o personagem
+     Exemplo: "Se minha história te tocou, inscreva-se..."
+   
+   • Roteiro em 3ª pessoa → CTAs falam do personagem
+     Exemplo: "Se a história de Jorge te impactou, inscreva-se..."
+
+📊 2. AJUSTE FINO DE IDIOMAS (12 IDIOMAS SUPORTADOS)
+   ✅ Multiplicadores específicos por idioma para quantidade de palavras
+   ✅ Correção automática de verbosidade natural de cada língua
+   
+   Idiomas otimizados:
+   • Português (BR) - Baseline 1.0x
+   • Espanhol - 0.85x (mais conciso)
+   • Inglês - 1.10x (mais direto)
+   • Francês - 0.90x
+   • Italiano - 0.92x
+   • Alemão - 0.95x
+   • Russo - 1.15x (mais conciso)
+   • Polonês - 1.05x
+   • Búlgaro - 1.08x
+   • Croata - 1.03x
+   • Turco - 1.20x (muito conciso)
+   • Romeno - 1.00x
+
+🧹 3. LIMPEZA DE CÓDIGO E OTIMIZAÇÃO
+   ✅ Removidos ~3.900 linhas de código obsoleto
+   ✅ Sistema de workspace removido (não utilizado)
+   ✅ Arquivos duplicados eliminados
+   ✅ Performance melhorada
+   
+   Arquivos removidos:
+   • main_simples.dart e main_workspace.dart
+   • Sistema de workspace completo (10+ arquivos)
+   • Widgets duplicados (_fixed, _new, _modal)
+   • Pasta de backup antiga
+
+🔧 4. CORREÇÕES TÉCNICAS
+   ✅ Correção de encoding UTF-8 em 30+ termos portugueses
+   ✅ Remoção completa do sistema de CTA automático obsoleto
+   ✅ Validação pós-geração rejeitando blocos >10% do limite
+   ✅ Eliminação de erros de compilação
+
+═══════════════════════════════════════════════════════════════════════════════
+🎨 MELHORIAS DE QUALIDADE
+═══════════════════════════════════════════════════════════════════════════════
+
+✨ CTAs Personalizados (Ferramentas Extras):
+   • Tom emocional alinhado com o roteiro
+   • Protagonismo vs. vitimização ajustado
+   • Desfecho do CTA reflete o final da história
+   • Zero promessas de eventos futuros em histórias concluídas
+
+🎯 Geração de Roteiros:
+   • Quantidade de palavras mais precisa por idioma
+   • Validação automática de excesso de palavras
+   • Sistema anti-repetição mantido e otimizado
+   • Qualidade narrativa preservada
+
+═══════════════════════════════════════════════════════════════════════════════
+🛠️ CORREÇÕES DE BUGS
+═══════════════════════════════════════════════════════════════════════════════
+
+🐛 Corrigidos:
+   ✅ Dropdown de temas com encoding incorreto (VinganÃ§a → Vingança)
+   ✅ CTAs em primeira pessoa para roteiros em terceira pessoa
+   ✅ Erros de compilação por chaves extras
+   ✅ Métodos faltantes em providers
+   ✅ Sobrecarga de palavras em idiomas verbosos (Espanhol +20%)
+
+═══════════════════════════════════════════════════════════════════════════════
+📋 REQUISITOS DO SISTEMA
+═══════════════════════════════════════════════════════════════════════════════
+
+Sistema Operacional: Windows 10/11 (64-bit)
+RAM: 4GB mínimo (8GB recomendado)
+Espaço em Disco: 200MB
+Conexão com Internet: Necessária (API Gemini 2.5 Pro)
+API Key: Google Gemini 2.5 Pro (obrigatória)
+
+═══════════════════════════════════════════════════════════════════════════════
+🚀 COMO USAR
+═══════════════════════════════════════════════════════════════════════════════
+
+1️⃣ Extraia todos os arquivos desta pasta para um local de sua escolha
+2️⃣ Execute o arquivo "flutter_gerador.exe"
+3️⃣ Configure sua API Key do Google Gemini nas configurações
+4️⃣ Escolha o tema, idioma e quantidade de palavras desejada
+5️⃣ Clique em "Gerar Roteiro" e aguarde o resultado!
+
+💡 DICA: Use "Ferramentas Extras" para gerar CTAs personalizados após criar seu roteiro!
+
+═══════════════════════════════════════════════════════════════════════════════
+📞 SUPORTE E FEEDBACK
+═══════════════════════════════════════════════════════════════════════════════
+
+📧 Dúvidas ou sugestões? Entre em contato!
+🐛 Encontrou um bug? Reporte para melhorarmos continuamente!
+⭐ Gostou? Compartilhe com outros criadores de conteúdo!
+
+═══════════════════════════════════════════════════════════════════════════════
+📜 HISTÓRICO DE VERSÕES
+═══════════════════════════════════════════════════════════════════════════════
+
+v1.4.0 (Outubro 2025)
+• Sistema de perspectiva narrativa inteligente
+• Ajuste fino de idiomas (12 línguas)
+• Limpeza de código (~3.900 linhas removidas)
+• Correções de encoding UTF-8
+• Performance otimizada
+
+v1.3.0 (Setembro 2025)
+• Sistema anti-repetição leve
+• Ajustes de linguagem simples em CTAs
+• Isolate para processamento pesado
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✨ Obrigado por usar o Gerador de Roteiros! ✨
+
+═══════════════════════════════════════════════════════════════════════════════

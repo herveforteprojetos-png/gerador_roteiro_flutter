@@ -7,6 +7,7 @@ import 'package:flutter_gerador/data/models/script_result.dart';
 import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/data/models/localization_level.dart';
 import 'package:flutter_gerador/data/services/name_generator_service.dart';
+import 'package:flutter_gerador/data/models/debug_log.dart';
 
 /// 🚀 FUNÇÃO TOP-LEVEL para execução em Isolate separado
 /// Evita travar UI thread durante verificação de repetição
@@ -313,6 +314,9 @@ class GeminiService {
   final String _instanceId;
   bool _isCancelled = false;
 
+  // Debug Logger
+  final _debugLogger = DebugLogManager();
+
   // Circuit breaker
   bool _isCircuitOpen = false;
   int _failureCount = 0;
@@ -389,6 +393,17 @@ class GeminiService {
       var acc = '';
       
       for (var block = 1; block <= totalBlocks && !_isCancelled; block++) {
+        // 🐛 DEBUG: Log início de bloco
+        _debugLogger.block(
+          block, 
+          "Iniciando geração",
+          metadata: {
+            'totalBlocos': totalBlocks,
+            'contextoAtual': acc.length,
+            'palavrasGeradas': _countWords(acc),
+          },
+        );
+        
         final phaseIdx = _getPhaseIndexFromProgress(block / totalBlocks);
         final phase = _phases[phaseIdx];
         final progress = block / totalBlocks;
@@ -467,6 +482,17 @@ class GeminiService {
           final isSimilar = result['isSimilar'] as bool;
           
           if (isSimilar) {
+            // 🐛 DEBUG: Log repetição detectada
+            _debugLogger.warning(
+              "Repetição detectada no bloco $block",
+              details: result['reason'] as String,
+              metadata: {
+                'bloco': block,
+                'tamanho': _countWords(added),
+                'threshold': 0.80,
+              },
+            );
+            
             if (kDebugMode) {
               debugPrint('❌ BLOCO $block REJEITADO: Muito similar ao conteúdo anterior!');
               debugPrint('   📊 Tamanho do bloco: ${_countWords(added)} palavras');
@@ -549,6 +575,17 @@ class GeminiService {
           // 🚨 VALIDAÇÃO CRÍTICA 2: Verificar se algum nome foi reutilizado
           _validateNameReuse(added, persistentTracker, block);
           
+          // 🐛 DEBUG: Log bloco completado com sucesso
+          _debugLogger.success(
+            "Bloco $block completado",
+            details: "Tamanho: ${_countWords(added)} palavras",
+            metadata: {
+              'bloco': block,
+              'palavrasNoBloco': _countWords(added),
+              'contextoTotal': acc.length + added.length,
+            },
+          );
+          
           _updateTrackerFromContextSnippet(persistentTracker, config, added);
           
           // 🔒 TRACKING APRIMORADO: Extrair TODOS os nomes após cada bloco
@@ -573,8 +610,20 @@ class GeminiService {
                   normalized != config.localizacao.trim().toLowerCase()) {
                 // 🔥 VALIDAÇÃO EXTRA: Verificar se nome está no banco curado
                 if (NameGeneratorService.isValidName(name)) {
-                  // Adicionar com tentativa de extrair papel do contexto
-                  persistentTracker.addName(name);
+                  // 📚 SISTEMA DE NOTAS: Adicionar com número do bloco
+                  persistentTracker.addName(name, blockNumber: block);
+                  
+                  // 🐛 DEBUG: Log personagem detectado
+                  _debugLogger.character(
+                    name,
+                    "Personagem detectado",
+                    blockNumber: block,
+                    metadata: {
+                      'frequencia': count,
+                      'primeiraAparicao': block,
+                    },
+                  );
+                  
                   if (kDebugMode) {
                     debugPrint('🔒 TRACKING SECUNDÁRIO (bloco $block): "$name" detectado $count vez(es)');
                   }
@@ -638,10 +687,29 @@ class GeminiService {
       // 🧹 LIMPAR MARCADORES DE DEBUG DO TEXTO FINAL
       final cleanedAcc = acc.replaceAll(RegExp(r'PERSONAGEM MENCIONADO:\s*'), '');
       
-      // � DETECÇÃO FINAL: Verificar se há parágrafos duplicados (apenas LOG, não remove)
+      // 🔍 DETECÇÃO FINAL: Verificar se há parágrafos duplicados (apenas LOG, não remove)
       if (kDebugMode) {
         _detectDuplicateParagraphsInFinalScript(cleanedAcc);
       }
+      
+      // 🐛 DEBUG: Log estatísticas finais
+      final stats = _debugLogger.getStatistics();
+      _debugLogger.success(
+        "Geração completa!",
+        details: "Roteiro finalizado com sucesso\n"
+                "- Palavras: ${_countWords(cleanedAcc)}\n"
+                "- Caracteres: ${cleanedAcc.length}\n"
+                "- Personagens: ${persistentTracker.confirmedNames.length}\n"
+                "- Logs gerados: ${stats['total']}",
+        metadata: {
+          'palavras': _countWords(cleanedAcc),
+          'caracteres': cleanedAcc.length,
+          'personagens': persistentTracker.confirmedNames.length,
+          'logsTotal': stats['total'],
+          'erros': stats['error'],
+          'avisos': stats['warning'],
+        },
+      );
       
       return ScriptResult(
         scriptText: cleanedAcc,
@@ -1812,6 +1880,14 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
       if (suspiciousName.toLowerCase() == protagonistName.toLowerCase()) continue;
       
       if (generatedText.contains(suspiciousName)) {
+        // 🐛 DEBUG: Log erro crítico de nome
+        _debugLogger.error(
+          "Troca de nome detectada!",
+          characterName: suspiciousName,
+          blockNumber: blockNumber,
+          details: "Protagonista deveria ser '$protagonistName' mas encontrei '$suspiciousName'",
+        );
+        
         debugPrint('🚨 ERRO CRÍTICO DETECTADO NO BLOCO $blockNumber:');
         debugPrint('   ❌ Protagonista deveria ser: "$protagonistName"');
         debugPrint('   ❌ Mas encontrei nome suspeito: "$suspiciousName"');
@@ -1821,7 +1897,22 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
     }
     
     if (!hasProtagonist && blockNumber <= 2) {
+      // 🐛 DEBUG: Log aviso de protagonista ausente
+      _debugLogger.warning(
+        "Protagonista ausente",
+        details: "'$protagonistName' não apareceu no bloco $blockNumber",
+        metadata: {'bloco': blockNumber, 'protagonista': protagonistName},
+      );
+      
       debugPrint('⚠️ AVISO: Protagonista "$protagonistName" não apareceu no bloco $blockNumber');
+    } else if (hasProtagonist) {
+      // 🐛 DEBUG: Log validação bem-sucedida
+      _debugLogger.validation(
+        "Protagonista validada",
+        blockNumber: blockNumber,
+        details: "'$protagonistName' presente no bloco",
+        metadata: {'protagonista': protagonistName},
+      );
     }
   }
   
@@ -1861,6 +1952,16 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
             
             // Se o papel existente não menciona essa pessoa, é reutilização!
             if (existingRole != null && relatedPerson != null && !existingRole.contains(relatedPerson)) {
+              // 🐛 DEBUG: Log erro crítico de reutilização
+              _debugLogger.error(
+                "Reutilização de nome detectada!",
+                characterName: name,
+                blockNumber: blockNumber,
+                details: "Nome '$name' usado em múltiplos contextos:\n"
+                        "- Anterior: $existingRole\n"
+                        "- Novo: $context $relatedPerson",
+              );
+              
               debugPrint('🚨🚨🚨 ERRO CRÍTICO DE REUTILIZAÇÃO DE NOME - BLOCO $blockNumber 🚨🚨🚨');
               debugPrint('   ❌ Nome "$name" está sendo REUTILIZADO!');
               debugPrint('   📋 Uso anterior: "$name" = $existingRole');
@@ -1873,6 +1974,14 @@ LOCALIZAÇÃO INFORMADA: $locationLabel
         }
       }
     }
+    
+    // 🐛 DEBUG: Log validação de nomes completa
+    _debugLogger.validation(
+      "Validação de reutilização completa",
+      blockNumber: blockNumber,
+      details: "${foundNames.length} nomes verificados",
+      metadata: {'nomesVerificados': foundNames.length},
+    );
   }
 
   bool _looksLikePersonName(String value) {
@@ -3418,12 +3527,135 @@ EXEMPLOS DE DETALHES ESPECÍFICOS (use este nível de concretude):
 }
 
 // 🔥 SOLUÇÃO 3: Tracker GLOBAL para manter personagens entre blocos
+/// 📝 Classe para armazenar uma nota sobre um personagem em um bloco específico
+class _CharacterNote {
+  final int blockNumber;
+  final String observation;
+  final DateTime timestamp;
+  
+  _CharacterNote(this.blockNumber, this.observation)
+      : timestamp = DateTime.now();
+  
+  @override
+  String toString() => '[Bloco $blockNumber] $observation';
+}
+
+/// 📚 Classe para armazenar o histórico completo de um personagem
+class _CharacterHistory {
+  final String name;
+  final List<_CharacterNote> timeline = [];
+  
+  _CharacterHistory(this.name);
+  
+  /// Adiciona uma nova observação sobre o personagem
+  void addNote(int blockNumber, String observation) {
+    if (observation.isEmpty) return;
+    timeline.add(_CharacterNote(blockNumber, observation));
+    if (kDebugMode) {
+      debugPrint('📝 Nota adicionada: "$name" → [B$blockNumber] $observation');
+    }
+  }
+  
+  /// Retorna o histórico completo formatado
+  String getFullHistory() {
+    if (timeline.isEmpty) return '';
+    return timeline.map((e) => e.toString()).join('\n   ');
+  }
+  
+  /// Verifica se uma nova observação contradiz o histórico
+  bool contradicts(String newObservation) {
+    if (timeline.isEmpty) return false;
+    
+    // Extrair palavras-chave da nova observação
+    final newKeywords = _extractRelationshipKeywords(newObservation);
+    
+    // Verificar se contradiz alguma nota anterior
+    for (final note in timeline) {
+      final existingKeywords = _extractRelationshipKeywords(note.observation);
+      
+      // Se ambos têm palavras de relacionamento, verificar contradição
+      if (newKeywords.isNotEmpty && existingKeywords.isNotEmpty) {
+        // Relacionamentos diferentes para o mesmo tipo = contradição
+        if (_areContradictoryRelationships(existingKeywords, newKeywords)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  /// Extrai palavras-chave de relacionamento de uma observação
+  Set<String> _extractRelationshipKeywords(String text) {
+    final keywords = <String>{};
+    final lowerText = text.toLowerCase();
+    
+    // Padrões de relacionamento
+    final patterns = {
+      'irmã': r'irmã\s+de\s+(\w+)',
+      'irmão': r'irmão\s+de\s+(\w+)',
+      'filho': r'filh[oa]\s+de\s+(\w+)',
+      'pai': r'pai\s+de\s+(\w+)',
+      'mãe': r'mãe\s+de\s+(\w+)',
+      'esposa': r'esposa\s+de\s+(\w+)',
+      'marido': r'marido\s+de\s+(\w+)',
+      'neto': r'net[oa]\s+de\s+(\w+)',
+      'tio': r'ti[oa]\s+de\s+(\w+)',
+      'primo': r'prim[oa]\s+de\s+(\w+)',
+      'avô': r'av[ôó]\s+de\s+(\w+)',
+    };
+    
+    for (final entry in patterns.entries) {
+      final regex = RegExp(entry.value, caseSensitive: false);
+      final match = regex.firstMatch(lowerText);
+      if (match != null) {
+        keywords.add('${entry.key}_${match.group(1)}');
+      }
+    }
+    
+    return keywords;
+  }
+  
+  /// Verifica se dois conjuntos de relacionamentos são contraditórios
+  bool _areContradictoryRelationships(Set<String> existing, Set<String> new_) {
+    for (final existingRel in existing) {
+      final existingType = existingRel.split('_')[0];
+      
+      for (final newRel in new_) {
+        final newType = newRel.split('_')[0];
+        
+        // Mesmo tipo de relacionamento mas com pessoas diferentes = contradição
+        if (existingType == newType && existingRel != newRel) {
+          if (kDebugMode) {
+            debugPrint('🚨 CONTRADIÇÃO DETECTADA:');
+            debugPrint('   Existente: $existingRel');
+            debugPrint('   Nova: $newRel');
+          }
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  /// Retorna a primeira nota (papel inicial do personagem)
+  String? get initialRole {
+    return timeline.isEmpty ? null : timeline.first.observation;
+  }
+  
+  /// Retorna número de aparições do personagem
+  int get appearanceCount => timeline.length;
+}
+
 class _CharacterTracker {
   final Set<String> _confirmedNames = {};
   // 🔥 NOVO: Mapear cada nome ao seu papel para prevenir confusão e reuso
   final Map<String, String> _characterRoles = {};
+  // 📚 SISTEMA DE NOTAS: Histórico completo de cada personagem
+  final Map<String, _CharacterHistory> _characterHistories = {};
   
-  void addName(String name, {String? role}) {
+  void addName(String name, {String? role, int? blockNumber}) {
     if (name.isEmpty || name.length <= 2) return;
     
     // 🔒 VALIDAÇÃO CRÍTICA: Bloquear reuso de nomes
@@ -3444,7 +3676,54 @@ class _CharacterTracker {
       if (kDebugMode) {
         debugPrint('✅ MAPEAMENTO: "$name" = "$role"');
       }
+      
+      // 📚 SISTEMA DE NOTAS: Adicionar ao histórico
+      if (blockNumber != null) {
+        addNoteToCharacter(name, blockNumber, role);
+      }
     }
+  }
+  
+  /// 📝 Adiciona uma nota sobre um personagem
+  void addNoteToCharacter(String name, int blockNumber, String observation) {
+    if (!_characterHistories.containsKey(name)) {
+      _characterHistories[name] = _CharacterHistory(name);
+    }
+    
+    // Verificar se a nova observação contradiz o histórico
+    final history = _characterHistories[name]!;
+    if (history.contradicts(observation)) {
+      if (kDebugMode) {
+        debugPrint('🚨🚨🚨 CONTRADIÇÃO NO HISTÓRICO DE "$name" 🚨🚨🚨');
+        debugPrint('   📚 Histórico existente:');
+        debugPrint('   ${history.getFullHistory()}');
+        debugPrint('   ⚠️ Nova observação contraditória: $observation');
+        debugPrint('   💡 Esta observação NÃO será adicionada!');
+        debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
+      }
+      return; // Bloqueia adição de observação contraditória
+    }
+    
+    history.addNote(blockNumber, observation);
+  }
+  
+  /// 📖 Obtém o histórico completo de um personagem
+  String? getCharacterHistory(String name) {
+    final history = _characterHistories[name];
+    return history?.getFullHistory();
+  }
+  
+  /// 📊 Obtém estatísticas de um personagem
+  Map<String, dynamic> getCharacterStats(String name) {
+    final history = _characterHistories[name];
+    if (history == null) return {};
+    
+    return {
+      'name': name,
+      'initial_role': history.initialRole,
+      'appearances': history.appearanceCount,
+      'full_history': history.getFullHistory(),
+    };
   }
   
   void addNames(List<String> names) {
@@ -3459,18 +3738,35 @@ class _CharacterTracker {
   
   String? getRole(String name) => _characterRoles[name];
   
-  // 🔥 NOVO: Obter mapeamento completo de personagens
+  // 🔥 NOVO: Obter mapeamento completo de personagens com histórico
   String getCharacterMapping() {
-    if (_characterRoles.isEmpty) return '';
-    final mappings = _characterRoles.entries
-        .map((e) => '"${e.key}" = ${e.value}')
-        .join(', ');
-    return '\n🎭 PERSONAGENS JÁ DEFINIDOS: $mappings\n';
+    if (_characterRoles.isEmpty && _characterHistories.isEmpty) return '';
+    
+    final buffer = StringBuffer('\n🎭 PERSONAGENS JÁ DEFINIDOS:\n');
+    
+    // Para cada personagem, mostrar histórico completo se disponível
+    for (final name in _confirmedNames) {
+      final history = _characterHistories[name];
+      
+      if (history != null && history.timeline.isNotEmpty) {
+        // Mostrar histórico completo
+        buffer.writeln('\n👤 $name:');
+        buffer.writeln('   ${history.getFullHistory()}');
+        buffer.writeln('   ⚠️ NUNCA mude este personagem! Use outro nome para novos personagens.');
+      } else {
+        // Mostrar apenas papel básico
+        final role = _characterRoles[name] ?? 'personagem';
+        buffer.writeln('   "$name" = $role');
+      }
+    }
+    
+    return buffer.toString();
   }
   
   void clear() {
     _confirmedNames.clear();
     _characterRoles.clear();
+    _characterHistories.clear();
   }
 }
 
