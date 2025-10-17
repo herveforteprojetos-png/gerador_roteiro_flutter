@@ -99,6 +99,10 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
     state = state.copyWith(genre: value);
   }
 
+  void updateNarrativeStyle(String value) {
+    state = state.copyWith(narrativeStyle: value);
+  }
+
   void clearAll() {
     // Preservar a API key e modelo ao limpar
     final currentApiKey = state.apiKey;

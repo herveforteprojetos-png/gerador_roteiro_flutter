@@ -133,7 +133,7 @@ class CtaItem {
   /// Get position description for UI
   String get positionDescription {
     if (position == CtaPosition.custom && customPositionPercentage != null) {
-      return '${position.displayName} (${customPositionPercentage}%)';
+      return '${position.displayName} ($customPositionPercentage%)';
     }
     return position.displayName;
   }

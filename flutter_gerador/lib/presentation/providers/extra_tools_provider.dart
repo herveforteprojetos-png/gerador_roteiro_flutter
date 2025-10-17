@@ -11,20 +11,33 @@ class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
 
   // Helper para converter nomes de idiomas para códigos de tags
   String _getLanguageTag(String language) {
-    switch(language.toLowerCase()) {
-      case 'português': return 'portuguese';
-      case 'inglês': return 'english';
-      case 'espanhol(mexicano)': return 'spanish';
-      case 'francês': return 'french';
-      case 'alemão': return 'german';
-      case 'italiano': return 'italian';
-      case 'polonês': return 'polish';
-      case 'búlgaro': return 'bulgarian';
-      case 'russo': return 'russian';
-      case 'croata': return 'croatian';
-      case 'turco': return 'turkish';
-      case 'romeno': return 'romanian';
-      default: return 'multilingual';
+    switch (language.toLowerCase()) {
+      case 'português':
+        return 'portuguese';
+      case 'inglês':
+        return 'english';
+      case 'espanhol(mexicano)':
+        return 'spanish';
+      case 'francês':
+        return 'french';
+      case 'alemão':
+        return 'german';
+      case 'italiano':
+        return 'italian';
+      case 'polonês':
+        return 'polish';
+      case 'búlgaro':
+        return 'bulgarian';
+      case 'russo':
+        return 'russian';
+      case 'croata':
+        return 'croatian';
+      case 'turco':
+        return 'turkish';
+      case 'romeno':
+        return 'romanian';
+      default:
+        return 'multilingual';
     }
   }
 
@@ -34,18 +47,18 @@ class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
     final hasGeneratedSrt = state.generatedSRT != null;
     final hasSourceText = state.srtSourceText != null;
     final textChanged = state.srtSourceText != currentScriptText;
-    
+
     print('🔍 Verificando validade do SRT:');
     print('  - Tem SRT gerado: $hasGeneratedSrt');
     print('  - Tem texto fonte: $hasSourceText');
     print('  - Texto mudou: $textChanged');
     print('  - SRT atual válido: ${state.isSrtValid}');
-    
+
     if (hasGeneratedSrt && textChanged) {
       print('🔄 SRT invalidado: texto do roteiro foi editado');
       print('  - Texto antigo: ${state.srtSourceText?.length ?? 0} chars');
       print('  - Texto novo: ${currentScriptText.length} chars');
-      
+
       state = state.copyWith(
         isSrtValid: false,
         srtError: 'SRT precisa ser atualizado - roteiro foi editado',
@@ -54,7 +67,10 @@ class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
   }
 
   // 🔄 Método para auto-regenerar SRT se necessário
-  Future<String?> autoRegenerateSrtIfNeeded(GenerationConfig config, String currentScriptText) async {
+  Future<String?> autoRegenerateSrtIfNeeded(
+    GenerationConfig config,
+    String currentScriptText,
+  ) async {
     // Se não há SRT ou não é válido, regenera automaticamente
     if (state.generatedSRT == null || !state.isSrtValid) {
       print('🔄 Auto-regenerando SRT...');
@@ -68,33 +84,41 @@ class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
     return state.generatedSRT;
   }
 
-  Future<String> generateSRTSubtitles(GenerationConfig config, String scriptText) async {
+  Future<String> generateSRTSubtitles(
+    GenerationConfig config,
+    String scriptText,
+  ) async {
     // 🔄 Verificar se o texto mudou e forçar regeneração
-    final shouldRegenerate = state.srtSourceText != scriptText || !state.isSrtValid;
-    
+    final shouldRegenerate =
+        state.srtSourceText != scriptText || !state.isSrtValid;
+
     print('🔄 generateSRTSubtitles chamado:');
     print('  - Texto atual: ${scriptText.length} caracteres');
-    print('  - Texto fonte SRT: ${state.srtSourceText?.length ?? 0} caracteres');
+    print(
+      '  - Texto fonte SRT: ${state.srtSourceText?.length ?? 0} caracteres',
+    );
     print('  - SRT válido: ${state.isSrtValid}');
     print('  - Deve regenerar: $shouldRegenerate');
-    
+
     // 🔄 SEMPRE limpar SRT anterior para garantir regeneração com texto atual
     state = state.copyWith(
-      isGeneratingSRT: true, 
+      isGeneratingSRT: true,
       srtError: null,
       generatedSRT: null, // ✅ Limpa SRT anterior
       isSrtValid: false, // ✅ Marca como inválido durante geração
     );
-    
+
     try {
       // Configurações específicas para CapCut baseadas na imagem
       final srtContent = SrtService.generateSrt(
         scriptText,
         wordsPerMinute: 120, // Mais lento para não encavalar
-        maxCharactersPerSubtitle: 500, // Máximo de caracteres por bloco (CapCut)
+        maxCharactersPerSubtitle:
+            500, // Máximo de caracteres por bloco (CapCut)
         maxLinesPerSubtitle: 3, // Permitir até 3 linhas
         minDisplayTime: 2.0, // Duração mínima por bloco (30 palavras ÷ 15 = 2s)
-        maxDisplayTime: 8.0, // Duração máxima por bloco (100 palavras ÷ 12.5 = 8s)
+        maxDisplayTime:
+            8.0, // Duração máxima por bloco (100 palavras ÷ 12.5 = 8s)
         gapBetweenSubtitles: 1.0, // Intervalo de 1 segundo entre blocos
         minWordsPerBlock: 30, // Mínimo de palavras por bloco
         maxWordsPerBlock: 100, // Máximo de palavras por bloco
@@ -122,19 +146,25 @@ class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
     }
   }
 
-  Future<String> generateYouTubeDescription(GenerationConfig config, String scriptText) async {
+  Future<String> generateYouTubeDescription(
+    GenerationConfig config,
+    String scriptText,
+  ) async {
     print('🎬 ExtraTools: Iniciando geração YouTube Description');
-    print('  📋 Config: ${config.title}, ${config.language}, API Key: ${config.apiKey.isNotEmpty ? "Present" : "Missing"}');
+    print(
+      '  📋 Config: ${config.title}, ${config.language}, API Key: ${config.apiKey.isNotEmpty ? "Present" : "Missing"}',
+    );
     print('  📝 Script length: ${scriptText.length} chars');
-    
+
     state = state.copyWith(isGeneratingYouTube: true, youtubeError: null);
-    
+
     try {
       print('🏷️ Gerando language tag para: ${config.language}');
       final languageTag = _getLanguageTag(config.language);
       print('✅ Language tag gerada: $languageTag');
-      
-      final youtubePrompt = '''
+
+      final youtubePrompt =
+          '''
 Com base no seguinte roteiro, crie uma descrição otimizada para YouTube que maximize o engajamento:
 
 **Título:** ${config.title}
@@ -155,7 +185,7 @@ $scriptText
    - Elementos narrativos (ex: #storytelling #históriaverdadeira #ficção)
    - Perfil do protagonista (ex: #mulheridosa #jovem #vingança)
    - Temas universais (ex: #família #justiça #amor #traição)
-   - Idioma: #${languageTag}
+   - Idioma: #$languageTag
    - Palavras-chave específicas do roteiro
 
 3. **ADAPTAÇÃO COMPLETA PARA ${config.language}**
@@ -182,7 +212,7 @@ $scriptText
         apiKey: config.apiKey,
         model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
       );
-      
+
       print('✅ Resposta recebida do Gemini');
       print('📊 Response length: ${response.length} chars');
 
@@ -202,14 +232,18 @@ $scriptText
     }
   }
 
-  Future<String> generateProtagonistPrompt(GenerationConfig config, String scriptText) async {
+  Future<String> generateProtagonistPrompt(
+    GenerationConfig config,
+    String scriptText,
+  ) async {
     state = state.copyWith(isGeneratingPrompts: true, promptsError: null);
-    
+
     try {
       // CORREÇÃO: Usar instância injetada em vez de criar nova
       // final geminiService = GeminiService(instanceId: 'midjourney_tools'); // <- VAZAMENTO!
-      
-      final protagonistPrompt = '''
+
+      final protagonistPrompt =
+          '''
 Com base no seguinte roteiro, gere um prompt em inglês para criar uma imagem do protagonista no Midjourney:
 
 **Título:** ${config.title}
@@ -232,7 +266,7 @@ $scriptText
         apiKey: config.apiKey,
         model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
       );
-      
+
       state = state.copyWith(
         isGeneratingPrompts: false,
         generatedPrompts: result,
@@ -248,15 +282,21 @@ $scriptText
     }
   }
 
-  Future<String> generateScenarioPrompt(GenerationConfig config, String scriptText) async {
+  Future<String> generateScenarioPrompt(
+    GenerationConfig config,
+    String scriptText,
+  ) async {
     print('🏔️ ExtraTools: Iniciando geração Scenario Prompt');
-    print('  📋 Config: ${config.title}, ${config.language}, API Key: ${config.apiKey.isNotEmpty ? "Present" : "Missing"}');
+    print(
+      '  📋 Config: ${config.title}, ${config.language}, API Key: ${config.apiKey.isNotEmpty ? "Present" : "Missing"}',
+    );
     print('  📝 Script length: ${scriptText.length} chars');
-    
+
     state = state.copyWith(isGeneratingScenario: true, scenarioError: null);
-    
+
     try {
-      final scenarioPrompt = '''
+      final scenarioPrompt =
+          '''
 Com base no seguinte roteiro, gere um prompt em inglês otimizado para criar uma imagem do cenário principal no Midjourney:
 
 **Título:** ${config.title}
@@ -293,10 +333,10 @@ $scriptText
         apiKey: config.apiKey,
         model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
       );
-      
+
       print('✅ Resposta scenario recebida do Gemini');
       print('📊 Result length: ${result.length} chars');
-      
+
       state = state.copyWith(
         isGeneratingScenario: false,
         generatedScenario: result,
@@ -313,14 +353,18 @@ $scriptText
     }
   }
 
-  Future<String> generateAdvancedPrompts(GenerationConfig config, String scriptText) async {
+  Future<String> generateAdvancedPrompts(
+    GenerationConfig config,
+    String scriptText,
+  ) async {
     state = state.copyWith(isGeneratingPrompts: true, promptsError: null);
-    
+
     try {
       // CORREÇÃO: Usar instância injetada em vez de criar nova
       // final geminiService = GeminiService(instanceId: 'extra_tools'); // <- VAZAMENTO!
-      
-      final promptsTemplate = '''
+
+      final promptsTemplate =
+          '''
 Com base no seguinte roteiro, crie uma coleção de prompts criativos:
 
 **Título:** ${config.title}
@@ -379,9 +423,9 @@ Responda em ${config.language} com prompts detalhados e criativos.
 
   void clearSRT() {
     state = state.copyWith(
-      generatedSRT: null, 
-      srtError: null, 
-      srtSourceText: null, 
+      generatedSRT: null,
+      srtError: null,
+      srtSourceText: null,
       isSrtValid: false,
     );
   }
@@ -484,7 +528,8 @@ class ExtraToolsState {
   }
 }
 
-final extraToolsProvider = StateNotifierProvider<ExtraToolsNotifier, ExtraToolsState>((ref) {
-  final geminiService = ref.watch(defaultGeminiServiceProvider);
-  return ExtraToolsNotifier(geminiService);
-});
+final extraToolsProvider =
+    StateNotifierProvider<ExtraToolsNotifier, ExtraToolsState>((ref) {
+      final geminiService = ref.watch(defaultGeminiServiceProvider);
+      return ExtraToolsNotifier(geminiService);
+    });

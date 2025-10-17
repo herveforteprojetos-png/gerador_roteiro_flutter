@@ -11,7 +11,6 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
           tema: 'História',
           subtema: 'Narrativa Básica',
           localizacao: '',
-          context: '',
           measureType: 'palavras',
           quantity: 2000,
           language: 'Português',
@@ -80,9 +79,7 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
     state = state.copyWith(localizacao: value);
   }
 
-  void updateContext(String value) {
-    state = state.copyWith(context: value);
-  }
+  // Context removido - método não é mais necessário
 
   void updateMeasureType(String value) {
     state = state.copyWith(measureType: value);

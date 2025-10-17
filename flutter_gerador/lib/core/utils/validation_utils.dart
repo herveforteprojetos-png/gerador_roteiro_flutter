@@ -28,7 +28,6 @@ class ValidationUtils {
       switch (model) {
         case 'gemini-pro':
         case 'gemini-2.5-pro':
-        case 'gemini-2.5-pro': // CORREÇÃO: Apenas Pro 2.5 disponível
           return 'Chave Gemini inválida (deve começar com "AIza")';
         case 'gpt-4':
         case 'gpt-3.5-turbo':

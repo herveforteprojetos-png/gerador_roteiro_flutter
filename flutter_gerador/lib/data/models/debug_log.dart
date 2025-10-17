@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 /// 🔍 Tipos de logs para debug visual
@@ -199,6 +200,9 @@ class DebugLogManager {
       'validation': getLogsByType(DebugLogType.validation).length,
     };
   }
+  
+  /// Alias para getStats() (compatibilidade)
+  Map<String, int> getStatistics() => getStats();
   
   /// Exporta logs para texto
   String exportToText() {

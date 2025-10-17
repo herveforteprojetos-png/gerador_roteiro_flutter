@@ -43,7 +43,7 @@ class _ScriptResultViewState extends State<ScriptResultView> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
+        SizedBox(
           height: 120,
           child: Row(
             children: [

@@ -112,6 +112,7 @@ class UnauthenticatedState extends AuthState {
 }
 
 class AuthenticatedState extends AuthState {
+  @override
   final LicenseModel license;
   
   const AuthenticatedState(this.license);

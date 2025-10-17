@@ -149,7 +149,7 @@ class CtaInserter {
         paragraphIndex: safeIndex,
         positionPercentage: targetPercentage,
         nearbyText: safeIndex < paragraphs.length 
-            ? paragraphs[safeIndex].substring(0, 100) + '...'
+            ? '${paragraphs[safeIndex].substring(0, 100)}...'
             : 'Final do roteiro',
       ));
     }

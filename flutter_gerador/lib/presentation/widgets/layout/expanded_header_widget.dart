@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../../providers/generation_config_provider.dart';
-import '../../providers/auxiliary_tools_provider.dart';
 // import '../../providers/license_provider.dart'; // Removido - usando autenticação por senha
 import '../../../data/models/generation_config.dart';
 import '../../../data/models/localization_level.dart';
@@ -14,6 +11,10 @@ import '../../../core/theme/app_design_system.dart';
 import 'package:flutter_gerador/core/utils/color_extensions.dart';
 import '../../../core/services/storage_service.dart';
 // import '../../pages/license_page.dart' as custom_license; // Removido - usando autenticação por senha
+import '../help/help_tooltip_widget.dart';
+import '../help/help_popup_widget.dart';
+import '../help/template_modal_widget.dart';
+import '../../../data/constants/help_content.dart';
 
 class ExpandedHeaderWidget extends ConsumerStatefulWidget {
   final TextEditingController? contextController;
@@ -119,40 +120,6 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
       );
     } catch (e) {
       debugPrint('Erro ao carregar configurações salvas: $e');
-    }
-  }
-
-  /// Limpa dados antigos incompatíveis do storage
-  Future<void> _cleanOldIncompatibleData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Verificar se há valores antigos incompatíveis
-      final oldLanguage = prefs.getString('language');
-      final oldPerspective = prefs.getString('perspective');
-
-      bool needsClean = false;
-
-      if (oldLanguage == 'pt' ||
-          oldLanguage != null &&
-              !GenerationConfig.availableLanguages.contains(oldLanguage)) {
-        needsClean = true;
-      }
-
-      if (oldPerspective == 'terceira' ||
-          oldPerspective != null &&
-              !GenerationConfig.availablePerspectives.contains(
-                oldPerspective,
-              )) {
-        needsClean = true;
-      }
-
-      if (needsClean) {
-        debugPrint('Limpando dados antigos incompatíveis...');
-        await StorageService.clearAllSettings();
-      }
-    } catch (e) {
-      debugPrint('Erro ao limpar dados antigos: $e');
     }
   }
 
@@ -425,11 +392,34 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                   size: 16,
                 ),
                 AppDesignSystem.horizontalSpaceS,
-                Text(
-                  'CONFIGURAÇÃO DO CONTEÚDO',
-                  style: AppDesignSystem.headingSmall.copyWith(
-                    color: AppColors.fireOrange,
-                    letterSpacing: 1.2,
+                Expanded(
+                  child: Text(
+                    'CONFIGURAÇÃO DO CONTEÚDO',
+                    style: AppDesignSystem.headingSmall.copyWith(
+                      color: AppColors.fireOrange,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+                // Botão Ver Combinações
+                ElevatedButton.icon(
+                  onPressed: () => TemplateModalWidget.show(context),
+                  icon: const Text('🎯', style: TextStyle(fontSize: 16)),
+                  label: const Text('Ver Combinações'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.withOpacity(0.2),
+                    foregroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      side: BorderSide(
+                        color: Colors.blue.withOpacity(0.5),
+                        width: 1,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -511,7 +501,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                   ],
                 ),
                 AppDesignSystem.verticalSpaceM,
-                // Linha com Tipo de História (Genre)
+                // Linha com Tipo de História (Genre) e Estilo Narrativo
                 Row(
                   children: [
                     // Tipo de História
@@ -520,9 +510,15 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                       child: _buildGenreDropdown(config, configNotifier),
                     ),
                     AppDesignSystem.horizontalSpaceL,
+                    // Estilo de Narração
+                    Expanded(
+                      flex: 2,
+                      child: _buildNarrativeStyleDropdown(config, configNotifier),
+                    ),
+                    AppDesignSystem.horizontalSpaceL,
                     // Espaço vazio para manter alinhamento
                     Expanded(
-                      flex: 5,
+                      flex: 3,
                       child: Container(),
                     ),
                   ],
@@ -536,7 +532,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   }
 
   Widget _buildApiKeyField(GenerationConfigNotifier configNotifier) {
-    final config = ref.watch(generationConfigProvider);
+    // final config = ref.watch(generationConfigProvider);
 
     // Determinar cor e ícone baseado no estado de validação
     Color borderColor;
@@ -816,7 +812,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
         SizedBox(
           height: AppDesignSystem.fieldHeight,
           child: DropdownButtonFormField<String>(
-            value: config.qualityMode,
+            initialValue: config.qualityMode,
             style: AppDesignSystem.bodyMedium,
             dropdownColor: AppColors.darkBackground,
             decoration: AppDesignSystem.getInputDecoration(
@@ -881,20 +877,22 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     GenerationConfig config,
     GenerationConfigNotifier configNotifier,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Tema',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.fireOrange,
-            fontSize: 14,
+    return HelpTooltipWidget(
+      message: HelpContent.tooltips['theme']!.text,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tema',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.fireOrange,
+              fontSize: 14,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          value: config.tema,
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+          initialValue: config.tema,
           style: const TextStyle(color: Colors.white, fontSize: 14),
           dropdownColor: AppColors.darkBackground,
           decoration: InputDecoration(
@@ -1009,6 +1007,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           },
         ),
       ],
+      ),
     );
   }
 
@@ -1033,7 +1032,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: subtemasDisponiveis.contains(config.subtema)
+          initialValue: subtemasDisponiveis.contains(config.subtema)
               ? config.subtema
               : subtemasDisponiveis.first,
           style: const TextStyle(color: Colors.white, fontSize: 14),
@@ -1176,7 +1175,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           Switch(
             value: config.usePersonalizedTheme,
             onChanged: configNotifier.updateUsePersonalizedTheme,
-            activeColor: AppColors.fireOrange,
+            activeThumbColor: AppColors.fireOrange,
             activeTrackColor: AppColors.fireOrange.withOpacity(0.3),
             inactiveThumbColor: Colors.grey,
             inactiveTrackColor: Colors.grey.withOpacity(0.3),
@@ -1190,19 +1189,21 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     GenerationConfig config,
     GenerationConfigNotifier configNotifier,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Onde se passa a história:',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.fireOrange,
-            fontSize: 14,
+    return HelpTooltipWidget(
+      message: HelpContent.tooltips['location']!.text,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Onde se passa a história:',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.fireOrange,
+              fontSize: 14,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
+          const SizedBox(height: 8),
+          TextField(
           controller: localizacaoController,
           style: const TextStyle(color: Colors.white, fontSize: 14),
           decoration: InputDecoration(
@@ -1236,6 +1237,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           onChanged: configNotifier.updateLocalizacao,
         ),
       ],
+      ),
     );
   }
 
@@ -1257,7 +1259,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
         const SizedBox(height: 8),
         // Dropdown de tipo de medida com mesmo estilo dos outros
         DropdownButtonFormField<String>(
-          value: config.measureType,
+          initialValue: config.measureType,
           style: const TextStyle(color: Colors.white, fontSize: 12),
           dropdownColor: AppColors.darkBackground,
           isDense: true,
@@ -1352,7 +1354,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: config.language,
+          initialValue: config.language,
           style: const TextStyle(color: Colors.white, fontSize: 12),
           dropdownColor: AppColors.darkBackground,
           isDense: true,
@@ -1417,17 +1419,37 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Tipo de História 🎭',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.fireOrange,
-            fontSize: 14,
-          ),
+        // Título com botão de ajuda
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Tipo de História',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.fireOrange,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            // Botão de informação
+            HelpTooltipWidget(
+              message: HelpContent.tooltips['genre']!.text,
+              child: IconButton(
+                icon: const Icon(Icons.info_outline, size: 18),
+                color: Colors.blue,
+                onPressed: () {
+                  HelpPopupWidget.show(context, HelpContent.genreHelp);
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String?>(
-          value: config.genre,
+          initialValue: config.genre,
           style: const TextStyle(color: Colors.white, fontSize: 12),
           dropdownColor: AppColors.darkBackground,
           isDense: true,
@@ -1512,17 +1534,37 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Regionalismo',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.fireOrange,
-            fontSize: 14,
-          ),
+        // Título com botão de ajuda
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Regionalismo',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.fireOrange,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            // Botão de informação
+            HelpTooltipWidget(
+              message: HelpContent.tooltips['localizationLevel']!.text,
+              child: IconButton(
+                icon: const Icon(Icons.info_outline, size: 18),
+                color: Colors.blue,
+                onPressed: () {
+                  HelpPopupWidget.show(context, HelpContent.localizationLevelHelp);
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<LocalizationLevel>(
-          value: config.localizationLevel,
+          initialValue: config.localizationLevel,
           style: const TextStyle(color: Colors.white, fontSize: 12),
           dropdownColor: AppColors.darkBackground,
           isDense: true,
@@ -1579,17 +1621,37 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Perspectiva Narrativa',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.fireOrange,
-            fontSize: 14,
-          ),
+        // Título com botão de ajuda
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Perspectiva Narrativa',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.fireOrange,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            // Botão de informação
+            HelpTooltipWidget(
+              message: HelpContent.tooltips['perspective']!.text,
+              child: IconButton(
+                icon: const Icon(Icons.info_outline, size: 18),
+                color: Colors.blue,
+                onPressed: () {
+                  HelpPopupWidget.show(context, HelpContent.perspectiveHelp);
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: config.perspective,
+          initialValue: config.perspective,
           style: const TextStyle(color: Colors.white, fontSize: 11),
           dropdownColor: AppColors.darkBackground,
           isDense: true,
@@ -1641,82 +1703,123 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     GenerationConfig config,
     GenerationConfigNotifier configNotifier,
   ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      child: Row(
-        children: [
-          Transform.scale(
-            scale: 0.9,
-            child: Checkbox(
-              value: config.startWithTitlePhrase,
-              onChanged: (bool? value) {
-                configNotifier.updateStartWithTitlePhrase(value ?? false);
-              },
-              activeColor: AppColors.fireOrange,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return HelpTooltipWidget(
+      message: HelpContent.tooltips['startWithTitle']!.text,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(
+          children: [
+            Transform.scale(
+              scale: 0.9,
+              child: Checkbox(
+                value: config.startWithTitlePhrase,
+                onChanged: (bool? value) {
+                  configNotifier.updateStartWithTitlePhrase(value ?? false);
+                },
+                activeColor: AppColors.fireOrange,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                configNotifier.updateStartWithTitlePhrase(!config.startWithTitlePhrase);
-              },
-              child: Text(
-                'Começar o roteiro com a frase do título',
-                style: AppDesignSystem.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
+            const SizedBox(width: 4),
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  configNotifier.updateStartWithTitlePhrase(!config.startWithTitlePhrase);
+                },
+                child: Text(
+                  'Começar o roteiro com a frase do título',
+                  style: AppDesignSystem.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildClearButton(
+  Widget _buildNarrativeStyleDropdown(
+    GenerationConfig config,
     GenerationConfigNotifier configNotifier,
-    AuxiliaryToolsNotifier auxiliaryNotifier,
   ) {
-    return SizedBox(
-      width: 200,
-      child: OutlinedButton.icon(
-        onPressed: () async {
-          configNotifier.clearAll();
-          titleController.clear();
-          localizacaoController.clear();
-
-          // Recarregar a API key do storage após limpar
-          try {
-            final savedApiKey = await StorageService.getApiKey();
-            if (savedApiKey != null && savedApiKey.isNotEmpty) {
-              apiKeyController.text = savedApiKey;
-              configNotifier.updateApiKey(savedApiKey);
-            } else {
-              apiKeyController.clear();
-            }
-          } catch (e) {
-            apiKeyController.clear();
-          }
-
-          // Limpar o contexto do roteiro também
-          if (widget.contextController != null) {
-            widget.contextController!.clear();
-          }
-
-          // Limpar ferramentas auxiliares (contexto gerado automaticamente)
-          auxiliaryNotifier.clearAll();
-        },
-        icon: const Icon(Icons.cleaning_services, size: 18),
-        label: const Text('🧹 Limpar Tudo'),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: AppColors.fireOrange),
-          foregroundColor: AppColors.fireOrange,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Título com botão de ajuda
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Estilo de Narração',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.fireOrange,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            // Botão de informação
+            HelpTooltipWidget(
+              message: HelpContent.tooltips['narrativeStyle']!.text,
+              child: IconButton(
+                icon: const Icon(Icons.info_outline, size: 18),
+                color: Colors.blue,
+                onPressed: () {
+                  HelpPopupWidget.show(context, HelpContent.narrativeStyleHelp);
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          ],
         ),
-      ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: config.narrativeStyle,
+          style: const TextStyle(color: Colors.white, fontSize: 12),
+          dropdownColor: AppColors.darkBackground,
+          isDense: true,
+          isExpanded: true,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.black.withOpacity(0.3),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 6,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide(color: AppColors.fireOrange),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide(color: AppColors.fireOrange.withOpacity(0.5)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide(color: AppColors.fireOrange, width: 1),
+            ),
+          ),
+          items: GenerationConfig.availableNarrativeStyles.map((style) {
+            return DropdownMenuItem(
+              value: style,
+              child: Text(
+                GenerationConfig.narrativeStyleLabels[style]!,
+                style: const TextStyle(fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value != null) {
+              configNotifier.updateNarrativeStyle(value);
+            }
+          },
+        ),
+      ],
     );
   }
 }

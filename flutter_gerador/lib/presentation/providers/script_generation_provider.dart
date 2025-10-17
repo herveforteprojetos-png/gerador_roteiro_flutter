@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'cta_config_provider.dart';
 import 'generation_config_provider.dart';
-import 'script_config_provider.dart';
 import '../../data/utils/cta_inserter.dart';
 
 class ScriptGenerationState {

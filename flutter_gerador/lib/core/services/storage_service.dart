@@ -1,4 +1,4 @@
-﻿import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
@@ -19,16 +19,16 @@ class StorageService {
   /// Salva a chave API de forma segura (com hash bÃ¡sico para obscurecer)
   static Future<void> saveApiKey(String apiKey) async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     if (apiKey.isEmpty) {
       await prefs.remove(_apiKeyKey);
       return;
     }
-    
+
     // Aplicar hash bÃ¡sico para obscurecer a chave (nÃ£o Ã© criptografia real)
     final obscuredKey = _obscureKey(apiKey);
     await prefs.setString(_apiKeyKey, obscuredKey);
-    
+
     // Adicionar ao histÃ³rico
     await _addToApiKeyHistory(apiKey);
   }
@@ -36,21 +36,21 @@ class StorageService {
   /// Adiciona uma chave ao histÃ³rico (mantÃ©m apenas as Ãºltimas 5)
   static Future<void> _addToApiKeyHistory(String apiKey) async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Obter histÃ³rico atual
     final history = await getApiKeyHistory();
-    
+
     // Remover se jÃ¡ existe para evitar duplicatas
     history.removeWhere((key) => key == apiKey);
-    
+
     // Adicionar no inÃ­cio
     history.insert(0, apiKey);
-    
+
     // Manter apenas as Ãºltimas 5 chaves
     if (history.length > 5) {
       history.removeRange(5, history.length);
     }
-    
+
     // Salvar histÃ³rico obscurecido
     final obscuredHistory = history.map((key) => _obscureKey(key)).toList();
     await prefs.setStringList(_apiKeyHistoryKey, obscuredHistory);
@@ -60,18 +60,21 @@ class StorageService {
   static Future<List<String>> getApiKeyHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final obscuredHistory = prefs.getStringList(_apiKeyHistoryKey) ?? [];
-    
+
     // Desobscurecer as chaves
-    return obscuredHistory.map((key) => _deobscureKey(key)).where((key) => key.isNotEmpty).toList();
+    return obscuredHistory
+        .map((key) => _deobscureKey(key))
+        .where((key) => key.isNotEmpty)
+        .toList();
   }
 
   /// Remove uma chave especÃ­fica do histÃ³rico
   static Future<void> removeApiKeyFromHistory(String apiKey) async {
     final prefs = await SharedPreferences.getInstance();
     final history = await getApiKeyHistory();
-    
+
     history.removeWhere((key) => key == apiKey);
-    
+
     final obscuredHistory = history.map((key) => _obscureKey(key)).toList();
     await prefs.setStringList(_apiKeyHistoryKey, obscuredHistory);
   }
@@ -80,9 +83,9 @@ class StorageService {
   static Future<String?> getApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     final obscuredKey = prefs.getString(_apiKeyKey);
-    
+
     if (obscuredKey == null) return null;
-    
+
     // Desobscurecer a chave
     return _deobscureKey(obscuredKey);
   }
@@ -111,21 +114,33 @@ class StorageService {
     String? qualityMode,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     if (language != null) await prefs.setString(_languageKey, language);
-    if (perspective != null) await prefs.setString(_perspectiveKey, perspective);
-    if (measureType != null) await prefs.setString(_measureTypeKey, measureType);
+    if (perspective != null) {
+      await prefs.setString(_perspectiveKey, perspective);
+    }
+    if (measureType != null) {
+      await prefs.setString(_measureTypeKey, measureType);
+    }
     if (quantity != null) await prefs.setInt(_quantityKey, quantity);
-    if (personalizedTheme != null) await prefs.setString(_personalizedThemeKey, personalizedTheme);
-    if (usePersonalizedTheme != null) await prefs.setBool(_usePersonalizedThemeKey, usePersonalizedTheme);
-    if (localizationLevel != null) await prefs.setString(_localizationLevelKey, localizationLevel);
-    if (qualityMode != null) await prefs.setString(_qualityModeKey, qualityMode);
+    if (personalizedTheme != null) {
+      await prefs.setString(_personalizedThemeKey, personalizedTheme);
+    }
+    if (usePersonalizedTheme != null) {
+      await prefs.setBool(_usePersonalizedThemeKey, usePersonalizedTheme);
+    }
+    if (localizationLevel != null) {
+      await prefs.setString(_localizationLevelKey, localizationLevel);
+    }
+    if (qualityMode != null) {
+      await prefs.setString(_qualityModeKey, qualityMode);
+    }
   }
 
   /// Recupera as configuraÃ§Ãµes do usuÃ¡rio
   static Future<Map<String, dynamic>> getUserPreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     return {
       'language': prefs.getString(_languageKey) ?? 'PortuguÃªs',
       'perspective': prefs.getString(_perspectiveKey) ?? 'terceira_pessoa',
@@ -153,9 +168,9 @@ class StorageService {
   // MÃ©todos privados para obscurecer/desobscurecer a chave
   static String _obscureKey(String key) {
     // Hash simples para obscurecer (nÃ£o Ã© seguranÃ§a real, apenas visual)
-    final bytes = utf8.encode(key + 'flutter_gerador_salt');
+    final bytes = utf8.encode('${key}flutter_gerador_salt');
     final digest = sha256.convert(bytes);
-    
+
     // Combinamos o hash com a chave original de forma reversÃ­vel
     final combined = base64.encode(utf8.encode(key));
     return '$digest:$combined';
@@ -165,7 +180,7 @@ class StorageService {
     try {
       final parts = obscuredKey.split(':');
       if (parts.length != 2) return '';
-      
+
       // Recuperar a chave original da parte base64
       final originalBytes = base64.decode(parts[1]);
       return utf8.decode(originalBytes);
@@ -180,4 +195,3 @@ class StorageService {
     await prefs.clear();
   }
 }
-

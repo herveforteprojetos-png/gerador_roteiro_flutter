@@ -9,14 +9,7 @@ class ScriptSettingsSection extends StatelessWidget {
   final TextEditingController titleController;
   final String selectedTema;
   final ValueChanged<String?> onTemaChanged;
-  final                       height: 40,
-                      padding: EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    SizedBox(height: 4),ler localizacaoController;
+  final TextEditingController localizacaoController;
   final TextEditingController contextController;
   final String measureType;
   final ValueChanged<String?> onMeasureTypeChanged;
@@ -110,7 +103,7 @@ class ScriptSettingsSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: selectedModel,
+                      initialValue: selectedModel,
                       decoration: InputDecoration(
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -167,7 +160,7 @@ class ScriptSettingsSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: selectedTema,
+                      initialValue: selectedTema,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.category),
                         isDense: true,
@@ -290,7 +283,7 @@ class ScriptSettingsSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: measureType,
+                      initialValue: measureType,
                       decoration: InputDecoration(
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -360,7 +353,7 @@ class ScriptSettingsSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: language,
+                      initialValue: language,
                       decoration: InputDecoration(
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -400,7 +393,7 @@ class ScriptSettingsSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String?>(
-                      value: genre,
+                      initialValue: genre,
                       decoration: InputDecoration(
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -446,7 +439,7 @@ class ScriptSettingsSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: perspective,
+                      initialValue: perspective,
                       decoration: InputDecoration(
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),

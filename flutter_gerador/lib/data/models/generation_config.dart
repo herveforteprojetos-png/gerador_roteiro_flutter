@@ -7,7 +7,6 @@ class GenerationConfig {
   final String tema;
   final String subtema;
   final String localizacao;
-  final String context;
   final String measureType; // 'palavras' ou 'caracteres'
   final int quantity;
   final String language;
@@ -20,6 +19,7 @@ class GenerationConfig {
   final String secondaryCharacterName; // Nome do personagem secundário
   final String qualityMode; // Modelo IA: 'pro' (2.5-pro, mais lento/melhor) ou 'flash' (2.5-flash, 4x mais rápido)
   final String? genre; // Tipo temático da História: null (normal), 'western', 'business', 'family'
+  final String narrativeStyle; // Estilo de narração: 'ficcional_livre', 'reflexivo_memorias', 'epico_periodo', etc.
 
   const GenerationConfig({
     required this.apiKey,
@@ -28,7 +28,6 @@ class GenerationConfig {
     this.tema = 'Vingança',
     this.subtema = 'Vingança Destrutiva',
     this.localizacao = '',
-    this.context = '',
     this.measureType = 'palavras',
     this.quantity = 1000,
     this.language = 'Português',
@@ -41,6 +40,7 @@ class GenerationConfig {
     this.secondaryCharacterName = '',
     this.qualityMode = 'pro', // Padrão: Qualidade Máxima (2.5-pro)
     this.genre, // Opcional: null = nomes do idioma
+    this.narrativeStyle = 'ficcional_livre', // Padrão: Narração livre (sem restrições)
   });
 
   GenerationConfig copyWith({
@@ -50,7 +50,6 @@ class GenerationConfig {
     String? tema,
     String? subtema,
     String? localizacao,
-    String? context,
     String? measureType,
     int? quantity,
     String? language,
@@ -63,6 +62,7 @@ class GenerationConfig {
     String? secondaryCharacterName,
     String? qualityMode,
     String? genre,
+    String? narrativeStyle,
   }) {
     return GenerationConfig(
       apiKey: apiKey ?? this.apiKey,
@@ -71,7 +71,6 @@ class GenerationConfig {
       tema: tema ?? this.tema,
       subtema: subtema ?? this.subtema,
       localizacao: localizacao ?? this.localizacao,
-      context: context ?? this.context,
       measureType: measureType ?? this.measureType,
       quantity: quantity ?? this.quantity,
       language: language ?? this.language,
@@ -84,6 +83,7 @@ class GenerationConfig {
       secondaryCharacterName: secondaryCharacterName ?? this.secondaryCharacterName,
       qualityMode: qualityMode ?? this.qualityMode,
       genre: genre ?? this.genre,
+      narrativeStyle: narrativeStyle ?? this.narrativeStyle,
     );
   }
 
@@ -95,7 +95,6 @@ class GenerationConfig {
       'tema': tema,
       'subtema': subtema,
       'localizacao': localizacao,
-      'context': context,
       'measureType': measureType,
       'quantity': quantity,
       'language': language,
@@ -108,6 +107,7 @@ class GenerationConfig {
       'secondaryCharacterName': secondaryCharacterName,
       'qualityMode': qualityMode,
       'genre': genre,
+      'narrativeStyle': narrativeStyle,
     };
   }
 
@@ -119,7 +119,6 @@ class GenerationConfig {
       tema: json['tema'] ?? 'Vingança',
       subtema: json['subtema'] ?? 'Vingança Destrutiva',
       localizacao: json['localizacao'] ?? '',
-      context: json['context'] ?? '',
       measureType: json['measureType'] ?? 'palavras',
       quantity: json['quantity'] ?? 1000,
       language: json['language'] ?? 'Português',
@@ -135,6 +134,7 @@ class GenerationConfig {
       secondaryCharacterName: json['secondaryCharacterName'] ?? '',
       qualityMode: json['qualityMode'] ?? 'pro', // Padrão: Pro
       genre: json['genre'], // Nullable: null = nomes do idioma
+      narrativeStyle: json['narrativeStyle'] ?? 'ficcional_livre', // Padrão: Narração livre
     );
   }
 
@@ -390,10 +390,30 @@ class GenerationConfig {
     return temaSubtemas[tema] ?? [];
   }
 
-  // MÃ©todo para obter o primeiro subtema de um tema (padrÃ£o)
+  // Método para obter o primeiro subtema de um tema (padrão)
   static String getDefaultSubtema(String tema) {
     final subtemas = getSubtemasForTema(tema);
     return subtemas.isNotEmpty ? subtemas.first : '';
   }
+
+  // Estilos de narração disponíveis
+  static const List<String> availableNarrativeStyles = [
+    'ficcional_livre',
+    'reflexivo_memorias',
+    'epico_periodo',
+    'educativo_curioso',
+    'acao_rapida',
+    'lirico_poetico',
+  ];
+
+  // Labels dos estilos de narração
+  static const Map<String, String> narrativeStyleLabels = {
+    'ficcional_livre': '📖 Ficção Livre',
+    'reflexivo_memorias': '👵 Reflexivo (Memórias)',
+    'epico_periodo': '⚔️ Épico de Período',
+    'educativo_curioso': '🔍 Educativo (Curiosidades)',
+    'acao_rapida': '⚡ Ação Rápida',
+    'lirico_poetico': '🌸 Lírico Poético',
+  };
 }
 

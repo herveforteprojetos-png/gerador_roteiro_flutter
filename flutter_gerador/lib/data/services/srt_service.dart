@@ -1,4 +1,3 @@
-import 'dart:math';
 
 class SrtService {
   /// Gera legendas SRT a partir de um texto
@@ -50,36 +49,6 @@ class SrtService {
 
   /// Cria segmentos de texto respeitando limites de caracteres e linhas
   // Removed legacy _createSegments (não utilizada após versão CapCut)
-
-  /// Otimiza quebras de linha dentro de um segmento
-  static String _optimizeSegmentBreaks(String segment, int maxChars, int maxLines) {
-    if (segment.length <= maxChars ~/ maxLines) {
-      return segment; // Cabe em uma linha
-    }
-    
-    List<String> words = segment.split(' ');
-    List<String> lines = [];
-    String currentLine = '';
-    
-    for (String word in words) {
-      String testLine = currentLine.isEmpty ? word : '$currentLine $word';
-      
-      if (testLine.length > maxChars ~/ maxLines && currentLine.isNotEmpty) {
-        lines.add(currentLine);
-        currentLine = word;
-        
-        if (lines.length >= maxLines) break;
-      } else {
-        currentLine = testLine;
-      }
-    }
-    
-    if (currentLine.isNotEmpty && lines.length < maxLines) {
-      lines.add(currentLine);
-    }
-    
-    return lines.join('\n');
-  }
 
   /// Calcula os tempos de início e fim para cada segmento
   // Removed legacy _calculateTimings (não utilizada após versão CapCut)

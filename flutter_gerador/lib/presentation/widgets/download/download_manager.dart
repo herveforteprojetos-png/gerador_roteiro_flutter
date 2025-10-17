@@ -15,8 +15,10 @@ class DownloadManager {
     String? fileExtension,
   }) async {
     final ext = fileExtension ?? 'txt';
-    final fullFileName = fileName.endsWith('.$ext') ? fileName : '$fileName.$ext';
-    
+    final fullFileName = fileName.endsWith('.$ext')
+        ? fileName
+        : '$fileName.$ext';
+
     await showDialog(
       context: context,
       builder: (context) => DownloadDialog(
@@ -44,13 +46,14 @@ class DownloadDialog extends StatefulWidget {
   State<DownloadDialog> createState() => _DownloadDialogState();
 }
 
-class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStateMixin {
+class _DownloadDialogState extends State<DownloadDialog>
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
   bool _isDownloading = false;
   String? _downloadPath;
-  
+
   final TextEditingController _fileNameController = TextEditingController();
   String _selectedFormat = 'txt';
   final List<String> _formats = ['txt', 'srt'];
@@ -58,29 +61,24 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    _fileNameController.text = widget.fileName.replaceAll(RegExp(r'\.[^.]*$'), '');
-    
+    _fileNameController.text = widget.fileName.replaceAll(
+      RegExp(r'\.[^.]*$'),
+      '',
+    );
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
-    _slideAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-    
+
+    _slideAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
     _animationController.forward();
   }
 
@@ -108,10 +106,7 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF1A1A1A),
-                      Color(0xFF2D2D2D),
-                    ],
+                    colors: [Color(0xFF1A1A1A), Color(0xFF2D2D2D)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
@@ -190,20 +185,14 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
                 const SizedBox(height: 4),
                 Text(
                   widget.title,
-                  style: TextStyle(
-                    color: Colors.white.o(0.7),
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white.o(0.7), fontSize: 14),
                 ),
               ],
             ),
           ),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: Icon(
-              Icons.close_rounded,
-              color: Colors.white.o(0.7),
-            ),
+            icon: Icon(Icons.close_rounded, color: Colors.white.o(0.7)),
           ),
         ],
       ),
@@ -231,9 +220,7 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
             decoration: BoxDecoration(
               color: const Color(0xFF0D1117),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.o(0.1),
-              ),
+              border: Border.all(color: Colors.white.o(0.1)),
             ),
             child: SingleChildScrollView(
               child: Text(
@@ -267,7 +254,7 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Nome do arquivo
           Row(
             children: [
@@ -293,15 +280,11 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
                         fillColor: const Color(0xFF0D1117),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Colors.white.o(0.2),
-                          ),
+                          borderSide: BorderSide(color: Colors.white.o(0.2)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Colors.white.o(0.2),
-                          ),
+                          borderSide: BorderSide(color: Colors.white.o(0.2)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -310,16 +293,14 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
                           ),
                         ),
                         hintText: 'Digite o nome do arquivo',
-                        hintStyle: TextStyle(
-                          color: Colors.white.o(0.5),
-                        ),
+                        hintStyle: TextStyle(color: Colors.white.o(0.5)),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Formato do arquivo
               Expanded(
                 child: Column(
@@ -335,21 +316,17 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: _selectedFormat,
+                      initialValue: _selectedFormat,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: const Color(0xFF0D1117),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Colors.white.o(0.2),
-                          ),
+                          borderSide: BorderSide(color: Colors.white.o(0.2)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: Colors.white.o(0.2),
-                          ),
+                          borderSide: BorderSide(color: Colors.white.o(0.2)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -380,7 +357,7 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
               ),
             ],
           ),
-          
+
           if (_downloadPath != null) ...[
             const SizedBox(height: 16),
             Container(
@@ -388,9 +365,7 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
               decoration: BoxDecoration(
                 color: const Color(0xFFFF6B35).o(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(0xFFFF6B35).o(0.3),
-                ),
+                border: Border.all(color: const Color(0xFFFF6B35).o(0.3)),
               ),
               child: Row(
                 children: [
@@ -435,15 +410,13 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(
-                    color: Colors.white.o(0.2),
-                  ),
+                  side: BorderSide(color: Colors.white.o(0.2)),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // Botão de escolher local
           Expanded(
             child: ElevatedButton.icon(
@@ -456,29 +429,27 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(
-                    color: Colors.white.o(0.2),
-                  ),
+                  side: BorderSide(color: Colors.white.o(0.2)),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // Botão de download rápido
           Expanded(
             child: ElevatedButton.icon(
               onPressed: _isDownloading ? null : () => _quickDownload(),
-              icon: _isDownloading 
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Icon(Icons.download_rounded),
+              icon: _isDownloading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.download_rounded),
               label: Text(_isDownloading ? 'Salvando...' : 'Download'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6B35),
@@ -503,9 +474,7 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
           content: const Text('Conteúdo copiado para a área de transferência!'),
           backgroundColor: const Color(0xFFFF6B35),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
     }
@@ -527,7 +496,7 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
         });
 
         await _saveFile(outputFile);
-        
+
         setState(() {
           _downloadPath = outputFile;
           _isDownloading = false;
@@ -550,7 +519,7 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
       setState(() {
         _isDownloading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -572,12 +541,14 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
         _isDownloading = true;
       });
 
-      final directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+      final directory =
+          await getDownloadsDirectory() ??
+          await getApplicationDocumentsDirectory();
       final fileName = '${_fileNameController.text}.$_selectedFormat';
       final filePath = '${directory.path}/$fileName';
 
       await _saveFile(filePath);
-      
+
       setState(() {
         _downloadPath = filePath;
         _isDownloading = false;
@@ -604,7 +575,7 @@ class _DownloadDialogState extends State<DownloadDialog> with TickerProviderStat
       setState(() {
         _isDownloading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

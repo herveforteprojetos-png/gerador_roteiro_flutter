@@ -1,8 +1,6 @@
-﻿import 'dart:convert';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/presentation/providers/script_generation_provider.dart';
 import 'package:flutter_gerador/presentation/providers/generation_config_provider.dart';
@@ -22,7 +20,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  final TextEditingController contextController = TextEditingController();
   final ScrollController _mainScrollController = ScrollController();
   final ScrollController _scriptScrollController = ScrollController();
   bool _isScriptScrollLocked = true; // ComeÃ§a bloqueado
@@ -38,7 +35,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   void dispose() {
     _mainScrollController.dispose();
     _scriptScrollController.dispose();
-    contextController.dispose();
     super.dispose();
   }
 
@@ -128,12 +124,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     debugPrint('ðŸš¨ HOME_PAGE: config.language = "${config.language}"');
     debugPrint('ðŸš¨ HOME_PAGE: config.language.codeUnits = ${config.language.codeUnits}');
     
-    // Atualizar o context no config se necessÃ¡rio
-    final finalConfig = config.copyWith(
-      context: contextController.text.isNotEmpty
-          ? contextController.text
-          : 'Gerar contexto automaticamente',
-    );
+    // Usar a configuração atual sem modificações
+    final finalConfig = config;
 
     // ðŸš¨ DEBUG: Verificando language depois de criar final config
     debugPrint('ðŸš¨ HOME_PAGE: finalConfig.language = "${finalConfig.language}"');
@@ -167,119 +159,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     debugPrint('\n');
   }
 
-  /// Gera contexto automaticamente com IA baseado nas configuraÃ§Ãµes
-  void _generateContextAutomatically() async {
-    final config = ref.read(generationConfigProvider);
-    final configNotifier = ref.read(generationConfigProvider.notifier);
-    final auxiliaryNotifier = ref.read(auxiliaryToolsProvider.notifier);
-
-    // Verificar se os campos mÃ­nimos estÃ£o preenchidos
-    if (config.apiKey.isEmpty) {
-      _showErrorDialog('Por favor, configure sua API Key primeiro.');
-      return;
-    }
-
-    if (config.title.isEmpty) {
-      _showErrorDialog('Por favor, preencha o tÃ­tulo do roteiro.');
-      return;
-    }
-
-    if (!configNotifier.isValid) {
-      _showErrorDialog(
-        'Por favor, preencha todos os campos obrigatÃ³rios antes de gerar o contexto.',
-      );
-      return;
-    }
-
-    // Mostrar dialog de loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.darkCard,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: AppColors.fireOrange.withOpacity(0.3)),
-          ),
-          content: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 50,
-                  height: 50,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(AppColors.fireOrange),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Gerando contexto automaticamente...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Aguarde enquanto a IA cria um contexto baseado no seu título e tema.',
-                  style: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    try {
-      // Usar a configuraÃ§Ã£o atual para gerar o contexto
-      final generatedContext = await auxiliaryNotifier.generateContext(config);
-
-      // Fechar dialog de loading
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
-      if (generatedContext.isNotEmpty) {
-        debugPrint('ðŸ” HOME_PAGE: Contexto gerado recebido - ${generatedContext.length} chars');
-        debugPrint('ðŸ” HOME_PAGE: Primeiros 100 chars: ${generatedContext.length > 100 ? generatedContext.substring(0, 100) : generatedContext}');
-        debugPrint('ðŸ” HOME_PAGE: Bytes UTF-8 primeiros 50 chars: ${utf8.encode(generatedContext.length > 50 ? generatedContext.substring(0, 50) : generatedContext)}');
-        contextController.text = generatedContext;
-        debugPrint('ðŸ” HOME_PAGE: Controller atualizado - texto tem ${contextController.text.length} chars');
-
-        // Mostrar dialog de sucesso
-        _showSuccessDialog('Contexto gerado com sucesso!');
-      } else {
-        // Mostrar dialog de erro
-        _showErrorDialog('Erro: Contexto vazio retornado pela IA.');
-      }
-    } catch (e) {
-      // Fechar dialog de loading
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
-      // Mostrar dialog de erro
-      _showErrorDialog('Erro ao gerar contexto: ${e.toString()}');
-    }
-  }
-
-  /// Limpa o campo de contexto
-  void _clearContext() {
-    contextController.clear();
-  }
-
   /// Alterna o bloqueio do scroll do roteiro
   void _toggleScriptScrollLock() {
     print('ðŸ”„ Alternando scroll lock de $_isScriptScrollLocked para ${!_isScriptScrollLocked}');
@@ -287,107 +166,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       _isScriptScrollLocked = !_isScriptScrollLocked;
     });
     print('âœ… Novo estado: $_isScriptScrollLocked');
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.darkCard,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.red.withOpacity(0.3)),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.error_outline, color: Colors.red, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                'Erro',
-                style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'OK',
-                style: TextStyle(
-                    color: AppColors.fireOrange, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showSuccessDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.darkCard,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.green.withOpacity(0.3)),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.check_circle_outline, color: Colors.green, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                'Sucesso',
-                style: TextStyle(
-                    color: Colors.green,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'OK',
-                style: TextStyle(
-                    color: AppColors.fireOrange, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _showExpandedContextEditor(BuildContext context) async {
-    final result = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return _ExpandedContextDialog(initialText: contextController.text);
-      },
-    );
-
-    // Se o usuÃ¡rio salvou, atualizar o controller principal
-    if (result != null) {
-      debugPrint('ðŸ” INTERFACE: Salvando resultado manual - ${result.length} chars');
-      debugPrint('ðŸ” INTERFACE: Primeiros 200 chars do resultado: ${result.length > 200 ? result.substring(0, 200) : result}');
-      contextController.text = result;
-    }
   }
 
   Future<void> _showExpandedScriptEditor(BuildContext context, String scriptText) async {
@@ -410,24 +188,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final generationState = ref.watch(scriptGenerationProvider);
     final generationNotifier = ref.read(scriptGenerationProvider.notifier);
-    final config = ref.watch(generationConfigProvider);
     final configNotifier = ref.read(generationConfigProvider.notifier);
-    final auxiliaryState = ref.watch(auxiliaryToolsProvider);
-
-    // Listener para contexto gerado automaticamente
-    ref.listen(auxiliaryToolsProvider, (previous, current) {
-      if (previous?.generatedContext != current.generatedContext &&
-          current.generatedContext != null &&
-          contextController.text.isEmpty &&
-          !generationState.isGenerating) {
-        debugPrint('ðŸ” INTERFACE: Atualizando contextController com ${current.generatedContext!.length} chars');
-        debugPrint('ðŸ” INTERFACE: Primeiros 200 chars: ${current.generatedContext!.length > 200 ? current.generatedContext!.substring(0, 200) : current.generatedContext!}');
-        debugPrint('ðŸ” INTERFACE: Bytes UTF-8: ${utf8.encode(current.generatedContext!.substring(0, current.generatedContext!.length > 50 ? 50 : current.generatedContext!.length))}');
-        contextController.text = current.generatedContext!;
-        debugPrint('ðŸ” INTERFACE: Controller atualizado - texto atual tem ${contextController.text.length} chars');
-      }
-    });
-
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
       body: SingleChildScrollView(
@@ -436,7 +197,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: Column(
           children: [
             // HEADER COMPACTO
-            ExpandedHeaderWidget(contextController: contextController),
+            const ExpandedHeaderWidget(),
 
             // ÃREA PRINCIPAL UNIFICADA
             Padding(
@@ -789,203 +550,45 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     )
                   else
-                    // CAMPO CONTEXTO E BOTÃƒO GERAR (estado inicial)
-                    Container(
-                      height: 400,
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // TÃ­tulo do campo
-                          Text(
-                            'Contexto do Roteiro',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.fireOrange,
-                              fontSize: 18,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          // Campo de contexto com botÃ£o sobreposto
-                          Expanded(
-                            child: Stack(
-                              children: [
-                                // TextField principal
-                                TextField(
-                                  controller: contextController,
-                                  maxLines: null,
-                                  expands: true,
-                                  textAlignVertical: TextAlignVertical.top,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText:
-                                        'Descreva o enredo, personagens principais, cenÃ¡rio, tom da histÃ³ria...',
-                                    hintStyle: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 16,
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.black.withOpacity(0.3),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: AppColors.fireOrange,
-                                      ),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: AppColors.fireOrange.withOpacity(
-                                          0.5,
-                                        ),
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: AppColors.fireOrange,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    contentPadding: const EdgeInsets.fromLTRB(
-                                      20,
-                                      20,
-                                      60,
-                                      20,
-                                    ), // EspaÃ§o para o botÃ£o
-                                  ),
-                                ),
-                                // BotÃ£o da engrenagem sobreposto
-                                Positioned(
-                                  top: 12,
-                                  right: 12,
-                                  child: InkWell(
-                                    onTap: _generateContextAutomatically,
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.fireOrange.withOpacity(
-                                          0.1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: AppColors.fireOrange
-                                              .withOpacity(0.3),
-                                        ),
-                                      ),
-                                      child: Tooltip(
-                                        message:
-                                            'Gerar contexto automaticamente com IA',
-                                        child: Icon(
-                                          Icons.settings,
-                                          color: AppColors.fireOrange,
-                                          size: 20,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                // BotÃ£o da vassoura para limpar contexto
-                                Positioned(
-                                  top: 60, // Posicionado abaixo da engrenagem
-                                  right: 12,
-                                  child: InkWell(
-                                    onTap: _clearContext,
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: Colors.red.withOpacity(0.3),
-                                        ),
-                                      ),
-                                      child: Tooltip(
-                                        message: 'Limpar contexto',
-                                        child: Icon(
-                                          Icons.cleaning_services,
-                                          color: Colors.red,
-                                          size: 20,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                // BotÃ£o de expandir o editor de contexto
-                                Positioned(
-                                  top: 108, // Posicionado abaixo da vassoura
-                                  right: 12,
-                                  child: InkWell(
-                                    onTap: () => _showExpandedContextEditor(context),
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: Colors.blue.withOpacity(0.3),
-                                        ),
-                                      ),
-                                      child: Tooltip(
-                                        message: 'Expandir editor',
-                                        child: Icon(
-                                          Icons.open_in_full,
-                                          color: Colors.blue,
-                                          size: 20,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          // BotÃ£o Gerar Roteiro
-                          Center(
-                            child: SizedBox(
-                              width: 200,
-                              height: 50,
-                              child: ElevatedButton(
-                                onPressed:
-                                    generationState.isGenerating ||
-                                        !configNotifier.isValid
-                                    ? null
-                                    : _generateScript,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.fireOrange,
-                                  foregroundColor: Colors.white,
-                                  disabledBackgroundColor: Colors.grey[700],
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                ),
-                                child: generationState.isGenerating
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Text(
-                                        'Gerar Roteiro',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                    // BOTÃO GERAR ROTEIRO (estado inicial)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40.0),
+                        child: SizedBox(
+                          width: 250,
+                          height: 60,
+                          child: ElevatedButton(
+                            onPressed:
+                                generationState.isGenerating ||
+                                    !configNotifier.isValid
+                                ? null
+                                : _generateScript,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.fireOrange,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey[700],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
                               ),
                             ),
+                            child: generationState.isGenerating
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Gerar Roteiro',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                 ],
@@ -1127,215 +730,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       content: scriptText,
       fileName: fileName,
       fileExtension: 'txt',
-    );
-  }
-}
-
-// Widget separado para o dialog expandido com contador dinÃ¢mico
-class _ExpandedContextDialog extends StatefulWidget {
-  final String initialText;
-
-  const _ExpandedContextDialog({required this.initialText});
-
-  @override
-  State<_ExpandedContextDialog> createState() => _ExpandedContextDialogState();
-}
-
-class _ExpandedContextDialogState extends State<_ExpandedContextDialog> {
-  late TextEditingController expandedController;
-  int characterCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    expandedController = TextEditingController(text: widget.initialText);
-    characterCount = widget.initialText.length;
-    expandedController.addListener(_updateCharacterCount);
-  }
-
-  @override
-  void dispose() {
-    expandedController.removeListener(_updateCharacterCount);
-    expandedController.dispose();
-    super.dispose();
-  }
-
-  void _updateCharacterCount() {
-    setState(() {
-      characterCount = expandedController.text.length;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: BoxDecoration(
-          color: AppColors.darkBackground,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.fireOrange, width: 2),
-        ),
-        child: Column(
-          children: [
-            // Header do modal
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.fireOrange.withOpacity(0.1),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(14),
-                  topRight: Radius.circular(14),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.edit_note, color: AppColors.fireOrange, size: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Editor Expandido - Contexto do Roteiro',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  // Contador de caracteres dinÃ¢mico
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: AppColors.fireOrange.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Text(
-                      '$characterCount caracteres',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Editor de texto expandido
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: TextField(
-                  controller: expandedController,
-                  maxLines: null,
-                  expands: true,
-                  textAlignVertical: TextAlignVertical.top,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    height: 1.5,
-                  ),
-                  decoration: InputDecoration(
-                    hintText:
-                        'Descreva o enredo, personagens principais, cenÃ¡rio, tom da histÃ³ria...\n\nðŸ’¡ Este editor expandido permite:\n\nâ€¢ Escrever textos longos com mais facilidade\nâ€¢ Ver todo o contexto de uma sÃ³ vez\nâ€¢ Editar com mais precisÃ£o\nâ€¢ Acompanhar o contador de caracteres em tempo real\nâ€¢ Usar Ctrl+A para selecionar tudo\nâ€¢ Usar Ctrl+Z para desfazer\n\nDigite Ã  vontade! ðŸ“',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 15,
-                      height: 1.4,
-                    ),
-                    filled: true,
-                    fillColor: Colors.black.withOpacity(0.3),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.fireOrange.withOpacity(0.3),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.fireOrange.withOpacity(0.3),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.fireOrange,
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.all(20),
-                  ),
-                ),
-              ),
-            ),
-            // BotÃµes de aÃ§Ã£o
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.2),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(14),
-                  bottomRight: Radius.circular(14),
-                ),
-              ),
-              child: Row(
-                children: [
-                  // InformaÃ§Ãµes adicionais
-                  Expanded(
-                    child: Text(
-                      'Use este espaÃ§o para detalhar sua histÃ³ria com mais conforto',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                  // BotÃµes
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(null),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white.withOpacity(0.7),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                    child: const Text('Cancelar'),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: () =>
-                        Navigator.of(context).pop(expandedController.text),
-                    icon: const Icon(Icons.save, size: 18),
-                    label: const Text('Salvar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.fireOrange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

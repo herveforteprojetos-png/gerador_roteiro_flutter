@@ -78,7 +78,7 @@ class _ApiConfigSectionState extends State<ApiConfigSection> {
           ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
-          value: widget.selectedModel,
+          initialValue: widget.selectedModel,
           decoration: InputDecoration(labelText: AppStrings.modelLabel),
           items: const [
             DropdownMenuItem(value: 'gemini-2.5-pro', child: Text('Gemini 2.5 Pro 🏆 (Qualidade Máxima - Único Disponível)')),

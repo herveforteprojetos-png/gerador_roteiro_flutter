@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'dart:math' as math;
 import '../../../data/models/generation_progress.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_design_system.dart';
 
 class ModernGenerationProgressView extends ConsumerWidget {
   final GenerationProgress progress;
@@ -68,7 +65,7 @@ class ModernGenerationProgressView extends ConsumerWidget {
 
   // Progress circle simples e funcional
   Widget _buildSimpleProgressCircle() {
-    return Container(
+    return SizedBox(
       width: 120,
       height: 120,
       child: Stack(

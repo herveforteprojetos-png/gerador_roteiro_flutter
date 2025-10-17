@@ -285,7 +285,7 @@ class ProtectedLicenseService {
   
   // Status das ativações (admin)
   static void printActivationStatus() {
-    print('\n' + '=' * 60);
+    print('\n${'=' * 60}');
     print('STATUS DAS ATIVAÇÕES - CONTROLE ANTI-PIRATARIA');
     print('=' * 60);
     
@@ -304,6 +304,6 @@ class ProtectedLicenseService {
       print('   ⏰ Último uso: ${data['lastUsed']}');
     }
     
-    print('\n' + '=' * 60);
+    print('\n${'=' * 60}');
   }
 }

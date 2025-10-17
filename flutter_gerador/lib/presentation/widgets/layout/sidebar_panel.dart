@@ -1,8 +1,6 @@
-﻿import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/models/generation_config.dart';
 import 'package:flutter_gerador/data/models/localization_level.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_gerador/core/utils/color_extensions.dart';
 import 'package:flutter_gerador/core/services/storage_service.dart';
 
@@ -84,23 +82,6 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
   }
 
   /// Salva a chave API quando alterada
-  Future<void> _saveApiKey() async {
-    if (apiKeyController.text.isNotEmpty) {
-      await StorageService.saveApiKey(apiKeyController.text);
-      await StorageService.saveSelectedModel(selectedModel);
-    }
-  }
-
-  /// Salva as preferÃªncias do usuÃ¡rio
-  Future<void> _saveUserPreferences() async {
-    await StorageService.saveUserPreferences(
-      language: language,
-      perspective: perspective,
-      measureType: measureType,
-      quantity: quantity,
-    );
-  }
-
   @override
   void dispose() {
     quantityController.dispose();
@@ -112,7 +93,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
     final generationState = ref.watch(scriptGenerationProvider);
     final generationNotifier = ref.read(scriptGenerationProvider.notifier);
 
-    void _generateScript() async {
+    void generateScript() async {
       if (apiKeyController.text.isEmpty || apiKeyController.text.length < 20) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -143,14 +124,13 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
         model: selectedModel,
         title: titleController.text,
         tema: selectedTema,
-        subtema: 'Narrativa BÃ¡sica', // Valor padrÃ£o para compatibilidade
+        subtema: 'Narrativa Básica', // Valor padrão para compatibilidade
         localizacao: localizacaoController.text,
-        context: contextController.text,
         measureType: measureType,
         quantity: quantity,
         language: language,
-        perspective: perspective, // Valor padrÃ£o para compatibilidade
-        localizationLevel: LocalizationLevel.national, // Valor padrÃ£o
+        perspective: perspective, // Valor padrão para compatibilidade
+        localizationLevel: LocalizationLevel.national, // Valor padrão
       );
 
       // ðŸš¨ DEBUG: Verificando language depois de criar GenerationConfig (SIDEBAR)
@@ -240,7 +220,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                           // Mostrar aviso sobre limites
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Limite: $minLimit a $maxLimit ${measureType}'),
+                              content: Text('Limite: $minLimit a $maxLimit $measureType'),
                               backgroundColor: Colors.orange,
                               duration: Duration(seconds: 2),
                             ),
@@ -379,7 +359,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                 GenerationButton(
                   isFormValid: isFormValid,
                   isGenerating: generationState.isGenerating,
-                  onPressed: _generateScript,
+                  onPressed: generateScript,
                 ),
                 if (generationState.isGenerating)
                   Padding(
