@@ -28,6 +28,7 @@ class ExpandedHeaderWidget extends ConsumerStatefulWidget {
 
 class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   late TextEditingController apiKeyController;
+  late TextEditingController openAIKeyController; // 🤖 NOVO
   late TextEditingController titleController;
   late TextEditingController localizacaoController;
 
@@ -37,7 +38,12 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   Timer? _validationTimer;
 
   // Estado da expansão da configuração técnica
-  bool _isTechnicalConfigExpanded = false;
+  bool _isTechnicalConfigExpanded =
+      true; // ✅ Iniciar expandida para mostrar API Key
+
+  // Estados de visibilidade das senhas
+  bool _isGeminiKeyVisible = false;
+  bool _isOpenAIKeyVisible = false;
 
   // Histórico de chaves API
   List<String> _apiKeyHistory = [];
@@ -47,11 +53,20 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   void initState() {
     super.initState();
     apiKeyController = TextEditingController();
+    openAIKeyController = TextEditingController(); // 🤖 NOVO
     titleController = TextEditingController();
     localizacaoController = TextEditingController();
 
-    // Adicionar listener para validação em tempo real
+    // Adicionar listeners para atualizar provider em tempo real
     apiKeyController.addListener(_onApiKeyChanged);
+    openAIKeyController.addListener(_onOpenAIKeyChanged); // 🤖 NOVO
+    titleController.addListener(() {
+      print('📝 titleController listener: Título = "${titleController.text}"');
+      ref
+          .read(generationConfigProvider.notifier)
+          .updateTitle(titleController.text);
+      print('✅ Provider atualizado com Título');
+    });
 
     // Carregar configurações salvas
     _loadSavedSettings();
@@ -68,6 +83,13 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
       if (savedApiKey != null && savedApiKey.isNotEmpty) {
         apiKeyController.text = savedApiKey;
         ref.read(generationConfigProvider.notifier).updateApiKey(savedApiKey);
+      }
+
+      // 🤖 Carregar chave OpenAI
+      final savedOpenAIKey = await StorageService.getOpenAIKey();
+      if (savedOpenAIKey != null && savedOpenAIKey.isNotEmpty) {
+        openAIKeyController.text = savedOpenAIKey;
+        ref.read(generationConfigProvider.notifier).updateOpenAIKey(savedOpenAIKey);
       }
 
       // Carregar modelo selecionado
@@ -127,6 +149,8 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   void dispose() {
     apiKeyController.removeListener(_onApiKeyChanged);
     apiKeyController.dispose();
+    openAIKeyController.removeListener(_onOpenAIKeyChanged); // 🤖 NOVO
+    openAIKeyController.dispose(); // 🤖 NOVO
     titleController.dispose();
     localizacaoController.dispose();
     _validationTimer?.cancel();
@@ -138,6 +162,13 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     _validationTimer?.cancel();
 
     final apiKey = apiKeyController.text.trim();
+
+    // ✅ ATUALIZAR O PROVIDER IMEDIATAMENTE (para habilitar botão)
+    print(
+      '🔑 _onApiKeyChanged: API Key = "${apiKey}" (${apiKey.length} chars)',
+    );
+    ref.read(generationConfigProvider.notifier).updateApiKey(apiKey);
+    print('✅ Provider atualizado com API Key');
 
     if (apiKey.isEmpty) {
       setState(() {
@@ -167,8 +198,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           if (result.isValid) {
             _validationState = ValidationState.valid;
             _validationErrorMessage = null;
-            // Atualizar o provider apenas se a chave for válida
-            ref.read(generationConfigProvider.notifier).updateApiKey(apiKey);
+            // ✅ Provider já foi atualizado em _onApiKeyChanged()
           } else {
             _validationState = ValidationState.invalid;
             _validationErrorMessage = result.errorMessage;
@@ -182,6 +212,20 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           _validationErrorMessage = 'Erro na validação: ${e.toString()}';
         });
       }
+    }
+  }
+
+  void _onOpenAIKeyChanged() {
+    final openAIKey = openAIKeyController.text.trim();
+    print(
+      '🤖 _onOpenAIKeyChanged: OpenAI Key = "${openAIKey.isEmpty ? "(vazia)" : "***${openAIKey.length} chars***"}"',
+    );
+    ref.read(generationConfigProvider.notifier).updateOpenAIKey(openAIKey);
+    print('✅ Provider atualizado com OpenAI Key');
+    
+    // Salvar automaticamente
+    if (openAIKey.isNotEmpty) {
+      StorageService.saveOpenAIKey(openAIKey);
     }
   }
 
@@ -247,13 +291,8 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     final config = ref.watch(generationConfigProvider); // watch for rebuild
     final configNotifier = ref.read(generationConfigProvider.notifier);
 
-    // Sincronizar apenas title e localização (não API key para permitir edição manual)
-    if (titleController.text != config.title) {
-      titleController.text = config.title;
-    }
-    if (localizacaoController.text != config.localizacao) {
-      localizacaoController.text = config.localizacao;
-    }
+    // ✅ Removido sincronização automática - os listeners cuidam disso
+    // Sincronizar controllers com config causava loops infinitos
 
     return Container(
       width: double.infinity,
@@ -349,21 +388,8 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           // Campos expansíveis da configuração técnica
           if (_isTechnicalConfigExpanded) ...[
             AppDesignSystem.verticalSpaceM,
-            Row(
-              children: [
-                // Campo Chave da API - Usando Expanded com flex maior
-                Expanded(
-                  flex: 5, // Flex aumentado para dar mais espaço
-                  child: _buildApiKeyField(configNotifier),
-                ),
-                AppDesignSystem.horizontalSpaceL,
-                // Dropdown Modelo
-                Expanded(
-                  flex: 2, // Flex menor para o dropdown
-                  child: _buildModelDropdown(config, configNotifier),
-                ),
-              ],
-            ),
+            // Botão para configurar APIs
+            _buildApiConfigButton(),
           ],
         ],
       ),
@@ -447,7 +473,8 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                     ),
                     AppDesignSystem.horizontalSpaceM,
                     // Campo Subtema (apenas se não estiver usando tema personalizado E tema não for "Livre (Sem Tema)")
-                    if (!config.usePersonalizedTheme && config.tema != 'Livre (Sem Tema)')
+                    if (!config.usePersonalizedTheme &&
+                        config.tema != 'Livre (Sem Tema)')
                       Expanded(
                         flex: 1,
                         child: _buildSubtemaDropdown(config, configNotifier),
@@ -513,21 +540,413 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                     // Estilo de Narração
                     Expanded(
                       flex: 2,
-                      child: _buildNarrativeStyleDropdown(config, configNotifier),
+                      child: _buildNarrativeStyleDropdown(
+                        config,
+                        configNotifier,
+                      ),
                     ),
                     AppDesignSystem.horizontalSpaceL,
                     // Espaço vazio para manter alinhamento
-                    Expanded(
-                      flex: 3,
-                      child: Container(),
-                    ),
+                    Expanded(flex: 3, child: Container()),
                   ],
                 ),
+                AppDesignSystem.verticalSpaceS,
+                // 📝 NOVO: Checkbox para prompt customizado
+                _buildCustomPromptCheckbox(config, configNotifier),
+                // 📝 NOVO: Campo de texto customizado (aparece apenas se checkbox ativado)
+                _buildCustomPromptField(config, configNotifier),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// Botão que abre o modal de configuração de APIs
+  Widget _buildApiConfigButton() {
+    final config = ref.watch(generationConfigProvider);
+    final hasGeminiKey = apiKeyController.text.trim().isNotEmpty;
+    final hasOpenAIKey = openAIKeyController.text.trim().isNotEmpty;
+    final isGemini = config.selectedProvider == 'gemini';
+    
+    // Define o status visual baseado na seleção
+    Color buttonColor;
+    IconData buttonIcon;
+    String buttonText;
+    String subtitle;
+    
+    if (isGemini && hasGeminiKey) {
+      buttonColor = AppColors.fireOrange;
+      buttonIcon = Icons.auto_awesome;
+      buttonText = 'Gemini 2.5 Pro Configurado';
+      subtitle = 'API ativa e pronta para usar';
+    } else if (!isGemini && hasOpenAIKey) {
+      buttonColor = Colors.blue;
+      buttonIcon = Icons.smart_toy;
+      buttonText = 'GPT-4o Configurado';
+      subtitle = 'API ativa e pronta para usar';
+    } else {
+      buttonColor = Colors.red;
+      buttonIcon = Icons.error;
+      buttonText = 'Configurar API';
+      subtitle = 'Escolha e configure Gemini ou ChatGPT';
+    }
+
+    return InkWell(
+      onTap: _showApiConfigDialog,
+      borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.darkCard,
+          borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
+          border: Border.all(color: buttonColor, width: 2),
+        ),
+        child: Row(
+          children: [
+            Icon(buttonIcon, color: buttonColor, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    buttonText,
+                    style: AppDesignSystem.bodyMedium.copyWith(
+                      color: buttonColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: AppDesignSystem.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.settings, color: buttonColor, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Modal de configuração das APIs
+  void _showApiConfigDialog() {
+    final config = ref.read(generationConfigProvider);
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        // Estado local para o modal
+        String selectedProvider = config.selectedProvider;
+        
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final isGemini = selectedProvider == 'gemini';
+            
+            return Dialog(
+              backgroundColor: AppColors.darkBackground,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
+              ),
+              child: Container(
+                width: 600,
+                padding: AppDesignSystem.paddingXL,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Título
+                    Row(
+                      children: [
+                        Icon(Icons.vpn_key, color: AppColors.fireOrange, size: 28),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Configuração da API',
+                            style: AppDesignSystem.headingMedium.copyWith(
+                              color: AppColors.fireOrange,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                    Divider(color: Colors.grey.withOpacity(0.3), height: 32),
+                    
+                    // Texto explicativo
+                    Text(
+                      'Escolha qual API você deseja usar:',
+                      style: AppDesignSystem.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    AppDesignSystem.verticalSpaceM,
+                    
+                    // Botões de seleção (Gemini OU OpenAI)
+                    Row(
+                      children: [
+                        // Botão Gemini
+                        Expanded(
+                          child: _buildProviderSelectionButton(
+                            isSelected: isGemini,
+                            icon: Icons.auto_awesome,
+                            title: 'Gemini',
+                            subtitle: '2.5 Pro',
+                            color: AppColors.fireOrange,
+                            onTap: () {
+                              setState(() {
+                                selectedProvider = 'gemini';
+                              });
+                              ref.read(generationConfigProvider.notifier)
+                                  .updateSelectedProvider('gemini');
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Botão OpenAI
+                        Expanded(
+                          child: _buildProviderSelectionButton(
+                            isSelected: !isGemini,
+                            icon: Icons.smart_toy,
+                            title: 'ChatGPT',
+                            subtitle: 'GPT-4o',
+                            color: Colors.blue,
+                            onTap: () {
+                              setState(() {
+                                selectedProvider = 'openai';
+                              });
+                              ref.read(generationConfigProvider.notifier)
+                                  .updateSelectedProvider('openai');
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    AppDesignSystem.verticalSpaceL,
+                    
+                    // Campo da API selecionada
+                    if (isGemini)
+                      _buildDialogApiKeyField(
+                        title: 'Chave da API Gemini',
+                        subtitle: 'Gemini 2.5 Pro',
+                        controller: apiKeyController,
+                        icon: Icons.auto_awesome,
+                        iconColor: AppColors.fireOrange,
+                        isVisible: _isGeminiKeyVisible,
+                        onToggleVisibility: () {
+                          setState(() {
+                            _isGeminiKeyVisible = !_isGeminiKeyVisible;
+                          });
+                        },
+                      )
+                    else
+                      _buildDialogApiKeyField(
+                        title: 'Chave da API OpenAI',
+                        subtitle: 'GPT-4o - Custo: ~\$0.15 USD/roteiro 10K palavras',
+                        controller: openAIKeyController,
+                        icon: Icons.smart_toy,
+                        iconColor: Colors.blue,
+                        isVisible: _isOpenAIKeyVisible,
+                        onToggleVisibility: () {
+                          setState(() {
+                            _isOpenAIKeyVisible = !_isOpenAIKeyVisible;
+                          });
+                        },
+                      ),
+                    
+                    AppDesignSystem.verticalSpaceL,
+                    
+                    // Botão Fechar
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.fireOrange,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        ),
+                        child: Text(
+                          'Fechar',
+                          style: AppDesignSystem.bodyMedium.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Botão de seleção de provider (Gemini ou OpenAI)
+  Widget _buildProviderSelectionButton({
+    required bool isSelected,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.1) : AppColors.darkCard,
+          borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.withOpacity(0.3),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? color : Colors.grey,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: AppDesignSystem.bodyMedium.copyWith(
+                color: isSelected ? color : Colors.grey,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: AppDesignSystem.caption.copyWith(
+                color: isSelected ? color.withOpacity(0.7) : Colors.grey,
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(height: 8),
+              Icon(Icons.check_circle, color: color, size: 20),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Campo de API key dentro do dialog
+  Widget _buildDialogApiKeyField({
+    required String title,
+    required String subtitle,
+    required TextEditingController controller,
+    required IconData icon,
+    required Color iconColor,
+    required bool isVisible,
+    required VoidCallback onToggleVisibility,
+  }) {
+    final hasKey = controller.text.trim().isNotEmpty;
+    final borderColor = hasKey ? Colors.green : iconColor.withOpacity(0.5);
+    
+    // Suffix icon com botão de visibilidade E check
+    Widget suffixIcon = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Botão de mostrar/ocultar
+        IconButton(
+          icon: Icon(
+            isVisible ? Icons.visibility : Icons.visibility_off,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
+          onPressed: onToggleVisibility,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(
+            minWidth: 40,
+            minHeight: 40,
+          ),
+        ),
+        // Check se tiver chave válida
+        if (hasKey) ...[
+          const SizedBox(width: 4),
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: Colors.green,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: const Icon(Icons.check, color: Colors.white, size: 10),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: iconColor),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: AppDesignSystem.bodyMedium.copyWith(
+                color: iconColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: AppDesignSystem.caption.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: AppDesignSystem.fieldHeight,
+          child: TextField(
+            controller: controller,
+            obscureText: !isVisible,
+            style: AppDesignSystem.bodyMedium,
+            decoration: AppDesignSystem.getInputDecoration(
+              hint: 'Cole sua chave aqui...',
+            ).copyWith(
+              prefixIcon: Icon(Icons.vpn_key, color: iconColor, size: 18),
+              suffixIcon: suffixIcon,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
+                borderSide: BorderSide(color: borderColor, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
+                borderSide: BorderSide(color: borderColor, width: 2),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
+                borderSide: BorderSide(color: borderColor, width: 1),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -795,6 +1214,95 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     );
   }
 
+  /// 🤖 Campo para OpenAI API Key (usado como fallback quando Gemini está indisponível)
+  Widget _buildOpenAIKeyField() {
+    // Verifica se há chave configurada
+    final hasKey = openAIKeyController.text.trim().isNotEmpty;
+    final borderColor = hasKey ? Colors.green : Colors.blue.withOpacity(0.3);
+    
+    // Ícone de status (checkmark verde se configurado)
+    Widget? suffixIcon;
+    if (hasKey) {
+      suffixIcon = Tooltip(
+        message: 'OpenAI configurado ✓',
+        child: Container(
+          width: 18,
+          height: 18,
+          decoration: BoxDecoration(
+            color: Colors.green,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: const Icon(Icons.check, color: Colors.white, size: 10),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.smart_toy, size: 16, color: hasKey ? Colors.green : Colors.blue),
+            const SizedBox(width: 6),
+            Text(
+              hasKey ? '🤖 OpenAI Configurado (Fallback Ativo)' : '🤖 OpenAI API Key (Fallback Opcional)',
+              style: AppDesignSystem.labelMedium.copyWith(
+                color: hasKey ? Colors.green : Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Tooltip(
+              message: 'GPT-4o será usado automaticamente quando Gemini retornar erro 503.\n'
+                  'Custo aproximado: \$0.15 USD por roteiro de 10K palavras.',
+              child: Icon(
+                Icons.info_outline,
+                size: 16,
+                color: (hasKey ? Colors.green : Colors.blue).withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+        AppDesignSystem.verticalSpaceS,
+        SizedBox(
+          height: AppDesignSystem.fieldHeight,
+          child: TextField(
+            controller: openAIKeyController,
+            obscureText: true,
+            style: AppDesignSystem.bodyMedium,
+            decoration: AppDesignSystem.getInputDecoration(
+              hint: 'sk-proj-... (usado quando Gemini está indisponível)',
+            ).copyWith(
+              prefixIcon: Icon(
+                Icons.vpn_key,
+                color: hasKey ? Colors.green : Colors.blue,
+                size: 18,
+              ),
+              suffixIcon: suffixIcon,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(
+                  AppDesignSystem.borderRadius,
+                ),
+                borderSide: BorderSide(color: borderColor, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(
+                  AppDesignSystem.borderRadius,
+                ),
+                borderSide: BorderSide(color: hasKey ? Colors.green : Colors.blue, width: 2),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(
+                  AppDesignSystem.borderRadius,
+                ),
+                borderSide: BorderSide(color: borderColor, width: 1),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildModelDropdown(
     GenerationConfig config,
     GenerationConfigNotifier configNotifier,
@@ -819,14 +1327,8 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
               hint: 'Selecione o modelo',
             ),
             items: const [
-              DropdownMenuItem(
-                value: 'pro',
-                child: Text('🧠 Pro'),
-              ),
-              DropdownMenuItem(
-                value: 'flash',
-                child: Text('⚡ Flash'),
-              ),
+              DropdownMenuItem(value: 'pro', child: Text('🧠 Pro')),
+              DropdownMenuItem(value: 'flash', child: Text('⚡ Flash')),
             ],
             onChanged: (value) {
               if (value != null) {
@@ -866,7 +1368,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                     size: 18,
                   ),
                 ),
-            onChanged: configNotifier.updateTitle,
+            // onChanged removido - usando listener em initState
           ),
         ),
       ],
@@ -892,121 +1394,130 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-          initialValue: config.tema,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-          dropdownColor: AppColors.darkBackground,
-          decoration: InputDecoration(
-            hintText: 'Selecione um tema...',
-            hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-            prefixIcon: Icon(
-              Icons.category,
-              color: AppColors.fireOrange,
-              size: 20,
-            ),
-            filled: true,
-            fillColor: Colors.black.withOpacity(0.3),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.fireOrange),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: AppColors.fireOrange.withOpacity(0.5),
+            initialValue: config.tema,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            dropdownColor: AppColors.darkBackground,
+            decoration: InputDecoration(
+              hintText: 'Selecione um tema...',
+              hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+              prefixIcon: Icon(
+                Icons.category,
+                color: AppColors.fireOrange,
+                size: 20,
+              ),
+              filled: true,
+              fillColor: Colors.black.withOpacity(0.3),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.fireOrange),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: AppColors.fireOrange.withOpacity(0.5),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.fireOrange, width: 2),
               ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.fireOrange, width: 2),
-            ),
+            items: const [
+              // 🎯 MODO LIVRE (SEM TEMA)
+              DropdownMenuItem(
+                value: 'Livre (Sem Tema)',
+                child: Text('🆓 Livre (Sem Tema)'),
+              ),
+
+              // Narrativas Dramáticas e Intensas
+              DropdownMenuItem(value: 'Vingança', child: Text('🔥 Vingança')),
+              DropdownMenuItem(value: 'Traição', child: Text('💔 Traição')),
+              DropdownMenuItem(value: 'Redenção', child: Text('✨ Redenção')),
+              DropdownMenuItem(value: 'Justiça', child: Text('⚖️ Justiça')),
+              DropdownMenuItem(
+                value: 'Sacrifício',
+                child: Text('🙏 Sacrifício'),
+              ),
+              DropdownMenuItem(
+                value: 'Poder e Corrupção',
+                child: Text('👑 Poder e Corrupção'),
+              ),
+              DropdownMenuItem(
+                value: 'Sobrevivência',
+                child: Text('🛡️ Sobrevivência'),
+              ),
+              DropdownMenuItem(
+                value: 'Família Disfuncional',
+                child: Text('🏠 Família Disfuncional'),
+              ),
+              DropdownMenuItem(
+                value: 'Segredos Obscuros',
+                child: Text('🔐 Segredos Obscuros'),
+              ),
+              DropdownMenuItem(
+                value: 'Ascensão e Queda',
+                child: Text('📈 Ascensão e Queda'),
+              ),
+
+              // Gêneros Clássicos
+              DropdownMenuItem(
+                value: 'Mistério/Suspense',
+                child: Text('🔍 Mistério/Suspense'),
+              ),
+              DropdownMenuItem(
+                value: 'Terror/Sobrenatural',
+                child: Text('👻 Terror/Sobrenatural'),
+              ),
+              DropdownMenuItem(
+                value: 'Ficção Científica',
+                child: Text('🚀 Ficção Científica'),
+              ),
+              DropdownMenuItem(
+                value: 'Drama/Romance',
+                child: Text('💕 Drama/Romance'),
+              ),
+              DropdownMenuItem(
+                value: 'Comédia/Humor',
+                child: Text('😄 Comédia/Humor'),
+              ),
+              DropdownMenuItem(
+                value: 'Ação/Aventura',
+                child: Text('⚡ Ação/Aventura'),
+              ),
+
+              // Temas Educativos
+              DropdownMenuItem(value: 'História', child: Text('📚 História')),
+              DropdownMenuItem(value: 'Ciência', child: Text('🔬 Ciência')),
+              DropdownMenuItem(value: 'Saúde', child: Text('💊 Saúde')),
+              DropdownMenuItem(
+                value: 'Tecnologia',
+                child: Text('💻 Tecnologia'),
+              ),
+              DropdownMenuItem(value: 'Natureza', child: Text('🌱 Natureza')),
+              DropdownMenuItem(
+                value: 'Biografias',
+                child: Text('👤 Biografias'),
+              ),
+              DropdownMenuItem(
+                value: 'Curiosidades',
+                child: Text('🤔 Curiosidades'),
+              ),
+              DropdownMenuItem(
+                value: 'Viagens/Lugares',
+                child: Text('🌍 Viagens/Lugares'),
+              ),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                configNotifier.updateTema(value);
+              }
+            },
           ),
-          items: const [
-            // 🎯 MODO LIVRE (SEM TEMA)
-            DropdownMenuItem(
-              value: 'Livre (Sem Tema)', 
-              child: Text('🆓 Livre (Sem Tema)'),
-            ),
-            
-            // Narrativas Dramáticas e Intensas
-            DropdownMenuItem(value: 'Vingança', child: Text('🔥 Vingança')),
-            DropdownMenuItem(value: 'Traição', child: Text('💔 Traição')),
-            DropdownMenuItem(value: 'Redenção', child: Text('✨ Redenção')),
-            DropdownMenuItem(value: 'Justiça', child: Text('⚖️ Justiça')),
-            DropdownMenuItem(value: 'Sacrifício', child: Text('🙏 Sacrifício')),
-            DropdownMenuItem(
-              value: 'Poder e Corrupção',
-              child: Text('👑 Poder e Corrupção'),
-            ),
-            DropdownMenuItem(
-              value: 'Sobrevivência',
-              child: Text('🛡️ Sobrevivência'),
-            ),
-            DropdownMenuItem(
-              value: 'Família Disfuncional',
-              child: Text('🏠 Família Disfuncional'),
-            ),
-            DropdownMenuItem(
-              value: 'Segredos Obscuros',
-              child: Text('🔐 Segredos Obscuros'),
-            ),
-            DropdownMenuItem(
-              value: 'Ascensão e Queda',
-              child: Text('📈 Ascensão e Queda'),
-            ),
-
-            // Gêneros Clássicos
-            DropdownMenuItem(
-              value: 'Mistério/Suspense',
-              child: Text('🔍 Mistério/Suspense'),
-            ),
-            DropdownMenuItem(
-              value: 'Terror/Sobrenatural',
-              child: Text('👻 Terror/Sobrenatural'),
-            ),
-            DropdownMenuItem(
-              value: 'Ficção Científica',
-              child: Text('🚀 Ficção Científica'),
-            ),
-            DropdownMenuItem(
-              value: 'Drama/Romance',
-              child: Text('💕 Drama/Romance'),
-            ),
-            DropdownMenuItem(
-              value: 'Comédia/Humor',
-              child: Text('😄 Comédia/Humor'),
-            ),
-            DropdownMenuItem(
-              value: 'Ação/Aventura',
-              child: Text('⚡ Ação/Aventura'),
-            ),
-
-            // Temas Educativos
-            DropdownMenuItem(value: 'História', child: Text('📚 História')),
-            DropdownMenuItem(value: 'Ciência', child: Text('🔬 Ciência')),
-            DropdownMenuItem(value: 'Saúde', child: Text('💊 Saúde')),
-            DropdownMenuItem(value: 'Tecnologia', child: Text('💻 Tecnologia')),
-            DropdownMenuItem(value: 'Natureza', child: Text('🌱 Natureza')),
-            DropdownMenuItem(value: 'Biografias', child: Text('👤 Biografias')),
-            DropdownMenuItem(
-              value: 'Curiosidades',
-              child: Text('🤔 Curiosidades'),
-            ),
-            DropdownMenuItem(
-              value: 'Viagens/Lugares',
-              child: Text('🌍 Viagens/Lugares'),
-            ),
-          ],
-          onChanged: (value) {
-            if (value != null) {
-              configNotifier.updateTema(value);
-            }
-          },
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -1137,6 +1648,107 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
               offset: config.personalizedTheme.length,
             ),
         ),
+        const SizedBox(height: 16),
+        // Subtema Principal
+        Text(
+          'Subtema Principal',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.fireOrange,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            hintText:
+                'Ex: Irmãos recebem milhões, protagonista recebe item sem valor...',
+            hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
+            prefixIcon: Icon(
+              Icons.subdirectory_arrow_right,
+              color: AppColors.fireOrange,
+              size: 20,
+            ),
+            filled: true,
+            fillColor: Colors.black.withOpacity(0.3),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.fireOrange),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: AppColors.fireOrange.withOpacity(0.5),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.fireOrange, width: 2),
+            ),
+          ),
+          maxLines: 2,
+          onChanged: configNotifier.updatePersonalizedSubtheme,
+          controller: TextEditingController(text: config.personalizedSubtheme)
+            ..selection = TextSelection.collapsed(
+              offset: config.personalizedSubtheme.length,
+            ),
+        ),
+        const SizedBox(height: 16),
+        // Subtema Secundário
+        Text(
+          'Subtema Secundário',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.fireOrange,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            hintText:
+                'Ex: Item aparentemente inútil esconde fortuna secreta...',
+            hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
+            prefixIcon: Icon(
+              Icons.double_arrow,
+              color: AppColors.fireOrange,
+              size: 20,
+            ),
+            filled: true,
+            fillColor: Colors.black.withOpacity(0.3),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.fireOrange),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: AppColors.fireOrange.withOpacity(0.5),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.fireOrange, width: 2),
+            ),
+          ),
+          maxLines: 2,
+          onChanged: configNotifier.updatePersonalizedSecondarySubtheme,
+          controller:
+              TextEditingController(text: config.personalizedSecondarySubtheme)
+                ..selection = TextSelection.collapsed(
+                  offset: config.personalizedSecondarySubtheme.length,
+                ),
+        ),
       ],
     );
   }
@@ -1204,39 +1816,39 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           ),
           const SizedBox(height: 8),
           TextField(
-          controller: localizacaoController,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-          decoration: InputDecoration(
-            hintText:
-                'Ex: Tokyo, Japão / Sertão da Bahia / Nova York / Interior de Minas...',
-            hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-            prefixIcon: Icon(
-              Icons.location_on,
-              color: AppColors.fireOrange,
-              size: 20,
+            controller: localizacaoController,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            decoration: InputDecoration(
+              hintText:
+                  'Ex: Tokyo, Japão / Sertão da Bahia / Nova York / Interior de Minas...',
+              hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+              prefixIcon: Icon(
+                Icons.location_on,
+                color: AppColors.fireOrange,
+                size: 20,
+              ),
+              filled: true,
+              fillColor: Colors.black.o(0.3),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.fireOrange),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.fireOrange.o(0.5)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: AppColors.fireOrange, width: 2),
+              ),
             ),
-            filled: true,
-            fillColor: Colors.black.o(0.3),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.fireOrange),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.fireOrange.o(0.5)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppColors.fireOrange, width: 2),
-            ),
+            onChanged: configNotifier.updateLocalizacao,
           ),
-          onChanged: configNotifier.updateLocalizacao,
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -1401,6 +2013,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                 case 'Russo':
                   langCode = 'ru';
                   break;
+                case 'Coreano (한국어)':
+                  langCode = 'ko';
+                  break;
                 default:
                   langCode = value.toLowerCase();
               }
@@ -1554,7 +2169,10 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                 icon: const Icon(Icons.info_outline, size: 18),
                 color: Colors.blue,
                 onPressed: () {
-                  HelpPopupWidget.show(context, HelpContent.localizationLevelHelp);
+                  HelpPopupWidget.show(
+                    context,
+                    HelpContent.localizationLevelHelp,
+                  );
                 },
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -1724,7 +2342,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             Expanded(
               child: GestureDetector(
                 onTap: () {
-                  configNotifier.updateStartWithTitlePhrase(!config.startWithTitlePhrase);
+                  configNotifier.updateStartWithTitlePhrase(
+                    !config.startWithTitlePhrase,
+                  );
                 },
                 child: Text(
                   'Começar o roteiro com a frase do título',
@@ -1796,7 +2416,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: BorderSide(color: AppColors.fireOrange.withOpacity(0.5)),
+              borderSide: BorderSide(
+                color: AppColors.fireOrange.withOpacity(0.5),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
@@ -1820,6 +2442,375 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           },
         ),
       ],
+    );
+  }
+
+  // 📝 NOVO: Checkbox para habilitar prompt customizado
+  Widget _buildCustomPromptCheckbox(
+    GenerationConfig config,
+    GenerationConfigNotifier configNotifier,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      decoration: BoxDecoration(
+        color: config.useCustomPrompt
+            ? AppColors.fireOrange.withOpacity(0.05)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: config.useCustomPrompt
+              ? AppColors.fireOrange.withOpacity(0.3)
+              : Colors.transparent,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Transform.scale(
+            scale: 0.9,
+            child: Checkbox(
+              value: config.useCustomPrompt,
+              onChanged: (bool? value) {
+                configNotifier.updateUseCustomPrompt(value ?? false);
+              },
+              activeColor: AppColors.fireOrange,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                configNotifier.updateUseCustomPrompt(!config.useCustomPrompt);
+              },
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.settings_suggest,
+                    size: 16,
+                    color: AppColors.fireOrange,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Modo Avançado: Prompt Customizado',
+                    style: AppDesignSystem.bodySmall.copyWith(
+                      color: config.useCustomPrompt
+                          ? AppColors.fireOrange
+                          : AppColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: config.useCustomPrompt
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Botão de ajuda
+          IconButton(
+            icon: const Icon(Icons.help_outline, size: 16),
+            color: AppColors.textSecondary,
+            onPressed: () {
+              _showCustomPromptHelp();
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Ver exemplos e guia de uso',
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 📝 NOVO: Campo de texto para prompt customizado
+  Widget _buildCustomPromptField(
+    GenerationConfig config,
+    GenerationConfigNotifier configNotifier,
+  ) {
+    if (!config.useCustomPrompt) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.fireOrange.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.fireOrange.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.edit_note,
+                size: 18,
+                color: AppColors.fireOrange,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Instruções Personalizadas',
+                style: AppDesignSystem.bodySmall.copyWith(
+                  color: AppColors.fireOrange,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _showCustomPromptHelp,
+                icon: const Icon(Icons.lightbulb_outline, size: 14),
+                label: const Text(
+                  'Ver Exemplos',
+                  style: TextStyle(fontSize: 11),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.fireOrange,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: TextEditingController(text: config.customPrompt)
+              ..selection = TextSelection.collapsed(
+                offset: config.customPrompt.length,
+              ),
+            maxLines: 4,
+            style: AppDesignSystem.bodyMedium.copyWith(fontSize: 13),
+            decoration: InputDecoration(
+              hintText:
+                  'Ex: Foco em diálogos intensos. Protagonista advogada. Tom sério, sem humor.',
+              hintStyle: TextStyle(
+                color: AppColors.textSecondary.withOpacity(0.5),
+                fontSize: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide(
+                  color: AppColors.textSecondary.withOpacity(0.3),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide(
+                  color: AppColors.textSecondary.withOpacity(0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: const BorderSide(
+                  color: AppColors.fireOrange,
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              filled: true,
+              fillColor: AppColors.darkBackground,
+            ),
+            onChanged: (value) {
+              configNotifier.updateCustomPrompt(value);
+            },
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '⚠️ Avançado: Estas instruções serão adicionadas ao prompt da IA. Use apenas se souber o que está fazendo.',
+            style: AppDesignSystem.bodySmall.copyWith(
+              color: AppColors.textSecondary.withOpacity(0.7),
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 📝 NOVO: Modal com exemplos de prompts customizados
+  void _showCustomPromptHelp() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.darkCard,
+        title: Row(
+          children: [
+            const Icon(Icons.lightbulb, color: AppColors.fireOrange),
+            const SizedBox(width: 8),
+            Text(
+              'Guia de Prompts Customizados',
+              style: AppDesignSystem.headingMedium.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 600,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Exemplos de Instruções Personalizadas:',
+                  style: AppDesignSystem.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildExamplePrompt(
+                  '🎭 Foco Dramático',
+                  'Foco em diálogos intensos e emocionais. Protagonista advogada. Tom sério, sem humor. Muitas cenas de tribunal.',
+                ),
+                _buildExamplePrompt(
+                  '😂 Tom Humorístico',
+                  'Narrativa leve e divertida. Incluir piadas sutis e situações cômicas. Protagonista desastrado mas carismático.',
+                ),
+                _buildExamplePrompt(
+                  '🌿 Estilo Poético',
+                  'Linguagem lírica e poética. Usar metáforas da natureza (rios, árvores, estações). Ritmo contemplativo.',
+                ),
+                _buildExamplePrompt(
+                  '⚡ Ação Rápida',
+                  'Ritmo acelerado. Frases curtas e diretas. Muita ação física. Pouca reflexão interna. Tensão constante.',
+                ),
+                _buildExamplePrompt(
+                  '🔍 Mistério Investigativo',
+                  'Tom de suspense policial. Protagonista detetive. Incluir pistas sutis. Reviravoltas inesperadas no meio da história.',
+                ),
+                _buildExamplePrompt(
+                  '❤️ Romance Intenso',
+                  'Foco na relação entre protagonista e par romântico. Muitas cenas de interação emocional. Tom apaixonado.',
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.darkSecondary,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.fireOrange.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.tips_and_updates,
+                            size: 16,
+                            color: AppColors.fireOrange,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Dicas:',
+                            style: AppDesignSystem.bodySmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.fireOrange,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '• Seja específico mas conciso\n'
+                        '• Combine múltiplos aspectos se necessário\n'
+                        '• Evite contradizer configurações base\n'
+                        '• Teste e ajuste conforme necessário',
+                        style: AppDesignSystem.bodySmall.copyWith(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: AppColors.fireOrange),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExamplePrompt(String title, String example) {
+    final configNotifier = ref.read(generationConfigProvider.notifier);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.darkSecondary,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.fireOrange.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppDesignSystem.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.fireOrange,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () {
+                  configNotifier.updateCustomPrompt(example);
+                  configNotifier.updateUseCustomPrompt(true);
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.content_copy, size: 12),
+                label: const Text('Usar', style: TextStyle(fontSize: 11)),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.fireOrange,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            example,
+            style: AppDesignSystem.bodySmall.copyWith(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

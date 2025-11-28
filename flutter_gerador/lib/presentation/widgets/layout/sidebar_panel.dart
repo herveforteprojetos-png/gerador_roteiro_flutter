@@ -13,7 +13,6 @@ import 'package:flutter_gerador/presentation/providers/auxiliary_tools_provider.
 import 'package:flutter_gerador/presentation/widgets/script_config/script_settings_section.dart';
 import 'package:flutter_gerador/presentation/widgets/script_config/generation_button.dart';
 
-
 class SidebarPanel extends ConsumerStatefulWidget {
   const SidebarPanel({super.key});
 
@@ -30,7 +29,8 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
 
   String selectedModel = 'gemini-2.5-pro';
   String selectedTema = 'HistÃ³ria';
-  String? selectedGenre; // Tipo temÃ¡tico (null, 'western', 'business', 'family')
+  String?
+  selectedGenre; // Tipo temÃ¡tico (null, 'western', 'business', 'family')
   String measureType = 'palavras';
   int quantity = 2000;
   late TextEditingController quantityController;
@@ -67,7 +67,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
 
       // Carregar preferÃªncias do usuÃ¡rio
       final preferences = await StorageService.getUserPreferences();
-      
+
       setState(() {
         language = preferences['language'] ?? 'PortuguÃªs';
         perspective = preferences['perspective'] ?? 'terceira_pessoa';
@@ -103,22 +103,26 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
         );
         return;
       }
-      
+
       // ValidaÃ§Ã£o para localizaÃ§Ã£o
       if (localizacaoController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('âš ï¸ Por favor, preencha onde a histÃ³ria se passa.'),
+            content: Text(
+              'âš ï¸ Por favor, preencha onde a histÃ³ria se passa.',
+            ),
             backgroundColor: Colors.orange,
           ),
         );
         return;
       }
-      
+
       // ðŸš¨ DEBUG: Verificando language antes de criar ScriptConfig (SIDEBAR)
       debugPrint('ðŸš¨ SIDEBAR_PANEL: language = "$language"');
-      debugPrint('ðŸš¨ SIDEBAR_PANEL: language.codeUnits = ${language.codeUnits}');
-      
+      debugPrint(
+        'ðŸš¨ SIDEBAR_PANEL: language.codeUnits = ${language.codeUnits}',
+      );
+
       final config = GenerationConfig(
         apiKey: apiKeyController.text,
         model: selectedModel,
@@ -135,7 +139,9 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
 
       // ðŸš¨ DEBUG: Verificando language depois de criar GenerationConfig (SIDEBAR)
       debugPrint('ðŸš¨ SIDEBAR_PANEL: config.language = "${config.language}"');
-      debugPrint('ðŸš¨ SIDEBAR_PANEL: config.language.codeUnits = ${config.language.codeUnits}');
+      debugPrint(
+        'ðŸš¨ SIDEBAR_PANEL: config.language.codeUnits = ${config.language.codeUnits}',
+      );
       try {
         await generationNotifier.generateScript(config);
       } catch (e) {
@@ -210,8 +216,10 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                       if (parsed != null && parsed > 0) {
                         // Validar limites baseados no tipo de medida
                         final minLimit = measureType == 'palavras' ? 500 : 1000;
-                        final maxLimit = measureType == 'palavras' ? 14000 : 100000;
-                        
+                        final maxLimit = measureType == 'palavras'
+                            ? 14000
+                            : 100000;
+
                         if (parsed >= minLimit && parsed <= maxLimit) {
                           setState(() {
                             quantity = parsed;
@@ -220,7 +228,9 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                           // Mostrar aviso sobre limites
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Limite: $minLimit a $maxLimit $measureType'),
+                              content: Text(
+                                'Limite: $minLimit a $maxLimit $measureType',
+                              ),
                               backgroundColor: Colors.orange,
                               duration: Duration(seconds: 2),
                             ),
@@ -280,59 +290,72 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                         perspective = value ?? perspective;
                       });
                     },
-                    onGenerateContext: _isGeneratingContext ? null : () async {
-                      if (titleController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Preencha o tÃ­tulo para gerar o contexto automaticamente.'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-                      setState(() => _isGeneratingContext = true);
-                      try {
-                        final config = GenerationConfig(
-                          apiKey: apiKeyController.text,
-                          model: selectedModel,
-                          title: titleController.text,
-                          language: language,
-                          perspective: perspective,
-                          quantity: quantity,
-                          measureType: measureType,
-                        );
-                        
-                        // Usar o provider correto para gerar contexto
-                        final auxiliaryNotifier = ref.read(auxiliaryToolsProvider.notifier);
-                        final context = await auxiliaryNotifier.generateContext(config);
-                        contextController.text = context;
-                      } catch (e) {
-                        // Melhorar mensagem de erro
-                        String errorMessage;
-                        final errorStr = e.toString().toLowerCase();
-                        
-                        if (errorStr.contains('503')) {
-                          errorMessage = 'ðŸ”„ Servidor temporariamente indisponÃ­vel. Tente em alguns minutos.';
-                        } else if (errorStr.contains('429')) {
-                          errorMessage = 'â±ï¸ Muitas solicitaÃ§Ãµes. Aguarde um momento.';
-                        } else if (errorStr.contains('timeout') || errorStr.contains('connection')) {
-                          errorMessage = 'ðŸŒ Problema de conexÃ£o. Verifique sua internet.';
-                        } else if (errorStr.contains('api')) {
-                          errorMessage = 'ðŸ”‘ Verifique sua chave API nas configuraÃ§Ãµes.';
-                        } else {
-                          errorMessage = 'âŒ Erro inesperado. Tente novamente.';
-                        }
-                        
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(errorMessage),
-                            backgroundColor: Colors.red,
-                            duration: const Duration(seconds: 5),
-                          ),
-                        );
-                      }
-                      setState(() => _isGeneratingContext = false);
-                    },
+                    onGenerateContext: _isGeneratingContext
+                        ? null
+                        : () async {
+                            if (titleController.text.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Preencha o tÃ­tulo para gerar o contexto automaticamente.',
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+                            setState(() => _isGeneratingContext = true);
+                            try {
+                              final config = GenerationConfig(
+                                apiKey: apiKeyController.text,
+                                model: selectedModel,
+                                title: titleController.text,
+                                language: language,
+                                perspective: perspective,
+                                quantity: quantity,
+                                measureType: measureType,
+                              );
+
+                              // Usar o provider correto para gerar contexto
+                              final auxiliaryNotifier = ref.read(
+                                auxiliaryToolsProvider.notifier,
+                              );
+                              final context = await auxiliaryNotifier
+                                  .generateContext(config);
+                              contextController.text = context;
+                            } catch (e) {
+                              // Melhorar mensagem de erro
+                              String errorMessage;
+                              final errorStr = e.toString().toLowerCase();
+
+                              if (errorStr.contains('503')) {
+                                errorMessage =
+                                    'ðŸ”„ Servidor temporariamente indisponÃ­vel. Tente em alguns minutos.';
+                              } else if (errorStr.contains('429')) {
+                                errorMessage =
+                                    'â±ï¸ Muitas solicitaÃ§Ãµes. Aguarde um momento.';
+                              } else if (errorStr.contains('timeout') ||
+                                  errorStr.contains('connection')) {
+                                errorMessage =
+                                    'ðŸŒ Problema de conexÃ£o. Verifique sua internet.';
+                              } else if (errorStr.contains('api')) {
+                                errorMessage =
+                                    'ðŸ”‘ Verifique sua chave API nas configuraÃ§Ãµes.';
+                              } else {
+                                errorMessage =
+                                    'âŒ Erro inesperado. Tente novamente.';
+                              }
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(errorMessage),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 5),
+                                ),
+                              );
+                            }
+                            setState(() => _isGeneratingContext = false);
+                          },
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -348,7 +371,8 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                   padding: const EdgeInsets.all(8),
                   child: SingleChildScrollView(
                     child: Text(
-                      generationState.result?.scriptText == null || generationState.result!.scriptText.isEmpty
+                      generationState.result?.scriptText == null ||
+                              generationState.result!.scriptText.isEmpty
                           ? 'Nenhum roteiro gerado ainda.'
                           : generationState.result!.scriptText,
                       style: TextStyle(fontSize: 14, color: Colors.white),
@@ -383,4 +407,3 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
     );
   }
 }
-

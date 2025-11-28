@@ -1,7 +1,7 @@
 class ValidationUtils {
   static bool isValidApiKey(String apiKey, String model) {
     if (apiKey.isEmpty) return false;
-    
+
     switch (model) {
       case 'gemini-pro':
       case 'gemini-2.5-pro':
@@ -12,7 +12,7 @@ class ValidationUtils {
         // OpenAI API keys começam com "sk-" e têm 51 caracteres
         return apiKey.startsWith('sk-') && apiKey.length == 51;
       case 'claude-3':
-        // Claude API keys começam com "sk-ant-" 
+        // Claude API keys começam com "sk-ant-"
         return apiKey.startsWith('sk-ant-') && apiKey.length > 20;
       default:
         return apiKey.length >= 20; // Validação genérica
@@ -23,7 +23,7 @@ class ValidationUtils {
     if (value.isEmpty) {
       return 'Chave da API é obrigatória';
     }
-    
+
     if (!isValidApiKey(value, model)) {
       switch (model) {
         case 'gemini-pro':
@@ -38,7 +38,7 @@ class ValidationUtils {
           return 'Formato de chave inválido';
       }
     }
-    
+
     return null;
   }
 
@@ -84,7 +84,7 @@ class ValidationUtils {
     if (quantity == null) {
       return 'Quantidade deve ser um número';
     }
-    
+
     if (!isValidQuantity(quantity, measureType)) {
       switch (measureType) {
         case 'palavras':
@@ -95,7 +95,7 @@ class ValidationUtils {
           return 'Quantidade inválida';
       }
     }
-    
+
     return null;
   }
 

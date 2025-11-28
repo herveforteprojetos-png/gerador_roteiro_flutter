@@ -21,7 +21,8 @@ class ScriptSettingsSection extends StatelessWidget {
   final ValueChanged<String?> onLanguageChanged;
   final String perspective;
   final ValueChanged<String?> onPerspectiveChanged;
-  final String? genre; // NOVO: Tipo temático (null, 'western', 'business', 'family')
+  final String?
+  genre; // NOVO: Tipo temático (null, 'western', 'business', 'family')
   final ValueChanged<String?> onGenreChanged; // NOVO: Callback
   final VoidCallback? onGenerateContext;
 
@@ -80,7 +81,10 @@ class ScriptSettingsSection extends StatelessWidget {
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.key),
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -106,11 +110,19 @@ class ScriptSettingsSection extends StatelessWidget {
                       initialValue: selectedModel,
                       decoration: InputDecoration(
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 8,
+                        ),
                         border: OutlineInputBorder(),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'gemini-2.5-pro', child: Text('Gemini 2.5 Pro 🏆 (Qualidade Máxima - Único Disponível)')),
+                        DropdownMenuItem(
+                          value: 'gemini-2.5-pro',
+                          child: Text(
+                            'Gemini 2.5 Pro 🏆 (Qualidade Máxima - Único Disponível)',
+                          ),
+                        ),
                       ],
                       onChanged: onModelChanged,
                     ),
@@ -137,7 +149,10 @@ class ScriptSettingsSection extends StatelessWidget {
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.title),
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -164,30 +179,37 @@ class ScriptSettingsSection extends StatelessWidget {
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.category),
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
                         border: OutlineInputBorder(),
                       ),
-                      items: [
-                        'Livre (Sem Tema)',
-                        'História',
-                        'Ciência',
-                        'Saúde',
-                        'Tecnologia',
-                        'Natureza',
-                        'Mistério/Suspense',
-                        'Terror/Sobrenatural',
-                        'Ficção Científica',
-                        'Drama/Romance',
-                        'Comédia/Humor',
-                        'Curiosidades',
-                        'Biografias',
-                        'Viagens/Lugares',
-                      ].map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value, style: TextStyle(fontSize: 13)),
-                        );
-                      }).toList(),
+                      items:
+                          [
+                            'Livre (Sem Tema)',
+                            'História',
+                            'Ciência',
+                            'Saúde',
+                            'Tecnologia',
+                            'Natureza',
+                            'Mistério/Suspense',
+                            'Terror/Sobrenatural',
+                            'Ficção Científica',
+                            'Drama/Romance',
+                            'Comédia/Humor',
+                            'Curiosidades',
+                            'Biografias',
+                            'Viagens/Lugares',
+                          ].map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: TextStyle(fontSize: 13),
+                              ),
+                            );
+                          }).toList(),
                       onChanged: onTemaChanged,
                     ),
                   ],
@@ -214,7 +236,10 @@ class ScriptSettingsSection extends StatelessWidget {
                         prefixIcon: const Icon(Icons.location_on),
                         hintText: 'Ex: Tokyo, Japão / Sertão da Bahia...',
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -243,7 +268,10 @@ class ScriptSettingsSection extends StatelessWidget {
                         hintText: 'Descreva o enredo...',
                         border: OutlineInputBorder(),
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -258,7 +286,9 @@ class ScriptSettingsSection extends StatelessWidget {
                             backgroundColor: AppColors.fireOrange,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           child: const Icon(Icons.auto_awesome, size: 20),
                         ),
@@ -286,12 +316,21 @@ class ScriptSettingsSection extends StatelessWidget {
                       initialValue: measureType,
                       decoration: InputDecoration(
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
                         border: OutlineInputBorder(),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'palavras', child: Text('Palavras')),
-                        DropdownMenuItem(value: 'caracteres', child: Text('Caracteres')),
+                        DropdownMenuItem(
+                          value: 'palavras',
+                          child: Text('Palavras'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'caracteres',
+                          child: Text('Caracteres'),
+                        ),
                       ],
                       onChanged: onMeasureTypeChanged,
                     ),
@@ -320,7 +359,10 @@ class ScriptSettingsSection extends StatelessWidget {
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(
                           isDense: true,
-                          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 8,
+                          ),
                           border: OutlineInputBorder(),
                         ),
                         onChanged: onQuantityFieldChanged,
@@ -356,21 +398,28 @@ class ScriptSettingsSection extends StatelessWidget {
                       initialValue: language,
                       decoration: InputDecoration(
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
                         border: OutlineInputBorder(),
                       ),
                       items: const [
                         DropdownMenuItem(value: 'de', child: Text('Alemão')),
                         DropdownMenuItem(value: 'bg', child: Text('Búlgaro')),
-                        DropdownMenuItem(value: 'es-mx', child: Text('Espanhol Mexicano')),
+                        DropdownMenuItem(value: 'ko', child: Text('Coreano (한국어)')),
+                        DropdownMenuItem(
+                          value: 'es-mx',
+                          child: Text('Espanhol Mexicano'),
+                        ),
                         DropdownMenuItem(value: 'fr', child: Text('Francês')),
                         DropdownMenuItem(value: 'en', child: Text('Inglês')),
                         DropdownMenuItem(value: 'it', child: Text('Italiano')),
                         DropdownMenuItem(value: 'pl', child: Text('Polonês')),
                         DropdownMenuItem(value: 'pt', child: Text('Português')),
+                        DropdownMenuItem(value: 'ro', child: Text('Romeno')),
                         DropdownMenuItem(value: 'ru', child: Text('Russo')),
                         DropdownMenuItem(value: 'tr', child: Text('Turco')),
-                        DropdownMenuItem(value: 'ro', child: Text('Romeno')),
                       ],
                       onChanged: onLanguageChanged,
                     ),
@@ -396,21 +445,38 @@ class ScriptSettingsSection extends StatelessWidget {
                       initialValue: genre,
                       decoration: InputDecoration(
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
                         border: OutlineInputBorder(),
                       ),
                       items: const [
-                        DropdownMenuItem(value: null, child: Text('Normal (usar nomes do idioma)')),
-                        DropdownMenuItem(value: 'western', child: Text('🤠 Western/Faroeste')),
-                        DropdownMenuItem(value: 'business', child: Text('💼 Corporativo (Em breve)')),
-                        DropdownMenuItem(value: 'family', child: Text('👨‍👩‍👧‍👦 Familiar (Em breve)')),
+                        DropdownMenuItem(
+                          value: null,
+                          child: Text('Normal (usar nomes do idioma)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'western',
+                          child: Text('🤠 Western/Faroeste'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'business',
+                          child: Text('💼 Corporativo (Em breve)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'family',
+                          child: Text('👨‍👩‍👧‍👦 Familiar (Em breve)'),
+                        ),
                       ],
                       onChanged: (value) {
                         // Bloquear seleção de opções "Em breve"
                         if (value == 'business' || value == 'family') {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('⚠️ Esta opção estará disponível em breve!'),
+                              content: Text(
+                                '⚠️ Esta opção estará disponível em breve!',
+                              ),
                               backgroundColor: Colors.orange,
                               duration: Duration(seconds: 2),
                             ),
@@ -442,7 +508,10 @@ class ScriptSettingsSection extends StatelessWidget {
                       initialValue: perspective,
                       decoration: InputDecoration(
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
                         border: OutlineInputBorder(),
                       ),
                       items: const [

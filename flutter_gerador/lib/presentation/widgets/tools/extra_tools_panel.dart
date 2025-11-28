@@ -23,7 +23,7 @@ class ExtraToolsPanel extends ConsumerWidget {
     final extraState = ref.watch(extraToolsProvider);
     final extraNotifier = ref.read(extraToolsProvider.notifier);
     final config = ref.watch(generationConfigProvider);
-    
+
     // 🔄 Verificar automaticamente se o SRT precisa ser invalidado
     WidgetsBinding.instance.addPostFrameCallback((_) {
       extraNotifier.invalidateSrtIfTextChanged(scriptText);
@@ -32,7 +32,7 @@ class ExtraToolsPanel extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.darkBackground,
-  border: Border.all(color: AppColors.fireOrange.o(0.3)),
+        border: Border.all(color: AppColors.fireOrange.o(0.3)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -53,11 +53,7 @@ class ExtraToolsPanel extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.build_circle,
-                  color: AppColors.fireOrange,
-                  size: 20,
-                ),
+                Icon(Icons.build_circle, color: AppColors.fireOrange, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   'Ferramentas Extras',
@@ -82,22 +78,29 @@ class ExtraToolsPanel extends ConsumerWidget {
                     _buildToolButton(
                       context: context,
                       icon: Icons.subtitles,
-                      title: extraState.isSrtValid ? 'Gerar SRT' : 'Atualizar SRT',
-                      description: extraState.isSrtValid 
-                          ? 'Legendas para vídeo' 
+                      title: extraState.isSrtValid
+                          ? 'Gerar SRT'
+                          : 'Atualizar SRT',
+                      description: extraState.isSrtValid
+                          ? 'Legendas para vídeo'
                           : 'SRT precisa ser atualizado',
                       isLoading: extraState.isGeneratingSRT,
-                      needsUpdate: !extraState.isSrtValid && extraState.generatedSRT != null,
+                      needsUpdate:
+                          !extraState.isSrtValid &&
+                          extraState.generatedSRT != null,
                       onPressed: config.apiKey.isEmpty
                           ? null
                           : () => _generateAndShow(
-                                context,
-                                ref,
-                                () => extraNotifier.generateSRTSubtitles(config, scriptText),
-                                'Legendas SRT Geradas',
-                                'Arquivo SRT para legendas de vídeo',
-                                extraState.generatedSRT,
+                              context,
+                              ref,
+                              () => extraNotifier.generateSRTSubtitles(
+                                config,
+                                scriptText,
                               ),
+                              'Legendas SRT Geradas',
+                              'Arquivo SRT para legendas de vídeo',
+                              extraState.generatedSRT,
+                            ),
                     ),
                     const SizedBox(height: 12),
 
@@ -111,13 +114,16 @@ class ExtraToolsPanel extends ConsumerWidget {
                       onPressed: config.apiKey.isEmpty
                           ? null
                           : () => _generateAndShow(
-                                context,
-                                ref,
-                                () => extraNotifier.generateYouTubeDescription(config, scriptText),
-                                'Descrição YouTube Gerada',
-                                'Descrição otimizada para SEO e engajamento',
-                                extraState.generatedYouTube,
+                              context,
+                              ref,
+                              () => extraNotifier.generateYouTubeDescription(
+                                config,
+                                scriptText,
                               ),
+                              'Descrição YouTube Gerada',
+                              'Descrição otimizada para SEO e engajamento',
+                              extraState.generatedYouTube,
+                            ),
                     ),
                     const SizedBox(height: 12),
 
@@ -131,33 +137,40 @@ class ExtraToolsPanel extends ConsumerWidget {
                       onPressed: config.apiKey.isEmpty
                           ? null
                           : () => _generateAndShow(
-                                context,
-                                ref,
-                                () => extraNotifier.generateProtagonistPrompt(config, scriptText),
-                                'Prompt do Protagonista Gerado',
-                                'Prompt em inglês para gerar imagem do protagonista no Midjourney',
-                                extraState.generatedPrompts,
+                              context,
+                              ref,
+                              () => extraNotifier.generateProtagonistPrompt(
+                                config,
+                                scriptText,
                               ),
+                              'Prompt do Protagonista Gerado',
+                              'Prompt em inglês para gerar imagem do protagonista no Midjourney',
+                              extraState.generatedPrompts,
+                            ),
                     ),
                     const SizedBox(height: 12),
 
-                    // Botão Prompt Cenário
+                    // 🎬 v7.6.13: Botão Prompt Cenas Principais (4 cenas cinematográficas)
                     _buildToolButton(
                       context: context,
-                      icon: Icons.landscape,
-                      title: 'Prompt Cenário',
-                      description: 'Ambiente principal',
+                      icon: Icons.movie_filter,
+                      title: 'Prompt Cenas Principais',
+                      description:
+                          '4 cenas cinematográficas com múltiplos personagens',
                       isLoading: extraState.isGeneratingScenario,
                       onPressed: config.apiKey.isEmpty
                           ? null
                           : () => _generateAndShow(
-                                context,
-                                ref,
-                                () => extraNotifier.generateScenarioPrompt(config, scriptText),
-                                'Prompt do Cenário Gerado',
-                                'Prompt em inglês para gerar imagem do cenário no Midjourney',
-                                extraState.generatedScenario,
+                              context,
+                              ref,
+                              () => extraNotifier.generateKeyScenes(
+                                config,
+                                scriptText,
                               ),
+                              'Prompts das Cenas Principais Gerados',
+                              '4 cenas cinematográficas principais com múltiplos personagens',
+                              extraState.generatedScenario,
+                            ),
                     ),
 
                     const SizedBox(height: 12),
@@ -166,8 +179,8 @@ class ExtraToolsPanel extends ConsumerWidget {
                     _buildToolButton(
                       context: context,
                       icon: Icons.campaign,
-                      title: 'CTAs Personalizados',
-                      description: 'Gerenciar call-to-actions',
+                      title: 'Gerar 3 CTAs',
+                      description: 'Início, Meio e Fim de uma vez',
                       isLoading: false,
                       onPressed: () => _openCtaDialog(context, ref),
                     ),
@@ -183,7 +196,9 @@ class ExtraToolsPanel extends ConsumerWidget {
                           contextController!.clear();
                         }
                         // Limpar também o contexto gerado automaticamente
-                        final auxiliaryNotifier = ref.read(auxiliaryToolsProvider.notifier);
+                        final auxiliaryNotifier = ref.read(
+                          auxiliaryToolsProvider.notifier,
+                        );
                         auxiliaryNotifier.clearContext();
                       },
                       icon: const Icon(Icons.clear_all, size: 16),
@@ -191,7 +206,10 @@ class ExtraToolsPanel extends ConsumerWidget {
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: Colors.red.o(0.7)),
                         foregroundColor: Colors.red.o(0.8),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
                     ),
                   ],
@@ -220,26 +238,27 @@ class ExtraToolsPanel extends ConsumerWidget {
         onPressed: isLoading ? null : onPressed,
         style: OutlinedButton.styleFrom(
           side: BorderSide(
-            color: onPressed == null 
-              ? Colors.grey.o(0.5)
-              : needsUpdate
+            color: onPressed == null
+                ? Colors.grey.o(0.5)
+                : needsUpdate
                 ? Colors.orange.o(0.8) // 🔄 Destaque quando precisa atualizar
-                : AppColors.fireOrange.o(0.7)
+                : AppColors.fireOrange.o(0.7),
           ),
-          foregroundColor: onPressed == null 
-            ? Colors.grey
-            : needsUpdate
-              ? Colors.orange // 🔄 Cor diferente quando precisa atualizar
+          foregroundColor: onPressed == null
+              ? Colors.grey
+              : needsUpdate
+              ? Colors
+                    .orange // 🔄 Cor diferente quando precisa atualizar
               : AppColors.fireOrange,
-          backgroundColor: onPressed == null 
-            ? Colors.grey.o(0.1)
-            : needsUpdate
-              ? Colors.orange.o(0.1) // 🔄 Fundo diferente quando precisa atualizar
+          backgroundColor: onPressed == null
+              ? Colors.grey.o(0.1)
+              : needsUpdate
+              ? Colors.orange.o(
+                  0.1,
+                ) // 🔄 Fundo diferente quando precisa atualizar
               : AppColors.fireOrange.o(0.05),
           padding: const EdgeInsets.all(12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: Row(
           children: [
@@ -249,7 +268,9 @@ class ExtraToolsPanel extends ConsumerWidget {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.fireOrange),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.fireOrange,
+                      ),
                     ),
                   )
                 : Icon(icon, size: 20),
@@ -283,9 +304,9 @@ class ExtraToolsPanel extends ConsumerWidget {
                     description,
                     style: TextStyle(
                       fontSize: 12,
-                      color: onPressed == null 
-                        ? Colors.grey
-                        : Colors.white.o(0.7),
+                      color: onPressed == null
+                          ? Colors.grey
+                          : Colors.white.o(0.7),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -309,11 +330,11 @@ class ExtraToolsPanel extends ConsumerWidget {
   ) async {
     try {
       String content;
-      
+
       // 🔄 Para SRT, sempre verificar se é válido antes de usar conteúdo existente
       final extraState = ref.read(extraToolsProvider);
       final isSrtRequest = title.contains('SRT');
-      
+
       if (existingContent != null && (!isSrtRequest || extraState.isSrtValid)) {
         // Use conteúdo existente apenas se não for SRT ou se SRT for válido
         content = existingContent;
@@ -359,7 +380,7 @@ class ExtraToolsPanel extends ConsumerWidget {
         .replaceAll(RegExp(r'[^a-z0-9_\- ]'), '')
         .replaceAll(' ', '_')
         .replaceAll('__', '_');
-    
+
     // Usar o tamanho da string já processada para evitar RangeError
     return sanitized.substring(0, sanitized.length.clamp(0, 40));
   }

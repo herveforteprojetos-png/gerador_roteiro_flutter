@@ -180,12 +180,12 @@ $scriptText
    - Destaque os elementos mais interessantes/chocantes da história
    - Termine com uma pergunta ou convite à reflexão
 
-2. **TAGS ESTRATÉGICAS**:
-   - Gênero da história (ex: #mistério #drama #horror #comédia)
-   - Elementos narrativos (ex: #storytelling #históriaverdadeira #ficção)
-   - Perfil do protagonista (ex: #mulheridosa #jovem #vingança)
-   - Temas universais (ex: #família #justiça #amor #traição)
-   - Idioma: #$languageTag
+2. **TAGS ESTRATÉGICAS** (separadas por vírgula, SEM hashtag #):
+   - Gênero da história (ex: mistério, drama, horror, comédia)
+   - Elementos narrativos (ex: storytelling, história verdadeira, ficção)
+   - Perfil do protagonista (ex: mulher idosa, jovem, vingança)
+   - Temas universais (ex: família, justiça, amor, traição)
+   - Idioma: $languageTag
    - Palavras-chave específicas do roteiro
 
 3. **ADAPTAÇÃO COMPLETA PARA ${config.language}**
@@ -196,7 +196,7 @@ $scriptText
 [Descrição de 400-500 caracteres com hook forte, resumo envolvente e pergunta final para engajamento]
 
 📱 **TAGS SUGERIDAS**
-[15-20 tags relevantes incluindo gênero, tema, perfil, elementos narrativos e idioma]
+[15-20 tags relevantes separadas por VÍRGULA, sem hashtag #. Exemplo: mistério, drama, vingança, família, storytelling, $languageTag]
 
 **DIRETRIZES DE QUALIDADE:**
 - Seja específico, não genérico
@@ -204,6 +204,8 @@ $scriptText
 - Inclua elementos de suspense sem spoilers
 - Adapte completamente para ${config.language}
 - Foque na experiência emocional que o vídeo oferece
+- ❌ NÃO use hashtag # nas tags
+- ✅ Separe as tags com vírgula: tag1, tag2, tag3
 ''';
 
       print('📤 Enviando para Gemini...');
@@ -244,21 +246,181 @@ $scriptText
 
       final protagonistPrompt =
           '''
-Com base no seguinte roteiro, gere um prompt em inglês para criar uma imagem do protagonista no Midjourney:
+Com base no seguinte roteiro, analise profundamente o protagonista e gere 4 PROMPTS COMPLETOS em inglês para criar imagens consistentes do protagonista no Midjourney:
 
 **Título:** ${config.title}
 **Roteiro:**
 $scriptText
 
-**Instruções:**
-- Gere um prompt do protagonista da cintura para cima
-- De frente para a câmera
-- Com roupa normal dele (baseada no contexto do roteiro)
-- O prompt deve ser em inglês para melhor compreensão da IA
-- Inclua detalhes físicos, roupas e expressão
-- Use estilo realista e fotográfico
+**⚠️ VALIDAÇÃO RIGOROSA DE NOME DO PROTAGONISTA (v7.6.15):**
 
-**Formato:** Apenas o prompt em inglês, sem explicações adicionais.
+Antes de gerar os prompts, execute verificação COMPLETA:
+
+1. **EXTRAIR TODOS OS NOMES DO PROTAGONISTA:**
+   - Liste CADA variação de nome que aparece
+   - Conte frequência de cada variação
+   - Exemplos: "Dr. Miller" (5x), "Dr. Thompson" (3x), "Claire Wallace" (12x)
+
+2. **DETECTAR INCONSISTÊNCIAS:**
+   - Se mesmo personagem tem nomes diferentes = ERRO DO ROTEIRO
+   - **AÇÃO:** Escolha o nome que aparece PRIMEIRO ou é mais COMPLETO
+   - Documente a escolha na seção de validação
+
+3. **ESCOLHER NOME DEFINITIVO:**
+   - UM nome único para usar nos 4 prompts
+   - Preferencialmente: nome completo (primeiro + sobrenome)
+   - Se houver título profissional (Dr., Captain), use apenas o nome pessoal nos prompts Midjourney
+   - Exemplo: "Dr. Claire Wallace" → use "Claire Wallace" nas imagens
+
+4. **DOCUMENTAR CORREÇÃO:**
+   - Se houve múltiplas variações, explique qual escolheu e por quê
+   - Se nome era consistente, confirme isso
+
+**ANÁLISE OBRIGATÓRIA DO PROTAGONISTA:**
+
+1️⃣ **CARACTERÍSTICAS FÍSICAS FIXAS** (devem ser IDÊNTICAS nos 4 prompts):
+   - Nome completo validado
+   - Idade aproximada
+   - Tipo físico (altura, peso, compleição)
+   - Cor e estilo de cabelo
+   - Cor dos olhos
+   - Formato do rosto
+   - Características marcantes (barba, óculos, cicatrizes, tatuagens, etc.)
+   - Tom de pele
+   
+   ${_getEthnicityInstructionForImagePrompts(config.language)}
+   
+   ${_getAgeInstructionForImagePrompts(config.perspective)}
+
+2️⃣ **PERSONALIDADE E CONTEXTO:**
+   - Profissão/ocupação
+   - Classe social
+   - Traços de personalidade principais
+   - Momento da história (início, meio, fim)
+
+3️⃣ **CENÁRIO E ATMOSFERA:**
+   - Localização principal do roteiro
+   - Época/período
+   - Clima/atmosfera da história
+
+**GERE EXATAMENTE 4 PROMPTS DIFERENTES:**
+
+🔹 **PROMPT 1: INÍCIO DA HISTÓRIA**
+- Protagonista em situação do INÍCIO do roteiro
+- Expressão/emoção do começo da jornada
+- Roupas e contexto do início
+- Cenário de fundo relacionado ao setup inicial
+- Mantém características físicas fixas
+
+🔹 **PROMPT 2: MOMENTO DE TENSÃO/CONFLITO**
+- Protagonista no MEIO da história
+- Expressão de tensão, dúvida ou luta
+- Possivelmente roupa diferente (se mudou no roteiro)
+- Cenário de fundo do conflito principal
+- Mantém características físicas fixas
+
+🔹 **PROMPT 3: CLÍMAX/DESCOBERTA**
+- Protagonista no momento crucial
+- Expressão de revelação, choque ou determinação
+- Contexto visual do momento decisivo
+- Cenário dramático do clímax
+- Mantém características físicas fixas
+
+🔹 **PROMPT 4: RESOLUÇÃO/FINAL**
+- Protagonista após a jornada
+- Expressão do estado final (vitória, paz, transformação)
+- Roupas/estilo final (pode ter mudado)
+- Cenário do desfecho
+- Mantém características físicas fixas
+
+**REGRAS CRÍTICAS:**
+
+✅ **CONSISTÊNCIA DE NOME (v7.6.15 - VALIDAÇÃO RIGOROSA):**
+- O protagonista deve ter APENAS UM NOME usado nos 4 prompts
+- **ZERO TOLERÂNCIA** para mudanças de nome entre prompts
+- Se roteiro tem inconsistências (Miller → Thompson → Wallace), escolha UM e documente
+- **FORMATO:** Use nome pessoal completo, SEM títulos profissionais
+- Exemplo: "Dr. Claire Wallace" → use "Claire Wallace" nos prompts
+- Informe na seção "VALIDAÇÃO DE NOME" qual escolheu e por quê
+
+✅ **CONSISTÊNCIA VISUAL ABSOLUTA:**
+- As características físicas (idade, cabelo, olhos, rosto, pele) devem ser EXATAMENTE IGUAIS nos 4 prompts
+- Use as MESMAS palavras descritivas para traços físicos fixos
+- Exemplo: Se é "30-year-old man, short brown hair, green eyes, square jaw" no Prompt 1, deve ser EXATAMENTE igual nos outros 3
+
+✅ **O QUE PODE MUDAR:**
+- Expressão facial (conforme momento da história)
+- Roupas (se mudou no roteiro)
+- Postura corporal
+- Cenário de fundo
+- Iluminação/atmosfera
+
+✅ **FORMATO DE CADA PROMPT:**
+"[características físicas fixas], [expressão facial], [roupas específicas], [postura], [cenário de fundo detalhado], [atmosfera/mood], cinematic lighting, photorealistic, high detail, 8k, professional photography, --ar 2:3 --v 6"
+
+✅ **ASPECTOS TÉCNICOS:**
+- Sempre "from waist up" ou "upper body portrait"
+- Sempre "facing camera" ou ângulo apropriado
+- Incluir "cinematic lighting, photorealistic"
+- Adicionar "--ar 2:3 --v 6" ao final
+
+**FORMATO DE SAÍDA:**
+
+Gere a resposta EXATAMENTE neste formato:
+
+═══════════════════════════════════════════
+🔍 VALIDAÇÃO DE NOME DO PROTAGONISTA (v7.6.15):
+═══════════════════════════════════════════
+**NOMES ENCONTRADOS NO ROTEIRO:**
+[Liste todas as variações com frequência]
+Exemplo:
+- "Dr. Miller": 5 aparições
+- "Dr. Thompson": 3 aparições  
+- "Claire Wallace": 12 aparições
+- "Dr. Wallace": 8 aparições
+
+**NOME ESCOLHIDO PARA OS PROMPTS:** [Nome definitivo]
+
+**JUSTIFICATIVA:**
+[Explique a escolha se houve inconsistências]
+Exemplo: "O roteiro usa três variações. Escolhi 'Claire Wallace' (nome completo) por ser o mais usado (12x) e o mais completo. Títulos profissionais ('Dr.') foram removidos para prompts Midjourney."
+
+OU se foi consistente:
+"Nome consistente no roteiro. Nenhuma correção necessária."
+
+═══════════════════════════════════════════
+📋 CARACTERÍSTICAS FIXAS DO PROTAGONISTA:
+═══════════════════════════════════════════
+[Descreva em português as características que serão mantidas, incluindo o nome validado acima]
+
+═══════════════════════════════════════════
+🎬 PROMPT 1 - INÍCIO DA HISTÓRIA:
+═══════════════════════════════════════════
+[Prompt completo em inglês]
+
+═══════════════════════════════════════════
+⚡ PROMPT 2 - MOMENTO DE TENSÃO:
+═══════════════════════════════════════════
+[Prompt completo em inglês]
+
+═══════════════════════════════════════════
+💥 PROMPT 3 - CLÍMAX/DESCOBERTA:
+═══════════════════════════════════════════
+[Prompt completo em inglês]
+
+═══════════════════════════════════════════
+🏆 PROMPT 4 - RESOLUÇÃO/FINAL:
+═══════════════════════════════════════════
+[Prompt completo em inglês]
+
+═══════════════════════════════════════════
+💡 DICAS DE USO:
+═══════════════════════════════════════════
+- Use seed fixo no Midjourney para maior consistência
+- Ajuste weight dos elementos conforme necessário
+- Considere usar image prompts da Imagem 1 para gerar 2, 3 e 4
+
+**IMPORTANTE:** Cada prompt deve ser completo e funcional por si só, pronto para colar diretamente no Midjourney!
 ''';
 
       final result = await _geminiService.generateTextWithApiKey(
@@ -282,11 +444,14 @@ $scriptText
     }
   }
 
-  Future<String> generateScenarioPrompt(
+  // 🎬 v7.6.13: NOVA FERRAMENTA - PROMPT CENAS PRINCIPAIS
+  // Substitui o antigo "generateScenarioPrompt" (clímax único)
+  // Agora gera 4 CENAS CINEMATOGRÁFICAS completas com múltiplos personagens
+  Future<String> generateKeyScenes(
     GenerationConfig config,
     String scriptText,
   ) async {
-    print('🏔️ ExtraTools: Iniciando geração Scenario Prompt');
+    print('🎬 ExtraTools: Iniciando geração CENAS PRINCIPAIS (v7.6.13)');
     print(
       '  📋 Config: ${config.title}, ${config.language}, API Key: ${config.apiKey.isNotEmpty ? "Present" : "Missing"}',
     );
@@ -295,46 +460,204 @@ $scriptText
     state = state.copyWith(isGeneratingScenario: true, scenarioError: null);
 
     try {
-      final scenarioPrompt =
+      final keyScenesPrompt =
           '''
-Com base no seguinte roteiro, gere um prompt em inglês otimizado para criar uma imagem do cenário principal no Midjourney:
+Com base no seguinte roteiro, analise profundamente e gere 4 PROMPTS COMPLETOS em inglês para criar CENAS CINEMATOGRÁFICAS PRINCIPAIS no Midjourney:
 
 **Título:** ${config.title}
 **Roteiro:**
 $scriptText
 
-**INSTRUÇÕES ESPECÍFICAS:**
-- Analise o roteiro e identifique o cenário/ambiente principal onde a ação acontece
-- Crie um prompt detalhado em inglês para gerar uma imagem cinematográfica
-- Inclua detalhes específicos de: localização, atmosfera, época, iluminação, clima
-- Use estilo fotorrealista e cinematográfico (cinematic, photorealistic)
-- Adicione elementos visuais que transmitam o mood da história
-- Inclua aspectos técnicos de câmera e composição quando relevante
-- NÃO inclua pessoas/personagens, apenas o ambiente
-- Use palavras-chave que funcionam bem no Midjourney
+**OBJETIVO:**
+Escolher as 4 CENAS MAIS IMPACTANTES e VISUALMENTE MARCANTES da história, onde o protagonista interage com outros personagens em momentos decisivos.
 
-**ELEMENTOS OBRIGATÓRIOS:**
-- Descrição detalhada do ambiente principal
-- Época/período histórico se relevante
-- Atmosfera e mood da cena
-- Detalhes de iluminação
-- Estilo visual (cinematic, photorealistic, etc.)
-- Aspectos técnicos da composição
+**CRITÉRIOS PARA SELEÇÃO DAS CENAS:**
 
-**FORMATO:** Prompt completo em inglês, pronto para usar no Midjourney, sem explicações adicionais.
+✅ **Priorize cenas COM MÚLTIPLOS PERSONAGENS:**
+   - Mínimo: Protagonista + 1 personagem secundário
+   - Máximo: Até 4 personagens (ideal para Midjourney)
+   - Cenas de diálogo, confronto, revelação, decisão importante
 
-**EXEMPLO DE ESTRUTURA:**
-"[ambiente detalhado], [época/período], [atmosfera/mood], [iluminação], [estilo visual], [aspectos técnicos], --ar 16:9 --v 6"
+✅ **Escolha momentos VISUALMENTE DRAMÁTICOS:**
+   - Cenas com ação, tensão emocional, revelações importantes
+   - Evite cenas estáticas ou monólogos internos
+   - Prefira locais interessantes e memoráveis
+
+✅ **Distribua ao longo da narrativa:**
+   - Cena 1: Momento importante do INÍCIO
+   - Cena 2: Momento crucial do DESENVOLVIMENTO/CONFLITO
+   - Cena 3: Momento decisivo do CLÍMAX
+   - Cena 4: Momento emocional da RESOLUÇÃO
+
+**⚠️ REGRAS CRÍTICAS - VALIDAÇÃO OBRIGATÓRIA DE NOMES (v7.6.15):**
+
+Antes de gerar os prompts, você DEVE executar estas verificações:
+
+1. **EXTRAIR TODOS OS NOMES:**
+   - Liste CADA nome próprio que aparece no roteiro
+   - Inclua primeiros nomes, sobrenomes, apelidos, títulos (Dr., Captain, etc.)
+   - Marque quantas vezes cada nome aparece
+
+2. **DETECTAR NOMES DUPLICADOS:**
+   - ⚠️ ERRO CRÍTICO: Se DOIS PERSONAGENS DIFERENTES têm o MESMO NOME
+   - Exemplo: "Kenneth" (capitão vilão) e "Kenneth" (cirurgião herói) = INACEITÁVEL
+   - **AÇÃO:** Renomeie o personagem secundário para nome DIFERENTE
+   - Escolha nome que combine com período/contexto (Marcus, William, Richard, Samuel, etc.)
+
+3. **DETECTAR MUDANÇAS DE NOME (MESMO PERSONAGEM):**
+   - ⚠️ INCONSISTÊNCIA: Protagonista muda de "Dr. Miller" → "Dr. Thompson" → "Dr. Wallace"
+   - **AÇÃO:** Escolha UM nome (preferencialmente o primeiro ou mais completo)
+   - Use APENAS esse nome em todas as 4 cenas
+
+4. **VALIDAR PERSONAGENS SECUNDÁRIOS:**
+   - Se personagem aparece SEM INTRODUÇÃO (ex: "Kenneth, the ship's old surgeon" do nada)
+   - **AÇÃO:** Mencione na seção de validação que personagem não foi introduzido adequadamente
+   - Use mesmo assim, mas alerte sobre problema no roteiro original
+
+5. **CRIAR TABELA DE NOMES ÚNICOS:**
+   - Liste TODOS os personagens com EXATAMENTE UM NOME cada
+   - Se roteiro tinha duplicatas/inconsistências, documente correções feitas
+
+**ANÁLISE OBRIGATÓRIA PARA CADA CENA:**
+
+1️⃣ **PERSONAGENS NA CENA:**
+   - Protagonista: Características físicas (idade, tipo físico, cabelo, olhos, rosto, pele, etnia)
+   - Personagens secundários: Descrição física de CADA um (nome, idade aproximada, aparência, roupa)
+   - Expressões faciais de cada personagem
+   - Posicionamento espacial (quem está onde, como interagem)
+   - ⚠️ **IMPORTANTE:** Use SEMPRE o mesmo nome para o mesmo personagem em todas as cenas
+   
+   ${_getEthnicityInstructionForImagePrompts(config.language)}
+
+2️⃣ **CENÁRIO DA CENA:**
+   - Localização específica (sala, rua, floresta, escritório, etc.)
+   - Período/época (1716, anos 80, contemporâneo, futuro)
+   - Elementos visuais marcantes (objetos, móveis, decoração)
+   - Atmosfera/clima (tenso, nostálgico, dramático, esperançoso)
+
+3️⃣ **ILUMINAÇÃO E COMPOSIÇÃO:**
+   - Hora do dia (amanhecer, meio-dia, entardecer, noite)
+   - Tipo de luz (natural, artificial, fogo, lua, velas)
+   - Clima/atmosfera (nevoeiro, chuva, sol forte, sombras)
+
+**FORMATO DE CADA PROMPT:**
+
+"Wide shot, [descrição da ação da cena]. [Protagonista: nome, idade, etnia, características físicas, expressão, roupa], [Personagem 2: nome, idade, características, expressão, roupa], [Personagem 3 se houver...]. [Descrição detalhada do cenário, localização, período histórico]. [Elementos visuais importantes]. [Atmosfera, iluminação, clima]. Photorealistic, natural lighting, high detail, 8k, professional photography, --ar 16:9 --v 6"
+
+**EXEMPLO DE PROMPT CORRETO:**
+
+"Wide shot, dramatic escape scene in dark swamp at night. William, a young Black man in his 20s with desperate expression, worn slave clothing, running alongside Blake, a weathered white pirate in his 40s with grey eyes and determined look, torn dark shirt. Both waist-deep in murky black water, pushing through hanging spanish moss from ancient cypress trees. Distant torchlight and barking dogs behind them creating urgency. Atmospheric fog, moonlight filtering through dense canopy. Photorealistic, natural lighting, high detail, 8k, professional photography, --ar 16:9 --v 6"
+
+**REGRAS CRÍTICAS:**
+
+✅ **CONSISTÊNCIA DE NOMES (v7.6.15 - VALIDAÇÃO RIGOROSA):**
+   - **ZERO TOLERÂNCIA para nomes duplicados:** Se dois personagens diferentes têm mesmo nome, RENOMEIE um deles
+   - **ZERO TOLERÂNCIA para mudanças de nome:** Um personagem = UM nome em todas as cenas
+   - Se roteiro tem "Kenneth" (vilão) e "Kenneth" (herói), renomeie um para "Marcus", "William", etc.
+   - Se protagonista muda "Miller" → "Thompson" → "Wallace", escolha UM e mantenha
+   - **DOCUMENTE** todas as correções na seção "VALIDAÇÃO DE NOMES"
+   - Preferência: use o nome que aparece PRIMEIRO no roteiro, ou o mais COMPLETO
+
+✅ **DETECÇÃO DE PERSONAGENS NÃO INTRODUZIDOS:**
+   - Se personagem aparece tarde sem introdução (ex: "Kenneth, the surgeon" do nada)
+   - **ALERTE** na validação: "⚠️ Personagem 'Kenneth (cirurgião)' aparece sem introdução prévia no roteiro"
+   - Use mesmo assim nas cenas, mas documente o problema
+
+✅ **CONSISTÊNCIA FÍSICA DOS PERSONAGENS:**
+   - Características físicas do protagonista devem ser IDÊNTICAS nas 4 cenas
+   - Personagens secundários que aparecem em múltiplas cenas devem manter consistência
+   - Use as MESMAS palavras descritivas para cada personagem
+
+❌ **EVITE:**
+   - Cenas com protagonista completamente sozinho (sem interação)
+   - Monólogos internos ou cenas muito estáticas
+   - Mais de 4 personagens em uma cena (Midjourney tem dificuldade)
+   - Cenas muito similares entre si
+
+✅ **ASPECTOS TÉCNICOS OBRIGATÓRIOS:**
+   - Sempre "Wide shot" no início (NÃO usar "Cinematic")
+   - Sempre "Photorealistic, natural lighting, high detail, 8k, professional photography"
+   - Sempre "--ar 16:9 --v 6" ao final
+   - Descrição em inglês fluente e natural
+   - ❌ NÃO usar: "cinematic lighting", "cinematography", "cinematic" (ficam artificiais)
+   - ✅ USAR: "photorealistic", "natural lighting", "professional photography"
+
+**FORMATO DE SAÍDA:**
+
+Gere a resposta EXATAMENTE neste formato:
+
+═══════════════════════════════════════════
+📋 VALIDAÇÃO DE NOMES E PERSONAGENS (v7.6.15):
+═══════════════════════════════════════════
+**NOMES ENCONTRADOS NO ROTEIRO ORIGINAL:**
+[Liste CADA nome que aparece, com frequência]
+Exemplo:
+- Kenneth: 15 vezes (capitão do Providence)
+- Kenneth: 3 vezes (cirurgião do navio) ← ⚠️ NOME DUPLICADO DETECTADO
+- Kenneth: 1 vez (príncipe morto mencionado) ← ⚠️ NOME DUPLICADO DETECTADO
+- Arthur: 42 vezes (protagonista)
+- Elizabeth: 28 vezes (princesa)
+
+**CORREÇÕES APLICADAS:**
+[Se houver duplicatas ou inconsistências, explique correções]
+Exemplo:
+✅ Kenneth (capitão vilão) → RENOMEADO para "Marcus" (evitar confusão)
+✅ Kenneth (cirurgião) → RENOMEADO para "William" (evitar confusão)
+✅ Kenneth (príncipe morto) → MANTIDO como "Kenneth" (personagem morto, menos confuso)
+
+OU se houver mudanças de nome do mesmo personagem:
+✅ Protagonista: "Dr. Miller" / "Dr. Thompson" / "Dr. Wallace" → ESCOLHIDO "Dr. Wallace" (nome completo mais usado)
+
+**ALERTAS DE PROBLEMAS NO ROTEIRO:**
+[Liste problemas estruturais detectados]
+Exemplo:
+⚠️ Personagem "William (cirurgião)" aparece sem introdução prévia no roteiro
+⚠️ Personagem "Grant" desaparece sem resolução após confronto
+
+═══════════════════════════════════════════
+📋 PERSONAGENS PRINCIPAIS DA HISTÓRIA:
+═══════════════════════════════════════════
+[Liste protagonista + personagens secundários importantes com descrição física de cada um usando os nomes validados acima]
+
+═══════════════════════════════════════════
+🎬 CENA 1 - [NOME/DESCRIÇÃO DA CENA]:
+═══════════════════════════════════════════
+[Prompt completo em inglês - wide shot cinematográfico]
+
+═══════════════════════════════════════════
+🎬 CENA 2 - [NOME/DESCRIÇÃO DA CENA]:
+═══════════════════════════════════════════
+[Prompt completo em inglês - wide shot cinematográfico]
+
+═══════════════════════════════════════════
+🎬 CENA 3 - [NOME/DESCRIÇÃO DA CENA]:
+═══════════════════════════════════════════
+[Prompt completo em inglês - wide shot cinematográfico]
+
+═══════════════════════════════════════════
+🎬 CENA 4 - [NOME/DESCRIÇÃO DA CENA]:
+═══════════════════════════════════════════
+[Prompt completo em inglês - wide shot cinematográfico]
+
+═══════════════════════════════════════════
+💡 DICAS DE USO:
+═══════════════════════════════════════════
+- Use seed fixo no Midjourney para maior consistência entre personagens
+- Para personagens recorrentes, use image prompts da primeira aparição
+- Ajuste weights se algum personagem estiver dominando demais: [nome]::1.5
+- Formato 16:9 é ideal para impressão em pôsteres ou uso em vídeos
+
+**IMPORTANTE:** Cada prompt deve ser PHOTOREALISTIC (não cinematográfico artificial), com iluminação natural, pronto para colar diretamente no Midjourney!
 ''';
 
-      print('📤 Enviando scenario prompt para Gemini...');
+      print('📤 Enviando key scenes prompts para Gemini (v7.6.13)...');
       final result = await _geminiService.generateTextWithApiKey(
-        prompt: scenarioPrompt,
+        prompt: keyScenesPrompt,
         apiKey: config.apiKey,
         model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
       );
 
-      print('✅ Resposta scenario recebida do Gemini');
+      print('✅ Resposta key scenes recebida do Gemini');
       print('📊 Result length: ${result.length} chars');
 
       state = state.copyWith(
@@ -344,10 +667,11 @@ $scriptText
 
       return result;
     } catch (e) {
-      print('❌ ERRO na geração Scenario: $e');
+      print('❌ ERRO na geração Key Scenes: $e');
       state = state.copyWith(
         isGeneratingScenario: false,
-        scenarioError: 'Erro ao gerar prompt do cenário: ${e.toString()}',
+        scenarioError:
+            'Erro ao gerar prompts das cenas principais: ${e.toString()}',
       );
       rethrow;
     }
@@ -453,6 +777,190 @@ Responda em ${config.language} com prompts detalhados e criativos.
       promptsError: null,
       scenarioError: null,
     );
+  }
+
+  // � v7.6.12: INSTRUÇÃO DE IDADE PARA PROMPTS DE IMAGENS DO PROTAGONISTA
+  String _getAgeInstructionForImagePrompts(String ageCategory) {
+    final ageLower = ageCategory.toLowerCase();
+
+    if (ageLower.contains('jovem') || ageLower.contains('young')) {
+      return '''🎂 **IDADE OBRIGATÓRIA:** Protagonista deve ter entre **20-35 anos** (young adult).
+   - Aparência: jovem, energético, início/meio da carreira
+   - Características físicas: pele lisa ou com mínimas linhas de expressão, aparência vibrante
+   - Postura: dinâmica, moderna, confiante
+   - Contexto: início de carreira, crescimento profissional/pessoal
+   - ❌ NÃO representar como adolescente (muito jovem) ou maduro (40+)
+   - ✅ Todos os 4 prompts devem manter esta faixa etária IDÊNTICA (20-35 anos)''';
+    }
+
+    if (ageLower.contains('maduro') || ageLower.contains('mature')) {
+      return '''🎂 **IDADE OBRIGATÓRIA:** Protagonista deve ter entre **35-50 anos** (mature adult).
+   - Aparência: experiente, consolidado, auge da carreira profissional
+   - Características físicas: algumas linhas de expressão, aparência madura mas ainda vigorosa e ativa
+   - Postura: confiante, estabelecida, profissional
+   - Contexto: carreira consolidada, experiência de vida, possivelmente filhos adolescentes
+   - ❌ NÃO representar como jovem (20s-early 30s) ou idoso (60+)
+   - ✅ Todos os 4 prompts devem manter esta faixa etária IDÊNTICA (35-50 anos)''';
+    }
+
+    if (ageLower.contains('idoso') ||
+        ageLower.contains('idosa') ||
+        ageLower.contains('senior') ||
+        ageLower.contains('elderly')) {
+      return '''🎂 **IDADE OBRIGATÓRIA:** Protagonista deve ter **50+ anos** (senior adult).
+   - Aparência: experiente, sábio, cabelos grisalhos ou brancos
+   - Características físicas: rugas de expressão marcantes, sinais claros de maturidade, possível calvície parcial
+   - Postura: elegante, digna, reflexiva
+   - Contexto: aposentado ou perto, netos, legado familiar, sabedoria de vida
+   - ❌ NÃO representar como jovem ou de meia-idade (30s-40s)
+   - ✅ Todos os 4 prompts devem manter esta faixa etária IDÊNTICA (50+ anos)''';
+    }
+
+    // Fallback genérico
+    return '''🎂 **IDADE:** Protagonista deve ter idade apropriada ao contexto da história.
+   - Aparência física coerente com a faixa etária da narrativa
+   - ✅ Todos os 4 prompts devem manter esta idade IDÊNTICA''';
+  }
+
+  // �🎭 v7.6.11: INSTRUÇÃO DE ETNIA PARA PROMPTS DE IMAGENS DO PROTAGONISTA
+  String _getEthnicityInstructionForImagePrompts(String language) {
+    final languageLower = language.toLowerCase();
+
+    if (languageLower.contains('français') ||
+        languageLower.contains('francês') ||
+        languageLower == 'french') {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **branco europeu francês** (white European French).
+   - Pele: clara/branca europeia (fair/light European skin tone)
+   - Traços faciais: típicos franceses (typical French facial features)
+   - Cabelos: castanhos, loiros ou pretos (brown, blonde, or black hair)
+   - Olhos: claros ou escuros (light or dark eyes)
+   - ❌ NÃO usar etnias asiáticas, africanas, latinas ou indígenas
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    if (languageLower.contains('english') ||
+        languageLower.contains('inglês') ||
+        languageLower.contains('ingles')) {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **branco anglo-saxão** (white Anglo-Saxon).
+   - Pele: clara/branca (fair/light skin tone)
+   - Traços faciais: anglo-saxões típicos (typical Anglo-Saxon facial features)
+   - Cabelos: loiros, ruivos, castanhos ou pretos (blonde, red, brown, or black hair)
+   - Olhos: claros (azuis/verdes/cinza) ou escuros (blue/green/gray or dark eyes)
+   - ❌ NÃO usar etnias asiáticas, latinas ou indígenas
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    if (languageLower.contains('español') ||
+        languageLower.contains('espanhol') ||
+        languageLower == 'spanish') {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **hispânico/latino** (Hispanic/Latino).
+   - Pele: morena-clara a morena (tan to brown skin tone)
+   - Traços faciais: latinos típicos (typical Latino facial features)
+   - Cabelos: pretos ou castanhos escuros (black or dark brown hair)
+   - Olhos: escuros (dark eyes)
+   - ❌ NÃO usar etnias asiáticas, africanas ou anglo-saxônicas
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    if (languageLower.contains('português') ||
+        languageLower.contains('portugues') ||
+        languageLower == 'portuguese') {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **brasileiro/português** (Brazilian/Portuguese).
+   - Pele: morena-clara a branca (tan-fair to white skin tone)
+   - Traços faciais: brasileiros/portugueses mistos (mixed Brazilian/Portuguese features)
+   - Cabelos: castanhos, pretos ou loiros (brown, black, or blonde hair)
+   - Olhos: castanhos, verdes ou azuis (brown, green, or blue eyes)
+   - Brasil é multiétnico: pode ser branco-brasileiro, pardo, moreno ou mestiço
+   - ❌ NÃO usar etnias asiáticas puras ou africanas puras (exceto se temática exigir)
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    if (languageLower.contains('italiano') || languageLower == 'italian') {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **italiano** (Italian, Mediterranean Caucasian).
+   - Pele: clara a morena-mediterrânea (fair to Mediterranean tan skin tone)
+   - Traços faciais: italianos típicos (typical Italian facial features)
+   - Cabelos: pretos ou castanhos escuros (black or dark brown hair)
+   - Olhos: castanhos ou verdes (brown or green eyes)
+   - ❌ NÃO usar etnias nórdicas, asiáticas ou africanas
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    if (languageLower.contains('alemão') ||
+        languageLower.contains('alemao') ||
+        languageLower == 'german') {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **germânico** (Germanic/German Caucasian).
+   - Pele: clara/branca (fair/light skin tone)
+   - Traços faciais: germânicos típicos (typical Germanic facial features)
+   - Cabelos: loiros, castanhos ou ruivos (blonde, brown, or red hair)
+   - Olhos: claros (azuis/verdes) ou castanhos (blue/green or brown eyes)
+   - ❌ NÃO usar etnias mediterrâneas, asiáticas ou africanas
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    if (languageLower.contains('russo') || languageLower == 'russian') {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **eslavo/russo** (Slavic/Russian Caucasian).
+   - Pele: clara/branca (fair/light skin tone)
+   - Traços faciais: eslavos típicos (typical Slavic facial features)
+   - Cabelos: loiros, castanhos ou pretos (blonde, brown, or black hair)
+   - Olhos: claros (azuis/cinza) ou castanhos (blue/gray or brown eyes)
+   - ❌ NÃO usar etnias asiáticas centrais, africanas ou mediterrâneas
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    if (languageLower.contains('japonês') ||
+        languageLower.contains('japones') ||
+        languageLower == 'japanese') {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **japonês** (Japanese East Asian).
+   - Pele: clara-amarelada asiática (light-yellow Asian skin tone)
+   - Traços faciais: japoneses típicos (typical Japanese facial features)
+   - Cabelos: pretos e lisos (black straight hair)
+   - Olhos: castanhos escuros e amendoados (dark brown almond-shaped eyes)
+   - ❌ NÃO usar etnias brancas, africanas, latinas ou de outros países asiáticos
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    if (languageLower.contains('chinês') ||
+        languageLower.contains('chines') ||
+        languageLower == 'chinese' ||
+        languageLower.contains('mandarim')) {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **chinês** (Chinese East Asian).
+   - Pele: clara-amarelada asiática (light-yellow Asian skin tone)
+   - Traços faciais: chineses típicos (typical Chinese facial features)
+   - Cabelos: pretos e lisos (black straight hair)
+   - Olhos: castanhos escuros (dark brown eyes)
+   - ❌ NÃO usar etnias brancas, africanas, latinas ou de outros países asiáticos
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    if (languageLower.contains('coreano') ||
+        languageLower.contains('korean') ||
+        languageLower.contains('한국어') ||
+        languageLower == 'ko') {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **coreano** (Korean East Asian).
+   - Pele: clara-amarelada asiática (light-yellow Asian skin tone)
+   - Traços faciais: coreanos típicos (typical Korean facial features)
+   - Cabelos: pretos e lisos (black straight hair)
+   - Olhos: castanhos escuros e amendoados (dark brown almond-shaped eyes)
+   - ❌ NÃO usar etnias brancas, africanas, latinas ou de outros países asiáticos
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    if (languageLower.contains('árabe') ||
+        languageLower.contains('arabe') ||
+        languageLower == 'arabic') {
+      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **árabe/médio-oriental** (Arab/Middle Eastern).
+   - Pele: morena-clara a morena-escura (tan to dark tan skin tone)
+   - Traços faciais: árabes típicos (typical Arab facial features)
+   - Cabelos: pretos ou castanhos escuros (black or dark brown hair)
+   - Olhos: castanhos ou pretos (brown or black eyes)
+   - ❌ NÃO usar etnias europeias, asiáticas ou africanas subsaarianas
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
+    }
+
+    // Idiomas sem especificação de etnia
+    return '''🎭 **ETNIA:** Protagonista deve ter etnia coerente com contexto cultural do idioma ${language}.
+   - Aparência física apropriada ao contexto linguístico e geográfico
+   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
   }
 }
 

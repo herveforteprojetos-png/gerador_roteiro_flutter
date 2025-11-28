@@ -56,7 +56,10 @@ class WorkspaceConfigService {
   }
 
   /// Atualiza apenas o nome de um workspace
-  static Future<void> updateWorkspaceName(String workspaceId, String name) async {
+  static Future<void> updateWorkspaceName(
+    String workspaceId,
+    String name,
+  ) async {
     final config = await loadConfig(workspaceId);
     final updatedConfig = config.copyWith(
       workspaceName: name,
@@ -69,7 +72,7 @@ class WorkspaceConfigService {
   static Future<Map<String, WorkspaceConfig>> loadAllConfigs() async {
     final prefs = await SharedPreferences.getInstance();
     final workspaceIds = prefs.getStringList(_allWorkspacesKey) ?? [];
-    
+
     final configs = <String, WorkspaceConfig>{};
     for (final id in workspaceIds) {
       configs[id] = await loadConfig(id);
@@ -82,7 +85,7 @@ class WorkspaceConfigService {
   static Future<void> _addWorkspaceId(String workspaceId) async {
     final prefs = await SharedPreferences.getInstance();
     final workspaceIds = prefs.getStringList(_allWorkspacesKey) ?? [];
-    
+
     if (!workspaceIds.contains(workspaceId)) {
       workspaceIds.add(workspaceId);
       await prefs.setStringList(_allWorkspacesKey, workspaceIds);
@@ -105,11 +108,11 @@ class WorkspaceConfigService {
   static Future<void> clearAllConfigs() async {
     final prefs = await SharedPreferences.getInstance();
     final workspaceIds = prefs.getStringList(_allWorkspacesKey) ?? [];
-    
+
     for (final id in workspaceIds) {
       await prefs.remove('$_keyPrefix$id');
     }
-    
+
     await prefs.remove(_allWorkspacesKey);
   }
 }

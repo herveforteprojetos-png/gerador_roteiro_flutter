@@ -40,19 +40,19 @@ class ModernGenerationProgressView extends ConsumerWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Progress circle simples
                 RepaintBoundary(child: _buildSimpleProgressCircle()),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Console simples
                 RepaintBoundary(child: _buildSimpleConsole()),
-                
+
                 const SizedBox(height: 30),
-                
+
                 // Botão cancelar
                 _buildCancelButton(),
               ],
@@ -81,7 +81,7 @@ class ModernGenerationProgressView extends ConsumerWidget {
               border: Border.all(color: Colors.grey[700]!, width: 2),
             ),
           ),
-          
+
           // Progress indicator
           SizedBox(
             width: 100,
@@ -94,7 +94,7 @@ class ModernGenerationProgressView extends ConsumerWidget {
               strokeCap: StrokeCap.round,
             ),
           ),
-          
+
           // Center content
           Column(
             mainAxisSize: MainAxisSize.min,
@@ -110,10 +110,7 @@ class ModernGenerationProgressView extends ConsumerWidget {
               const SizedBox(height: 4),
               Text(
                 'Bloco ${progress.currentBlock}/${progress.totalBlocks}',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey[400], fontSize: 12),
               ),
             ],
           ),
@@ -130,7 +127,7 @@ class ModernGenerationProgressView extends ConsumerWidget {
     final displayLogs = progress.logs.length > 3
         ? progress.logs.sublist(progress.logs.length - 3)
         : progress.logs;
-    
+
     return RepaintBoundary(
       child: Container(
         width: double.infinity,
@@ -162,7 +159,7 @@ class ModernGenerationProgressView extends ConsumerWidget {
                 ),
               ),
             ),
-            
+
             // Content - OTIMIZADO com addAutomaticKeepAlives
             Expanded(
               child: ListView.builder(
@@ -176,7 +173,9 @@ class ModernGenerationProgressView extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final log = displayLogs[index];
                   return Padding(
-                    key: ValueKey('log_${progress.logs.length - displayLogs.length + index}'),
+                    key: ValueKey(
+                      'log_${progress.logs.length - displayLogs.length + index}',
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 1),
                     child: Text(
                       '> $log',
@@ -204,9 +203,7 @@ class ModernGenerationProgressView extends ConsumerWidget {
         backgroundColor: Colors.red[600],
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
       child: const Text('Cancelar'),
     );

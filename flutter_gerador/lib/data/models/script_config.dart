@@ -3,10 +3,10 @@ import 'generation_config.dart';
 
 // Formatos de vídeo disponíveis
 enum VideoFormat {
-  standard,        // Sem otimização específica (padrão original)
-  youtubeShort,    // 1-3 min (200-600 palavras) - Ultra dinâmico
-  youtubeMedium,   // 8-15 min (1.500-3.000 palavras) - Dinâmico
-  youtubeLong,     // 20-30 min (4.000-6.000 palavras) - Equilibrado
+  standard, // Sem otimização específica (padrão original)
+  youtubeShort, // 1-3 min (200-600 palavras) - Ultra dinâmico
+  youtubeMedium, // 8-15 min (1.500-3.000 palavras) - Dinâmico
+  youtubeLong, // 20-30 min (4.000-6.000 palavras) - Equilibrado
 }
 
 extension VideoFormatExtension on VideoFormat {
@@ -22,7 +22,7 @@ extension VideoFormatExtension on VideoFormat {
         return 'YouTube Longo (20-30 min)';
     }
   }
-  
+
   // Target de palavras recomendado para cada formato
   int get recommendedWordCount {
     switch (this) {
@@ -36,7 +36,7 @@ extension VideoFormatExtension on VideoFormat {
         return 5000; // ~25 min
     }
   }
-  
+
   // Duração aproximada em minutos
   String get approximateDuration {
     switch (this) {
@@ -55,6 +55,8 @@ extension VideoFormatExtension on VideoFormat {
 // Modelo principal do projeto
 class ScriptConfig {
   final String apiKey;
+  final String? openAIKey; // 🤖 NOVO: API Key OpenAI (fallback)
+  final String selectedProvider; // 🤖 NOVO: 'gemini' ou 'openai'
   final String model;
   final String title;
   final String tema;
@@ -66,15 +68,22 @@ class ScriptConfig {
   final String perspective;
   final LocalizationLevel localizationLevel;
   final bool startWithTitlePhrase; // NOVO: Começar com frase do título
-  final String qualityMode; // NOVO: Modo de qualidade (balanced, quality, speed)
+  final String
+  qualityMode; // NOVO: Modo de qualidade (balanced, quality, speed)
   final String protagonistName;
   final String secondaryCharacterName;
-  final String? genre; // NOVO: Tipo temático da história ('western', 'business', 'family')
-  final String narrativeStyle; // NOVO: Estilo de narração ('ficcional_livre', 'reflexivo_memorias', etc.)
+  final String?
+  genre; // NOVO: Tipo temático da história ('western', 'business', 'family')
+  final String
+  narrativeStyle; // NOVO: Estilo de narração ('ficcional_livre', 'reflexivo_memorias', etc.)
   final VideoFormat videoFormat; // 🎬 NOVO: Formato de vídeo YouTube
+  final String customPrompt; // 📝 NOVO: Prompt personalizado do usuário
+  final bool useCustomPrompt; // 📝 NOVO: Habilitar prompt personalizado
 
   ScriptConfig({
     required this.apiKey,
+    this.openAIKey, // 🤖 NOVO: Opcional
+    this.selectedProvider = 'gemini', // 🤖 NOVO: Padrão Gemini
     required this.model,
     required this.title,
     required this.tema,
@@ -91,7 +100,10 @@ class ScriptConfig {
     this.secondaryCharacterName = '',
     this.genre, // NOVO: Opcional (null = nomes do idioma, 'western' = nomes western)
     this.narrativeStyle = 'ficcional_livre', // NOVO: Padrão é narração livre
-    this.videoFormat = VideoFormat.standard, // 🎬 NOVO: Padrão é standard (sem otimização)
+    this.videoFormat =
+        VideoFormat.standard, // 🎬 NOVO: Padrão é standard (sem otimização)
+    this.customPrompt = '', // 📝 NOVO: Padrão vazio
+    this.useCustomPrompt = false, // 📝 NOVO: Padrão desabilitado
   }) {
     // 🔥 VALIDAÇÕES
     if (quantity <= 0) {
@@ -110,19 +122,34 @@ class ScriptConfig {
     // 🎯 Se usar tema personalizado, usar personalizedTheme (pode ser vazio = sem tema)
     // Se personalizedTheme estiver vazio, usar 'Livre (Sem Tema)' como indicador
     final temaFinal = config.usePersonalizedTheme
-        ? (config.personalizedTheme.trim().isEmpty ? 'Livre (Sem Tema)' : config.personalizedTheme)
+        ? (config.personalizedTheme.trim().isEmpty
+              ? 'Livre (Sem Tema)'
+              : config.personalizedTheme)
         : config.tema;
-    
+
     final subtemFinal = config.usePersonalizedTheme
-        ? '' // Subtema não se aplica a temas personalizados
+        ? config
+              .personalizedSubtheme // 🎯 NOVO: Usar subtema personalizado
         : config.subtema;
-    
+
+    // 🎯 NOVO: Adicionar subtema secundário ao final do subtema se existir
+    final subtemaCompleto =
+        config.usePersonalizedTheme &&
+            config.personalizedSecondarySubtheme.trim().isNotEmpty
+        ? (subtemFinal.isEmpty
+              ? config.personalizedSecondarySubtheme
+              : '$subtemFinal | ${config.personalizedSecondarySubtheme}')
+        : subtemFinal;
+
     return ScriptConfig(
       apiKey: config.apiKey,
+      openAIKey: config.openAIKey, // 🤖 NOVO: Fallback OpenAI
+      selectedProvider: config.selectedProvider, // 🤖 NOVO: Qual API usar
       model: config.model,
       title: config.title,
       tema: temaFinal,
-      subtema: subtemFinal,
+      subtema:
+          subtemaCompleto, // 🎯 USAR subtemaCompleto que contém ambos subtemas
       localizacao: config.localizacao,
       measureType: config.measureType,
       quantity: config.quantity,
@@ -135,7 +162,10 @@ class ScriptConfig {
       secondaryCharacterName: config.secondaryCharacterName,
       genre: config.genre, // NOVO: Tipo temático
       narrativeStyle: config.narrativeStyle, // NOVO: Estilo de narração
-      videoFormat: VideoFormat.standard, // 🎬 NOVO: Por padrão usa standard (será adicionado ao GenerationConfig depois)
+      videoFormat: VideoFormat
+          .standard, // 🎬 NOVO: Por padrão usa standard (será adicionado ao GenerationConfig depois)
+      customPrompt: config.customPrompt, // 📝 NOVO: Prompt personalizado
+      useCustomPrompt: config.useCustomPrompt, // 📝 NOVO: Habilitar prompt
     );
   }
 
@@ -158,6 +188,8 @@ class ScriptConfig {
     String? genre,
     String? narrativeStyle,
     VideoFormat? videoFormat, // 🎬 NOVO
+    String? customPrompt, // 📝 NOVO
+    bool? useCustomPrompt, // 📝 NOVO
   }) {
     return ScriptConfig(
       apiKey: apiKey ?? this.apiKey,
@@ -174,10 +206,13 @@ class ScriptConfig {
       startWithTitlePhrase: startWithTitlePhrase ?? this.startWithTitlePhrase,
       qualityMode: qualityMode ?? this.qualityMode,
       protagonistName: protagonistName ?? this.protagonistName,
-      secondaryCharacterName: secondaryCharacterName ?? this.secondaryCharacterName,
+      secondaryCharacterName:
+          secondaryCharacterName ?? this.secondaryCharacterName,
       genre: genre ?? this.genre,
       narrativeStyle: narrativeStyle ?? this.narrativeStyle,
       videoFormat: videoFormat ?? this.videoFormat, // 🎬 NOVO
+      customPrompt: customPrompt ?? this.customPrompt, // 📝 NOVO
+      useCustomPrompt: useCustomPrompt ?? this.useCustomPrompt, // 📝 NOVO
     );
   }
 }

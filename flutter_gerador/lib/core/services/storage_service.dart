@@ -2,9 +2,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
-/// ServiÃ§o para gerenciar armazenamento seguro de configuraÃ§Ãµes
+/// Serviço para gerenciar armazenamento seguro de configurações
 class StorageService {
   static const String _apiKeyKey = 'gemini_api_key';
+  static const String _openAIKeyKey = 'openai_api_key'; // 🤖 NOVO
   static const String _apiKeyHistoryKey = 'api_key_history';
   static const String _modelKey = 'selected_model';
   static const String _qualityModeKey = 'quality_mode';
@@ -87,6 +88,29 @@ class StorageService {
     if (obscuredKey == null) return null;
 
     // Desobscurecer a chave
+    return _deobscureKey(obscuredKey);
+  }
+
+  /// 🤖 Salva a chave OpenAI de forma segura
+  static Future<void> saveOpenAIKey(String openAIKey) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (openAIKey.isEmpty) {
+      await prefs.remove(_openAIKeyKey);
+      return;
+    }
+
+    final obscuredKey = _obscureKey(openAIKey);
+    await prefs.setString(_openAIKeyKey, obscuredKey);
+  }
+
+  /// 🤖 Recupera a chave OpenAI salva
+  static Future<String?> getOpenAIKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    final obscuredKey = prefs.getString(_openAIKeyKey);
+
+    if (obscuredKey == null) return null;
+
     return _deobscureKey(obscuredKey);
   }
 

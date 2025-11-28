@@ -2,6 +2,8 @@
 
 class GenerationConfig {
   final String apiKey;
+  final String? openAIKey; // 🤖 NOVO: API Key OpenAI (fallback)
+  final String selectedProvider; // 🤖 NOVO: 'gemini' ou 'openai' - qual API usar
   final String model;
   final String title;
   final String tema;
@@ -11,18 +13,29 @@ class GenerationConfig {
   final int quantity;
   final String language;
   final String perspective;
-  final String personalizedTheme; // Tema personalizado do usuÃ¡rio
+  final String personalizedTheme; // Tema personalizado do usuário
   final bool usePersonalizedTheme; // Se deve usar tema personalizado
-  final LocalizationLevel localizationLevel; // NÃ­vel de regionalismo
+  final String personalizedSubtheme; // Subtema principal personalizado
+  final String
+  personalizedSecondarySubtheme; // Subtema secundário personalizado
+  final LocalizationLevel localizationLevel; // Nível de regionalismo
   final bool startWithTitlePhrase; // Se deve começar com a frase do título
   final String protagonistName; // Nome do protagonista
   final String secondaryCharacterName; // Nome do personagem secundário
-  final String qualityMode; // Modelo IA: 'pro' (2.5-pro, mais lento/melhor) ou 'flash' (2.5-flash, 4x mais rápido)
-  final String? genre; // Tipo temático da História: null (normal), 'western', 'business', 'family'
-  final String narrativeStyle; // Estilo de narração: 'ficcional_livre', 'reflexivo_memorias', 'epico_periodo', etc.
+  final String
+  qualityMode; // Modelo IA: 'pro' (2.5-pro, mais lento/melhor) ou 'flash' (2.5-flash, 4x mais rápido)
+  final String?
+  genre; // Tipo temático da História: null (normal), 'western', 'business', 'family'
+  final String
+  narrativeStyle; // Estilo de narração: 'ficcional_livre', 'reflexivo_memorias', 'epico_periodo', etc.
+  final String
+  customPrompt; // Prompt customizado opcional para instruções específicas avançadas
+  final bool useCustomPrompt; // Se deve usar o prompt customizado
 
   const GenerationConfig({
     required this.apiKey,
+    this.openAIKey, // 🤖 NOVO: Opcional
+    this.selectedProvider = 'gemini', // 🤖 NOVO: Padrão Gemini
     required this.model,
     required this.title,
     this.tema = 'Vingança',
@@ -34,17 +47,24 @@ class GenerationConfig {
     this.perspective = 'terceira_pessoa',
     this.personalizedTheme = '',
     this.usePersonalizedTheme = false,
+    this.personalizedSubtheme = '',
+    this.personalizedSecondarySubtheme = '',
     this.localizationLevel = LocalizationLevel.national,
     this.startWithTitlePhrase = false,
     this.protagonistName = '',
     this.secondaryCharacterName = '',
     this.qualityMode = 'pro', // Padrão: Qualidade Máxima (2.5-pro)
     this.genre, // Opcional: null = nomes do idioma
-    this.narrativeStyle = 'ficcional_livre', // Padrão: Narração livre (sem restrições)
+    this.narrativeStyle =
+        'ficcional_livre', // Padrão: Narração livre (sem restrições)
+    this.customPrompt = '', // Padrão: vazio (não usa)
+    this.useCustomPrompt = false, // Padrão: desativado
   });
 
   GenerationConfig copyWith({
     String? apiKey,
+    String? openAIKey, // 🤖 NOVO
+    String? selectedProvider, // 🤖 NOVO
     String? model,
     String? title,
     String? tema,
@@ -56,6 +76,8 @@ class GenerationConfig {
     String? perspective,
     String? personalizedTheme,
     bool? usePersonalizedTheme,
+    String? personalizedSubtheme,
+    String? personalizedSecondarySubtheme,
     LocalizationLevel? localizationLevel,
     bool? startWithTitlePhrase,
     String? protagonistName,
@@ -63,9 +85,13 @@ class GenerationConfig {
     String? qualityMode,
     String? genre,
     String? narrativeStyle,
+    String? customPrompt,
+    bool? useCustomPrompt,
   }) {
     return GenerationConfig(
       apiKey: apiKey ?? this.apiKey,
+      openAIKey: openAIKey ?? this.openAIKey, // 🤖 NOVO
+      selectedProvider: selectedProvider ?? this.selectedProvider, // 🤖 NOVO
       model: model ?? this.model,
       title: title ?? this.title,
       tema: tema ?? this.tema,
@@ -77,19 +103,27 @@ class GenerationConfig {
       perspective: perspective ?? this.perspective,
       personalizedTheme: personalizedTheme ?? this.personalizedTheme,
       usePersonalizedTheme: usePersonalizedTheme ?? this.usePersonalizedTheme,
+      personalizedSubtheme: personalizedSubtheme ?? this.personalizedSubtheme,
+      personalizedSecondarySubtheme:
+          personalizedSecondarySubtheme ?? this.personalizedSecondarySubtheme,
       localizationLevel: localizationLevel ?? this.localizationLevel,
       startWithTitlePhrase: startWithTitlePhrase ?? this.startWithTitlePhrase,
       protagonistName: protagonistName ?? this.protagonistName,
-      secondaryCharacterName: secondaryCharacterName ?? this.secondaryCharacterName,
+      secondaryCharacterName:
+          secondaryCharacterName ?? this.secondaryCharacterName,
       qualityMode: qualityMode ?? this.qualityMode,
       genre: genre ?? this.genre,
       narrativeStyle: narrativeStyle ?? this.narrativeStyle,
+      customPrompt: customPrompt ?? this.customPrompt,
+      useCustomPrompt: useCustomPrompt ?? this.useCustomPrompt,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'apiKey': apiKey,
+      'openAIKey': openAIKey, // 🤖 NOVO
+      'selectedProvider': selectedProvider, // 🤖 NOVO
       'model': model,
       'title': title,
       'tema': tema,
@@ -101,6 +135,8 @@ class GenerationConfig {
       'perspective': perspective,
       'personalizedTheme': personalizedTheme,
       'usePersonalizedTheme': usePersonalizedTheme,
+      'personalizedSubtheme': personalizedSubtheme,
+      'personalizedSecondarySubtheme': personalizedSecondarySubtheme,
       'localizationLevel': localizationLevel.name,
       'startWithTitlePhrase': startWithTitlePhrase,
       'protagonistName': protagonistName,
@@ -108,12 +144,16 @@ class GenerationConfig {
       'qualityMode': qualityMode,
       'genre': genre,
       'narrativeStyle': narrativeStyle,
+      'customPrompt': customPrompt,
+      'useCustomPrompt': useCustomPrompt,
     };
   }
 
   factory GenerationConfig.fromJson(Map<String, dynamic> json) {
     return GenerationConfig(
       apiKey: json['apiKey'] ?? '',
+      openAIKey: json['openAIKey'], // 🤖 NOVO: Nullable
+      selectedProvider: json['selectedProvider'] ?? 'gemini', // 🤖 NOVO: Padrão gemini
       model: json['model'] ?? 'gemini-1.5-pro',
       title: json['title'] ?? '',
       tema: json['tema'] ?? 'Vingança',
@@ -125,6 +165,9 @@ class GenerationConfig {
       perspective: json['perspective'] ?? 'terceira_pessoa',
       personalizedTheme: json['personalizedTheme'] ?? '',
       usePersonalizedTheme: json['usePersonalizedTheme'] ?? false,
+      personalizedSubtheme: json['personalizedSubtheme'] ?? '',
+      personalizedSecondarySubtheme:
+          json['personalizedSecondarySubtheme'] ?? '',
       localizationLevel: LocalizationLevel.values.firstWhere(
         (level) => level.name == json['localizationLevel'],
         orElse: () => LocalizationLevel.national,
@@ -134,7 +177,10 @@ class GenerationConfig {
       secondaryCharacterName: json['secondaryCharacterName'] ?? '',
       qualityMode: json['qualityMode'] ?? 'pro', // Padrão: Pro
       genre: json['genre'], // Nullable: null = nomes do idioma
-      narrativeStyle: json['narrativeStyle'] ?? 'ficcional_livre', // Padrão: Narração livre
+      narrativeStyle:
+          json['narrativeStyle'] ?? 'ficcional_livre', // Padrão: Narração livre
+      customPrompt: json['customPrompt'] ?? '', // Padrão: vazio
+      useCustomPrompt: json['useCustomPrompt'] ?? false, // Padrão: desativado
     );
   }
 
@@ -142,6 +188,7 @@ class GenerationConfig {
   static const List<String> availableLanguages = [
     'Alemão',
     'Búlgaro',
+    'Coreano (한국어)',
     'Croata',
     'Espanhol(mexicano)',
     'Francês',
@@ -156,23 +203,29 @@ class GenerationConfig {
 
   static const List<String> availablePerspectives = [
     'terceira_pessoa',
-    'primeira_pessoa_homem_idoso',
     'primeira_pessoa_homem_jovem',
-    'primeira_pessoa_mulher_idosa',
+    'primeira_pessoa_homem_maduro',
+    'primeira_pessoa_homem_idoso',
     'primeira_pessoa_mulher_jovem',
+    'primeira_pessoa_mulher_madura',
+    'primeira_pessoa_mulher_idosa',
   ];
 
   static const Map<String, String> perspectiveLabels = {
     'terceira_pessoa': 'Terceira Pessoa',
-    'primeira_pessoa_homem_idoso': 'Primeira Pessoa Homem Idoso',
-    'primeira_pessoa_homem_jovem': 'Primeira Pessoa Homem Jovem de 25 a 40',
-    'primeira_pessoa_mulher_idosa': 'Primeira Pessoa Mulher Idosa',
-    'primeira_pessoa_mulher_jovem': 'Primeira Pessoa Mulher Jovem de 25 a 40',
+    'primeira_pessoa_homem_jovem': 'Primeira Pessoa Homem Jovem (20-35 anos)',
+    'primeira_pessoa_homem_maduro': 'Primeira Pessoa Homem Maduro (35-50 anos)',
+    'primeira_pessoa_homem_idoso': 'Primeira Pessoa Homem Idoso (50+ anos)',
+    'primeira_pessoa_mulher_jovem': 'Primeira Pessoa Mulher Jovem (20-35 anos)',
+    'primeira_pessoa_mulher_madura':
+        'Primeira Pessoa Mulher Madura (35-50 anos)',
+    'primeira_pessoa_mulher_idosa': 'Primeira Pessoa Mulher Idosa (50+ anos)',
   };
 
   static const Map<String, String> languageLabels = {
     'Alemão': 'Alemão',
     'Búlgaro': 'Búlgaro',
+    'Coreano (한국어)': 'Coreano (한국어)',
     'Croata': 'Croata',
     'Espanhol(mexicano)': 'Espanhol (Mexicano)',
     'Francês': 'Francês',
@@ -195,11 +248,10 @@ class GenerationConfig {
   static const Map<String, List<String>> temaSubtemas = {
     // ðŸŽ¯ MODO LIVRE (SEM TEMA)
     'Livre (Sem Tema)': [], // Sem subtemas disponíveis
-    
     // TEMAS DRAMÃTICOS E INTENSOS
     'Vingança': [
       'Vingança Destrutiva',
-      'Vingança Construtiva', 
+      'Vingança Construtiva',
       'Justiça Poética',
       'Vingança Silenciosa',
       'Vingança Familiar',
@@ -373,14 +425,14 @@ class GenerationConfig {
 
   /// Retorna o tema efetivo que deve ser usado na gerAção
   String get effectiveTheme {
-    return usePersonalizedTheme && personalizedTheme.isNotEmpty 
-        ? personalizedTheme 
+    return usePersonalizedTheme && personalizedTheme.isNotEmpty
+        ? personalizedTheme
         : tema;
   }
 
   /// Retorna o subtema efetivo que deve ser usado na gerAção
   String get effectiveSubtema {
-    return usePersonalizedTheme && personalizedTheme.isNotEmpty 
+    return usePersonalizedTheme && personalizedTheme.isNotEmpty
         ? '' // Quando usa tema personalizado, nÃ£o usa subtema predefinido
         : subtema;
   }
@@ -416,4 +468,3 @@ class GenerationConfig {
     'lirico_poetico': '🌸 Lírico Poético',
   };
 }
-
