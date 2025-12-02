@@ -44,7 +44,8 @@ class MainPromptTemplate {
     required String forbiddenNamesWarning,
     required Map<String, String> labels,
   }) {
-    return '''⭐ IDIOMA OBRIGATÓRIO: ${_getLanguageInstructionInline(language)}\n
+    return '''⭐ IDIOMA OBRIGATÓRIO: ${_getLanguageInstructionInline(language)}
+${_getKoreanNameRules(language)}
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║  🚨🚨🚨 ERRO CRÍTICO #1: NUNCA MUDE O NOME DOS PERSONAGENS! 🚨🚨🚨           ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -1397,7 +1398,7 @@ ${_getYouTubeFinaleStructureRules()}''';
         : '${labels['location']}: $localizacao';
 
     return '''⭐ IDIOMA: ${_getLanguageInstructionInline(language)}
-
+${_getKoreanNameRules(language)}
 ${contextoPrevio.isNotEmpty ? 'CONTEXTO (resuma mentalmente, sem repetir):\n$contextoPrevio\n\n' : ''}${avoidRepetition ? '🚨 REPETIÇÃO DETECTADA ANTES — escreva conteúdo 100% novo (palavras e estruturas diferentes)\n\n' : ''}${characterGuidance.isEmpty ? '' : characterGuidance}
 $instruction.
 $temaSection
@@ -1585,6 +1586,60 @@ ${useCustomPrompt && customPrompt.trim().isNotEmpty ? 'INSTRUÇÕES DO USUÁRIO 
   static String _getLanguageInstructionInline(String language) {
     // Inline simplificado - full logic está em BaseRules
     return language;
+  }
+
+  /// 🇰🇷 REGRAS ESPECÍFICAS PARA NOMES COREANOS (v7.6.42)
+  /// Na Coreia, o sobrenome SEMPRE vem primeiro: Kim Seon-woo, Park Ji-young
+  static String _getKoreanNameRules(String language) {
+    final normalizedLang = language.toLowerCase();
+    if (normalizedLang.contains('한국어') ||
+        normalizedLang.contains('coreano') ||
+        normalizedLang.contains('korean') ||
+        normalizedLang.contains('ko')) {
+      return '''
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  🇰🇷 REGRAS ESPECIAIS PARA NOMES COREANOS (OBRIGATÓRIO!) 🇰🇷                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+🚨🚨🚨 FORMATO OBRIGATÓRIO DE NOMES EM COREANO 🚨🚨🚨
+
+Na cultura coreana, o SOBRENOME vem PRIMEIRO, seguido do nome pessoal.
+Isso é ESSENCIAL para autenticidade e imersão do público coreano!
+
+✅ FORMATO CORRETO (OBRIGATÓRIO):
+   • Kim Seon-woo (김선우) - "Kim" é sobrenome
+   • Park Ji-young (박지영) - "Park" é sobrenome  
+   • Lee Min-ho (이민호) - "Lee" é sobrenome
+   • Choi Hye-jin (최혜진) - "Choi" é sobrenome
+   • Jung Tae-hyun (정태현) - "Jung" é sobrenome
+
+❌ FORMATO ERRADO (NUNCA USE):
+   • Seon-woo (sem sobrenome) ❌
+   • Ji-young (sem sobrenome) ❌
+   • Min-ho sozinho ❌
+
+📋 SOBRENOMES COREANOS COMUNS:
+   Kim (김), Lee (이), Park (박), Choi (최), Jung (정)
+   Kang (강), Cho (조), Yoon (윤), Jang (장), Lim (임)
+   Han (한), Oh (오), Seo (서), Shin (신), Kwon (권)
+
+⚠️ REGRAS DE USO:
+1️⃣ Na PRIMEIRA menção: Use nome COMPLETO (sobrenome + nome)
+   Ex: "Kim Seon-woo entrou na sala."
+
+2️⃣ Nas menções SEGUINTES: Pode usar apenas o nome pessoal
+   Ex: "Seon-woo olhou para ela." (após já ter apresentado)
+
+3️⃣ Em DIÁLOGO: Personagens podem usar apenas primeiro nome entre amigos
+   Ex: "Seon-woo-ya, você está bem?" (íntimo/informal)
+
+🔴 SE VOCÊ CRIAR PERSONAGEM COREANO SEM SOBRENOME, O BLOCO SERÁ REJEITADO!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+''';
+    }
+    return ''; // Não é coreano, não adiciona regras
   }
 
   static String _getThemeInterpretationRules() {

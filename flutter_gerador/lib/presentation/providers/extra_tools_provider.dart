@@ -919,18 +919,7 @@ Responda em ${config.language} com prompts detalhados e criativos.
    - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
     }
 
-    if (languageLower.contains('chinês') ||
-        languageLower.contains('chines') ||
-        languageLower == 'chinese' ||
-        languageLower.contains('mandarim')) {
-      return '''🎭 **ETNIA OBRIGATÓRIA:** Protagonista deve ser **chinês** (Chinese East Asian).
-   - Pele: clara-amarelada asiática (light-yellow Asian skin tone)
-   - Traços faciais: chineses típicos (typical Chinese facial features)
-   - Cabelos: pretos e lisos (black straight hair)
-   - Olhos: castanhos escuros (dark brown eyes)
-   - ❌ NÃO usar etnias brancas, africanas, latinas ou de outros países asiáticos
-   - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
-    }
+    // CHINÊS REMOVIDO - Não há YouTube na China
 
     if (languageLower.contains('coreano') ||
         languageLower.contains('korean') ||

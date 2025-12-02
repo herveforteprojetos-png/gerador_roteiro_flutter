@@ -8,7 +8,7 @@ import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/data/models/localization_level.dart';
 import 'package:flutter_gerador/data/services/name_generator_service.dart';
 import 'package:flutter_gerador/data/models/debug_log.dart';
-import 'gemini/gemini_modules.dart';
+import 'gemini/gemini_modules.dart'; // 🆕 v7.6.35: Inclui PostGenerationFixer via barrel
 import 'openai_service.dart'; // 🤖 NOVO: Fallback OpenAI
 
 // 🚀 NOVOS MÓDULOS DE PROMPTS (Refatoração v2.0)
@@ -297,8 +297,8 @@ class GeminiService {
   Timer? _watchdogTimer;
   bool _isOperationRunning = false;
   static const Duration _maxOperationTime = Duration(
-    minutes: 30,
-  ); // Aumentado para 30 min para idiomas complexos (russo, chinês)
+    minutes: 60,
+  ); // AUMENTADO: 60 min para roteiros longos (13k+ palavras = 35+ blocos)
 
   GeminiService({String? instanceId})
     : _instanceId = instanceId ?? _genId(),
@@ -356,6 +356,9 @@ class GeminiService {
 
     // 🆕 v4: Resetar rastreador de nomes para nova história
     _resetNameTracker();
+    
+    // 🆕 v7.6.37: Resetar personagens introduzidos para detecção de duplicatas
+    PostGenerationFixer.resetIntroducedCharacters();
 
     if (!_canMakeRequest()) {
       return ScriptResult.error(
@@ -465,6 +468,22 @@ class GeminiService {
             totalBlocks,
           ),
         );
+
+        // 🆕 v7.6.35: CORREÇÃO PÓS-GERAÇÃO - Corrigir nomes trocados automaticamente
+        // Executa ANTES de qualquer validação para garantir consistência
+        if (added.trim().isNotEmpty && block > 1) {
+          // 🔍 DEBUG v7.6.36: Verificar mapa antes de chamar fixer
+          if (kDebugMode) {
+            final roleMap = persistentTracker.roleToNameMap;
+            debugPrint('🔧 [Bloco $block] Chamando PostGenerationFixer');
+            debugPrint('   roleToNameMap: ${roleMap.isEmpty ? "VAZIO!" : roleMap.toString()}');
+          }
+          added = PostGenerationFixer.fixSwappedNames(
+            added,
+            persistentTracker.roleToNameMap,
+            block,
+          );
+        }
 
         // 🎯 YIELD PÓS-API: Dar tempo para UI processar resultado antes de validações
         await Future.delayed(const Duration(milliseconds: 100));
@@ -824,6 +843,10 @@ class GeminiService {
           // 🆕 VALIDAÇÃO CRÍTICA 4: Verificar inconsistências em relações familiares
           _validateFamilyRelations(added, block);
 
+          // 🔄 v7.6.41: Resetar watchdog a cada bloco bem-sucedido
+          // Evita timeout em roteiros longos (35+ blocos)
+          _resetWatchdog();
+
           // 🐛 DEBUG: Log bloco completado com sucesso
           _debugLogger.success(
             "Bloco $block completado",
@@ -1071,9 +1094,12 @@ class GeminiService {
         '',
       );
 
-      // 🔍 DETECÇÃO FINAL: Verificar se há parágrafos duplicados (apenas LOG, não remove)
+      // 🆕 v7.6.43: REMOVER PARÁGRAFOS DUPLICADOS DO ROTEIRO FINAL
+      final deduplicatedScript = _removeAllDuplicateParagraphs(cleanedAcc);
+
+      // 🔍 DETECÇÃO FINAL: Verificar se há parágrafos duplicados restantes (apenas LOG)
       if (kDebugMode) {
-        _detectDuplicateParagraphsInFinalScript(cleanedAcc);
+        _detectDuplicateParagraphsInFinalScript(deduplicatedScript);
       }
 
       // 🐛 DEBUG: Log estatísticas finais
@@ -1082,13 +1108,13 @@ class GeminiService {
         "Geração completa!",
         details:
             "Roteiro finalizado com sucesso\n"
-            "- Palavras: ${_countWords(cleanedAcc)}\n"
-            "- Caracteres: ${cleanedAcc.length}\n"
+            "- Palavras: ${_countWords(deduplicatedScript)}\n"
+            "- Caracteres: ${deduplicatedScript.length}\n"
             "- Personagens: ${persistentTracker.confirmedNames.length}\n"
             "- Logs gerados: ${stats['total']}",
         metadata: {
-          'palavras': _countWords(cleanedAcc),
-          'caracteres': cleanedAcc.length,
+          'palavras': _countWords(deduplicatedScript),
+          'caracteres': deduplicatedScript.length,
           'personagens': persistentTracker.confirmedNames.length,
           'logsTotal': stats['total'],
           'erros': stats['error'],
@@ -1097,11 +1123,11 @@ class GeminiService {
       );
 
       return ScriptResult(
-        scriptText: cleanedAcc,
-        wordCount: _countWords(cleanedAcc),
-        charCount: cleanedAcc.length,
-        paragraphCount: cleanedAcc.split('\n').length,
-        readingTime: (_countWords(cleanedAcc) / 150).ceil(),
+        scriptText: deduplicatedScript,
+        wordCount: _countWords(deduplicatedScript),
+        charCount: deduplicatedScript.length,
+        paragraphCount: deduplicatedScript.split('\n').length,
+        readingTime: (_countWords(deduplicatedScript) / 150).ceil(),
       );
     } catch (e) {
       _stopWatchdog();
@@ -1262,6 +1288,17 @@ class GeminiService {
         _isCancelled = true;
       }
     });
+  }
+
+  /// 🔄 v7.6.41: Resetar watchdog a cada bloco bem-sucedido
+  /// Evita timeout em roteiros longos quando a geração está funcionando
+  void _resetWatchdog() {
+    if (_isOperationRunning && !_isCancelled) {
+      _startWatchdog(); // Reinicia o timer
+      if (kDebugMode) {
+        debugPrint('[$_instanceId] Watchdog resetado - operação ativa');
+      }
+    }
   }
 
   void _stopWatchdog() {
@@ -1683,37 +1720,38 @@ class GeminiService {
                      c.language.toLowerCase().contains('coreano') ||
                      c.language.toLowerCase().contains('korean');
 
-    // 🇰🇷 COREANO: Ajuste Fino v11 (Baseado em Capacidade Real)
+    // 🇰🇷 COREANO: Ajuste Fino v12 (Corrigir Sub-Geração)
     // 
-    // ANÁLISE v10:
-    // Pedido: 35k chars (8.333 palavras)
-    // Config: 14 blocos → Target 595 palavras/bloco
-    // Realidade: Gemini gerou média de ~420 palavras/bloco (ignora pedido de 600)
-    // Resultado: ~24k chars (Faltou 30%)
+    // ANÁLISE v11:
+    // Pedido: 13k palavras
+    // Config: 35 blocos → ~371 palavras/bloco esperado
+    // Realidade: Gemini gerou ~11k palavras (84.6% do pedido) ❌
     //
-    // CONCLUSÃO:
-    // O modelo tem um "teto" natural de ~400-450 palavras por bloco em Coreano.
-    // Pedir mais que isso é inútil.
+    // PROBLEMA:
+    // O modelo gera consistentemente ~15% menos do que o pedido em Coreano.
+    // Isso ocorre porque Coreano usa caracteres Hangul que são contados diferente.
     //
-    // SOLUÇÃO v11:
-    // Ajustar número de blocos para que o target seja ~380-400 palavras.
-    // Assim, o pedido alinha com a capacidade natural do modelo.
+    // SOLUÇÃO v12:
+    // 1. Aumentar número de blocos em ~18% para compensar sub-geração
+    // 2. Manter target de ~380-400 palavras/bloco (zona de conforto do modelo)
     //
-    // CÁLCULO v11 (para 35k chars / 8.333 palavras):
-    // 8.333 palavras ÷ 400 palavras/bloco = ~21 blocos
-    // Vamos usar 22 blocos para garantir.
+    // CÁLCULO v12 (para 13k palavras):
+    // 13.000 × 1.18 = ~15.340 palavras pedidas internamente
+    // 15.340 ÷ 380 = ~40 blocos
     if (isKorean) {
+      // 🔥 v12: Aumentar blocos em 18% para compensar sub-geração natural
       int blocks;
-      if (wordsEquivalent <= 1000) blocks = 3;   // ~333 pal/bloco
-      else if (wordsEquivalent <= 3000) blocks = 8;   // ~375 pal/bloco
-      else if (wordsEquivalent <= 6000) blocks = 15;  // ~400 pal/bloco
-      else if (wordsEquivalent <= 10000) blocks = 22; // ~454 pal/bloco (8.3k -> 378 pal/bloco)
-      else if (wordsEquivalent <= 15000) blocks = 35; // ~428 pal/bloco
-      else if (wordsEquivalent <= 20000) blocks = 48; // ~416 pal/bloco
-      else if (wordsEquivalent <= 25000) blocks = 60; // ~416 pal/bloco
-      else blocks = 70;
+      if (wordsEquivalent <= 1000) blocks = 4;        // ~250 pal/bloco (era 3)
+      else if (wordsEquivalent <= 3000) blocks = 10;  // ~300 pal/bloco (era 8)
+      else if (wordsEquivalent <= 6000) blocks = 18;  // ~333 pal/bloco (era 15)
+      else if (wordsEquivalent <= 10000) blocks = 28; // ~357 pal/bloco (era 22)
+      else if (wordsEquivalent <= 13000) blocks = 38; // ~342 pal/bloco (NOVO!)
+      else if (wordsEquivalent <= 15000) blocks = 42; // ~357 pal/bloco (era 35)
+      else if (wordsEquivalent <= 20000) blocks = 55; // ~363 pal/bloco (era 48)
+      else if (wordsEquivalent <= 25000) blocks = 70; // ~357 pal/bloco (era 60)
+      else blocks = 80; // (era 70)
 
-      if (kDebugMode) debugPrint('   🇰🇷 COREANO DETECTADO: Retornando $blocks blocos (v11)');
+      if (kDebugMode) debugPrint('   🇰🇷 COREANO DETECTADO: Retornando $blocks blocos (v12 - +18% compensação)');
       return blocks;
     }    // 🇧🇷 PORTUGUÊS: Mais blocos (tamanho médio) para evitar 503 e atingir meta
     if (isPortuguese) {
@@ -1808,16 +1846,19 @@ class GeminiService {
     //   v6.3: 1.05 → Melhor, mas ainda 100% (10600) ou 77% (8500) variável ⚠️
     //   v6.4: 1.08 → Volta ao valor do v5.0 MAS ainda dá 503 com 12 blocos ❌
     //   v6.5: 1.05 → Reduz para 1.05 + AUMENTA blocos (12→14) = blocos 25% menores 🎯
-    // SOLUÇÃO v6.5: Multiplicador 1.05 + 14 blocos (ao invés de 12)
-    // Português: 1.05 com 14 blocos = ~760 palavras/bloco (vs 950 do v6.4)
-    // Outros idiomas: 1.05 (mantém tamanho padrão)
-    // RATIONALE: v6.4 dava 503 com 12 blocos × 1.08 = ~950 palavras/bloco
-    //            v6.5 tem 14 blocos × 1.05 = ~760 palavras/bloco = 20% MAIS LEVE
-    //            + Contexto reduzido (3 vs 4) = 25% menos contexto
-    //            = Blocos MUITO mais leves, margem alta contra 503
-    final multiplier = c.language.toLowerCase().contains('portugu')
-        ? 1.05 // v6.5: Reduz para 1.05 (compensado por +2 blocos = 14 total)
-        : 1.05;
+    //   v7.6.42: 1.18 → Coreano específico para compensar sub-geração de ~15%
+    // 
+    // 🇰🇷 COREANO v12: Multiplicador 1.18 para compensar sub-geração natural
+    // ANÁLISE: Coreano gera apenas ~84.6% do pedido (11k de 13k)
+    // SOLUÇÃO: Pedir 18% a mais para compensar
+    double multiplier;
+    if (isKoreanTarget) {
+      multiplier = 1.18; // 🇰🇷 v12: Compensar sub-geração de ~15%
+    } else if (c.language.toLowerCase().contains('portugu')) {
+      multiplier = 1.05; // v6.5: Português
+    } else {
+      multiplier = 1.05; // Outros idiomas
+    }
 
     // Calcular target acumulado até este bloco (com margem ajustada)
     final cumulativeTarget = (targetQuantity * (current / total) * multiplier)
@@ -2798,6 +2839,115 @@ no vasto manto azul do infinito."
     }
   }
 
+  /// 🆕 v7.6.43: Remove parágrafos duplicados CONSECUTIVOS do roteiro final
+  /// Detecta quando o mesmo parágrafo aparece duas ou mais vezes seguidas
+  /// e mantém apenas a primeira ocorrência
+  String _removeDuplicateConsecutiveParagraphs(String fullScript) {
+    // Dividir por quebras de linha duplas (parágrafos)
+    final paragraphs = fullScript.split(RegExp(r'\n{2,}'));
+    
+    if (paragraphs.length < 2) return fullScript;
+    
+    final result = <String>[];
+    String? previousParagraph;
+    var removedCount = 0;
+    
+    for (final rawParagraph in paragraphs) {
+      final paragraph = rawParagraph.trim();
+      
+      // Pular parágrafos vazios
+      if (paragraph.isEmpty) continue;
+      
+      // Verificar se é duplicata consecutiva
+      if (previousParagraph != null && paragraph == previousParagraph) {
+        removedCount++;
+        if (kDebugMode) {
+          final preview = paragraph.length > 60
+              ? '${paragraph.substring(0, 60)}...'
+              : paragraph;
+          debugPrint('🧹 REMOVIDO parágrafo duplicado consecutivo: "$preview"');
+        }
+        continue; // Pular duplicata
+      }
+      
+      // Também verificar duplicatas com pequenas variações (espaços extras)
+      if (previousParagraph != null) {
+        final normalizedCurrent = paragraph.replaceAll(RegExp(r'\s+'), ' ');
+        final normalizedPrevious = previousParagraph.replaceAll(RegExp(r'\s+'), ' ');
+        
+        if (normalizedCurrent == normalizedPrevious) {
+          removedCount++;
+          if (kDebugMode) {
+            debugPrint('🧹 REMOVIDO parágrafo quase-duplicado (espaços diferentes)');
+          }
+          continue;
+        }
+      }
+      
+      result.add(paragraph);
+      previousParagraph = paragraph;
+    }
+    
+    if (removedCount > 0 && kDebugMode) {
+      debugPrint('✅ v7.6.43: Removidos $removedCount parágrafo(s) duplicado(s) consecutivo(s)');
+    }
+    
+    return result.join('\n\n');
+  }
+
+  /// 🆕 v7.6.43: Remove TODAS as duplicatas de parágrafos (não apenas consecutivas)
+  /// Mantém a primeira ocorrência e remove todas as repetições posteriores
+  String _removeAllDuplicateParagraphs(String fullScript) {
+    final paragraphs = fullScript.split(RegExp(r'\n{2,}'));
+    
+    if (paragraphs.length < 2) return fullScript;
+    
+    final seen = <String>{};
+    final seenNormalized = <String>{};
+    final result = <String>[];
+    var removedCount = 0;
+    
+    for (final rawParagraph in paragraphs) {
+      final paragraph = rawParagraph.trim();
+      
+      if (paragraph.isEmpty) continue;
+      
+      // Normalizar para comparação (ignorar espaços extras)
+      final normalized = paragraph.replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+      
+      // Verificar duplicata exata
+      if (seen.contains(paragraph)) {
+        removedCount++;
+        if (kDebugMode) {
+          final preview = paragraph.length > 50
+              ? '${paragraph.substring(0, 50)}...'
+              : paragraph;
+          debugPrint('🧹 REMOVIDO duplicata exata: "$preview"');
+        }
+        continue;
+      }
+      
+      // Verificar duplicata normalizada (ignora case e espaços)
+      if (seenNormalized.contains(normalized)) {
+        removedCount++;
+        if (kDebugMode) {
+          debugPrint('🧹 REMOVIDO duplicata similar (case/espaços diferentes)');
+        }
+        continue;
+      }
+      
+      seen.add(paragraph);
+      seenNormalized.add(normalized);
+      result.add(paragraph);
+    }
+    
+    if (removedCount > 0) {
+      debugPrint('✅ v7.6.43: Total de $removedCount parágrafo(s) duplicado(s) removido(s) do roteiro final');
+    }
+    
+    return result.join('\n\n');
+  }
+
   /// 🆕 v7.6.17: Detecta e registra o nome da protagonista no Bloco 1
   /// Extrai o primeiro nome próprio encontrado e registra no tracker
   void _detectAndRegisterProtagonist(
@@ -3735,8 +3885,163 @@ no vasto manto azul do infinito."
       ),
     };
 
-    // Retornar primeiro papel encontrado
+    // Retornar primeiro papel encontrado (português)
     for (final entry in rolePatterns.entries) {
+      if (entry.value.hasMatch(text)) {
+        return entry.key;
+      }
+    }
+
+    // 🆕 v7.6.36: Padrões em INGLÊS para detectar papéis
+    final englishPatterns = {
+      'father': RegExp(
+        r'(?:my|his|her|our|the)\s+(?:father|dad)(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'mother': RegExp(
+        r'(?:my|his|her|our|the)\s+(?:mother|mom|mum)(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'sister': RegExp(
+        r'(?:my|his|her|our|the)\s+sister(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'brother': RegExp(
+        r'(?:my|his|her|our|the)\s+brother(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'husband': RegExp(
+        r'(?:my|her|our|the)\s+husband(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'wife': RegExp(
+        r'(?:my|his|our|the)\s+wife(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'boyfriend': RegExp(
+        r'(?:my|her|the)\s+(?:boyfriend|fianc[eé])(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'girlfriend': RegExp(
+        r'(?:my|his|the)\s+(?:girlfriend|fianc[eé]e)(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'uncle': RegExp(
+        r'(?:my|his|her|our|the)\s+uncle(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'aunt': RegExp(
+        r'(?:my|his|her|our|the)\s+aunt(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'grandfather': RegExp(
+        r'(?:my|his|her|our|the)\s+(?:grandfather|grandpa)(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'grandmother': RegExp(
+        r'(?:my|his|her|our|the)\s+(?:grandmother|grandma)(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'lawyer': RegExp(
+        r'(?:my|his|her|our|the|a)\s+(?:lawyer|attorney)(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'father-in-law': RegExp(
+        r'(?:my|his|her|our|the)\s+father-in-law(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'mother-in-law': RegExp(
+        r'(?:my|his|her|our|the)\s+mother-in-law(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'son': RegExp(
+        r'(?:my|his|her|our|the)\s+son(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'daughter': RegExp(
+        r'(?:my|his|her|our|the)\s+daughter(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+      'friend': RegExp(
+        r'(?:my|his|her|our|a)\s+(?:friend|best friend)(?:[^.]{0,30}\b' +
+            name +
+            r'\b|(?:,)?\s+' +
+            name +
+            r')',
+        caseSensitive: false,
+      ),
+    };
+
+    // Retornar primeiro papel encontrado (inglês)
+    for (final entry in englishPatterns.entries) {
       if (entry.value.hasMatch(text)) {
         return entry.key;
       }
@@ -4480,6 +4785,22 @@ no vasto manto azul do infinito."
     'semanas',
     'aconteceu',
     'todas', 'ajuda', 'consolo', 'vamos', 'conheço', 'conheco', 'lembra',
+    
+    // 🆕 v7.6.39: Palavras em inglês que NÃO são nomes (evitar "Grand" etc.)
+    'grand', 'grandfather', 'grandmother', 'grandpa', 'grandma',
+    'father', 'mother', 'brother', 'sister', 'uncle', 'aunt',
+    'cousin', 'nephew', 'niece', 'husband', 'wife', 'spouse',
+    'son', 'daughter', 'child', 'children', 'parent', 'parents',
+    'lawyer', 'attorney', 'doctor', 'nurse', 'teacher', 'professor',
+    'judge', 'officer', 'detective', 'manager', 'boss', 'therapist',
+    'someone', 'anyone', 'everyone', 'nobody', 'somebody', 'anybody',
+    'nothing', 'something', 'everything', 'anything',
+    'said', 'told', 'asked', 'replied', 'explained', 'answered',
+    'speaking', 'talking', 'calling', 'waiting', 'looking',
+    'morning', 'afternoon', 'evening', 'night', 'today', 'tomorrow',
+    'office', 'house', 'home', 'room', 'building', 'street', 'city',
+    'the', 'and', 'but', 'for', 'with', 'from', 'about', 'into',
+    'just', 'only', 'even', 'still', 'already', 'always', 'never',
 
     // Verbos comuns no início de frase (EXPANDIDO)
     'era', 'foi', 'seria', 'pode', 'podia', 'deve', 'devia',
@@ -4654,6 +4975,8 @@ VOCÊ DEVE, OBRIGATORIAMENTE, GERAR UM PROTAGONISTA FEMININO!
    • Português: Maria, Ana, Sofia, Helena, Clara, Beatriz, Julia, Laura
    • English: Emma, Sarah, Jennifer, Emily, Jessica, Ashley, Michelle, Amanda
    • Español: María, Carmen, Laura, Ana, Isabel, Rosa, Elena, Sofia
+   • 한국어 (Korean): Kim Ji-young, Park Soo-yeon, Lee Min-ji, Choi Hye-jin, Jung Yoo-na
+     ⚠️ COREANO: SEMPRE use SOBRENOME + NOME (ex: "Kim Ji-young", NÃO "Ji-young")
    
    ❌ PROIBIDO: João, Pedro, Carlos, Michael, Roberto, Pierre, Jean, Marc
    ❌ JAMAIS use nomes MASCULINOS quando o narrador é MULHER!
@@ -4746,6 +5069,8 @@ VOCÊ DEVE, OBRIGATORIAMENTE, GERAR UM PROTAGONISTA MASCULINO!
    • Português: João, Pedro, Carlos, Roberto, Alberto, Paulo, Fernando, Ricardo
    • English: John, Michael, David, James, Robert, William, Richard, Thomas
    • Español: Juan, Pedro, Carlos, José, Luis, Miguel, Antonio, Francisco
+   • 한국어 (Korean): Kim Seon-woo, Park Jae-hyun, Lee Min-ho, Choi Dong-wook, Jung Tae-hyun
+     ⚠️ COREANO: SEMPRE use SOBRENOME + NOME (ex: "Kim Seon-woo", NÃO "Seon-woo")
    
    ❌ PROIBIDO: Maria, Ana, Sofia, Sophie, Mônica, Clara, Helena, Emma
    ❌ JAMAIS use nomes FEMININOS quando o narrador é HOMEM!
@@ -4976,32 +5301,71 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
 
     // 🔥 SOLUÇÃO 3: Reforçar os nomes confirmados no prompt para manter consistência
     String trackerInfo = '';
-    if (tracker.confirmedNames.isNotEmpty) {
-      // 🚨 v7.6.28: LISTA EXPLÍCITA DE NOMES PROIBIDOS NO INÍCIO
+    
+    // 🆕 v7.6.36: LEMBRETE CRÍTICO DE NOMES - Muito mais agressivo!
+    // Aparece no INÍCIO de cada bloco para evitar que Gemini "esqueça" nomes
+    if (tracker.confirmedNames.isNotEmpty && blockNumber > 1) {
+      final nameReminder = StringBuffer();
+      nameReminder.writeln('');
+      nameReminder.writeln('🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨');
+      nameReminder.writeln('⚠️ LEMBRETE OBRIGATÓRIO DE NOMES - LEIA ANTES DE CONTINUAR! ⚠️');
+      nameReminder.writeln('🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨');
+      nameReminder.writeln('');
+      nameReminder.writeln('📋 PERSONAGENS DESTA HISTÓRIA (USE SEMPRE ESTES NOMES):');
+      nameReminder.writeln('');
+      
+      // Listar cada personagem com seu papel de forma MUITO clara
+      for (final name in tracker.confirmedNames) {
+        final role = tracker.getRole(name) ?? 'personagem';
+        nameReminder.writeln('   ✅ $name = $role');
+      }
+      
+      nameReminder.writeln('');
+      nameReminder.writeln('❌ PROIBIDO MUDAR ESTES NOMES! ❌');
+      nameReminder.writeln('');
+      
+      // Adicionar protagonista de forma EXTRA enfática
+      final protagonistName = c.protagonistName.trim();
+      if (protagonistName.isNotEmpty) {
+        nameReminder.writeln('🔴 A PROTAGONISTA/NARRADORA SE CHAMA: $protagonistName');
+        nameReminder.writeln('   → Quando ela fala de si mesma: "i" ou "me"');
+        nameReminder.writeln('   → Quando outros falam dela: "$protagonistName"');
+        nameReminder.writeln('   → NUNCA mude para Emma, Jessica, Lauren, Sarah, etc!');
+        nameReminder.writeln('');
+      }
+      
+      // Listar mapeamento reverso (papel → nome) para reforçar
+      final roleMap = tracker.roleToNameMap;
+      if (roleMap.isNotEmpty) {
+        nameReminder.writeln('📌 MAPEAMENTO PAPEL → NOME (CONSULTE SEMPRE):');
+        for (final entry in roleMap.entries) {
+          nameReminder.writeln('   • ${entry.key} → ${entry.value}');
+        }
+        nameReminder.writeln('');
+      }
+      
+      nameReminder.writeln('⚠️ SE VOCÊ TROCAR UM NOME, O ROTEIRO SERÁ REJEITADO! ⚠️');
+      nameReminder.writeln('🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨');
+      nameReminder.writeln('');
+      
+      trackerInfo = nameReminder.toString();
+      
+      if (kDebugMode) {
+        debugPrint('🔥 Bloco $blockNumber - LEMBRETE DE NOMES INJETADO:');
+        debugPrint('   Personagens: ${tracker.confirmedNames.join(", ")}');
+        debugPrint('   Protagonista: $protagonistName');
+      }
+    } else if (tracker.confirmedNames.isNotEmpty) {
+      // Bloco 1: lista mais simples
       trackerInfo =
           '\n🚫 NOMES JÁ USADOS - NUNCA REUTILIZE: ${tracker.confirmedNames.join(", ")}\n';
       trackerInfo += '⚠️ Se precisa de novo personagem, use NOME TOTALMENTE DIFERENTE!\n';
       
-      // 🔥 NOVO: Adicionar mapeamento personagem-papel
       final mapping = tracker.getCharacterMapping();
       if (mapping.isNotEmpty) {
         trackerInfo += mapping;
         trackerInfo +=
             '\n⚠️ REGRA CRÍTICA: NUNCA use o mesmo nome para personagens diferentes!\n';
-        trackerInfo +=
-            '⚠️ Exemplo PROIBIDO: "Mark" como boyfriend E "Mark" como lawyer!\n';
-        trackerInfo +=
-            '⚠️ CORRETO: "Mark" (boyfriend) + "Robert" (lawyer) = nomes DIFERENTES!\n';
-      }
-      if (kDebugMode) {
-        debugPrint(
-          '🔥 Bloco $blockNumber - Nomes no tracker: ${tracker.confirmedNames.join(", ")}',
-        );
-        if (mapping.isNotEmpty) {
-          debugPrint(
-            '🎭 Mapeamento: ${tracker.confirmedNames.map((n) => "$n=${tracker.getRole(n) ?? '?'}").join(", ")}',
-          );
-        }
       }
     }
 
@@ -7240,6 +7604,9 @@ class _CharacterTracker {
   bool hasName(String name) => _confirmedNames.contains(name);
 
   String? getRole(String name) => _characterRoles[name];
+
+  /// 🆕 v7.6.35: Expõe o mapa roleToName para o PostGenerationFixer
+  Map<String, String> get roleToNameMap => Map.unmodifiable(_roleToName);
 
   /// 🔍 v1.7: Obtém o nome associado a um papel (mapeamento reverso)
   String? getNameForRole(String role) {

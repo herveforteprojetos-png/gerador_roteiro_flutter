@@ -7,6 +7,7 @@ export 'utils/text_filter.dart';
 export 'validation/anti_repetition.dart';
 export 'validation/name_validator.dart';
 export 'validation/family_relations.dart';
+export 'validation/post_generation_fixer.dart'; // 🆕 v7.6.35
 export 'tracking/character_tracker.dart';
 export 'progress/generation_progress_manager.dart';
 

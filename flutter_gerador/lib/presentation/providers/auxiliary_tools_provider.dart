@@ -719,16 +719,7 @@ Responda apenas com o prompt final em inglês, sem explicações adicionais.
    - ✅ Etnia coerente com contexto cultural japonês''';
     }
 
-    if (languageLower.contains('chinês') ||
-        languageLower.contains('chines') ||
-        languageLower == 'chinese' ||
-        languageLower.contains('mandarim')) {
-      return '''O protagonista deve ser de **etnia chinesa** (asiático do leste - chinês).
-   - Aparência física típica: pele clara-amarelada asiática, traços faciais chineses típicos
-   - Características: cabelos pretos e lisos, olhos castanhos escuros, estrutura facial chinesa
-   - ❌ NÃO usar etnias brancas, africanas, latinas ou de outros países asiáticos
-   - ✅ Etnia coerente com contexto cultural chinês''';
-    }
+    // CHINÊS REMOVIDO - Não há YouTube na China
 
     if (languageLower.contains('coreano') ||
         languageLower.contains('korean') ||
