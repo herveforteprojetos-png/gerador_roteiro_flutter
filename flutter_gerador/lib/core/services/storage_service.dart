@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
@@ -157,7 +158,9 @@ class StorageService {
       await prefs.setString(_localizationLevelKey, localizationLevel);
     }
     if (qualityMode != null) {
+      debugPrint('💾 Salvando qualityMode no storage: $qualityMode');
       await prefs.setString(_qualityModeKey, qualityMode);
+      debugPrint('✅ qualityMode salvo com sucesso');
     }
   }
 

@@ -1,4 +1,5 @@
-﻿import 'localization_level.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'localization_level.dart';
 import 'generation_config.dart';
 
 // Formatos de vídeo disponíveis
@@ -119,6 +120,9 @@ class ScriptConfig {
 
   // Factory para conversão de GenerationConfig
   factory ScriptConfig.fromGenerationConfig(GenerationConfig config) {
+    debugPrint('🔄 ScriptConfig.fromGenerationConfig()');
+    debugPrint('📥 GenerationConfig.qualityMode = "${config.qualityMode}"');
+    
     // 🎯 Se usar tema personalizado, usar personalizedTheme (pode ser vazio = sem tema)
     // Se personalizedTheme estiver vazio, usar 'Livre (Sem Tema)' como indicador
     final temaFinal = config.usePersonalizedTheme
@@ -166,7 +170,12 @@ class ScriptConfig {
           .standard, // 🎬 NOVO: Por padrão usa standard (será adicionado ao GenerationConfig depois)
       customPrompt: config.customPrompt, // 📝 NOVO: Prompt personalizado
       useCustomPrompt: config.useCustomPrompt, // 📝 NOVO: Habilitar prompt
-    );
+    ).._debugLog();
+  }
+  
+  void _debugLog() {
+    debugPrint('📦 ScriptConfig criado:');
+    debugPrint('   qualityMode = "$qualityMode"');
   }
 
   ScriptConfig copyWith({

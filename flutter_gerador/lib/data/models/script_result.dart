@@ -25,16 +25,15 @@ class ScriptResult {
   });
 
   // Construtor para casos de erro
-  ScriptResult.error({
-    required String errorMessage,
-  }) : scriptText = '',
-        wordCount = 0,
-        charCount = 0,
-        paragraphCount = 0,
-        readingTime = 0,
-        success = false,
-        errorMessage = errorMessage,
-        generationTime = null,
-        model = null,
-        hasCtaIntegration = false;
+  ScriptResult.error({required String errorMessage})
+    : scriptText = '',
+      wordCount = 0,
+      charCount = 0,
+      paragraphCount = 0,
+      readingTime = 0,
+      success = false,
+      errorMessage = errorMessage,
+      generationTime = null,
+      model = null,
+      hasCtaIntegration = false;
 }

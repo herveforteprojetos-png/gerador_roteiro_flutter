@@ -23,7 +23,7 @@ class GenerationConfig {
   final String protagonistName; // Nome do protagonista
   final String secondaryCharacterName; // Nome do personagem secundário
   final String
-  qualityMode; // Modelo IA: 'pro' (2.5-pro, mais lento/melhor) ou 'flash' (2.5-flash, 4x mais rápido)
+  qualityMode; // Modelo IA: 'pro' (2.5-pro), 'flash' (2.5-flash, 4x rápido), 'ultra' (3.0-preview, +avançado)
   final String?
   genre; // Tipo temático da História: null (normal), 'western', 'business', 'family'
   final String

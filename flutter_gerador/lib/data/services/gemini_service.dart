@@ -9,7 +9,6 @@ import 'package:flutter_gerador/data/models/localization_level.dart';
 import 'package:flutter_gerador/data/services/name_generator_service.dart';
 import 'package:flutter_gerador/data/models/debug_log.dart';
 import 'gemini/gemini_modules.dart'; // 🆕 v7.6.35: Inclui PostGenerationFixer via barrel
-import 'openai_service.dart'; // 🤖 NOVO: Fallback OpenAI
 
 // 🚀 NOVOS MÓDULOS DE PROMPTS (Refatoração v2.0)
 import 'package:flutter_gerador/data/services/prompts/base_rules.dart';
@@ -257,10 +256,6 @@ class GeminiService {
   final String _instanceId;
   bool _isCancelled = false;
 
-  // 🤖 NOVO: OpenAI como fallback para erro 503
-  OpenAIService? _openAIService;
-  bool _useOpenAIFallback = false;
-
   // 🚀 v7.6.20: Adaptive Delay Manager (economia de 40-50% do tempo)
   DateTime? _lastSuccessfulCall;
   int _consecutive503Errors = 0;
@@ -343,7 +338,7 @@ class GeminiService {
     // 🤖 v7.6.19: RESPEITAR SELEÇÃO DO USUÁRIO - Não usar fallback automático
     // Se selecionou Gemini → usar APENAS Gemini
     // Se selecionou OpenAI → usar APENAS OpenAI (implementar no futuro)
-    _useOpenAIFallback = false; // ❌ DESABILITAR fallback automático
+    // _useOpenAIFallback = false; // ❌ REMOVIDO - OpenAI descontinuado
     
     if (kDebugMode) {
       debugPrint('[$_instanceId] 🎯 Provider selecionado: ${config.selectedProvider}');
@@ -427,10 +422,9 @@ class GeminiService {
             ),
           );
 
-          // 🎯 YIELD MASSIVO: 50ms → 150ms para UI respirar completamente
-          // Indicador precisa de tempo para animar entre updates
+          // 🎯 YIELD OTIMIZADO: 50ms para UI respirar sem bloquear geração
           await Future.delayed(
-            Duration(milliseconds: progress > 0.5 ? 200 : 150),
+            Duration(milliseconds: 50),
           );
         }
 
@@ -485,10 +479,10 @@ class GeminiService {
           );
         }
 
-        // 🎯 YIELD PÓS-API: Dar tempo para UI processar resultado antes de validações
-        await Future.delayed(const Duration(milliseconds: 100));
+        // 🎯 YIELD PÓS-API: Mínimo delay para UI
+        await Future.delayed(const Duration(milliseconds: 10));
 
-        // 🔥 RETRY PARA BLOCOS VAZIOS: Se bloco retornou vazio, tentar novamente até 3 vezes
+        // 🔥 RETRY PARA BLOCOS VAZIOS: Se bloco retornou vazio, tentar novamente até 6 vezes
         if (added.trim().isEmpty && acc.isNotEmpty) {
           if (kDebugMode) {
             debugPrint(
@@ -496,15 +490,17 @@ class GeminiService {
             );
           }
 
-          for (int retry = 1; retry <= 3; retry++) {
+          for (int retry = 1; retry <= 6; retry++) {
             if (kDebugMode) {
-              debugPrint('🔄 Retry $retry/3 para bloco $block...');
+              debugPrint('🔄 Retry $retry/6 para bloco $block...');
             }
 
-            // 🔥 v7.6.18: DELAY MUITO MAIOR: 15s, 30s, 45s (servidor sobrecarregado)
-            final retryDelay = 15 * retry;
+            // 🚀 v7.6.47: DELAY PROGRESSIVO INTELIGENTE
+            // Primeiros 3 retries: rápido (5s, 10s, 15s)
+            // Últimos 3 retries: moderado (20s, 30s, 40s) para dar tempo ao servidor
+            final retryDelay = retry <= 3 ? 5 * retry : 15 + (retry - 3) * 10;
             if (kDebugMode) {
-              debugPrint('⏱️ Aguardando ${retryDelay}s antes do retry...');
+              debugPrint('⏱️ Aguardando ${retryDelay}s antes do retry (${retry <= 3 ? "rápido" : "moderado"})...');
             }
             await Future.delayed(Duration(seconds: retryDelay));
 
@@ -533,28 +529,30 @@ class GeminiService {
             }
           }
 
-          // 🔥 CORREÇÃO CRÍTICA: Se após 3 tentativas ainda estiver vazio, ABORTAR geração
+          // 🔥 CORREÇÃO CRÍTICA: Se após 6 tentativas ainda estiver vazio, ABORTAR geração
           if (added.trim().isEmpty) {
             _log(
-              '❌ ERRO CRÍTICO: Bloco $block permaneceu vazio após 3 retries!',
+              '❌ ERRO CRÍTICO: Bloco $block permaneceu vazio após 6 retries!',
               level: 'critical',
             );
             _log(
-              '🔴 ABORTANDO GERAÇÃO: Não é possível continuar com blocos vazios.',
+              '🔴 ABORTANDO GERAÇÃO: Servidor Gemini pode estar sobrecarregado.',
               level: 'critical',
             );
             _log(
-              '💡 SOLUÇÃO: Aguarde alguns minutos e tente novamente. O servidor Gemini pode estar temporariamente indisponível.',
+              '💡 SOLUÇÃO: Aguarde 10-15 minutos e tente novamente, ou use OpenAI GPT-4o.',
               level: 'critical',
             );
 
             // 🔥 RETORNAR ERRO em vez de continuar
             return ScriptResult.error(
               errorMessage:
-                  '🔴 ERRO: Bloco $block falhou após múltiplas tentativas.\n\n'
-                  'O servidor Gemini pode estar temporariamente indisponível.\n'
-                  'Aguarde alguns minutos e tente novamente.\n\n'
-                  'Progresso: ${_countWords(acc)} palavras geradas (bloco $block de $totalBlocks).',
+                  '🔴 ERRO: Bloco $block falhou após 6 tentativas (total ~2min de espera).\n\n'
+                  'O servidor Gemini está temporariamente sobrecarregado.\n'
+                  'Aguarde 10-15 minutos e tente novamente, ou:\n'
+                  '• Troque para OpenAI GPT-4o nas configurações\n'
+                  '• Tente em horário de menor tráfego\n\n'
+                  'Progresso salvo: ${_countWords(acc)} palavras (bloco $block de $totalBlocks).',
             );
           }
         }
@@ -922,10 +920,10 @@ class GeminiService {
           }
         }
 
-        // OTIMIZADO: Checkpoint de estabilidade mais rápido para Gemini Billing
+        // OTIMIZADO: Checkpoint de estabilidade ultra-rápido
         await Future.delayed(
-          const Duration(milliseconds: 150),
-        ); // REDUZIDO: Era 300ms, agora 150ms
+          const Duration(milliseconds: 50),
+        ); // ULTRA-OTIMIZADO: Era 150ms, agora 50ms
 
         // Verificacao de sanidade do resultado
         if (added.trim().isEmpty) {
@@ -948,8 +946,8 @@ class GeminiService {
               );
             }
 
-            // Aguardar antes de retry (exponential backoff: 4s, 8s, 12s)
-            await Future.delayed(Duration(seconds: 4 * retryCount));
+            // Aguardar antes de retry (exponential backoff otimizado: 2s, 4s, 6s)
+            await Future.delayed(Duration(seconds: 2 * retryCount)); // OTIMIZADO: era 4s
 
             // Tentar gerar novamente
             try {
@@ -1028,10 +1026,10 @@ class GeminiService {
 
             return ScriptResult.error(
               errorMessage:
-                  '🔴 ERRO CRÍTICO: Bloco $block permaneceu vazio após múltiplas tentativas.\n\n'
-                  'O servidor Gemini pode estar temporariamente indisponível.\n'
-                  'Aguarde alguns minutos e tente novamente.\n\n'
-                  'Progresso salvo: ${_countWords(acc)} palavras geradas de ${config.quantity} (bloco $block de $totalBlocks).',
+                  '🔴 ERRO CRÍTICO: Bloco $block permaneceu vazio após 6 tentativas.\n\n'
+                  'O servidor Gemini está temporariamente sobrecarregado.\n'
+                  'Aguarde 10-15 minutos e tente novamente, ou troque para OpenAI.\n\n'
+                  'Progresso salvo: ${_countWords(acc)} palavras de ${config.quantity} (bloco $block de $totalBlocks).',
             );
           }
         }
@@ -1043,8 +1041,8 @@ class GeminiService {
           );
         }
         await Future.delayed(
-          const Duration(milliseconds: 50),
-        ); // REDUZIDO: Era 100ms, agora 50ms
+          const Duration(milliseconds: 10),
+        ); // ULTRA-OTIMIZADO: Era 50ms, agora 10ms
 
         // Delay adicional entre blocos para evitar sobrecarga
         await Future.delayed(
@@ -1095,11 +1093,95 @@ class GeminiService {
       );
 
       // 🆕 v7.6.43: REMOVER PARÁGRAFOS DUPLICADOS DO ROTEIRO FINAL
-      final deduplicatedScript = _removeAllDuplicateParagraphs(cleanedAcc);
+      var deduplicatedScript = _removeAllDuplicateParagraphs(cleanedAcc);
 
       // 🔍 DETECÇÃO FINAL: Verificar se há parágrafos duplicados restantes (apenas LOG)
       if (kDebugMode) {
         _detectDuplicateParagraphsInFinalScript(deduplicatedScript);
+      }
+
+      // 🎯 v7.6.45: VALIDAÇÃO RIGOROSA DE COERÊNCIA COM TÍTULO
+      if (config.title.trim().isNotEmpty) {
+        final validationResult = await _validateTitleCoherenceRigorous(
+          title: config.title,
+          story: deduplicatedScript,
+          language: config.language,
+          apiKey: config.apiKey,
+        );
+
+        final isCoherent = validationResult['isCoherent'] as bool? ?? true;
+        final confidence = validationResult['confidence'] as int? ?? 0;
+        final missingElements =
+            (validationResult['missingElements'] as List?)?.cast<String>() ?? [];
+        final foundElements = 
+            (validationResult['foundElements'] as List?)?.cast<String>() ?? [];
+
+        _debugLogger.info(
+          '🎯 Validação de coerência título-história',
+          details: '''
+Título: "${config.title}"
+Resultado: ${isCoherent ? '✅ COERENTE' : '❌ INCOERENTE'}
+Confiança: $confidence%
+
+📋 Elementos encontrados:
+${foundElements.isEmpty ? '  (nenhum)' : foundElements.map((e) => '  ✓ $e').join('\n')}
+
+${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.map((e) => '  ✗ $e').join('\n')}'}
+''',
+          metadata: {
+            'isCoherent': isCoherent,
+            'confidence': confidence,
+            'missingCount': missingElements.length,
+            'foundCount': foundElements.length,
+          },
+        );
+
+        // 🔄 FALLBACK: Se incoerente E confiança baixa, tentar regenerar ÚLTIMO bloco
+        if (!isCoherent && confidence < 50 && missingElements.isNotEmpty) {
+          _debugLogger.warning(
+            '🔄 Tentando regeneração com ênfase nos elementos faltantes',
+            details:
+                'Elementos críticos ausentes: ${missingElements.take(3).join(", ")}',
+          );
+
+          try {
+            // Extrair últimos 2 blocos para contexto
+            final blocks = deduplicatedScript.split('\n\n');
+            final contextBlocks =
+                blocks.length > 2 ? blocks.sublist(blocks.length - 2) : blocks;
+            final context = contextBlocks.join('\n\n');
+
+            // Criar prompt de recuperação com elementos faltantes
+            final recoveryPrompt = _buildRecoveryPrompt(
+              config.title,
+              missingElements,
+              context,
+              config.language,
+            );
+
+            // Gerar bloco de recuperação com Gemini
+            final recoveryResponse = await _makeApiRequest(
+              apiKey: config.apiKey,
+              model: 'gemini-2.0-flash-exp',
+              prompt: recoveryPrompt,
+              maxTokens: 500, // Bloco pequeno de recuperação
+            );
+
+            if (recoveryResponse != null && recoveryResponse.trim().isNotEmpty) {
+              // Adicionar bloco de recuperação ao final
+              deduplicatedScript = '$deduplicatedScript\n\n$recoveryResponse';
+              _debugLogger.success(
+                '✅ Bloco de recuperação adicionado',
+                details: 'Novos elementos incorporados à história',
+              );
+            }
+          } catch (e) {
+            _debugLogger.warning(
+              '⚠️ Falha na regeneração',
+              details: 'Mantendo história original: $e',
+            );
+          }
+        }
       }
 
       // 🐛 DEBUG: Log estatísticas finais
@@ -1150,20 +1232,11 @@ class GeminiService {
     }
   }
 
-  /// 🤖 Configura OpenAI como fallback para erro 503
+  /// 🤖 Configura OpenAI como fallback para erro 503 (DESCONTINUADO)
   void setOpenAIKey(String? apiKey) {
-    if (apiKey != null && apiKey.isNotEmpty) {
-      _openAIService = OpenAIService(apiKey: apiKey);
-      _useOpenAIFallback = true;
-      if (kDebugMode) {
-        debugPrint('[$_instanceId] 🤖 OpenAI configurado como fallback');
-      }
-    } else {
-      _openAIService = null;
-      _useOpenAIFallback = false;
-      if (kDebugMode) {
-        debugPrint('[$_instanceId] OpenAI fallback desativado');
-      }
+    // REMOVIDO - OpenAI não é mais usado
+    if (kDebugMode) {
+      debugPrint('[$_instanceId] OpenAI fallback descontinuado');
     }
   }
 
@@ -1209,7 +1282,7 @@ class GeminiService {
   Future<String> generateText(String prompt) async {
     try {
       final response = await _dio.post(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
         queryParameters: {'key': 'demo_key'},
         data: {
           'contents': [
@@ -1398,35 +1471,35 @@ class GeminiService {
   /// Aprende com comportamento da API e ajusta delays automaticamente
   /// Reduz tempo de geração em 40-50% quando API está rápida
   Duration _getAdaptiveDelay({required int blockNumber}) {
-    // Se última chamada foi sucesso RÁPIDO (< 5s atrás), delay mínimo
+    // 🚀 v7.6.46: DELAYS ULTRA-OTIMIZADOS para velocidade máxima
+    // Se última chamada foi sucesso RÁPIDO (< 3s atrás), delay mínimo
     if (_lastSuccessfulCall != null && 
-        DateTime.now().difference(_lastSuccessfulCall!) < Duration(seconds: 5)) {
+        DateTime.now().difference(_lastSuccessfulCall!) < Duration(seconds: 3)) {
       _consecutiveSuccesses++;
       
-      // Após 3 sucessos rápidos consecutivos, reduzir delay drasticamente
-      if (_consecutiveSuccesses >= 3) {
-        // API está MUITO rápida - usar delays mínimos
-        if (blockNumber <= 6) return Duration(seconds: 1);
-        return Duration(seconds: 2); // Blocos finais precisam um pouco mais
+      // Após 2 sucessos rápidos consecutivos, usar delays mínimos
+      if (_consecutiveSuccesses >= 2) {
+        // API está rápida - usar delays mínimos (0.3-0.8s)
+        if (blockNumber <= 10) return Duration(milliseconds: 300);
+        return Duration(milliseconds: 800); // Blocos finais precisam um pouco mais
       }
     }
     
     // Se teve erro 503 recente, aumentar delay progressivamente
     if (_consecutive503Errors > 0) {
       _consecutiveSuccesses = 0; // Reset sucessos
-      final delaySeconds = min(10 * _consecutive503Errors, 30);
+      final delaySeconds = min(5 * _consecutive503Errors, 15); // Reduzido de 10s/30s para 5s/15s
       return Duration(seconds: delaySeconds);
     }
     
-    // Padrão: delays moderados baseados no bloco
-    // (Reduzido de 5s/7s/9s/12s para 3s/4s/5s/6s)
+    // Padrão: delays MÍNIMOS (0.5s-2s em vez de 3s-6s)
     _consecutiveSuccesses = 0;
     _consecutive503Errors = max(0, _consecutive503Errors - 1); // Decay gradual
     
-    if (blockNumber <= 3) return Duration(seconds: 3);
-    if (blockNumber <= 6) return Duration(seconds: 4);
-    if (blockNumber <= 9) return Duration(seconds: 5);
-    return Duration(seconds: 6);
+    if (blockNumber <= 5) return Duration(milliseconds: 500);  // 0.5s
+    if (blockNumber <= 15) return Duration(milliseconds: 1000); // 1s
+    if (blockNumber <= 25) return Duration(milliseconds: 1500); // 1.5s
+    return Duration(seconds: 2); // 2s máximo
   }
 
   /// Registra sucesso de chamada da API
@@ -1481,50 +1554,47 @@ class GeminiService {
           // Se usuário escolheu OpenAI, implementar chamada direta do OpenAI (futuro)
           
           if (attempt < maxRetries - 1) {
-            // 🔥 v7.6.17: BACKOFF EXPONENCIAL MUITO AGRESSIVO para 503:
-            // Tentativa 1: 30s
-            // Tentativa 2: 60s (1 min)
-            // Tentativa 3: 120s (2 min)
-            // Tentativa 4: 240s (4 min)
-            // Tentativa 5: 300s (5 min - cap)
-            final baseDelay = 30; // AUMENTADO: era 15s
+            // 🚀 v7.6.46: BACKOFF OTIMIZADO para 503:
+            // Tentativa 1: 10s
+            // Tentativa 2: 20s
+            // Tentativa 3: 40s
+            // Tentativa 4: 60s
+            // Tentativa 5: 90s (cap)
+            final baseDelay = 10; // OTIMIZADO: era 30s
             final exponentialDelay = baseDelay * (1 << attempt); // 2^attempt
-            final delay = Duration(seconds: min(exponentialDelay, 300)); // Cap em 5 min (era 3)
+            final delay = Duration(seconds: min(exponentialDelay, 90)); // Cap em 90s (era 300s)
             
             if (kDebugMode) {
               debugPrint(
                 '[$_instanceId] 🔴 ERRO 503 (Servidor Indisponível) - Aguardando ${delay.inSeconds}s antes de retry ${attempt + 2}/$maxRetries',
               );
               debugPrint(
-                '[$_instanceId] 📊 Backoff: 30s → 60s → 120s → 240s → 300s (cap)',
-              );
-              debugPrint(
-                '[$_instanceId] 💡 DICA: Erro 503 indica sobrecarga do servidor Gemini. O delay progressivo ajuda a não piorar a situação.',
+                '[$_instanceId] 📊 Backoff otimizado: 10s → 20s → 40s → 60s → 90s',
               );
             }
             await Future.delayed(delay);
             continue;
           } else {
             // 🔥 APÓS 6 TENTATIVAS, desistir com mensagem clara
-            final totalWaitTime = (30 + 60 + 120 + 240 + 300); // Total: ~12.5 min
+            final totalWaitTime = (10 + 20 + 40 + 60 + 90); // Total: ~3.7 min
             throw Exception(
               '🔴 ERRO CRÍTICO: Servidor do Gemini permanece indisponível após $maxRetries tentativas (~${(totalWaitTime / 60).toStringAsFixed(1)} min de espera total).\n'
               '\n'
               '💡 SOLUÇÕES POSSÍVEIS:\n'
-              '  1️⃣ Aguarde 10-15 minutos e tente novamente (servidor pode estar sobrecarregado)\n'
-              '  2️⃣ Troque para OpenAI GPT-4o nas configurações (botão superior direito)\n'
+              '  1️⃣ Aguarde 5-10 minutos e tente novamente\n'
+              '  2️⃣ Troque para OpenAI GPT-4o nas configurações\n'
               '  3️⃣ Tente novamente em horário de menor tráfego\n'
               '\n'
-              '📊 Seu progresso foi salvo e pode ser continuado quando o serviço voltar.',
+              '📊 Seu progresso foi salvo e pode ser continuado.',
             );
           }
         }
 
         // 🔥 CORREÇÃO: Diferentes delays para diferentes tipos de erro
         if (errorStr.contains('429') && attempt < maxRetries - 1) {
-          // 🔴 ERRO 429 (Rate Limit) = Delay LONGO progressivo
-          // Tentativas: 15s, 30s, 45s, 60s, 75s, 90s
-          final delay = Duration(seconds: (attempt + 1) * 15);
+          // 🔴 ERRO 429 (Rate Limit) = Delay otimizado progressivo
+          // Tentativas: 5s, 10s, 15s, 20s, 25s, 30s
+          final delay = Duration(seconds: (attempt + 1) * 5); // OTIMIZADO: era * 15
           if (kDebugMode) {
             debugPrint(
               '[$_instanceId] 🔴 ERRO 429 (Rate Limit) - Aguardando ${delay.inSeconds}s (tentativa ${attempt + 1}/$maxRetries)',
@@ -1534,10 +1604,10 @@ class GeminiService {
           continue;
         }
 
-        // ⚡ Timeout/Connection = Retry rápido (2s por tentativa)
+        // ⚡ Timeout/Connection = Retry muito rápido (1s por tentativa)
         if ((errorStr.contains('timeout') || errorStr.contains('connection')) &&
             attempt < maxRetries - 1) {
-          final delay = Duration(seconds: (attempt + 1) * 2);
+          final delay = Duration(seconds: attempt + 1); // OTIMIZADO: era * 2
           if (kDebugMode) {
             debugPrint(
               '[$_instanceId] ⚡ Retry rápido (timeout/connection) - ${delay.inSeconds}s (tentativa ${attempt + 1}/$maxRetries)',
@@ -2946,6 +3016,344 @@ no vasto manto azul do infinito."
     }
     
     return result.join('\n\n');
+  }
+
+  /// 🆕 v7.6.44: VALIDAÇÃO DE COERÊNCIA TÍTULO ↔ HISTÓRIA
+  /// Verifica se a história gerada é coerente com o título fornecido
+  /// usando o próprio Gemini para análise semântica
+  /// 🆕 v7.6.44: EXTRAÇÃO AUTOMÁTICA DE ELEMENTOS-CHAVE DO TÍTULO
+  /// Identifica personagens, ações e contextos que DEVEM aparecer na história
+  Map<String, List<String>> _extractTitleKeyElements(String title, String language) {
+    final result = <String, List<String>>{
+      'personagens': [],
+      'acoes': [],
+      'contextos': [],
+      'objetos': [],
+    };
+
+    if (title.trim().isEmpty) return result;
+
+    final titleLower = title.toLowerCase();
+
+    // 🎯 DETECÇÃO DE PERSONAGENS (baseado em profissões/papéis)
+    final personPatterns = {
+      // Português
+      r'(?:funcionári[oa]|atendente|vendedor|caixa|balconista)\s+(?:de\s+)?(?:loja|mercado|supermercado|conveniência)': 'funcionário de loja/conveniência',
+      r'(?:garçom|garçonete|atendente)\s+(?:de\s+)?(?:restaurante|café|bar|lanchonete)': 'garçom/garçonete',
+      r'(?:médic[oa]|enferm[oa]|doutor[a]?)': 'profissional de saúde',
+      r'(?:advogad[oa]|juiz[a]?|promotor[a]?)': 'profissional jurídico',
+      r'(?:CEO|empresári[oa]|dono|chefe|patrão|gerente)': 'executivo/chefe',
+      r'(?:mendigo|sem-teto|morador de rua|idoso faminto|noiva|noivo)': 'pessoa em situação especial',
+      
+      // English
+      r'(?:store|shop|convenience\s+store)\s+(?:clerk|employee|worker)': 'store employee',
+      r'(?:waiter|waitress|server)': 'restaurant server',
+      r'(?:doctor|nurse|physician)': 'healthcare worker',
+      r'(?:lawyer|attorney|judge)': 'legal professional',
+      r'(?:CEO|boss|manager|executive|owner)': 'executive',
+      r'(?:homeless|beggar|starving\s+(?:man|woman|elder))': 'person in special situation',
+      
+      // Español
+      r'(?:emplead[oa]|dependiente)\s+de\s+(?:tienda|supermercado)': 'empleado de tienda',
+      r'(?:camarero|camarera|mesero)': 'camarero',
+      r'(?:médi[oa]|doctor[a]?|enfermer[oa])': 'profesional médico',
+      
+      // 한국어 (Korean)
+      r'(?:편의점|마트|가게)\s*알바생?': '편의점 알바생',
+      r'(?:굶고\s*있는|배고픈)\s*(?:노인|할머니|할아버지)': '굶고 있는 노인',
+      r'(?:사장님?|대표님?|회장님?)': '사장/CEO',
+    };
+
+    for (final entry in personPatterns.entries) {
+      if (RegExp(entry.key, caseSensitive: false).hasMatch(titleLower)) {
+        result['personagens']!.add(entry.value);
+      }
+    }
+
+    // 🎯 DETECÇÃO DE AÇÕES PRINCIPAIS
+    final actionPatterns = {
+      // Português
+      r'(?:deu|ofereceu|compartilhou|dividiu)\s+(?:comida|marmita|dinheiro|ajuda)': 'compartilhar/ajudar',
+      r'(?:salvou|resgatou|ajudou)': 'salvar/resgatar',
+      r'(?:demitiu|despediu|expulsou)': 'demitir',
+      r'(?:herdou|recebeu herança)': 'herdar',
+      r'(?:traiu|enganou|mentiu)': 'trair/enganar',
+      r'(?:vingou|se vingou)': 'vingar-se',
+      
+      // English
+      r'(?:gave|offered|shared)\s+(?:food|lunch|money|help)': 'share/help',
+      r'(?:saved|rescued|helped)': 'save/rescue',
+      r'(?:fired|dismissed)': 'fire/dismiss',
+      r'(?:inherited|received inheritance)': 'inherit',
+      r'(?:betrayed|cheated|lied)': 'betray',
+      
+      // Español
+      r'(?:dio|ofreció|compartió)\s+(?:comida|almuerzo|dinero)': 'compartir/ayudar',
+      
+      // 한국어
+      r'(?:나눠?준|주었|도와준)': '나눠주다/돕다',
+      r'(?:건네며|주며)': '건네다',
+    };
+
+    for (final entry in actionPatterns.entries) {
+      if (RegExp(entry.key, caseSensitive: false).hasMatch(titleLower)) {
+        result['acoes']!.add(entry.value);
+      }
+    }
+
+    // 🎯 DETECÇÃO DE CONTEXTOS/LOCAIS
+    final contextPatterns = {
+      r'(?:loja|mercado|supermercado|conveniência)': 'loja/conveniência',
+      r'(?:restaurante|café|lanchonete)': 'restaurante',
+      r'(?:hospital|clínica)': 'hospital',
+      r'(?:escritório|empresa|firma)': 'escritório',
+      r'(?:rua|calçada)': 'rua',
+      r'(?:casa|residência|mansão)': 'casa',
+      r'(?:store|shop|convenience)': 'store',
+      r'(?:restaurant|cafe|diner)': 'restaurant',
+      r'(?:office|company)': 'office',
+      r'(?:street)': 'street',
+      r'(?:편의점)': '편의점',
+    };
+
+    for (final entry in contextPatterns.entries) {
+      if (RegExp(entry.key, caseSensitive: false).hasMatch(titleLower)) {
+        result['contextos']!.add(entry.value);
+      }
+    }
+
+    // 🎯 DETECÇÃO DE OBJETOS IMPORTANTES
+    final objectPatterns = {
+      r'(?:marmita|lanche|comida|alimento|도시락)': 'comida/marmita',
+      r'(?:cartão|명함)': 'cartão de visita',
+      r'(?:dinheiro|money|dinero)': 'dinheiro',
+      r'(?:presente|gift|regalo)': 'presente',
+      r'(?:carta|letter|carta)': 'carta',
+    };
+
+    for (final entry in objectPatterns.entries) {
+      if (RegExp(entry.key, caseSensitive: false).hasMatch(titleLower)) {
+        result['objetos']!.add(entry.value);
+      }
+    }
+
+    return result;
+  }
+
+  /// 🆕 v7.6.44: VALIDAÇÃO RIGOROSA DE COERÊNCIA TÍTULO ↔ HISTÓRIA
+  /// Verifica se elementos-chave do título aparecem na história
+  Future<Map<String, dynamic>> _validateTitleCoherenceRigorous({
+    required String title,
+    required String story,
+    required String language,
+    required String apiKey,
+  }) async {
+    try {
+      // 1️⃣ EXTRAÇÃO AUTOMÁTICA DE ELEMENTOS-CHAVE
+      final keyElements = _extractTitleKeyElements(title, language);
+      final missingElements = <String>[];
+      final foundElements = <String>[];
+
+      if (kDebugMode) {
+        debugPrint('🔍 ELEMENTOS-CHAVE DETECTADOS NO TÍTULO:');
+        debugPrint('   Personagens: ${keyElements['personagens']?.join(", ") ?? "nenhum"}');
+        debugPrint('   Ações: ${keyElements['acoes']?.join(", ") ?? "nenhuma"}');
+        debugPrint('   Contextos: ${keyElements['contextos']?.join(", ") ?? "nenhum"}');
+        debugPrint('   Objetos: ${keyElements['objetos']?.join(", ") ?? "nenhum"}');
+      }
+
+      // 2️⃣ VALIDAÇÃO BÁSICA: Verificar presença de palavras-chave
+      final storyLower = story.toLowerCase();
+      
+      // Validar personagens
+      for (final personagem in keyElements['personagens'] ?? []) {
+        // Extrair palavra principal do padrão
+        final mainWords = personagem.split(' ').where((String w) => w.length > 3).toList();
+        var found = false;
+        for (final word in mainWords) {
+          if (storyLower.contains(word.toLowerCase())) {
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          foundElements.add('👤 $personagem');
+        } else {
+          missingElements.add('👤 $personagem');
+        }
+      }
+
+      // Validar contextos
+      for (final contexto in keyElements['contextos'] ?? []) {
+        final mainWords = contexto.split(' ').where((String w) => w.length > 3).toList();
+        var found = false;
+        for (final word in mainWords) {
+          if (storyLower.contains(word.toLowerCase())) {
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          foundElements.add('📍 $contexto');
+        } else {
+          missingElements.add('📍 $contexto');
+        }
+      }
+
+      // Validar objetos importantes
+      for (final objeto in keyElements['objetos'] ?? []) {
+        final mainWords = objeto.split(' ').where((String w) => w.length > 3).toList();
+        var found = false;
+        for (final word in mainWords) {
+          if (storyLower.contains(word.toLowerCase())) {
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          foundElements.add('🎁 $objeto');
+        } else {
+          missingElements.add('🎁 $objeto');
+        }
+      }
+
+      // 3️⃣ VALIDAÇÃO AVANÇADA: Usar IA para análise semântica
+      final storyPreview = story.length > 2000 
+          ? story.substring(0, 2000) + '...'
+          : story;
+
+      final validationPrompt = '''
+Você é um validador rigoroso de coerência narrativa. 
+
+TÍTULO: "$title"
+
+ELEMENTOS-CHAVE ESPERADOS:
+${keyElements['personagens']!.isNotEmpty ? '- Personagens: ${keyElements['personagens']!.join(", ")}' : ''}
+${keyElements['acoes']!.isNotEmpty ? '- Ações: ${keyElements['acoes']!.join(", ")}' : ''}
+${keyElements['contextos']!.isNotEmpty ? '- Contextos: ${keyElements['contextos']!.join(", ")}' : ''}
+${keyElements['objetos']!.isNotEmpty ? '- Objetos: ${keyElements['objetos']!.join(", ")}' : ''}
+
+HISTÓRIA (início):
+$storyPreview
+
+TAREFA:
+Analise RIGOROSAMENTE se a história desenvolve TODOS os elementos do título.
+
+CRITÉRIOS DE REPROVAÇÃO:
+❌ Personagem do título não aparece ou foi substituído
+❌ Ação principal do título não acontece
+❌ Contexto/local do título está errado
+❌ Objeto importante do título não é mencionado
+
+RESPONDA:
+COERENTE: sim/não
+CONFIANÇA: 0-100%
+ELEMENTOS_FALTANDO: [liste o que faltou]
+RAZÃO: [explicação em português, máximo 2 linhas]
+''';
+
+      final response = await _dio.post(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+        queryParameters: {'key': apiKey},
+        data: {
+          'contents': [
+            {
+              'parts': [
+                {'text': validationPrompt}
+              ]
+            }
+          ],
+          'generationConfig': {
+            'temperature': 0.1, // Muito baixa para análise objetiva
+            'maxOutputTokens': 500,
+          },
+        },
+      );
+
+      final text = response.data['candidates'][0]['content']['parts'][0]['text']
+          ?.toString() ?? '';
+
+      // Parse da resposta
+      final isCoherent = text.toLowerCase().contains('coerente: sim');
+      final confidenceMatch = RegExp(r'CONFIANÇA:\s*(\d+)').firstMatch(text);
+      final confidence = confidenceMatch != null 
+          ? int.tryParse(confidenceMatch.group(1) ?? '0') ?? 0
+          : 0;
+
+      final reasonMatch = RegExp(r'RAZÃO:\s*(.+?)(?=\n|$)', dotAll: true)
+          .firstMatch(text);
+
+      return {
+        'isCoherent': isCoherent && confidence >= 70, // Precisa 70%+ de confiança
+        'confidence': confidence,
+        'missingElements': missingElements,
+        'foundElements': foundElements,
+        'reason': reasonMatch?.group(1)?.trim() ?? 'Análise não disponível',
+        'aiResponse': text,
+        'keyElements': keyElements,
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Erro na validação rigorosa: $e');
+      }
+      return {
+        'isCoherent': true, // Assumir OK em caso de erro
+        'confidence': 0,
+        'missingElements': [],
+        'foundElements': [],
+        'reason': 'Validação não executada (erro: $e)',
+        'error': true,
+      };
+    }
+  }
+
+  /// 🆕 v7.6.45: Cria prompt de recuperação para incorporar elementos faltantes
+  /// Gera um parágrafo final que adiciona os elementos ausentes à história
+  String _buildRecoveryPrompt(
+    String title,
+    List<String> missingElements,
+    String context,
+    String language,
+  ) {
+    // Mapear idioma para instruções
+    final languageInstructions = {
+      'pt': 'em português brasileiro',
+      'en': 'in English',
+      'es': 'en español',
+      'ko': '한국어로',
+    };
+
+    final langCode = language.toLowerCase().substring(0, 2);
+    final langInstruction = languageInstructions[langCode] ?? 'in the same language as the title';
+
+    return '''
+🎯 MISSÃO DE RECUPERAÇÃO: Adicionar elementos faltantes à história
+
+TÍTULO ORIGINAL: "$title"
+
+ELEMENTOS QUE AINDA NÃO APARECERAM:
+${missingElements.map((e) => '❌ $e').join('\n')}
+
+CONTEXTO FINAL DA HISTÓRIA ATÉ AGORA:
+---
+${context.length > 800 ? context.substring(context.length - 800) : context}
+---
+
+TAREFA:
+Escreva UM PARÁGRAFO FINAL (100-150 palavras) $langInstruction que:
+✅ Incorpore TODOS os elementos faltantes de forma NATURAL
+✅ Seja uma continuação FLUIDA do contexto acima
+✅ Mantenha coerência com a história existente
+✅ NÃO repita eventos já narrados
+
+❌ PROIBIDO:
+- Começar nova história do zero
+- Ignorar o contexto fornecido
+- Usar "CONTINUAÇÃO:", "CONTEXTO:", etc.
+- Adicionar mais de 200 palavras
+
+APENAS o parágrafo final. Comece direto:
+''';
   }
 
   /// 🆕 v7.6.17: Detecta e registra o nome da protagonista no Bloco 1
@@ -5476,6 +5884,32 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         ? '// Modo Livre: Desenvolva o roteiro baseado APENAS no título e contexto fornecidos\n'
         : '${labels['theme']}: ${c.tema}\n${labels['subtheme']}: ${c.subtema}\n';
 
+    // 🆕 v7.6.44: SEMPRE incluir título como base da história
+    // O título NÃO é apenas decorativo - é a PREMISSA da história!
+    final titleSection = c.title.trim().isNotEmpty
+        ? '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+          '🎯 TÍTULO/PREMISSA OBRIGATÓRIA DA HISTÓRIA:\n'
+          '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+          '"${c.title}"\n'
+          '\n'
+          '⚠️ REGRA ABSOLUTA:\n'
+          '   • A história DEVE desenvolver os elementos deste título\n'
+          '   • Personagens, ações e contexto do título são OBRIGATÓRIOS\n'
+          '   • NÃO invente uma história diferente da proposta no título\n'
+          '   • O título é a PROMESSA feita ao espectador - CUMPRA-A!\n'
+          '\n'
+          '📋 EXEMPLOS:\n'
+          '   ✅ Título: "굶고 있는 노인에게 도시락을 나눠준 편의점 알바생"\n'
+          '      → História DEVE ter: funcionário de conveniência + idoso faminto + marmita compartilhada\n'
+          '   \n'
+          '   ✅ Título: "Bilionário me ofereceu emprego após eu ajudar um mendigo"\n'
+          '      → História DEVE ter: protagonista + mendigo ajudado + revelação (mendigo = bilionário)\n'
+          '   \n'
+          '   ❌ ERRO: Ignorar título e criar história sobre CEO infiltrado em empresa\n'
+          '      → Isso QUEBRA a promessa feita ao espectador!\n'
+          '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
+        : '';
+
     // 🚫 CONSTRUIR LISTA DE NOMES PROIBIDOS (já usados nesta história)
     String forbiddenNamesWarning = '';
     if (tracker.confirmedNames.isNotEmpty) {
@@ -5660,6 +6094,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     final prompt =
         perspectiveInstruction + // ✅ AGORA A INSTRUÇÃO DE GÊNERO VEM PRIMEIRO!
         '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+        titleSection + // 🆕 v7.6.44: TÍTULO SEMPRE INCLUÍDO PARA GARANTIR COERÊNCIA
         MainPromptTemplate.buildCompactPrompt(
           language: _getLanguageInstruction(c.language),
           instruction: instruction,
@@ -5725,9 +6160,17 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
           : maxTokensCalculated;
 
       // 🤖 SELEÇÃO DE MODELO BASEADA EM qualityMode
+      // 🚀 v7.6.49: Adicionado Gemini 3.0 Pro como opção "ultra"
       final selectedModel = c.qualityMode == 'flash'
-          ? 'gemini-2.5-flash'
-          : 'gemini-2.5-pro';
+          ? 'gemini-2.5-flash'        // STABLE - Rápido e eficiente
+          : c.qualityMode == 'ultra'
+              ? 'gemini-3-pro-preview'  // PREVIEW - Modelo mais avançado (Jan 2025)
+              : 'gemini-2.5-pro';       // STABLE - Máxima qualidade
+
+      if (kDebugMode) {
+        debugPrint('[$_instanceId] 🎯 qualityMode = "${c.qualityMode}"');
+        debugPrint('[$_instanceId] 🤖 selectedModel = "$selectedModel"');
+      }
 
       final data = await _makeApiRequest(
         apiKey: c.apiKey,

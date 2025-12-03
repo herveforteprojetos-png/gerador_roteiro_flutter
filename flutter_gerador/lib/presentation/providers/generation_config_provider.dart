@@ -1,4 +1,5 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/generation_config.dart';
 import '../../data/models/localization_level.dart';
 
@@ -41,9 +42,16 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
 
   void updateQualityMode(String mode) {
     state = state.copyWith(qualityMode: mode);
-    print(
-      '🤖 Modelo alterado para: ${mode == "pro" ? "Gemini 2.5-PRO (Melhor Qualidade)" : "Gemini 2.5-FLASH (4x Mais Rápido)"}',
-    );
+    debugPrint('🔄 Provider updateQualityMode($mode)');
+    debugPrint('🔍 state.qualityMode = "${state.qualityMode}"');
+    
+    final modelName = mode == 'flash' 
+        ? 'Gemini 2.5-FLASH (Rápido)' 
+        : mode == 'ultra'
+            ? 'Gemini 3.0-PRO PREVIEW (Ultra)'
+            : 'Gemini 2.5-PRO (Qualidade)';
+    
+    print('🤖 Modelo alterado para: $modelName');
   }
 
   void updateTitle(String title) {

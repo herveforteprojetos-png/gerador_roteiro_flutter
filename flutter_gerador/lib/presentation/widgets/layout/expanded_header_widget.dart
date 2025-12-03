@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:async';
 import '../../providers/generation_config_provider.dart';
 // import '../../providers/license_provider.dart'; // Removido - usando autenticação por senha
 import '../../../data/models/generation_config.dart';
 import '../../../data/models/localization_level.dart';
-import '../../../data/services/api_validation_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_design_system.dart';
 import 'package:flutter_gerador/core/utils/color_extensions.dart';
@@ -28,14 +26,8 @@ class ExpandedHeaderWidget extends ConsumerStatefulWidget {
 
 class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   late TextEditingController apiKeyController;
-  late TextEditingController openAIKeyController; // 🤖 NOVO
   late TextEditingController titleController;
   late TextEditingController localizacaoController;
-
-  // Estados de validação da API
-  ValidationState _validationState = ValidationState.initial;
-  String? _validationErrorMessage;
-  Timer? _validationTimer;
 
   // Estado da expansão da configuração técnica
   bool _isTechnicalConfigExpanded =
@@ -43,23 +35,16 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
 
   // Estados de visibilidade das senhas
   bool _isGeminiKeyVisible = false;
-  bool _isOpenAIKeyVisible = false;
-
-  // Histórico de chaves API
-  List<String> _apiKeyHistory = [];
-  bool _showApiKeyHistory = false;
 
   @override
   void initState() {
     super.initState();
     apiKeyController = TextEditingController();
-    openAIKeyController = TextEditingController(); // 🤖 NOVO
     titleController = TextEditingController();
     localizacaoController = TextEditingController();
 
     // Adicionar listeners para atualizar provider em tempo real
     apiKeyController.addListener(_onApiKeyChanged);
-    openAIKeyController.addListener(_onOpenAIKeyChanged); // 🤖 NOVO
     titleController.addListener(() {
       print('📝 titleController listener: Título = "${titleController.text}"');
       ref
@@ -75,21 +60,11 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   /// Carrega as configurações salvas
   Future<void> _loadSavedSettings() async {
     try {
-      // Carregar histórico de chaves API
-      _apiKeyHistory = await StorageService.getApiKeyHistory();
-
       // Carregar chave API atual
       final savedApiKey = await StorageService.getApiKey();
       if (savedApiKey != null && savedApiKey.isNotEmpty) {
         apiKeyController.text = savedApiKey;
         ref.read(generationConfigProvider.notifier).updateApiKey(savedApiKey);
-      }
-
-      // 🤖 Carregar chave OpenAI
-      final savedOpenAIKey = await StorageService.getOpenAIKey();
-      if (savedOpenAIKey != null && savedOpenAIKey.isNotEmpty) {
-        openAIKeyController.text = savedOpenAIKey;
-        ref.read(generationConfigProvider.notifier).updateOpenAIKey(savedOpenAIKey);
       }
 
       // Carregar modelo selecionado
@@ -104,7 +79,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
 
       // Carregar qualityMode salvo
       final qualityMode = preferences['qualityMode'] ?? 'pro';
+      debugPrint('💾 Carregando qualityMode do storage: $qualityMode');
       configNotifier.updateQualityMode(qualityMode);
+      debugPrint('✅ qualityMode do storage aplicado ao provider');
 
       configNotifier.updateQuantity(preferences['quantity'] ?? 2000);
       configNotifier.updateMeasureType(
@@ -149,18 +126,12 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   void dispose() {
     apiKeyController.removeListener(_onApiKeyChanged);
     apiKeyController.dispose();
-    openAIKeyController.removeListener(_onOpenAIKeyChanged); // 🤖 NOVO
-    openAIKeyController.dispose(); // 🤖 NOVO
     titleController.dispose();
     localizacaoController.dispose();
-    _validationTimer?.cancel();
     super.dispose();
   }
 
   void _onApiKeyChanged() {
-    // Cancelar timer anterior se existir
-    _validationTimer?.cancel();
-
     final apiKey = apiKeyController.text.trim();
 
     // ✅ ATUALIZAR O PROVIDER IMEDIATAMENTE (para habilitar botão)
@@ -169,121 +140,6 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     );
     ref.read(generationConfigProvider.notifier).updateApiKey(apiKey);
     print('✅ Provider atualizado com API Key');
-
-    if (apiKey.isEmpty) {
-      setState(() {
-        _validationState = ValidationState.initial;
-        _validationErrorMessage = null;
-      });
-      return;
-    }
-
-    // Iniciar novo timer de 1 segundo para evitar muitas requisições
-    _validationTimer = Timer(const Duration(seconds: 1), () {
-      _validateApiKey(apiKey);
-    });
-  }
-
-  Future<void> _validateApiKey(String apiKey) async {
-    setState(() {
-      _validationState = ValidationState.validating;
-      _validationErrorMessage = null;
-    });
-
-    try {
-      final result = await ApiValidationService.validateGeminiApiKey(apiKey);
-
-      if (mounted) {
-        setState(() {
-          if (result.isValid) {
-            _validationState = ValidationState.valid;
-            _validationErrorMessage = null;
-            // ✅ Provider já foi atualizado em _onApiKeyChanged()
-          } else {
-            _validationState = ValidationState.invalid;
-            _validationErrorMessage = result.errorMessage;
-          }
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _validationState = ValidationState.invalid;
-          _validationErrorMessage = 'Erro na validação: ${e.toString()}';
-        });
-      }
-    }
-  }
-
-  void _onOpenAIKeyChanged() {
-    final openAIKey = openAIKeyController.text.trim();
-    print(
-      '🤖 _onOpenAIKeyChanged: OpenAI Key = "${openAIKey.isEmpty ? "(vazia)" : "***${openAIKey.length} chars***"}"',
-    );
-    ref.read(generationConfigProvider.notifier).updateOpenAIKey(openAIKey);
-    print('✅ Provider atualizado com OpenAI Key');
-    
-    // Salvar automaticamente
-    if (openAIKey.isNotEmpty) {
-      StorageService.saveOpenAIKey(openAIKey);
-    }
-  }
-
-  /// Salva a chave API atual se ela for válida
-  Future<void> _saveCurrentApiKey() async {
-    final apiKey = apiKeyController.text.trim();
-
-    if (apiKey.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Digite uma chave API antes de salvar'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (_validationState != ValidationState.valid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A chave API deve ser válida antes de salvar'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    try {
-      await StorageService.saveApiKey(apiKey);
-
-      // Atualizar histórico local
-      _apiKeyHistory = await StorageService.getApiKeyHistory();
-      setState(() {});
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Chave API salva com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao salvar: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  /// Seleciona uma chave do histórico
-  void _selectApiKeyFromHistory(String apiKey) {
-    apiKeyController.text = apiKey;
-    setState(() {
-      _showApiKeyHistory = false;
-    });
-    // Validar a chave selecionada
-    _validateApiKey(apiKey);
   }
 
   @override
@@ -565,32 +421,24 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
 
   /// Botão que abre o modal de configuração de APIs
   Widget _buildApiConfigButton() {
-    final config = ref.watch(generationConfigProvider);
     final hasGeminiKey = apiKeyController.text.trim().isNotEmpty;
-    final hasOpenAIKey = openAIKeyController.text.trim().isNotEmpty;
-    final isGemini = config.selectedProvider == 'gemini';
     
-    // Define o status visual baseado na seleção
+    // Define o status visual baseado na presença da chave
     Color buttonColor;
     IconData buttonIcon;
     String buttonText;
     String subtitle;
     
-    if (isGemini && hasGeminiKey) {
+    if (hasGeminiKey) {
       buttonColor = AppColors.fireOrange;
       buttonIcon = Icons.auto_awesome;
-      buttonText = 'Gemini 2.5 Pro Configurado';
-      subtitle = 'API ativa e pronta para usar';
-    } else if (!isGemini && hasOpenAIKey) {
-      buttonColor = Colors.blue;
-      buttonIcon = Icons.smart_toy;
-      buttonText = 'GPT-4o Configurado';
-      subtitle = 'API ativa e pronta para usar';
+      buttonText = 'Gemini Configurado';
+      subtitle = 'API ativa - 3 modelos disponíveis (Flash, Pro, Ultra)';
     } else {
       buttonColor = Colors.red;
       buttonIcon = Icons.error;
       buttonText = 'Configurar API';
-      subtitle = 'Escolha e configure Gemini ou ChatGPT';
+      subtitle = 'Clique para adicionar sua chave da API Gemini';
     }
 
     return InkWell(
@@ -637,17 +485,11 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
 
   /// Modal de configuração das APIs
   void _showApiConfigDialog() {
-    final config = ref.read(generationConfigProvider);
-    
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
-        // Estado local para o modal
-        String selectedProvider = config.selectedProvider;
-        
         return StatefulBuilder(
           builder: (context, setState) {
-            final isGemini = selectedProvider == 'gemini';
             
             return Dialog(
               backgroundColor: AppColors.darkBackground,
@@ -668,7 +510,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Configuração da API',
+                            'Configuração da API Gemini',
                             style: AppDesignSystem.headingMedium.copyWith(
                               color: AppColors.fireOrange,
                             ),
@@ -682,50 +524,68 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                     ),
                     Divider(color: Colors.grey.withOpacity(0.3), height: 32),
                     
-                    // Texto explicativo
-                    Text(
-                      'Escolha qual API você deseja usar:',
-                      style: AppDesignSystem.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                    // Texto explicativo sobre os modelos
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.darkCard,
+                        borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
+                        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '3 Modelos Gemini Disponíveis:',
+                            style: AppDesignSystem.bodyMedium.copyWith(
+                              color: AppColors.fireOrange,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildModelInfoRow('⚡', 'Flash (2.5)', 'Mais rápido, menor custo'),
+                          const SizedBox(height: 8),
+                          _buildModelInfoRow('🧠', 'Pro (2.5)', 'Qualidade máxima (atual)'),
+                          const SizedBox(height: 8),
+                          _buildModelInfoRow('🚀', 'Ultra (3.0 Preview)', 'Modelo mais avançado (Jan 2025)'),
+                        ],
                       ),
                     ),
-                    AppDesignSystem.verticalSpaceM,
                     
-                    // Botões de seleção (Gemini OU OpenAI)
-                    Row(
+                    AppDesignSystem.verticalSpaceL,
+                    
+                    // Dropdown de seleção de modelo
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Botão Gemini
-                        Expanded(
-                          child: _buildProviderSelectionButton(
-                            isSelected: isGemini,
-                            icon: Icons.auto_awesome,
-                            title: 'Gemini',
-                            subtitle: '2.5 Pro',
+                        Text(
+                          'Modelo IA',
+                          style: AppDesignSystem.labelMedium.copyWith(
                             color: AppColors.fireOrange,
-                            onTap: () {
-                              setState(() {
-                                selectedProvider = 'gemini';
-                              });
-                              ref.read(generationConfigProvider.notifier)
-                                  .updateSelectedProvider('gemini');
-                            },
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        // Botão OpenAI
-                        Expanded(
-                          child: _buildProviderSelectionButton(
-                            isSelected: !isGemini,
-                            icon: Icons.smart_toy,
-                            title: 'ChatGPT',
-                            subtitle: 'GPT-4o',
-                            color: Colors.blue,
-                            onTap: () {
-                              setState(() {
-                                selectedProvider = 'openai';
-                              });
-                              ref.read(generationConfigProvider.notifier)
-                                  .updateSelectedProvider('openai');
+                        AppDesignSystem.verticalSpaceS,
+                        SizedBox(
+                          height: AppDesignSystem.fieldHeight,
+                          child: DropdownButtonFormField<String>(
+                            value: ref.watch(generationConfigProvider).qualityMode,
+                            style: AppDesignSystem.bodyMedium,
+                            dropdownColor: AppColors.darkBackground,
+                            decoration: AppDesignSystem.getInputDecoration(
+                              hint: 'Selecione o modelo',
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'flash', child: Text('⚡ Flash (2.5)')),
+                              DropdownMenuItem(value: 'pro', child: Text('🧠 Pro (2.5)')),
+                              DropdownMenuItem(value: 'ultra', child: Text('🚀 Ultra (3.0 Preview)')),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                debugPrint('🎯 Dropdown selecionado: $value');
+                                ref.read(generationConfigProvider.notifier).updateQualityMode(value);
+                                StorageService.saveUserPreferences(qualityMode: value);
+                                debugPrint('✅ qualityMode atualizado e salvo');
+                              }
                             },
                           ),
                         ),
@@ -734,35 +594,20 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                     
                     AppDesignSystem.verticalSpaceL,
                     
-                    // Campo da API selecionada
-                    if (isGemini)
-                      _buildDialogApiKeyField(
-                        title: 'Chave da API Gemini',
-                        subtitle: 'Gemini 2.5 Pro',
-                        controller: apiKeyController,
-                        icon: Icons.auto_awesome,
-                        iconColor: AppColors.fireOrange,
-                        isVisible: _isGeminiKeyVisible,
-                        onToggleVisibility: () {
-                          setState(() {
-                            _isGeminiKeyVisible = !_isGeminiKeyVisible;
-                          });
-                        },
-                      )
-                    else
-                      _buildDialogApiKeyField(
-                        title: 'Chave da API OpenAI',
-                        subtitle: 'GPT-4o - Custo: ~\$0.15 USD/roteiro 10K palavras',
-                        controller: openAIKeyController,
-                        icon: Icons.smart_toy,
-                        iconColor: Colors.blue,
-                        isVisible: _isOpenAIKeyVisible,
-                        onToggleVisibility: () {
-                          setState(() {
-                            _isOpenAIKeyVisible = !_isOpenAIKeyVisible;
-                          });
-                        },
-                      ),
+                    // Campo da API Gemini
+                    _buildDialogApiKeyField(
+                      title: 'Chave da API Gemini',
+                      subtitle: 'Funciona com todos os 3 modelos acima',
+                      controller: apiKeyController,
+                      icon: Icons.auto_awesome,
+                      iconColor: AppColors.fireOrange,
+                      isVisible: _isGeminiKeyVisible,
+                      onToggleVisibility: () {
+                        setState(() {
+                          _isGeminiKeyVisible = !_isGeminiKeyVisible;
+                        });
+                      },
+                    ),
                     
                     AppDesignSystem.verticalSpaceL,
                     
@@ -794,57 +639,36 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     );
   }
 
-  /// Botão de seleção de provider (Gemini ou OpenAI)
-  Widget _buildProviderSelectionButton({
-    required bool isSelected,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : AppColors.darkCard,
-          borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
-          border: Border.all(
-            color: isSelected ? color : Colors.grey.withOpacity(0.3),
-            width: isSelected ? 2 : 1,
+  /// Widget para exibir informações de cada modelo
+  Widget _buildModelInfoRow(String emoji, String name, String description) {
+    return Row(
+      children: [
+        Text(
+          emoji,
+          style: const TextStyle(fontSize: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: AppDesignSystem.bodyMedium.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                description,
+                style: AppDesignSystem.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
         ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? color : Colors.grey,
-              size: 32,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: AppDesignSystem.bodyMedium.copyWith(
-                color: isSelected ? color : Colors.grey,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: AppDesignSystem.caption.copyWith(
-                color: isSelected ? color.withOpacity(0.7) : Colors.grey,
-              ),
-            ),
-            if (isSelected) ...[
-              const SizedBox(height: 8),
-              Icon(Icons.check_circle, color: color, size: 20),
-            ],
-          ],
-        ),
-      ),
+      ],
     );
   }
 
@@ -944,398 +768,6 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                 borderSide: BorderSide(color: borderColor, width: 1),
               ),
             ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildApiKeyField(GenerationConfigNotifier configNotifier) {
-    // final config = ref.watch(generationConfigProvider);
-
-    // Determinar cor e ícone baseado no estado de validação
-    Color borderColor;
-    Widget? suffixIcon;
-
-    switch (_validationState) {
-      case ValidationState.initial:
-        borderColor = AppColors.fireOrange;
-        suffixIcon = null;
-        break;
-      case ValidationState.validating:
-        borderColor = Colors.orange;
-        suffixIcon = Tooltip(
-          message: 'Validando chave da API...',
-          child: const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
-            ),
-          ),
-        );
-        break;
-      case ValidationState.valid:
-        borderColor = Colors.green;
-        suffixIcon = Tooltip(
-          message: 'Chave da API válida ✓',
-          child: Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(
-              color: Colors.green,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: const Icon(Icons.check, color: Colors.white, size: 10),
-          ),
-        );
-        break;
-      case ValidationState.invalid:
-        borderColor = Colors.red;
-        suffixIcon = Tooltip(
-          message: _validationErrorMessage ?? 'Chave da API inválida',
-          child: Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: const Icon(Icons.close, color: Colors.white, size: 10),
-          ),
-        );
-        break;
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'Chave da API Gemini',
-              style: AppDesignSystem.labelMedium.copyWith(
-                color: AppColors.fireOrange,
-              ),
-            ),
-            const Spacer(),
-            // Botão do histórico
-            if (_apiKeyHistory.isNotEmpty)
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    _showApiKeyHistory = !_showApiKeyHistory;
-                  });
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.darkCard,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.fireOrange.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.history,
-                        color: AppColors.fireOrange,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Histórico',
-                        style: AppDesignSystem.caption.copyWith(
-                          color: AppColors.fireOrange,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            const SizedBox(width: 8),
-            // Botão salvar
-            InkWell(
-              onTap: _saveCurrentApiKey,
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _validationState == ValidationState.valid
-                      ? Colors.green.withOpacity(0.2)
-                      : AppColors.darkCard,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _validationState == ValidationState.valid
-                        ? Colors.green
-                        : AppColors.fireOrange.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.save,
-                      color: _validationState == ValidationState.valid
-                          ? Colors.green
-                          : AppColors.fireOrange,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Salvar',
-                      style: AppDesignSystem.caption.copyWith(
-                        color: _validationState == ValidationState.valid
-                            ? Colors.green
-                            : AppColors.fireOrange,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-        AppDesignSystem.verticalSpaceS,
-        // Dropdown do histórico (se visível)
-        if (_showApiKeyHistory && _apiKeyHistory.isNotEmpty) ...[
-          Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(maxHeight: 200),
-            decoration: BoxDecoration(
-              color: AppColors.darkCard,
-              borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
-              border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
-            ),
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _apiKeyHistory.length,
-              itemBuilder: (context, index) {
-                final key = _apiKeyHistory[index];
-                final maskedKey = '${key.substring(0, 8)}...*****';
-
-                return InkWell(
-                  onTap: () => _selectApiKeyFromHistory(key),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      border: index < _apiKeyHistory.length - 1
-                          ? Border(
-                              bottom: BorderSide(
-                                color: AppColors.fireOrange.withOpacity(0.2),
-                              ),
-                            )
-                          : null,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.key, color: AppColors.fireOrange, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            maskedKey,
-                            style: AppDesignSystem.bodySmall.copyWith(
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red, size: 16),
-                          onPressed: () async {
-                            await StorageService.removeApiKeyFromHistory(key);
-                            _apiKeyHistory =
-                                await StorageService.getApiKeyHistory();
-                            setState(() {});
-                          },
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          AppDesignSystem.verticalSpaceS,
-        ],
-        SizedBox(
-          height: AppDesignSystem.fieldHeight,
-          child: TextField(
-            controller: apiKeyController,
-            obscureText: true,
-            style: AppDesignSystem.bodyMedium,
-            decoration:
-                AppDesignSystem.getInputDecoration(
-                  hint: 'Cole sua chave da API aqui...',
-                ).copyWith(
-                  prefixIcon: Icon(
-                    Icons.key,
-                    color: AppColors.fireOrange,
-                    size: 18,
-                  ),
-                  suffixIcon: suffixIcon,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppDesignSystem.borderRadius,
-                    ),
-                    borderSide: BorderSide(color: borderColor, width: 1),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppDesignSystem.borderRadius,
-                    ),
-                    borderSide: BorderSide(color: borderColor, width: 2),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppDesignSystem.borderRadius,
-                    ),
-                    borderSide: BorderSide(color: borderColor, width: 1),
-                  ),
-                ),
-            // Removemos o onChanged daqui pois agora usamos o listener
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 🤖 Campo para OpenAI API Key (usado como fallback quando Gemini está indisponível)
-  Widget _buildOpenAIKeyField() {
-    // Verifica se há chave configurada
-    final hasKey = openAIKeyController.text.trim().isNotEmpty;
-    final borderColor = hasKey ? Colors.green : Colors.blue.withOpacity(0.3);
-    
-    // Ícone de status (checkmark verde se configurado)
-    Widget? suffixIcon;
-    if (hasKey) {
-      suffixIcon = Tooltip(
-        message: 'OpenAI configurado ✓',
-        child: Container(
-          width: 18,
-          height: 18,
-          decoration: BoxDecoration(
-            color: Colors.green,
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: const Icon(Icons.check, color: Colors.white, size: 10),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.smart_toy, size: 16, color: hasKey ? Colors.green : Colors.blue),
-            const SizedBox(width: 6),
-            Text(
-              hasKey ? '🤖 OpenAI Configurado (Fallback Ativo)' : '🤖 OpenAI API Key (Fallback Opcional)',
-              style: AppDesignSystem.labelMedium.copyWith(
-                color: hasKey ? Colors.green : Colors.blue,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Tooltip(
-              message: 'GPT-4o será usado automaticamente quando Gemini retornar erro 503.\n'
-                  'Custo aproximado: \$0.15 USD por roteiro de 10K palavras.',
-              child: Icon(
-                Icons.info_outline,
-                size: 16,
-                color: (hasKey ? Colors.green : Colors.blue).withOpacity(0.7),
-              ),
-            ),
-          ],
-        ),
-        AppDesignSystem.verticalSpaceS,
-        SizedBox(
-          height: AppDesignSystem.fieldHeight,
-          child: TextField(
-            controller: openAIKeyController,
-            obscureText: true,
-            style: AppDesignSystem.bodyMedium,
-            decoration: AppDesignSystem.getInputDecoration(
-              hint: 'sk-proj-... (usado quando Gemini está indisponível)',
-            ).copyWith(
-              prefixIcon: Icon(
-                Icons.vpn_key,
-                color: hasKey ? Colors.green : Colors.blue,
-                size: 18,
-              ),
-              suffixIcon: suffixIcon,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  AppDesignSystem.borderRadius,
-                ),
-                borderSide: BorderSide(color: borderColor, width: 1),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  AppDesignSystem.borderRadius,
-                ),
-                borderSide: BorderSide(color: hasKey ? Colors.green : Colors.blue, width: 2),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  AppDesignSystem.borderRadius,
-                ),
-                borderSide: BorderSide(color: borderColor, width: 1),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildModelDropdown(
-    GenerationConfig config,
-    GenerationConfigNotifier configNotifier,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Modelo IA',
-          style: AppDesignSystem.labelMedium.copyWith(
-            color: AppColors.fireOrange,
-          ),
-        ),
-        AppDesignSystem.verticalSpaceS,
-        SizedBox(
-          height: AppDesignSystem.fieldHeight,
-          child: DropdownButtonFormField<String>(
-            initialValue: config.qualityMode,
-            style: AppDesignSystem.bodyMedium,
-            dropdownColor: AppColors.darkBackground,
-            decoration: AppDesignSystem.getInputDecoration(
-              hint: 'Selecione o modelo',
-            ),
-            items: const [
-              DropdownMenuItem(value: 'pro', child: Text('🧠 Pro')),
-              DropdownMenuItem(value: 'flash', child: Text('⚡ Flash')),
-            ],
-            onChanged: (value) {
-              if (value != null) {
-                configNotifier.updateQualityMode(value);
-                StorageService.saveUserPreferences(qualityMode: value);
-              }
-            },
           ),
         ),
       ],
