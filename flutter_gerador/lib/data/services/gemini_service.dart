@@ -397,6 +397,30 @@ class GeminiService {
         ),
       );
     }
+    
+    // 🆕 v7.6.53: CAMADA 1 - Gerar Sinopse Comprimida UMA VEZ no início
+    // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
+    try {
+      worldState.sinopseComprimida = await _generateCompressedSynopsis(
+        tema: config.tema,
+        title: config.title,
+        protagonistName: config.protagonistName,
+        language: config.language,
+        apiKey: config.apiKey,
+        qualityMode: config.qualityMode,
+      );
+      if (kDebugMode) {
+        debugPrint('🔵 Camada 1 (Sinopse) gerada: ${worldState.sinopseComprimida.length} chars');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Erro ao gerar sinopse (não-crítico): $e');
+      }
+      // Fallback: usar tema truncado
+      worldState.sinopseComprimida = config.tema.length > 500 
+          ? '${config.tema.substring(0, 500)}...' 
+          : config.tema;
+    }
 
     _startWatchdog();
     final start = DateTime.now();
@@ -1828,80 +1852,105 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
       }
     }
 
-    // 📊 CÁLCULO OTIMIZADO: Blocos maiores = mais rápido, mas deve completar meta
-    // Sistema TESTADO e VALIDADO - NÃO aumentar blocos sem testes extensivos!
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 🎯 v7.6.53: CHUNKING OTIMIZADO POR IDIOMA - Pipeline de Modelo Único
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     //
-    // 🔥 v6.1: AJUSTE PARA PORTUGUÊS - Blocos médios para equilibrar 503 vs meta
-    // Português gera ~30% mais tokens que inglês para mesmo conteúdo
-    // SOLUÇÃO: Aumentar QUANTIDADE de blocos moderadamente (compensar redução de TAMANHO)
+    // ESPECIFICAÇÃO DE PALAVRAS POR BLOCO (pal/bloco):
+    //   🇧🇷 PORTUGUÊS:     1.200 - 1.500 pal/bloco (verboso, latino)
+    //   🇰🇷 COREANO:       600 - 800 pal/bloco (Hangul, alta densidade)
+    //   🇷🇺🇧🇬 CIRÍLICOS:  900 - 1.100 pal/bloco (tokens pesados)
+    //   🇹🇷 TURCO:         1.000 - 1.200 pal/bloco (aglutinante)
+    //   🇵🇱 POLONÊS:       1.000 - 1.200 pal/bloco (diacríticos)
+    //   🇩🇪 ALEMÃO:        1.000 - 1.200 pal/bloco (palavras compostas)
+    //   🌍 LATINOS:        1.200 - 1.500 pal/bloco (EN, ES, FR, IT, RO)
+    //
+    // FÓRMULA: blocos = wordsEquivalent / target_pal_bloco
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    final isPortuguese = c.language.toLowerCase().contains('portugu');
+    final langLower = c.language.toLowerCase();
+    
+    // 🔍 DETECÇÃO DE IDIOMA
+    final isPortuguese = langLower.contains('portugu') || langLower == 'pt';
     final isKorean = c.language.contains('한국어') || 
-                     c.language.toLowerCase().contains('coreano') ||
-                     c.language.toLowerCase().contains('korean');
+                     langLower.contains('coreano') ||
+                     langLower.contains('korean') ||
+                     langLower == 'ko';
+    final isRussian = langLower.contains('russo') || langLower == 'ru';
+    final isBulgarian = langLower.contains('búlgar') || langLower.contains('bulgar') || langLower == 'bg';
+    final isCyrillic = isRussian || isBulgarian;
+    final isTurkish = langLower.contains('turco') || langLower == 'tr';
+    final isPolish = langLower.contains('polon') || langLower == 'pl';
+    final isGerman = langLower.contains('alem') || langLower == 'de';
+    // Latinos: en, es-mx, fr, it, ro (usam valores similares ao português)
+    final isLatin = langLower.contains('inglês') || langLower.contains('english') || langLower == 'en' ||
+                    langLower.contains('espanhol') || langLower.contains('español') || langLower.contains('es') ||
+                    langLower.contains('francês') || langLower.contains('français') || langLower == 'fr' ||
+                    langLower.contains('italiano') || langLower == 'it' ||
+                    langLower.contains('romeno') || langLower.contains('român') || langLower == 'ro';
 
-    // 🇰🇷 COREANO: Ajuste Fino v12 (Corrigir Sub-Geração)
-    // 
-    // ANÁLISE v11:
-    // Pedido: 13k palavras
-    // Config: 35 blocos → ~371 palavras/bloco esperado
-    // Realidade: Gemini gerou ~11k palavras (84.6% do pedido) ❌
-    //
-    // PROBLEMA:
-    // O modelo gera consistentemente ~15% menos do que o pedido em Coreano.
-    // Isso ocorre porque Coreano usa caracteres Hangul que são contados diferente.
-    //
-    // SOLUÇÃO v12:
-    // 1. Aumentar número de blocos em ~18% para compensar sub-geração
-    // 2. Manter target de ~380-400 palavras/bloco (zona de conforto do modelo)
-    //
-    // CÁLCULO v12 (para 13k palavras):
-    // 13.000 × 1.18 = ~15.340 palavras pedidas internamente
-    // 15.340 ÷ 380 = ~40 blocos
+    // 🎯 TARGET DE PALAVRAS POR BLOCO (centro do range)
+    int targetPalBloco;
+    String langCategory;
+    
     if (isKorean) {
-      // 🔥 v12: Aumentar blocos em 18% para compensar sub-geração natural
-      int blocks;
-      if (wordsEquivalent <= 1000) blocks = 4;        // ~250 pal/bloco (era 3)
-      else if (wordsEquivalent <= 3000) blocks = 10;  // ~300 pal/bloco (era 8)
-      else if (wordsEquivalent <= 6000) blocks = 18;  // ~333 pal/bloco (era 15)
-      else if (wordsEquivalent <= 10000) blocks = 28; // ~357 pal/bloco (era 22)
-      else if (wordsEquivalent <= 13000) blocks = 38; // ~342 pal/bloco (NOVO!)
-      else if (wordsEquivalent <= 15000) blocks = 42; // ~357 pal/bloco (era 35)
-      else if (wordsEquivalent <= 20000) blocks = 55; // ~363 pal/bloco (era 48)
-      else if (wordsEquivalent <= 25000) blocks = 70; // ~357 pal/bloco (era 60)
-      else blocks = 80; // (era 70)
-
-      if (kDebugMode) debugPrint('   🇰🇷 COREANO DETECTADO: Retornando $blocks blocos (v12 - +18% compensação)');
-      return blocks;
-    }    // 🇧🇷 PORTUGUÊS: Mais blocos (tamanho médio) para evitar 503 e atingir meta
-    if (isPortuguese) {
-      if (wordsEquivalent <= 1000) return 3; // ~333 palavras/bloco
-      if (wordsEquivalent <= 3000)
-        return 5; // ~600 palavras/bloco (era 4→6, agora 5)
-      if (wordsEquivalent <= 6000)
-        return 7; // ~857 palavras/bloco (era 5→8, agora 7)
-      if (wordsEquivalent <= 10000)
-        return 14; // ~714 palavras/bloco (v6.5: 12→14 para evitar 503)
-      if (wordsEquivalent <= 15000)
-        return 18; // ~833 palavras/bloco (v6.5: 16→18)
-      if (wordsEquivalent <= 20000)
-        return 22; // ~909 palavras/bloco (v6.5: 20→22)
-      if (wordsEquivalent <= 25000)
-        return 26; // ~961 palavras/bloco (v6.5: 24→26)
-      return 30; // Máximo 30 blocos para português (v6.5: 28→30)
+      targetPalBloco = 700; // 600-800 pal/bloco
+      langCategory = '🇰🇷 COREANO';
+    } else if (isCyrillic) {
+      targetPalBloco = 1000; // 900-1100 pal/bloco
+      langCategory = '🔤 CIRÍLICO';
+    } else if (isTurkish) {
+      targetPalBloco = 1100; // 1000-1200 pal/bloco
+      langCategory = '🇹🇷 TURCO';
+    } else if (isPolish) {
+      targetPalBloco = 1100; // 1000-1200 pal/bloco
+      langCategory = '🇵🇱 POLONÊS';
+    } else if (isGerman) {
+      targetPalBloco = 1100; // 1000-1200 pal/bloco
+      langCategory = '🇩🇪 ALEMÃO';
+    } else if (isPortuguese) {
+      targetPalBloco = 1350; // 1200-1500 pal/bloco
+      langCategory = '🇧🇷 PORTUGUÊS';
+    } else if (isLatin) {
+      targetPalBloco = 1350; // 1200-1500 pal/bloco
+      langCategory = '🌍 LATINO';
+    } else {
+      // Fallback para idiomas não especificados
+      targetPalBloco = 1200;
+      langCategory = '🌐 OUTROS';
     }
 
-    // 🌍 OUTROS IDIOMAS: Blocos padrão (maiores, mais eficientes)
-    if (wordsEquivalent <= 1000) return 3; // ~333 palavras/bloco
-    if (wordsEquivalent <= 3000) return 4; // ~750 palavras/bloco
-    if (wordsEquivalent <= 6000) return 5; // ~1200 palavras/bloco
-    if (wordsEquivalent <= 10000) {
-      return 10; // ~1000 palavras/bloco (AJUSTADO: era 8, agora 10 para garantir meta)
+    // 📊 CÁLCULO DE BLOCOS: words / target
+    int calculatedBlocks = (wordsEquivalent / targetPalBloco).ceil();
+    
+    // 🔒 LIMITES DE SEGURANÇA
+    // Mínimo: 2 blocos (intro + conclusão)
+    // Máximo: varia por idioma para evitar erro 503
+    int minBlocks = 2;
+    int maxBlocks;
+    
+    if (isKorean) {
+      maxBlocks = 50; // Coreano precisa de mais blocos menores
+    } else if (isCyrillic) {
+      maxBlocks = 30; // Cirílicos são mais pesados
+    } else {
+      maxBlocks = 25; // Latinos e outros são eficientes
     }
-    if (wordsEquivalent <= 15000) return 12; // ~1250 palavras/bloco
-    if (wordsEquivalent <= 20000) return 14; // ~1428 palavras/bloco
-    if (wordsEquivalent <= 25000) return 16; // ~1562 palavras/bloco
-    return 18; // Máximo 18 blocos para textos enormes
+    
+    // Aplicar limites
+    int finalBlocks = calculatedBlocks.clamp(minBlocks, maxBlocks);
+    
+    // 🇰🇷 COMPENSAÇÃO COREANO: +18% blocos para compensar sub-geração natural
+    if (isKorean) {
+      finalBlocks = (finalBlocks * 1.18).ceil().clamp(minBlocks, maxBlocks);
+    }
+    
+    if (kDebugMode) {
+      final actualPalBloco = (wordsEquivalent / finalBlocks).round();
+      debugPrint('   $langCategory: $wordsEquivalent palavras ÷ $targetPalBloco target = $calculatedBlocks → $finalBlocks blocos (~$actualPalBloco pal/bloco)');
+    }
+    
+    return finalBlocks;
   }
 
   int _calculateTargetForBlock(int current, int total, ScriptConfig c) {
@@ -7288,6 +7337,108 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
     }
   }
 
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 🆕 v7.6.53: CAMADA 1 - SINOPSE COMPRIMIDA (≤500 tokens)
+  // Gerada UMA VEZ no início e incluída em TODOS os blocos
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  
+  /// Gera uma sinopse comprimida da história (Camada 1 - Contexto Estático)
+  /// 
+  /// Esta sinopse é gerada UMA VEZ no início da geração e incluída em TODOS os blocos.
+  /// Serve como "bíblia" da história para manter consistência.
+  /// 
+  /// Parâmetros:
+  /// - [tema]: O tema/prompt da história
+  /// - [title]: O título da história
+  /// - [protagonistName]: Nome do protagonista
+  /// - [language]: Idioma da história
+  /// - [apiKey]: Chave da API
+  /// - [qualityMode]: Modo de qualidade (flash/pro/ultra) - usa mesmo modelo
+  /// 
+  /// Retorna: String com sinopse comprimida (≤150 palavras, ~500 tokens)
+  static Future<String> _generateCompressedSynopsis({
+    required String tema,
+    required String title,
+    required String protagonistName,
+    required String language,
+    required String apiKey,
+    required String qualityMode,
+  }) async {
+    if (kDebugMode) {
+      debugPrint('🔵 Gerando Sinopse Comprimida (Camada 1)...');
+    }
+    
+    try {
+      // 🎯 Pipeline Modelo Único: Usar mesmo modelo selecionado pelo usuário
+      final model = _getSelectedModel(qualityMode);
+      
+      final prompt = '''
+Você é um assistente de escrita criativa. Gere uma SINOPSE COMPRIMIDA da história a seguir.
+
+TÍTULO: $title
+PROTAGONISTA: $protagonistName
+TEMA/PROMPT: $tema
+
+INSTRUÇÕES:
+1. Crie uma sinopse CONCISA de no máximo 150 palavras
+2. Inclua: premissa, protagonista, conflito central, tom narrativo
+3. NÃO inclua spoilers ou resolução da história
+4. Use linguagem clara e objetiva
+5. Esta sinopse será usada como referência durante toda a geração
+
+FORMATO DE RESPOSTA:
+Responda APENAS com a sinopse, sem formatação adicional ou explicações.
+Idioma da resposta: $language
+''';
+
+      final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
+      
+      // Usar Dio para consistência com resto do código
+      final dio = Dio();
+      final response = await dio.post(
+        url,
+        options: Options(headers: {'Content-Type': 'application/json'}),
+        data: {
+          'contents': [{'parts': [{'text': prompt}]}],
+          'generationConfig': {
+            'temperature': 0.4, // Baixa temperatura para consistência
+            'maxOutputTokens': 500, // Limite rígido de tokens
+            'topP': 0.9,
+          },
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final decoded = response.data;
+        final synopsis = decoded['candidates']?[0]?['content']?['parts']?[0]?['text'] as String? ?? '';
+        
+        if (synopsis.isNotEmpty) {
+          // Limitar a ~150 palavras (~750 caracteres)
+          final trimmed = synopsis.trim();
+          final limited = trimmed.length > 750 
+              ? '${trimmed.substring(0, 750)}...'
+              : trimmed;
+          
+          if (kDebugMode) {
+            debugPrint('✅ Sinopse Comprimida gerada: ${limited.length} chars');
+          }
+          return limited;
+        }
+      } else {
+        if (kDebugMode) {
+          debugPrint('⚠️ Erro ao gerar sinopse: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Exceção ao gerar sinopse: $e');
+      }
+    }
+    
+    // Fallback: usar tema original truncado
+    return tema.length > 500 ? '${tema.substring(0, 500)}...' : tema;
+  }
+
   // ===================== MÉTODOS CTA E FERRAMENTAS AUXILIARES =====================
 
   // 🎯 v7.6.51: Adicionado qualityMode para Pipeline Modelo Único
@@ -8568,6 +8719,7 @@ class _WorldCharacter {
 /// - Inventário (objetos importantes por personagem)
 /// - Fatos (eventos importantes que aconteceram)
 /// - Linha do tempo (blocos onde eventos ocorreram)
+/// - 🆕 v7.6.53: Sinopse Comprimida (Camada 1 - Contexto Estático)
 class _WorldState {
   /// Personagens indexados por papel normalizado
   final Map<String, _WorldCharacter> personagens;
@@ -8584,12 +8736,17 @@ class _WorldState {
   /// Resumo cumulativo da história
   String resumoAcumulado;
   
+  /// 🆕 v7.6.53: Sinopse Comprimida (Camada 1 - Contexto Estático ≤500 tokens)
+  /// Gerada UMA VEZ no início e incluída em TODOS os blocos
+  String sinopseComprimida;
+  
   _WorldState()
       : personagens = {},
         inventario = {},
         fatos = [],
         ultimoBloco = 0,
-        resumoAcumulado = '';
+        resumoAcumulado = '',
+        sinopseComprimida = '';
   
   /// Converte para JSON string para incluir no prompt
   String toJsonString() {
@@ -8640,22 +8797,46 @@ class _WorldState {
   }
   
   /// Retorna contexto formatado para incluir no prompt de geração
+  /// 🆕 v7.6.53: Estrutura "Sanduíche" de 3 Camadas
   String getContextForPrompt() {
-    if (personagens.isEmpty && fatos.isEmpty) return '';
+    if (personagens.isEmpty && fatos.isEmpty && sinopseComprimida.isEmpty) return '';
     
     final buffer = StringBuffer();
     buffer.writeln('');
     buffer.writeln('═══════════════════════════════════════════════════════════');
-    buffer.writeln('📊 ESTADO DO MUNDO (WORLD STATE) - Bloco $ultimoBloco');
+    buffer.writeln('📊 CONTEXTO ESTRUTURADO - Pipeline de Modelo Único v7.6.53');
     buffer.writeln('═══════════════════════════════════════════════════════════');
+    
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 🔵 CAMADA 1 - CONTEXTO ESTÁTICO (Sinopse Comprimida ≤500 tokens)
+    // Gerada uma vez, incluída em todos os blocos
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if (sinopseComprimida.isNotEmpty) {
+      buffer.writeln('');
+      buffer.writeln('🔵 CAMADA 1 - SINOPSE DA HISTÓRIA:');
+      buffer.writeln('   $sinopseComprimida');
+    }
+    
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 🟢 CAMADA 2 - JANELA DESLIZANTE (Últimos N blocos)
+    // Incluída via contextoPrevio no buildCompactPrompt
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // (Esta camada é gerenciada externamente via contextoPrevio)
+    
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 🟡 CAMADA 3 - WORLD STATE JSON (Estado do Mundo)
+    // Estrutura persistente de personagens, inventário, fatos
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    buffer.writeln('');
+    buffer.writeln('🟡 CAMADA 3 - ESTADO DO MUNDO (Bloco $ultimoBloco):');
     
     // Personagens
     if (personagens.isNotEmpty) {
       buffer.writeln('');
-      buffer.writeln('🎭 PERSONAGENS ATIVOS:');
+      buffer.writeln('   🎭 PERSONAGENS ATIVOS:');
       for (final entry in personagens.entries) {
         final c = entry.value;
-        buffer.write('   • ${c.nome} (${c.papel})');
+        buffer.write('      • ${c.nome} (${c.papel})');
         if (c.status != 'vivo') buffer.write(' - STATUS: ${c.status.toUpperCase()}');
         if (c.localAtual != null) buffer.write(' - Local: ${c.localAtual}');
         buffer.writeln();
@@ -8665,10 +8846,10 @@ class _WorldState {
     // Inventário
     if (inventario.isNotEmpty) {
       buffer.writeln('');
-      buffer.writeln('🎒 INVENTÁRIO/OBJETOS IMPORTANTES:');
+      buffer.writeln('   🎒 INVENTÁRIO/OBJETOS IMPORTANTES:');
       for (final entry in inventario.entries) {
         if (entry.value.isNotEmpty) {
-          buffer.writeln('   • ${entry.key}: ${entry.value.join(", ")}');
+          buffer.writeln('      • ${entry.key}: ${entry.value.join(", ")}');
         }
       }
     }
@@ -8677,17 +8858,17 @@ class _WorldState {
     final recentFatos = fatos.length > 5 ? fatos.sublist(fatos.length - 5) : fatos;
     if (recentFatos.isNotEmpty) {
       buffer.writeln('');
-      buffer.writeln('📝 FATOS RECENTES:');
+      buffer.writeln('   📝 FATOS RECENTES:');
       for (final f in recentFatos) {
-        buffer.writeln('   • [Bloco ${f['bloco']}] ${f['evento']}');
+        buffer.writeln('      • [Bloco ${f['bloco']}] ${f['evento']}');
       }
     }
     
     // Resumo
     if (resumoAcumulado.isNotEmpty) {
       buffer.writeln('');
-      buffer.writeln('📖 RESUMO ATÉ AGORA:');
-      buffer.writeln('   $resumoAcumulado');
+      buffer.writeln('   📖 RESUMO ATÉ AGORA:');
+      buffer.writeln('      $resumoAcumulado');
     }
     
     buffer.writeln('═══════════════════════════════════════════════════════════');
