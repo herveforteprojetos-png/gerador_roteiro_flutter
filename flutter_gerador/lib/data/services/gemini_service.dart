@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert'; // 🆕 v7.6.52: Para JSON parsing do World State
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
@@ -295,6 +296,17 @@ class GeminiService {
     minutes: 60,
   ); // AUMENTADO: 60 min para roteiros longos (13k+ palavras = 35+ blocos)
 
+  // 🎯 v7.6.51: HELPER PARA MODELO ÚNICO - Arquitetura Pipeline Modelo Único
+  // O modelo selecionado pelo usuário deve ser usado em TODAS as etapas
+  // para garantir consistência de estilo e respeitar a configuração do cliente
+  static String _getSelectedModel(String qualityMode) {
+    return qualityMode == 'flash'
+        ? 'gemini-2.5-flash'        // STABLE - Rápido e eficiente
+        : qualityMode == 'ultra'
+            ? 'gemini-3-pro-preview'  // PREVIEW - Modelo mais avançado (Jan 2025)
+            : 'gemini-2.5-pro';       // STABLE - Máxima qualidade (default)
+  }
+
   GeminiService({String? instanceId})
     : _instanceId = instanceId ?? _genId(),
       _dio = Dio(
@@ -368,6 +380,23 @@ class GeminiService {
     // Tracker global alimentado com os nomes definidos pelo usuÃ¡rio/contexto
     final persistentTracker = _CharacterTracker();
     _bootstrapCharacterTracker(persistentTracker, config);
+
+    // 🆕 v7.6.52: WORLD STATE - Memória Infinita via JSON
+    // Rastreia personagens, inventário, fatos e resumo da história
+    // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
+    final worldState = _WorldState();
+    
+    // Inicializar protagonista no World State
+    if (config.protagonistName.trim().isNotEmpty) {
+      worldState.upsertCharacter(
+        'protagonista',
+        _WorldCharacter(
+          nome: config.protagonistName.trim(),
+          papel: 'protagonista/narradora',
+          status: 'vivo',
+        ),
+      );
+    }
 
     _startWatchdog();
     final start = DateTime.now();
@@ -460,6 +489,7 @@ class GeminiService {
             persistentTracker,
             block,
             totalBlocks,
+            worldState: worldState, // 🆕 v7.6.52: World State
           ),
         );
 
@@ -518,6 +548,7 @@ class GeminiService {
                 persistentTracker,
                 block,
                 totalBlocks,
+                worldState: worldState, // 🆕 v7.6.52
               ),
             );
 
@@ -608,6 +639,7 @@ class GeminiService {
                 block,
                 totalBlocks,
                 avoidRepetition: true, // Flag especial
+                worldState: worldState, // 🆕 v7.6.52
               ),
             );
 
@@ -645,6 +677,7 @@ class GeminiService {
                   block,
                   totalBlocks,
                   avoidRepetition: true,
+                  worldState: worldState, // 🆕 v7.6.52
                 ),
               );
 
@@ -743,6 +776,7 @@ class GeminiService {
                 block,
                 totalBlocks,
                 avoidRepetition: true,
+                worldState: worldState, // 🆕 v7.6.52
               );
               
               if (regenerated.trim().isEmpty) {
@@ -916,6 +950,20 @@ class GeminiService {
               if (kDebugMode) {
                 debugPrint('✅ v7.6.28 + v7.6.25: Bloco $block ACEITO (nomes únicos + sem conflitos de papel)');
               }
+              
+              // 🆕 v7.6.52: ATUALIZAR WORLD STATE - Pipeline Modelo Único
+              // O MESMO modelo selecionado pelo usuário atualiza o JSON de estado
+              // Isso garante consistência e respeita a config do cliente
+              if (added.trim().isNotEmpty) {
+                await _updateWorldState(
+                  worldState: worldState,
+                  generatedBlock: added,
+                  blockNumber: block,
+                  apiKey: config.apiKey,
+                  qualityMode: config.qualityMode,
+                  language: config.language,
+                );
+              }
             }
           }
         }
@@ -960,6 +1008,7 @@ class GeminiService {
                   persistentTracker,
                   block,
                   totalBlocks,
+                  worldState: worldState, // 🆕 v7.6.52
                 ),
               );
 
@@ -1159,10 +1208,11 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
               config.language,
             );
 
-            // Gerar bloco de recuperação com Gemini
+            // Gerar bloco de recuperação com o MESMO modelo selecionado pelo usuário
+            // 🎯 v7.6.51: Arquitetura Modelo Único - usar config.qualityMode
             final recoveryResponse = await _makeApiRequest(
               apiKey: config.apiKey,
-              model: 'gemini-2.0-flash-exp',
+              model: _getSelectedModel(config.qualityMode),
               prompt: recoveryPrompt,
               maxTokens: 500, // Bloco pequeno de recuperação
             );
@@ -5669,6 +5719,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     int totalBlocks, {
     bool avoidRepetition =
         false, // 🔥 NOVO: Flag para regeneração anti-repetição
+    _WorldState? worldState, // 🆕 v7.6.52: World State para contexto rico
   }) async {
     // 🔧 IMPORTANTE: target vem SEMPRE em PALAVRAS de _calculateTargetForBlock()
     // Mesmo quando measureType='caracteres', _calculateTargetForBlock já converteu caracteres→palavras
@@ -5787,6 +5838,16 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
           '   ✅ SEMPRE use "$protagonistName" quando se referir à protagonista!\n';
     }
     final characterGuidance = _buildCharacterGuidance(c, tracker);
+
+    // 🆕 v7.6.52: WORLD STATE CONTEXT - Memória Infinita
+    // Adiciona contexto estruturado de personagens, inventário e fatos
+    String worldStateContext = '';
+    if (worldState != null && blockNumber > 1) {
+      worldStateContext = worldState.getContextForPrompt();
+      if (kDebugMode && worldStateContext.isNotEmpty) {
+        debugPrint('🌍 World State injetado no prompt (${worldStateContext.length} chars)');
+      }
+    }
 
     // 🔧 IMPORTANTE: Limitar palavras por bloco para estabilidade
     // O Gemini funciona melhor com targets de PALAVRAS, não caracteres
@@ -6094,6 +6155,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     final prompt =
         perspectiveInstruction + // ✅ AGORA A INSTRUÇÃO DE GÊNERO VEM PRIMEIRO!
         '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+        worldStateContext + // 🆕 v7.6.52: WORLD STATE CONTEXT - Memória Infinita
         titleSection + // 🆕 v7.6.44: TÍTULO SEMPRE INCLUÍDO PARA GARANTIR COERÊNCIA
         MainPromptTemplate.buildCompactPrompt(
           language: _getLanguageInstruction(c.language),
@@ -6160,12 +6222,8 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
           : maxTokensCalculated;
 
       // 🤖 SELEÇÃO DE MODELO BASEADA EM qualityMode
-      // 🚀 v7.6.49: Adicionado Gemini 3.0 Pro como opção "ultra"
-      final selectedModel = c.qualityMode == 'flash'
-          ? 'gemini-2.5-flash'        // STABLE - Rápido e eficiente
-          : c.qualityMode == 'ultra'
-              ? 'gemini-3-pro-preview'  // PREVIEW - Modelo mais avançado (Jan 2025)
-              : 'gemini-2.5-pro';       // STABLE - Máxima qualidade
+      // 🎯 v7.6.51: Arquitetura Pipeline Modelo Único - usar helper centralizado
+      final selectedModel = _getSelectedModel(c.qualityMode);
 
       if (kDebugMode) {
         debugPrint('[$_instanceId] 🎯 qualityMode = "${c.qualityMode}"');
@@ -6722,22 +6780,26 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
   }
 
   // Método público para uso nos providers - OTIMIZADO PARA CONTEXTO
+  // 🎯 v7.6.51: Suporte a qualityMode para Pipeline Modelo Único
   Future<String> generateTextWithApiKey({
     required String prompt,
     required String apiKey,
-    String model = 'gemini-2.5-pro',
+    String? model, // Se null, usa qualityMode
+    String qualityMode = 'pro', // 🎯 NOVO: Para determinar modelo automaticamente
     int maxTokens =
         16384, // AUMENTADO: Era 8192, agora 16384 para contextos mais ricos
   }) async {
+    // Determinar modelo: usar explícito se fornecido, senão calcular via qualityMode
+    final effectiveModel = model ?? _getSelectedModel(qualityMode);
     // CORREÇÃO: Reset de estado para evitar conflitos com geração de scripts
     if (_isCancelled) _isCancelled = false;
 
     return await _retryOnRateLimit(() async {
       try {
-        debugPrint('GeminiService: Iniciando requisição para modelo $model');
+        debugPrint('GeminiService: Iniciando requisição para modelo $effectiveModel');
         final result = await _makeApiRequest(
           apiKey: apiKey,
-          model: model,
+          model: effectiveModel,
           prompt: prompt,
           maxTokens: maxTokens,
           tryOpenAIOnFail: false, // 🚫 v7.6.19: Desabilitado - usar apenas API selecionada
@@ -7028,8 +7090,207 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     // Implementação vazia para compatibilidade
   }
 
+  // =============================================================================
+  // 🆕 v7.6.52: WORLD STATE UPDATE - Atualização de Estado via IA (Modelo Único)
+  // =============================================================================
+  // Arquitetura Pipeline de Modelo Único: O MESMO modelo selecionado pelo usuário
+  // é usado para gerar o texto E para atualizar o JSON de estado do mundo.
+  // Isso garante consistência de estilo e respeita a configuração do cliente.
+  // =============================================================================
+
+  /// 🌍 v7.6.52: Atualiza o World State após gerar um bloco
+  /// 
+  /// Usa o MESMO modelo selecionado pelo usuário (qualityMode) para:
+  /// 1. Analisar o bloco gerado
+  /// 2. Extrair novos personagens/fatos/inventário
+  /// 3. Atualizar o JSON de estado
+  /// 
+  /// Isso mantém a arquitetura de Pipeline de Modelo Único.
+  Future<void> _updateWorldState({
+    required _WorldState worldState,
+    required String generatedBlock,
+    required int blockNumber,
+    required String apiKey,
+    required String qualityMode,
+    required String language,
+  }) async {
+    if (generatedBlock.trim().isEmpty) return;
+    
+    try {
+      final selectedModel = _getSelectedModel(qualityMode);
+      
+      if (kDebugMode) {
+        debugPrint('🌍 [Bloco $blockNumber] Atualizando World State com modelo: $selectedModel');
+      }
+      
+      // Prompt para extrair informações do bloco
+      final extractionPrompt = '''
+Analise o seguinte trecho de história e extraia as informações estruturadas.
+
+TRECHO (Bloco $blockNumber):
+"""
+$generatedBlock
+"""
+
+ESTADO ATUAL DO MUNDO:
+${worldState.toJsonString()}
+
+INSTRUÇÕES:
+1. Identifique NOVOS personagens que apareceram (nome, papel, status)
+2. Identifique objetos importantes que foram mencionados/adquiridos
+3. Identifique fatos importantes que aconteceram neste bloco
+4. Resuma em 1-2 frases o que aconteceu neste bloco
+
+RESPONDA EXATAMENTE NESTE FORMATO JSON (sem texto adicional):
+{
+  "novos_personagens": [
+    {"nome": "Nome", "papel": "papel do personagem", "status": "vivo"}
+  ],
+  "novos_itens": [
+    {"personagem": "papel", "item": "nome do item"}
+  ],
+  "novos_fatos": [
+    "Descrição curta do fato importante"
+  ],
+  "resumo_bloco": "Resumo de 1-2 frases do que aconteceu"
+}
+
+Se não houver novos elementos em alguma categoria, use array vazio [].
+IMPORTANTE: Responda APENAS com o JSON, sem explicações.
+''';
+
+      final response = await generateTextWithApiKey(
+        prompt: extractionPrompt,
+        apiKey: apiKey,
+        qualityMode: qualityMode, // 🎯 MESMO modelo do usuário
+        maxTokens: 1024,
+      );
+      
+      // Parse da resposta JSON
+      final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(response);
+      if (jsonMatch == null) {
+        if (kDebugMode) {
+          debugPrint('⚠️ WorldState: Não foi possível extrair JSON da resposta');
+        }
+        return;
+      }
+      
+      try {
+        final extracted = _parseJsonSafely(jsonMatch.group(0)!);
+        if (extracted == null) return;
+        
+        // Atualizar personagens
+        final novosPersonagens = extracted['novos_personagens'] as List<dynamic>? ?? [];
+        for (final p in novosPersonagens) {
+          if (p is Map<String, dynamic>) {
+            final nome = p['nome'] as String? ?? '';
+            final papel = p['papel'] as String? ?? 'personagem';
+            if (nome.isNotEmpty) {
+              worldState.upsertCharacter(
+                papel,
+                _WorldCharacter(
+                  nome: nome,
+                  papel: papel,
+                  status: p['status'] as String? ?? 'vivo',
+                ),
+              );
+            }
+          }
+        }
+        
+        // Atualizar inventário
+        final novosItens = extracted['novos_itens'] as List<dynamic>? ?? [];
+        for (final item in novosItens) {
+          if (item is Map<String, dynamic>) {
+            final personagem = item['personagem'] as String? ?? 'protagonista';
+            final nomeItem = item['item'] as String? ?? '';
+            if (nomeItem.isNotEmpty) {
+              worldState.addToInventory(personagem, nomeItem);
+            }
+          }
+        }
+        
+        // Adicionar fatos
+        final novosFatos = extracted['novos_fatos'] as List<dynamic>? ?? [];
+        for (final fato in novosFatos) {
+          if (fato is String && fato.isNotEmpty) {
+            worldState.addFact(blockNumber, fato);
+          }
+        }
+        
+        // Atualizar resumo acumulado
+        final resumoBloco = extracted['resumo_bloco'] as String? ?? '';
+        if (resumoBloco.isNotEmpty) {
+          if (worldState.resumoAcumulado.isEmpty) {
+            worldState.resumoAcumulado = resumoBloco;
+          } else {
+            // Manter resumo conciso (últimos 500 chars)
+            final novoResumo = '${worldState.resumoAcumulado} $resumoBloco';
+            worldState.resumoAcumulado = novoResumo.length > 500
+                ? novoResumo.substring(novoResumo.length - 500)
+                : novoResumo;
+          }
+        }
+        
+        worldState.ultimoBloco = blockNumber;
+        
+        if (kDebugMode) {
+          debugPrint('✅ WorldState atualizado:');
+          debugPrint('   Personagens: ${worldState.personagens.length}');
+          debugPrint('   Fatos: ${worldState.fatos.length}');
+          debugPrint('   Itens: ${worldState.inventario.values.expand((x) => x).length}');
+        }
+        
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('⚠️ WorldState: Erro ao processar JSON: $e');
+        }
+      }
+      
+    } catch (e) {
+      // Erro não-crítico - não interrompe a geração
+      if (kDebugMode) {
+        debugPrint('⚠️ WorldState: Erro na atualização (não-crítico): $e');
+      }
+    }
+  }
+  
+  /// Helper para parse seguro de JSON
+  Map<String, dynamic>? _parseJsonSafely(String jsonStr) {
+    try {
+      // Limpar possíveis caracteres problemáticos
+      final cleaned = jsonStr
+          .replaceAll('\n', ' ')
+          .replaceAll('\r', '')
+          .replaceAll(RegExp(r'\\(?!["\\/bfnrt])'), '\\\\');
+      
+      // Tentar parse direto
+      final decoded = _decodeJson(cleaned);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      return null;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ JSON parse error: $e');
+      }
+      return null;
+    }
+  }
+  
+  /// Decode JSON com tratamento de erros
+  dynamic _decodeJson(String json) {
+    // Usar dart:convert importado
+    try {
+      return jsonDecode(json);
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ===================== MÉTODOS CTA E FERRAMENTAS AUXILIARES =====================
 
+  // 🎯 v7.6.51: Adicionado qualityMode para Pipeline Modelo Único
   Future<Map<String, String>> generateCtasForScript({
     required String scriptContent,
     required String apiKey,
@@ -7038,16 +7299,18 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     String language = 'Português',
     String perspective =
         'terceira_pessoa', // PERSPECTIVA CONFIGURADA PELO USUÁRIO
+    String qualityMode = 'pro', // 🎯 NOVO: Para Pipeline Modelo Único
   }) async {
     try {
       // Usar idioma e perspectiva configurados pelo usuário (não detectar)
       final finalLanguage = language;
 
-      // Analisar contexto da história
+      // Analisar contexto da história (usando mesmo modelo)
       final scriptContext = await _analyzeScriptContext(
         scriptContent,
         apiKey,
         finalLanguage,
+        qualityMode, // 🎯 Propagar qualityMode
       );
 
       // Gerar CTAs contextualizados COM A PERSPECTIVA CONFIGURADA
@@ -7063,8 +7326,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       final result = await generateTextWithApiKey(
         prompt: prompt,
         apiKey: apiKey,
-        model:
-            'gemini-2.5-flash-lite', // Flash-lite é mais rápido e OBEDECE melhor a instruções de perspectiva
+        qualityMode: qualityMode, // 🎯 v7.6.51: Usar modelo selecionado pelo usuário
         maxTokens: 3072,
       );
 
@@ -7080,10 +7342,12 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     }
   }
 
+  // 🎯 v7.6.51: Adicionado qualityMode para Pipeline Modelo Único
   Future<String> _analyzeScriptContext(
     String scriptContent,
     String apiKey,
     String language,
+    String qualityMode, // 🎯 NOVO: Para usar modelo selecionado
   ) async {
     final prompt =
         '''
@@ -7102,7 +7366,7 @@ ${scriptContent.substring(0, scriptContent.length > 1000 ? 1000 : scriptContent.
       final result = await generateTextWithApiKey(
         prompt: prompt,
         apiKey: apiKey,
-        model: 'gemini-2.5-flash-lite', // Ultra rápido para análise simples
+        qualityMode: qualityMode, // 🎯 Usar modelo selecionado pelo usuário
         maxTokens: 100,
       );
       return result.trim();
@@ -8248,5 +8512,257 @@ class _CharacterTracker {
     _roleToName.clear(); // v1.7: Limpar mapeamento reverso
     _characterHistories.clear();
     _characterResolution.clear(); // v7.6.22: Limpar resoluções
+  }
+}
+
+// =============================================================================
+// 🆕 v7.6.52: WORLD STATE - Sistema de Memória Infinita via JSON
+// =============================================================================
+// Arquitetura Pipeline de Modelo Único: O mesmo modelo selecionado pelo usuário
+// é responsável por GERAR o texto E por ATUALIZAR o estado do mundo.
+// =============================================================================
+
+/// 📊 Representa um personagem no estado do mundo
+class _WorldCharacter {
+  String nome;
+  String papel;
+  String? idade;
+  String status; // 'vivo', 'morto', 'desaparecido', etc.
+  String? localAtual;
+  List<String> relacionamentos;
+  
+  _WorldCharacter({
+    required this.nome,
+    required this.papel,
+    this.idade,
+    this.status = 'vivo',
+    this.localAtual,
+    List<String>? relacionamentos,
+  }) : relacionamentos = relacionamentos ?? [];
+  
+  Map<String, dynamic> toJson() => {
+    'nome': nome,
+    'papel': papel,
+    if (idade != null) 'idade': idade,
+    'status': status,
+    if (localAtual != null) 'local_atual': localAtual,
+    if (relacionamentos.isNotEmpty) 'relacionamentos': relacionamentos,
+  };
+  
+  factory _WorldCharacter.fromJson(Map<String, dynamic> json) => _WorldCharacter(
+    nome: json['nome'] as String? ?? '',
+    papel: json['papel'] as String? ?? 'personagem',
+    idade: json['idade'] as String?,
+    status: json['status'] as String? ?? 'vivo',
+    localAtual: json['local_atual'] as String?,
+    relacionamentos: (json['relacionamentos'] as List<dynamic>?)
+        ?.map((e) => e.toString())
+        .toList() ?? [],
+  );
+}
+
+/// 🌍 v7.6.52: WORLD STATE - Estado completo do mundo da história
+/// 
+/// Estrutura JSON de memória infinita que rastreia:
+/// - Personagens (nome, papel, status, localização)
+/// - Inventário (objetos importantes por personagem)
+/// - Fatos (eventos importantes que aconteceram)
+/// - Linha do tempo (blocos onde eventos ocorreram)
+class _WorldState {
+  /// Personagens indexados por papel normalizado
+  final Map<String, _WorldCharacter> personagens;
+  
+  /// Inventário: papel → lista de itens
+  final Map<String, List<String>> inventario;
+  
+  /// Fatos importantes da história (com bloco onde ocorreram)
+  final List<Map<String, dynamic>> fatos;
+  
+  /// Último bloco processado
+  int ultimoBloco;
+  
+  /// Resumo cumulativo da história
+  String resumoAcumulado;
+  
+  _WorldState()
+      : personagens = {},
+        inventario = {},
+        fatos = [],
+        ultimoBloco = 0,
+        resumoAcumulado = '';
+  
+  /// Converte para JSON string para incluir no prompt
+  String toJsonString() {
+    // Formato compacto para economizar tokens
+    final buffer = StringBuffer();
+    buffer.writeln('{');
+    
+    // Personagens
+    buffer.writeln('  "personagens": {');
+    final chars = personagens.entries.toList();
+    for (var i = 0; i < chars.length; i++) {
+      final c = chars[i];
+      buffer.write('    "${c.key}": {"nome":"${c.value.nome}","papel":"${c.value.papel}","status":"${c.value.status}"');
+      if (c.value.localAtual != null) buffer.write(',"local":"${c.value.localAtual}"');
+      buffer.write('}');
+      if (i < chars.length - 1) buffer.writeln(',');
+    }
+    buffer.writeln('\n  },');
+    
+    // Inventário (só se não vazio)
+    if (inventario.isNotEmpty) {
+      buffer.writeln('  "inventario": {');
+      final invs = inventario.entries.toList();
+      for (var i = 0; i < invs.length; i++) {
+        final inv = invs[i];
+        buffer.write('    "${inv.key}": ${inv.value}');
+        if (i < invs.length - 1) buffer.writeln(',');
+      }
+      buffer.writeln('\n  },');
+    }
+    
+    // Fatos (últimos 10 para economizar tokens)
+    final recentFatos = fatos.length > 10 ? fatos.sublist(fatos.length - 10) : fatos;
+    if (recentFatos.isNotEmpty) {
+      buffer.writeln('  "fatos_recentes": [');
+      for (var i = 0; i < recentFatos.length; i++) {
+        final f = recentFatos[i];
+        buffer.write('    {"bloco":${f['bloco']},"evento":"${f['evento']}"}');
+        if (i < recentFatos.length - 1) buffer.writeln(',');
+      }
+      buffer.writeln('\n  ],');
+    }
+    
+    buffer.writeln('  "ultimo_bloco": $ultimoBloco');
+    buffer.writeln('}');
+    
+    return buffer.toString();
+  }
+  
+  /// Retorna contexto formatado para incluir no prompt de geração
+  String getContextForPrompt() {
+    if (personagens.isEmpty && fatos.isEmpty) return '';
+    
+    final buffer = StringBuffer();
+    buffer.writeln('');
+    buffer.writeln('═══════════════════════════════════════════════════════════');
+    buffer.writeln('📊 ESTADO DO MUNDO (WORLD STATE) - Bloco $ultimoBloco');
+    buffer.writeln('═══════════════════════════════════════════════════════════');
+    
+    // Personagens
+    if (personagens.isNotEmpty) {
+      buffer.writeln('');
+      buffer.writeln('🎭 PERSONAGENS ATIVOS:');
+      for (final entry in personagens.entries) {
+        final c = entry.value;
+        buffer.write('   • ${c.nome} (${c.papel})');
+        if (c.status != 'vivo') buffer.write(' - STATUS: ${c.status.toUpperCase()}');
+        if (c.localAtual != null) buffer.write(' - Local: ${c.localAtual}');
+        buffer.writeln();
+      }
+    }
+    
+    // Inventário
+    if (inventario.isNotEmpty) {
+      buffer.writeln('');
+      buffer.writeln('🎒 INVENTÁRIO/OBJETOS IMPORTANTES:');
+      for (final entry in inventario.entries) {
+        if (entry.value.isNotEmpty) {
+          buffer.writeln('   • ${entry.key}: ${entry.value.join(", ")}');
+        }
+      }
+    }
+    
+    // Fatos recentes
+    final recentFatos = fatos.length > 5 ? fatos.sublist(fatos.length - 5) : fatos;
+    if (recentFatos.isNotEmpty) {
+      buffer.writeln('');
+      buffer.writeln('📝 FATOS RECENTES:');
+      for (final f in recentFatos) {
+        buffer.writeln('   • [Bloco ${f['bloco']}] ${f['evento']}');
+      }
+    }
+    
+    // Resumo
+    if (resumoAcumulado.isNotEmpty) {
+      buffer.writeln('');
+      buffer.writeln('📖 RESUMO ATÉ AGORA:');
+      buffer.writeln('   $resumoAcumulado');
+    }
+    
+    buffer.writeln('═══════════════════════════════════════════════════════════');
+    return buffer.toString();
+  }
+  
+  /// Adiciona ou atualiza um personagem
+  void upsertCharacter(String papel, _WorldCharacter character) {
+    final normalizedRole = _normalizeRole(papel);
+    personagens[normalizedRole] = character;
+    if (kDebugMode) {
+      debugPrint('🌍 WorldState: Personagem atualizado - ${character.nome} ($papel)');
+    }
+  }
+  
+  /// Adiciona item ao inventário de um personagem
+  void addToInventory(String papel, String item) {
+    final normalizedRole = _normalizeRole(papel);
+    inventario.putIfAbsent(normalizedRole, () => []);
+    if (!inventario[normalizedRole]!.contains(item)) {
+      inventario[normalizedRole]!.add(item);
+      if (kDebugMode) {
+        debugPrint('🌍 WorldState: Item adicionado - $item para $papel');
+      }
+    }
+  }
+  
+  /// Remove item do inventário
+  void removeFromInventory(String papel, String item) {
+    final normalizedRole = _normalizeRole(papel);
+    inventario[normalizedRole]?.remove(item);
+  }
+  
+  /// Adiciona um fato importante
+  void addFact(int bloco, String evento) {
+    fatos.add({'bloco': bloco, 'evento': evento});
+    if (kDebugMode) {
+      debugPrint('🌍 WorldState: Fato adicionado - [B$bloco] $evento');
+    }
+  }
+  
+  /// Atualiza status de um personagem
+  void updateCharacterStatus(String papel, String novoStatus) {
+    final normalizedRole = _normalizeRole(papel);
+    if (personagens.containsKey(normalizedRole)) {
+      personagens[normalizedRole]!.status = novoStatus;
+      if (kDebugMode) {
+        debugPrint('🌍 WorldState: Status atualizado - $papel → $novoStatus');
+      }
+    }
+  }
+  
+  /// Atualiza localização de um personagem
+  void updateCharacterLocation(String papel, String novoLocal) {
+    final normalizedRole = _normalizeRole(papel);
+    if (personagens.containsKey(normalizedRole)) {
+      personagens[normalizedRole]!.localAtual = novoLocal;
+    }
+  }
+  
+  /// Normaliza papel para chave consistente
+  static String _normalizeRole(String role) {
+    return role
+        .toLowerCase()
+        .trim()
+        .replaceAll(RegExp(r'\s+'), '_')
+        .replaceAll(RegExp(r'[^a-z0-9_]'), '');
+  }
+  
+  /// Limpa estado para nova geração
+  void clear() {
+    personagens.clear();
+    inventario.clear();
+    fatos.clear();
+    ultimoBloco = 0;
+    resumoAcumulado = '';
   }
 }

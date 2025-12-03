@@ -282,6 +282,7 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
       print('🎯 [CTA Provider] Gerando CTAs - Tipos solicitados: $ctaTypes');
       print('🎯 [CTA Provider] Mapa de IDs: $ctaIdMap');
       
+      // 🎯 v7.6.51: Pipeline Modelo Único - usar mesmo modelo do config
       final generatedCtas = await geminiService.generateCtasForScript(
         scriptContent: scriptContent,
         apiKey: apiKey,
@@ -289,6 +290,7 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
         customTheme: customTheme,
         language: scriptConfig.language,
         perspective: scriptConfig.perspective, // ⚡ PASSAR PERSPECTIVA CONFIGURADA
+        qualityMode: scriptConfig.qualityMode, // 🎯 v7.6.51: Pipeline Modelo Único
       );
       
       print('🎯 [CTA Provider] CTAs recebidos do Gemini: ${generatedCtas.keys.toList()}');
@@ -369,6 +371,7 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
       // Generate single CTA
       final geminiService = GeminiService();
       final scriptConfig = ref.read(scriptConfigProvider);
+      // 🎯 v7.6.51: Pipeline Modelo Único - usar mesmo modelo do config
       final generatedCtas = await geminiService.generateCtasForScript(
         scriptContent: scriptContent,
         apiKey: apiKey,
@@ -376,6 +379,7 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
         customTheme: customTheme,
         language: scriptConfig.language,
         perspective: scriptConfig.perspective, // ⚡ PASSAR PERSPECTIVA CONFIGURADA
+        qualityMode: scriptConfig.qualityMode, // 🎯 v7.6.51: Pipeline Modelo Único
       );
       
       final generatedContent = generatedCtas[ctaType];
