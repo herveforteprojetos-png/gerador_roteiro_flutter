@@ -416,8 +416,9 @@ class GeminiService {
 
     // 🆕 v7.6.53: CAMADA 1 - Gerar Sinopse Comprimida UMA VEZ no início
     // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
+    // 🏗️ v7.6.64: Migrado para usar WorldStateManager (SOLID)
     try {
-      worldState.sinopseComprimida = await _generateCompressedSynopsis(
+      worldState.sinopseComprimida = await _worldStateManager.generateCompressedSynopsis(
         tema: config.tema,
         title: config.title,
         protagonistName: config.protagonistName,
