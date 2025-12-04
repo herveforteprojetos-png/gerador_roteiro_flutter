@@ -3087,68 +3087,7 @@ no vasto manto azul do infinito."
     }
   }
 
-  /// 🆕 v7.6.43: Remove parágrafos duplicados CONSECUTIVOS do roteiro final
-  /// Detecta quando o mesmo parágrafo aparece duas ou mais vezes seguidas
-  /// e mantém apenas a primeira ocorrência
-  String _removeDuplicateConsecutiveParagraphs(String fullScript) {
-    // Dividir por quebras de linha duplas (parágrafos)
-    final paragraphs = fullScript.split(RegExp(r'\n{2,}'));
-
-    if (paragraphs.length < 2) return fullScript;
-
-    final result = <String>[];
-    String? previousParagraph;
-    var removedCount = 0;
-
-    for (final rawParagraph in paragraphs) {
-      final paragraph = rawParagraph.trim();
-
-      // Pular parágrafos vazios
-      if (paragraph.isEmpty) continue;
-
-      // Verificar se é duplicata consecutiva
-      if (previousParagraph != null && paragraph == previousParagraph) {
-        removedCount++;
-        if (kDebugMode) {
-          final preview = paragraph.length > 60
-              ? '${paragraph.substring(0, 60)}...'
-              : paragraph;
-          debugPrint('🧹 REMOVIDO parágrafo duplicado consecutivo: "$preview"');
-        }
-        continue; // Pular duplicata
-      }
-
-      // Também verificar duplicatas com pequenas variações (espaços extras)
-      if (previousParagraph != null) {
-        final normalizedCurrent = paragraph.replaceAll(RegExp(r'\s+'), ' ');
-        final normalizedPrevious = previousParagraph.replaceAll(
-          RegExp(r'\s+'),
-          ' ',
-        );
-
-        if (normalizedCurrent == normalizedPrevious) {
-          removedCount++;
-          if (kDebugMode) {
-            debugPrint(
-              '🧹 REMOVIDO parágrafo quase-duplicado (espaços diferentes)',
-            );
-          }
-          continue;
-        }
-      }
-
-      result.add(paragraph);
-      previousParagraph = paragraph;
-    }
-
-    if (removedCount > 0 && kDebugMode) {
-      debugPrint(
-        '✅ v7.6.43: Removidos $removedCount parágrafo(s) duplicado(s) consecutivo(s)',
-      );
-    }
-
-    return result.join('\n\n');
-  }
+  // 🏗️ v7.6.64: _removeDuplicateConsecutiveParagraphs removido (não era usado)
 
   /// 🆕 v7.6.43: Remove TODAS as duplicatas de parágrafos (não apenas consecutivas)
   /// Mantém a primeira ocorrência e remove todas as repetições posteriores
@@ -8086,12 +8025,7 @@ EXEMPLOS DE DETALHES ESPECÍFICOS (use este nível de concretude):
     };
   }
 
-  Map<String, String> _parseCtaResponse(
-    String response,
-    List<String> ctaTypes,
-  ) {
-    return _parseCtaResponseWithValidation(response, ctaTypes, '');
-  }
+  // 🏗️ v7.6.64: _parseCtaResponse removido (não era usado diretamente)
 
   /// Parse CTA response with script content for validation
   Map<String, String> _parseCtaResponseWithValidation(
@@ -8937,19 +8871,7 @@ class _WorldCharacter {
     if (relacionamentos.isNotEmpty) 'relacionamentos': relacionamentos,
   };
 
-  factory _WorldCharacter.fromJson(Map<String, dynamic> json) =>
-      _WorldCharacter(
-        nome: json['nome'] as String? ?? '',
-        papel: json['papel'] as String? ?? 'personagem',
-        idade: json['idade'] as String?,
-        status: json['status'] as String? ?? 'vivo',
-        localAtual: json['local_atual'] as String?,
-        relacionamentos:
-            (json['relacionamentos'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [],
-      );
+  // 🏗️ v7.6.64: fromJson disponível em WorldCharacter (scripting/world_state_manager.dart)
 }
 
 /// 🌍 v7.6.52: WORLD STATE - Estado completo do mundo da história
