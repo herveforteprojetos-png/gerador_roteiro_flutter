@@ -2,7 +2,7 @@ import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/services/prompts/base_rules.dart';
 import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart';
 
-/// 🏗️ PromptBuilder - Construtor de Prompts para Geração de Roteiros
+/// 🏗️ ScriptPromptBuilder - Construtor de Prompts para Geração de Roteiros
 ///
 /// Responsável por:
 /// - Constantes de formatação TTS
@@ -10,9 +10,11 @@ import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart'
 /// - Lógica de Hook (_generateViralHook)
 /// - Montagem do prompt principal
 /// - Instruções de perspectiva (primeira/terceira pessoa)
+/// - Prompts de recuperação de elementos faltantes
 ///
 /// Parte da refatoração SOLID do GeminiService v7.6.64
-class PromptBuilder {
+/// Renomeado de PromptBuilder para evitar conflito com prompts/prompt_builder.dart
+class ScriptPromptBuilder {
   /// 📏 Regras de formatação para TTS (Text-to-Speech)
   static const String ttsFormattingRules = '''
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -566,5 +568,72 @@ ${!isFinalBlock ? '🚫 NUNCA finalize a história antes do bloco final ($totalB
     }
 
     return 'JORNADA DO HERÓI';
+  }
+
+  // ================== PROMPTS DE RECUPERAÇÃO ==================
+
+  /// 🔄 Cria prompt de recuperação para incorporar elementos faltantes
+  ///
+  /// Usado quando a validação detecta que elementos-chave do título
+  /// não apareceram na história gerada.
+  ///
+  /// [title]: Título original da história
+  /// [missingElements]: Lista de elementos que faltam
+  /// [context]: Contexto dos últimos blocos da história
+  /// [language]: Idioma do roteiro
+  ///
+  /// Retorna: Prompt formatado para gerar bloco de recuperação
+  static String buildRecoveryPrompt(
+    String title,
+    List<String> missingElements,
+    String context,
+    String language,
+  ) {
+    // Mapear idioma para instruções
+    final languageInstructions = {
+      'pt': 'em português brasileiro',
+      'en': 'in English',
+      'es': 'en español',
+      'ko': '한국어로',
+    };
+
+    final langCode = language.toLowerCase().length >= 2
+        ? language.toLowerCase().substring(0, 2)
+        : language.toLowerCase();
+    final langInstruction =
+        languageInstructions[langCode] ?? 'in the same language as the title';
+
+    final contextPreview = context.length > 800
+        ? context.substring(context.length - 800)
+        : context;
+
+    return '''
+🎯 MISSÃO DE RECUPERAÇÃO: Adicionar elementos faltantes à história
+
+TÍTULO ORIGINAL: "$title"
+
+ELEMENTOS QUE AINDA NÃO APARECERAM:
+${missingElements.map((e) => '❌ $e').join('\n')}
+
+CONTEXTO FINAL DA HISTÓRIA ATÉ AGORA:
+---
+$contextPreview
+---
+
+TAREFA:
+Escreva UM PARÁGRAFO FINAL (100-150 palavras) $langInstruction que:
+✅ Incorpore TODOS os elementos faltantes de forma NATURAL
+✅ Seja uma continuação FLUIDA do contexto acima
+✅ Mantenha coerência com a história existente
+✅ NÃO repita eventos já narrados
+
+❌ PROIBIDO:
+- Começar nova história do zero
+- Ignorar o contexto fornecido
+- Usar "CONTINUAÇÃO:", "CONTEXTO:", etc.
+- Adicionar mais de 200 palavras
+
+APENAS o parágrafo final. Comece direto:
+''';
   }
 }

@@ -1276,8 +1276,8 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
                 : blocks;
             final context = contextBlocks.join('\n\n');
 
-            // Criar prompt de recuperação com elementos faltantes
-            final recoveryPrompt = _buildRecoveryPrompt(
+            // 🏗️ v7.6.64: Usar ScriptPromptBuilder para criar prompt de recuperação (SOLID)
+            final recoveryPrompt = ScriptPromptBuilder.buildRecoveryPrompt(
               config.title,
               missingElements,
               context,
@@ -3145,55 +3145,7 @@ no vasto manto azul do infinito."
     return result.join('\n\n');
   }
 
-  /// 🆕 v7.6.45: Cria prompt de recuperação para incorporar elementos faltantes
-  /// Gera um parágrafo final que adiciona os elementos ausentes à história
-  String _buildRecoveryPrompt(
-    String title,
-    List<String> missingElements,
-    String context,
-    String language,
-  ) {
-    // Mapear idioma para instruções
-    final languageInstructions = {
-      'pt': 'em português brasileiro',
-      'en': 'in English',
-      'es': 'en español',
-      'ko': '한국어로',
-    };
-
-    final langCode = language.toLowerCase().substring(0, 2);
-    final langInstruction =
-        languageInstructions[langCode] ?? 'in the same language as the title';
-
-    return '''
-🎯 MISSÃO DE RECUPERAÇÃO: Adicionar elementos faltantes à história
-
-TÍTULO ORIGINAL: "$title"
-
-ELEMENTOS QUE AINDA NÃO APARECERAM:
-${missingElements.map((e) => '❌ $e').join('\n')}
-
-CONTEXTO FINAL DA HISTÓRIA ATÉ AGORA:
----
-${context.length > 800 ? context.substring(context.length - 800) : context}
----
-
-TAREFA:
-Escreva UM PARÁGRAFO FINAL (100-150 palavras) $langInstruction que:
-✅ Incorpore TODOS os elementos faltantes de forma NATURAL
-✅ Seja uma continuação FLUIDA do contexto acima
-✅ Mantenha coerência com a história existente
-✅ NÃO repita eventos já narrados
-
-❌ PROIBIDO:
-- Começar nova história do zero
-- Ignorar o contexto fornecido
-- Usar "CONTINUAÇÃO:", "CONTEXTO:", etc.
-- Adicionar mais de 200 palavras
-
-APENAS o parágrafo final. Comece direto:
-''';
-  }
+  // 🏗️ v7.6.64: _buildRecoveryPrompt migrado para ScriptPromptBuilder.buildRecoveryPrompt()
 
   /// 🆕 v7.6.17: Detecta e registra o nome da protagonista no Bloco 1
   /// Extrai o primeiro nome próprio encontrado e registra no tracker

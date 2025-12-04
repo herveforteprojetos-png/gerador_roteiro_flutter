@@ -5,11 +5,11 @@
 //
 // Módulos incluídos:
 // - LlmClient: Comunicação com APIs de LLM (Gemini)
-// - PromptBuilder: Construção de prompts para geração
+// - ScriptPromptBuilder: Construção de prompts para geração de scripts
 // - WorldStateManager: Gerenciamento do estado do mundo
 // - ScriptValidator: Validação de roteiros
 
 export 'llm_client.dart';
-export 'prompt_builder.dart';
+export 'script_prompt_builder.dart';
 export 'world_state_manager.dart';
 export 'script_validator.dart';
