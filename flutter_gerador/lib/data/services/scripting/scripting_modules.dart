@@ -8,7 +8,6 @@
 /// - PromptBuilder: Construção de prompts para geração
 /// - WorldStateManager: Gerenciamento do estado do mundo
 /// - ScriptValidator: Validação de roteiros
-library scripting;
 
 export 'llm_client.dart';
 export 'prompt_builder.dart';

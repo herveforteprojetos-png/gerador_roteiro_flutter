@@ -122,7 +122,7 @@ class ScriptConfig {
   factory ScriptConfig.fromGenerationConfig(GenerationConfig config) {
     debugPrint('🔄 ScriptConfig.fromGenerationConfig()');
     debugPrint('📥 GenerationConfig.qualityMode = "${config.qualityMode}"');
-    
+
     // 🎯 Se usar tema personalizado, usar personalizedTheme (pode ser vazio = sem tema)
     // Se personalizedTheme estiver vazio, usar 'Livre (Sem Tema)' como indicador
     final temaFinal = config.usePersonalizedTheme
@@ -172,7 +172,7 @@ class ScriptConfig {
       useCustomPrompt: config.useCustomPrompt, // 📝 NOVO: Habilitar prompt
     ).._debugLog();
   }
-  
+
   void _debugLog() {
     debugPrint('📦 ScriptConfig criado:');
     debugPrint('   qualityMode = "$qualityMode"');

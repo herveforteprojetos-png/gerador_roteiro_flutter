@@ -3,7 +3,8 @@
 class GenerationConfig {
   final String apiKey;
   final String? openAIKey; // 🤖 NOVO: API Key OpenAI (fallback)
-  final String selectedProvider; // 🤖 NOVO: 'gemini' ou 'openai' - qual API usar
+  final String
+  selectedProvider; // 🤖 NOVO: 'gemini' ou 'openai' - qual API usar
   final String model;
   final String title;
   final String tema;
@@ -153,7 +154,8 @@ class GenerationConfig {
     return GenerationConfig(
       apiKey: json['apiKey'] ?? '',
       openAIKey: json['openAIKey'], // 🤖 NOVO: Nullable
-      selectedProvider: json['selectedProvider'] ?? 'gemini', // 🤖 NOVO: Padrão gemini
+      selectedProvider:
+          json['selectedProvider'] ?? 'gemini', // 🤖 NOVO: Padrão gemini
       model: json['model'] ?? 'gemini-1.5-pro',
       title: json['title'] ?? '',
       tema: json['tema'] ?? 'Vingança',

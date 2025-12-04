@@ -422,13 +422,13 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   /// Botão que abre o modal de configuração de APIs
   Widget _buildApiConfigButton() {
     final hasGeminiKey = apiKeyController.text.trim().isNotEmpty;
-    
+
     // Define o status visual baseado na presença da chave
     Color buttonColor;
     IconData buttonIcon;
     String buttonText;
     String subtitle;
-    
+
     if (hasGeminiKey) {
       buttonColor = AppColors.fireOrange;
       buttonIcon = Icons.auto_awesome;
@@ -490,11 +490,12 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
-            
             return Dialog(
               backgroundColor: AppColors.darkBackground,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
+                borderRadius: BorderRadius.circular(
+                  AppDesignSystem.borderRadius,
+                ),
               ),
               child: Container(
                 width: 600,
@@ -506,7 +507,11 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                     // Título
                     Row(
                       children: [
-                        Icon(Icons.vpn_key, color: AppColors.fireOrange, size: 28),
+                        Icon(
+                          Icons.vpn_key,
+                          color: AppColors.fireOrange,
+                          size: 28,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -523,14 +528,18 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                       ],
                     ),
                     Divider(color: Colors.grey.withOpacity(0.3), height: 32),
-                    
+
                     // Texto explicativo sobre os modelos
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppColors.darkCard,
-                        borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
-                        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(
+                          AppDesignSystem.borderRadius,
+                        ),
+                        border: Border.all(
+                          color: AppColors.fireOrange.withOpacity(0.3),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,17 +552,29 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          _buildModelInfoRow('⚡', 'Flash (2.5)', 'Mais rápido, menor custo'),
+                          _buildModelInfoRow(
+                            '⚡',
+                            'Flash (2.5)',
+                            'Mais rápido, menor custo',
+                          ),
                           const SizedBox(height: 8),
-                          _buildModelInfoRow('🧠', 'Pro (2.5)', 'Qualidade máxima (atual)'),
+                          _buildModelInfoRow(
+                            '🧠',
+                            'Pro (2.5)',
+                            'Qualidade máxima (atual)',
+                          ),
                           const SizedBox(height: 8),
-                          _buildModelInfoRow('🚀', 'Ultra (3.0 Preview)', 'Modelo mais avançado (Jan 2025)'),
+                          _buildModelInfoRow(
+                            '🚀',
+                            'Ultra (3.0 Preview)',
+                            'Modelo mais avançado (Jan 2025)',
+                          ),
                         ],
                       ),
                     ),
-                    
+
                     AppDesignSystem.verticalSpaceL,
-                    
+
                     // Dropdown de seleção de modelo
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,22 +589,37 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                         SizedBox(
                           height: AppDesignSystem.fieldHeight,
                           child: DropdownButtonFormField<String>(
-                            value: ref.watch(generationConfigProvider).qualityMode,
+                            value: ref
+                                .watch(generationConfigProvider)
+                                .qualityMode,
                             style: AppDesignSystem.bodyMedium,
                             dropdownColor: AppColors.darkBackground,
                             decoration: AppDesignSystem.getInputDecoration(
                               hint: 'Selecione o modelo',
                             ),
                             items: const [
-                              DropdownMenuItem(value: 'flash', child: Text('⚡ Flash (2.5)')),
-                              DropdownMenuItem(value: 'pro', child: Text('🧠 Pro (2.5)')),
-                              DropdownMenuItem(value: 'ultra', child: Text('🚀 Ultra (3.0 Preview)')),
+                              DropdownMenuItem(
+                                value: 'flash',
+                                child: Text('⚡ Flash (2.5)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'pro',
+                                child: Text('🧠 Pro (2.5)'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'ultra',
+                                child: Text('🚀 Ultra (3.0 Preview)'),
+                              ),
                             ],
                             onChanged: (value) {
                               if (value != null) {
                                 debugPrint('🎯 Dropdown selecionado: $value');
-                                ref.read(generationConfigProvider.notifier).updateQualityMode(value);
-                                StorageService.saveUserPreferences(qualityMode: value);
+                                ref
+                                    .read(generationConfigProvider.notifier)
+                                    .updateQualityMode(value);
+                                StorageService.saveUserPreferences(
+                                  qualityMode: value,
+                                );
                                 debugPrint('✅ qualityMode atualizado e salvo');
                               }
                             },
@@ -591,9 +627,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                         ),
                       ],
                     ),
-                    
+
                     AppDesignSystem.verticalSpaceL,
-                    
+
                     // Campo da API Gemini
                     _buildDialogApiKeyField(
                       title: 'Chave da API Gemini',
@@ -608,9 +644,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                         });
                       },
                     ),
-                    
+
                     AppDesignSystem.verticalSpaceL,
-                    
+
                     // Botão Fechar
                     Align(
                       alignment: Alignment.centerRight,
@@ -618,7 +654,10 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                         onPressed: () => Navigator.of(context).pop(),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.fireOrange,
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 12,
+                          ),
                         ),
                         child: Text(
                           'Fechar',
@@ -643,10 +682,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   Widget _buildModelInfoRow(String emoji, String name, String description) {
     return Row(
       children: [
-        Text(
-          emoji,
-          style: const TextStyle(fontSize: 20),
-        ),
+        Text(emoji, style: const TextStyle(fontSize: 20)),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -684,7 +720,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
   }) {
     final hasKey = controller.text.trim().isNotEmpty;
     final borderColor = hasKey ? Colors.green : iconColor.withOpacity(0.5);
-    
+
     // Suffix icon com botão de visibilidade E check
     Widget suffixIcon = Row(
       mainAxisSize: MainAxisSize.min,
@@ -698,10 +734,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           ),
           onPressed: onToggleVisibility,
           padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(
-            minWidth: 40,
-            minHeight: 40,
-          ),
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
         ),
         // Check se tiver chave válida
         if (hasKey) ...[
@@ -750,24 +783,31 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             controller: controller,
             obscureText: !isVisible,
             style: AppDesignSystem.bodyMedium,
-            decoration: AppDesignSystem.getInputDecoration(
-              hint: 'Cole sua chave aqui...',
-            ).copyWith(
-              prefixIcon: Icon(Icons.vpn_key, color: iconColor, size: 18),
-              suffixIcon: suffixIcon,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
-                borderSide: BorderSide(color: borderColor, width: 1),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
-                borderSide: BorderSide(color: borderColor, width: 2),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDesignSystem.borderRadius),
-                borderSide: BorderSide(color: borderColor, width: 1),
-              ),
-            ),
+            decoration:
+                AppDesignSystem.getInputDecoration(
+                  hint: 'Cole sua chave aqui...',
+                ).copyWith(
+                  prefixIcon: Icon(Icons.vpn_key, color: iconColor, size: 18),
+                  suffixIcon: suffixIcon,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppDesignSystem.borderRadius,
+                    ),
+                    borderSide: BorderSide(color: borderColor, width: 1),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppDesignSystem.borderRadius,
+                    ),
+                    borderSide: BorderSide(color: borderColor, width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppDesignSystem.borderRadius,
+                    ),
+                    borderSide: BorderSide(color: borderColor, width: 1),
+                  ),
+                ),
           ),
         ),
       ],

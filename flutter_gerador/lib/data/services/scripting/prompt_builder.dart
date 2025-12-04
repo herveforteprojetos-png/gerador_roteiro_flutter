@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/services/prompts/base_rules.dart';
 import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart';

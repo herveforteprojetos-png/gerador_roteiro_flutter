@@ -264,13 +264,13 @@ class NameValidator {
     // v7.6.56: Validação estrutural - Gemini é o Casting Director
     // Verificar estrutura básica de nome próprio
     if (cleaned.length < 2 || cleaned.length > 30) return false;
-    
+
     // Primeira letra maiúscula
     if (!RegExp(r'^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇÑ]').hasMatch(cleaned)) return false;
-    
+
     // Não é stopword conhecida
     if (nameStopwords.contains(cleaned.toLowerCase())) return false;
-    
+
     return true;
   }
 

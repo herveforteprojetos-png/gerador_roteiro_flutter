@@ -3,9 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 /// 🤖 OpenAI Service - Integração com GPT-4o
-/// 
+///
 /// Serve como FALLBACK quando Gemini API está indisponível (erro 503).
-/// 
+///
 /// Features:
 /// - GPT-4o (mais recente e capaz)
 /// - Mesmo formato de prompt do Gemini
@@ -14,10 +14,10 @@ import 'package:flutter/foundation.dart';
 class OpenAIService {
   static const String _baseUrl = 'https://api.openai.com/v1';
   static const String _model = 'gpt-4o'; // Modelo mais recente
-  
+
   late final Dio _dio;
   String? _apiKey;
-  
+
   // Rate limiting
   static int _globalRequestCount = 0;
   static DateTime? _globalLastRequestTime;
@@ -25,31 +25,33 @@ class OpenAIService {
   static bool _rateLimitBusy = false;
 
   OpenAIService({String? apiKey}) : _apiKey = apiKey {
-    _dio = Dio(BaseOptions(
-      baseUrl: _baseUrl,
-      connectTimeout: const Duration(seconds: 60),
-      receiveTimeout: const Duration(seconds: 120),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: _baseUrl,
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 120),
+        headers: {'Content-Type': 'application/json'},
+      ),
+    );
 
     // Interceptor para logging
     if (kDebugMode) {
-      _dio.interceptors.add(InterceptorsWrapper(
-        onRequest: (options, handler) {
-          debugPrint('[OpenAI] -> ${options.method} ${options.uri}');
-          return handler.next(options);
-        },
-        onResponse: (response, handler) {
-          debugPrint('[OpenAI] <- ${response.statusCode}');
-          return handler.next(response);
-        },
-        onError: (error, handler) {
-          debugPrint('[OpenAI] ERROR: ${error.message}');
-          return handler.next(error);
-        },
-      ));
+      _dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            debugPrint('[OpenAI] -> ${options.method} ${options.uri}');
+            return handler.next(options);
+          },
+          onResponse: (response, handler) {
+            debugPrint('[OpenAI] <- ${response.statusCode}');
+            return handler.next(response);
+          },
+          onError: (error, handler) {
+            debugPrint('[OpenAI] ERROR: ${error.message}');
+            return handler.next(error);
+          },
+        ),
+      );
     }
   }
 
@@ -69,7 +71,7 @@ class OpenAIService {
 
       if (_globalLastRequestTime != null) {
         final elapsed = now.difference(_globalLastRequestTime!);
-        
+
         // Reset a cada minuto
         if (elapsed.inSeconds >= 60) {
           _globalRequestCount = 0;
@@ -88,9 +90,11 @@ class OpenAIService {
       }
 
       _globalRequestCount++;
-      
+
       if (kDebugMode) {
-        debugPrint('[OpenAI] Request $_globalRequestCount/$_maxRequestsPerMinute');
+        debugPrint(
+          '[OpenAI] Request $_globalRequestCount/$_maxRequestsPerMinute',
+        );
       }
     } finally {
       _rateLimitBusy = false;
@@ -114,7 +118,9 @@ class OpenAIService {
           if (attempt < maxRetries - 1) {
             final delay = Duration(seconds: (attempt + 1) * 15);
             if (kDebugMode) {
-              debugPrint('[OpenAI] 429 Rate Limit - aguardando ${delay.inSeconds}s');
+              debugPrint(
+                '[OpenAI] 429 Rate Limit - aguardando ${delay.inSeconds}s',
+              );
             }
             await Future.delayed(delay);
             continue;
@@ -128,7 +134,9 @@ class OpenAIService {
             final exponentialDelay = baseDelay * (1 << attempt);
             final delay = Duration(seconds: min(exponentialDelay, 300));
             if (kDebugMode) {
-              debugPrint('[OpenAI] Server error - aguardando ${delay.inSeconds}s');
+              debugPrint(
+                '[OpenAI] Server error - aguardando ${delay.inSeconds}s',
+              );
             }
             await Future.delayed(delay);
             continue;
@@ -165,22 +173,16 @@ class OpenAIService {
     return _retryOnError(() async {
       final response = await _dio.post(
         '/chat/completions',
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $_apiKey',
-          },
-        ),
+        options: Options(headers: {'Authorization': 'Bearer $_apiKey'}),
         data: {
           'model': _model,
           'messages': [
             {
               'role': 'system',
-              'content': 'Você é um roteirista profissional especializado em criar histórias envolventes para YouTube. Siga TODAS as instruções com precisão absoluta.',
+              'content':
+                  'Você é um roteirista profissional especializado em criar histórias envolventes para YouTube. Siga TODAS as instruções com precisão absoluta.',
             },
-            {
-              'role': 'user',
-              'content': prompt,
-            },
+            {'role': 'user', 'content': prompt},
           ],
           'max_tokens': maxTokens,
           'temperature': temperature,
@@ -194,7 +196,7 @@ class OpenAIService {
 
       final data = response.data as Map<String, dynamic>;
       final choices = data['choices'] as List;
-      
+
       if (choices.isEmpty) {
         throw Exception('OpenAI retornou resposta vazia');
       }
@@ -205,7 +207,9 @@ class OpenAIService {
       // Informações de uso
       final usage = data['usage'] as Map<String, dynamic>?;
       if (kDebugMode && usage != null) {
-        debugPrint('[OpenAI] Tokens: ${usage['total_tokens']} (prompt: ${usage['prompt_tokens']}, completion: ${usage['completion_tokens']})');
+        debugPrint(
+          '[OpenAI] Tokens: ${usage['total_tokens']} (prompt: ${usage['prompt_tokens']}, completion: ${usage['completion_tokens']})',
+        );
       }
 
       return content.trim();

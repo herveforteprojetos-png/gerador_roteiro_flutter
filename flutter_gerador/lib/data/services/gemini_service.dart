@@ -14,6 +14,9 @@ import 'gemini/gemini_modules.dart'; // 🆕 v7.6.35: Inclui PostGenerationFixer
 import 'package:flutter_gerador/data/services/prompts/base_rules.dart';
 import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart';
 
+// 🏗️ v7.6.64: MÓDULOS REFATORADOS (Arquitetura SOLID)
+import 'package:flutter_gerador/data/services/scripting/scripting_modules.dart';
+
 /// 📝 Helper padronizado para logs (mantém emojis em debug, limpa em produção)
 void _log(String message, {String level = 'info'}) {
   if (kDebugMode) {
@@ -256,6 +259,11 @@ class GeminiService {
   final String _instanceId;
   bool _isCancelled = false;
 
+  // 🏗️ v7.6.64: MÓDULOS REFATORADOS (Arquitetura SOLID)
+  late final LlmClient _llmClient;
+  late final WorldStateManager _worldStateManager;
+  late final ScriptValidator _scriptValidator;
+
   // 🚀 v7.6.20: Adaptive Delay Manager (economia de 40-50% do tempo)
   DateTime? _lastSuccessfulCall;
   int _consecutive503Errors = 0;
@@ -300,10 +308,10 @@ class GeminiService {
   // para garantir consistência de estilo e respeitar a configuração do cliente
   static String _getSelectedModel(String qualityMode) {
     return qualityMode == 'flash'
-        ? 'gemini-2.5-flash'        // STABLE - Rápido e eficiente
+        ? 'gemini-2.5-flash' // STABLE - Rápido e eficiente
         : qualityMode == 'ultra'
-            ? 'gemini-3-pro-preview'  // PREVIEW - Modelo mais avançado (Jan 2025)
-            : 'gemini-2.5-pro';       // STABLE - Máxima qualidade (default)
+        ? 'gemini-3-pro-preview' // PREVIEW - Modelo mais avançado (Jan 2025)
+        : 'gemini-2.5-pro'; // STABLE - Máxima qualidade (default)
   }
 
   GeminiService({String? instanceId})
@@ -321,6 +329,11 @@ class GeminiService {
           ), // AUMENTADO: Era 30s, agora 45s
         ),
       ) {
+    // 🏗️ v7.6.64: Inicializar módulos refatorados
+    _llmClient = LlmClient(instanceId: _instanceId);
+    _worldStateManager = WorldStateManager(llmClient: _llmClient);
+    _scriptValidator = ScriptValidator();
+
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (o, h) {
@@ -350,19 +363,23 @@ class GeminiService {
     // Se selecionou Gemini → usar APENAS Gemini
     // Se selecionou OpenAI → usar APENAS OpenAI (implementar no futuro)
     // _useOpenAIFallback = false; // ❌ REMOVIDO - OpenAI descontinuado
-    
+
     if (kDebugMode) {
-      debugPrint('[$_instanceId] 🎯 Provider selecionado: ${config.selectedProvider}');
-      debugPrint('[$_instanceId] 🚫 Fallback automático: DESABILITADO (usar apenas API selecionada)');
+      debugPrint(
+        '[$_instanceId] 🎯 Provider selecionado: ${config.selectedProvider}',
+      );
+      debugPrint(
+        '[$_instanceId] 🚫 Fallback automático: DESABILITADO (usar apenas API selecionada)',
+      );
     }
-    
+
     // 🔥 CORREÇÃO CRÍTICA: Resetar variáveis globais ANTES de verificar rate limit
     // Isso garante que cada nova geração comece do zero
     _resetGlobalRateLimit();
 
     // 🆕 v4: Resetar rastreador de nomes para nova história
     _resetNameTracker();
-    
+
     // 🆕 v7.6.37: Resetar personagens introduzidos para detecção de duplicatas
     PostGenerationFixer.resetIntroducedCharacters();
 
@@ -384,7 +401,7 @@ class GeminiService {
     // Rastreia personagens, inventário, fatos e resumo da história
     // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
     final worldState = _WorldState();
-    
+
     // Inicializar protagonista no World State
     if (config.protagonistName.trim().isNotEmpty) {
       worldState.upsertCharacter(
@@ -396,7 +413,7 @@ class GeminiService {
         ),
       );
     }
-    
+
     // 🆕 v7.6.53: CAMADA 1 - Gerar Sinopse Comprimida UMA VEZ no início
     // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
     try {
@@ -409,15 +426,17 @@ class GeminiService {
         qualityMode: config.qualityMode,
       );
       if (kDebugMode) {
-        debugPrint('🔵 Camada 1 (Sinopse) gerada: ${worldState.sinopseComprimida.length} chars');
+        debugPrint(
+          '🔵 Camada 1 (Sinopse) gerada: ${worldState.sinopseComprimida.length} chars',
+        );
       }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('⚠️ Erro ao gerar sinopse (não-crítico): $e');
       }
       // Fallback: usar tema truncado
-      worldState.sinopseComprimida = config.tema.length > 500 
-          ? '${config.tema.substring(0, 500)}...' 
+      worldState.sinopseComprimida = config.tema.length > 500
+          ? '${config.tema.substring(0, 500)}...'
           : config.tema;
     }
 
@@ -475,16 +494,14 @@ class GeminiService {
           );
 
           // 🎯 YIELD OTIMIZADO: 50ms para UI respirar sem bloquear geração
-          await Future.delayed(
-            Duration(milliseconds: 50),
-          );
+          await Future.delayed(Duration(milliseconds: 50));
         }
 
         // 🔥 DELAY INTELIGENTE ENTRE BLOCOS: Sistema Adaptativo v7.6.20
         // Aprende com o comportamento da API e ajusta delays automaticamente
         if (block > 1) {
           final adaptiveDelay = _getAdaptiveDelay(blockNumber: block);
-          
+
           if (kDebugMode) {
             debugPrint(
               '⏱️ Delay adaptativo de ${adaptiveDelay.inSeconds}s antes do bloco $block',
@@ -523,7 +540,9 @@ class GeminiService {
           if (kDebugMode) {
             final roleMap = persistentTracker.roleToNameMap;
             debugPrint('🔧 [Bloco $block] Chamando PostGenerationFixer');
-            debugPrint('   roleToNameMap: ${roleMap.isEmpty ? "VAZIO!" : roleMap.toString()}');
+            debugPrint(
+              '   roleToNameMap: ${roleMap.isEmpty ? "VAZIO!" : roleMap.toString()}',
+            );
           }
           added = PostGenerationFixer.fixSwappedNames(
             added,
@@ -553,7 +572,9 @@ class GeminiService {
             // Últimos 3 retries: moderado (20s, 30s, 40s) para dar tempo ao servidor
             final retryDelay = retry <= 3 ? 5 * retry : 15 + (retry - 3) * 10;
             if (kDebugMode) {
-              debugPrint('⏱️ Aguardando ${retryDelay}s antes do retry (${retry <= 3 ? "rápido" : "moderado"})...');
+              debugPrint(
+                '⏱️ Aguardando ${retryDelay}s antes do retry (${retry <= 3 ? "rápido" : "moderado"})...',
+              );
             }
             await Future.delayed(Duration(seconds: retryDelay));
 
@@ -770,7 +791,9 @@ class GeminiService {
               );
               if (protagonistChanged) {
                 final detected = persistentTracker.getProtagonistName();
-                debugPrint('   ❌ PROTAGONISTA: "$detected" mudou para outro nome!');
+                debugPrint(
+                  '   ❌ PROTAGONISTA: "$detected" mudou para outro nome!',
+                );
               }
               for (final change in characterNameChanges) {
                 final role = change['role'] ?? 'personagem';
@@ -784,12 +807,18 @@ class GeminiService {
             // 🆕 v7.6.17: LIMITE DE REGENERAÇÕES para evitar loop infinito
             const maxRegenerations = 3;
             String? regenerated;
-            
-            for (int regenAttempt = 1; regenAttempt <= maxRegenerations; regenAttempt++) {
+
+            for (
+              int regenAttempt = 1;
+              regenAttempt <= maxRegenerations;
+              regenAttempt++
+            ) {
               if (kDebugMode && regenAttempt > 1) {
-                debugPrint('   🔄 Tentativa $regenAttempt/$maxRegenerations...');
+                debugPrint(
+                  '   🔄 Tentativa $regenAttempt/$maxRegenerations...',
+                );
               }
-              
+
               regenerated = await _generateBlockContent(
                 acc,
                 targetForBlock,
@@ -801,14 +830,14 @@ class GeminiService {
                 avoidRepetition: true,
                 worldState: worldState, // 🆕 v7.6.52
               );
-              
+
               if (regenerated.trim().isEmpty) {
                 if (kDebugMode) {
                   debugPrint('   ❌ Regeneração $regenAttempt retornou vazia!');
                 }
                 continue; // Tentar novamente
               }
-              
+
               // Validar se regeneração corrigiu o problema
               final stillChanged = _detectProtagonistNameChange(
                 regenerated,
@@ -816,7 +845,7 @@ class GeminiService {
                 persistentTracker,
                 block,
               );
-              
+
               if (!stillChanged) {
                 if (kDebugMode) {
                   debugPrint('   ✅ Regeneração $regenAttempt bem-sucedida!');
@@ -824,11 +853,15 @@ class GeminiService {
                 break; // Sucesso! Sair do loop
               } else {
                 if (kDebugMode) {
-                  debugPrint('   ⚠️ Regeneração $regenAttempt ainda tem erro de nome!');
+                  debugPrint(
+                    '   ⚠️ Regeneração $regenAttempt ainda tem erro de nome!',
+                  );
                 }
                 if (regenAttempt == maxRegenerations) {
                   if (kDebugMode) {
-                    debugPrint('   ❌ Limite de regenerações atingido! Aceitando bloco...');
+                    debugPrint(
+                      '   ❌ Limite de regenerações atingido! Aceitando bloco...',
+                    );
                   }
                 }
               }
@@ -851,15 +884,15 @@ class GeminiService {
           }
 
           // 🆕 v7.6.17: VALIDAÇÃO UNIVERSAL DE TODOS OS NOMES (primários + secundários)
-          final allNamesInBlock = _extractNamesFromText(added)
-              .where((n) => _looksLikePersonName(n))
-              .toList();
-          
+          final allNamesInBlock = _extractNamesFromText(
+            added,
+          ).where((n) => _looksLikePersonName(n)).toList();
+
           // Detectar nomes novos não registrados no tracker
           final unregisteredNames = allNamesInBlock
               .where((name) => !persistentTracker.hasName(name))
               .toList();
-          
+
           if (unregisteredNames.isNotEmpty && block > 1) {
             if (kDebugMode) {
               debugPrint(
@@ -871,7 +904,7 @@ class GeminiService {
               persistentTracker.addName(name, blockNumber: block);
             }
           }
-          
+
           // 🆕 v4: EXTRAÇÃO E RASTREAMENTO DE NOMES
           final duplicatedNames = _validateNamesInText(
             added,
@@ -925,7 +958,9 @@ class GeminiService {
           if (duplicateNameConflict) {
             // ❌ BLOCO REJEITADO: Nome duplicado em papéis diferentes
             if (kDebugMode) {
-              debugPrint('❌ v7.6.28: BLOCO $block REJEITADO por NOME DUPLICADO!');
+              debugPrint(
+                '❌ v7.6.28: BLOCO $block REJEITADO por NOME DUPLICADO!',
+              );
               debugPrint(
                 '   💡 EXEMPLO: "Mark" aparece como boyfriend E attorney (nomes devem ser únicos)',
               );
@@ -942,7 +977,7 @@ class GeminiService {
             added = '';
           } else {
             // ✅ v7.6.28: Nomes únicos, prosseguir para validação de papéis
-            
+
             // 🚨 v7.6.25: VALIDAÇÃO DE CONFLITOS DE PAPEL
             final trackerValid = _updateTrackerFromContextSnippet(
               persistentTracker,
@@ -953,7 +988,9 @@ class GeminiService {
             if (!trackerValid) {
               // ❌ BLOCO REJEITADO: Conflito de papel detectado (ex: advogado Martin → Richard)
               if (kDebugMode) {
-                debugPrint('❌ v7.6.25: BLOCO $block REJEITADO por CONFLITO DE PAPEL!');
+                debugPrint(
+                  '❌ v7.6.25: BLOCO $block REJEITADO por CONFLITO DE PAPEL!',
+                );
                 debugPrint(
                   '   💡 EXEMPLO: Mesmo papel (advogado) com nomes diferentes (Martin vs Richard)',
                 );
@@ -971,9 +1008,11 @@ class GeminiService {
             } else {
               // ✅ v7.6.25: Tracker válido, atualizar mapeamento já foi feito
               if (kDebugMode) {
-                debugPrint('✅ v7.6.28 + v7.6.25: Bloco $block ACEITO (nomes únicos + sem conflitos de papel)');
+                debugPrint(
+                  '✅ v7.6.28 + v7.6.25: Bloco $block ACEITO (nomes únicos + sem conflitos de papel)',
+                );
               }
-              
+
               // 🆕 v7.6.52: ATUALIZAR WORLD STATE - Pipeline Modelo Único
               // O MESMO modelo selecionado pelo usuário atualiza o JSON de estado
               // Isso garante consistência e respeita a config do cliente
@@ -1018,7 +1057,9 @@ class GeminiService {
             }
 
             // Aguardar antes de retry (exponential backoff otimizado: 2s, 4s, 6s)
-            await Future.delayed(Duration(seconds: 2 * retryCount)); // OTIMIZADO: era 4s
+            await Future.delayed(
+              Duration(seconds: 2 * retryCount),
+            ); // OTIMIZADO: era 4s
 
             // Tentar gerar novamente
             try {
@@ -1071,7 +1112,7 @@ class GeminiService {
                   added = ''; // Forçar nova tentativa
                   continue; // Tentar próximo retry
                 }
-                
+
                 if (kDebugMode) {
                   debugPrint(
                     '[$_instanceId] ✅ v7.6.28 + v7.6.25: Retry válido! Bloco $block aceito.',
@@ -1184,13 +1225,15 @@ class GeminiService {
         final isCoherent = validationResult['isCoherent'] as bool? ?? true;
         final confidence = validationResult['confidence'] as int? ?? 0;
         final missingElements =
-            (validationResult['missingElements'] as List?)?.cast<String>() ?? [];
-        final foundElements = 
+            (validationResult['missingElements'] as List?)?.cast<String>() ??
+            [];
+        final foundElements =
             (validationResult['foundElements'] as List?)?.cast<String>() ?? [];
 
         _debugLogger.info(
           '🎯 Validação de coerência título-história',
-          details: '''
+          details:
+              '''
 Título: "${config.title}"
 Resultado: ${isCoherent ? '✅ COERENTE' : '❌ INCOERENTE'}
 Confiança: $confidence%
@@ -1219,8 +1262,9 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
           try {
             // Extrair últimos 2 blocos para contexto
             final blocks = deduplicatedScript.split('\n\n');
-            final contextBlocks =
-                blocks.length > 2 ? blocks.sublist(blocks.length - 2) : blocks;
+            final contextBlocks = blocks.length > 2
+                ? blocks.sublist(blocks.length - 2)
+                : blocks;
             final context = contextBlocks.join('\n\n');
 
             // Criar prompt de recuperação com elementos faltantes
@@ -1240,7 +1284,8 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
               maxTokens: 500, // Bloco pequeno de recuperação
             );
 
-            if (recoveryResponse != null && recoveryResponse.trim().isNotEmpty) {
+            if (recoveryResponse != null &&
+                recoveryResponse.trim().isNotEmpty) {
               // Adicionar bloco de recuperação ao final
               deduplicatedScript = '$deduplicatedScript\n\n$recoveryResponse';
               _debugLogger.success(
@@ -1546,30 +1591,36 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
   Duration _getAdaptiveDelay({required int blockNumber}) {
     // 🚀 v7.6.46: DELAYS ULTRA-OTIMIZADOS para velocidade máxima
     // Se última chamada foi sucesso RÁPIDO (< 3s atrás), delay mínimo
-    if (_lastSuccessfulCall != null && 
-        DateTime.now().difference(_lastSuccessfulCall!) < Duration(seconds: 3)) {
+    if (_lastSuccessfulCall != null &&
+        DateTime.now().difference(_lastSuccessfulCall!) <
+            Duration(seconds: 3)) {
       _consecutiveSuccesses++;
-      
+
       // Após 2 sucessos rápidos consecutivos, usar delays mínimos
       if (_consecutiveSuccesses >= 2) {
         // API está rápida - usar delays mínimos (0.3-0.8s)
         if (blockNumber <= 10) return Duration(milliseconds: 300);
-        return Duration(milliseconds: 800); // Blocos finais precisam um pouco mais
+        return Duration(
+          milliseconds: 800,
+        ); // Blocos finais precisam um pouco mais
       }
     }
-    
+
     // Se teve erro 503 recente, aumentar delay progressivamente
     if (_consecutive503Errors > 0) {
       _consecutiveSuccesses = 0; // Reset sucessos
-      final delaySeconds = min(5 * _consecutive503Errors, 15); // Reduzido de 10s/30s para 5s/15s
+      final delaySeconds = min(
+        5 * _consecutive503Errors,
+        15,
+      ); // Reduzido de 10s/30s para 5s/15s
       return Duration(seconds: delaySeconds);
     }
-    
+
     // Padrão: delays MÍNIMOS (0.5s-2s em vez de 3s-6s)
     _consecutiveSuccesses = 0;
     _consecutive503Errors = max(0, _consecutive503Errors - 1); // Decay gradual
-    
-    if (blockNumber <= 5) return Duration(milliseconds: 500);  // 0.5s
+
+    if (blockNumber <= 5) return Duration(milliseconds: 500); // 0.5s
     if (blockNumber <= 15) return Duration(milliseconds: 1000); // 1s
     if (blockNumber <= 25) return Duration(milliseconds: 1500); // 1.5s
     return Duration(seconds: 2); // 2s máximo
@@ -1618,14 +1669,13 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
         if (errorStr.contains('503') ||
             errorStr.contains('server error') ||
             errorStr.contains('service unavailable')) {
-          
           // 🚀 v7.6.20: Registrar erro 503 para Adaptive Delay Manager
           _recordApi503Error();
-          
+
           // 🚫 v7.6.19: Fallback OpenAI REMOVIDO - respeitar seleção do usuário
           // Se usuário escolheu Gemini, usar APENAS Gemini (mesmo com erros 503)
           // Se usuário escolheu OpenAI, implementar chamada direta do OpenAI (futuro)
-          
+
           if (attempt < maxRetries - 1) {
             // 🚀 v7.6.46: BACKOFF OTIMIZADO para 503:
             // Tentativa 1: 10s
@@ -1635,8 +1685,10 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
             // Tentativa 5: 90s (cap)
             final baseDelay = 10; // OTIMIZADO: era 30s
             final exponentialDelay = baseDelay * (1 << attempt); // 2^attempt
-            final delay = Duration(seconds: min(exponentialDelay, 90)); // Cap em 90s (era 300s)
-            
+            final delay = Duration(
+              seconds: min(exponentialDelay, 90),
+            ); // Cap em 90s (era 300s)
+
             if (kDebugMode) {
               debugPrint(
                 '[$_instanceId] 🔴 ERRO 503 (Servidor Indisponível) - Aguardando ${delay.inSeconds}s antes de retry ${attempt + 2}/$maxRetries',
@@ -1667,7 +1719,9 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
         if (errorStr.contains('429') && attempt < maxRetries - 1) {
           // 🔴 ERRO 429 (Rate Limit) = Delay otimizado progressivo
           // Tentativas: 5s, 10s, 15s, 20s, 25s, 30s
-          final delay = Duration(seconds: (attempt + 1) * 5); // OTIMIZADO: era * 15
+          final delay = Duration(
+            seconds: (attempt + 1) * 5,
+          ); // OTIMIZADO: era * 15
           if (kDebugMode) {
             debugPrint(
               '[$_instanceId] 🔴 ERRO 429 (Rate Limit) - Aguardando ${delay.inSeconds}s (tentativa ${attempt + 1}/$maxRetries)',
@@ -1770,18 +1824,19 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     // ⚠️ IMPORTANTE: NÃO aplicar multiplicador de idioma aqui!
     //    O multiplicador é aplicado por bloco, não no total de blocos.
     //    Caso contrário, inglês (1.05x) geraria blocos extras desnecessários.
-    
+
     // 🇰🇷 AJUSTE ESPECIAL PARA COREANO: Densidade de caracteres menor
     // Hangul: 1 caractere = 1 sílaba completa → menos chars por palavra
     // Fórmula coreano: 4.2 chars/palavra (vs inglês/PT: 5.5)
-    final isKoreanMeasure = c.language.contains('한국어') || 
-                            c.language.toLowerCase().contains('coreano') ||
-                            c.language.toLowerCase().contains('korean');
-    
-    final charToWordRatio = (c.measureType == 'caracteres' && isKoreanMeasure) 
-        ? 4.2  // Coreano: alta densidade silábica
+    final isKoreanMeasure =
+        c.language.contains('한국어') ||
+        c.language.toLowerCase().contains('coreano') ||
+        c.language.toLowerCase().contains('korean');
+
+    final charToWordRatio = (c.measureType == 'caracteres' && isKoreanMeasure)
+        ? 4.2 // Coreano: alta densidade silábica
         : 5.5; // Outros idiomas: padrão
-    
+
     int wordsEquivalent = c.measureType == 'caracteres'
         ? (c.quantity / charToWordRatio)
               .round() // Conversão: chars → palavras
@@ -1868,30 +1923,44 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     final langLower = c.language.toLowerCase();
-    
+
     // 🔍 DETECÇÃO DE IDIOMA
     final isPortuguese = langLower.contains('portugu') || langLower == 'pt';
-    final isKorean = c.language.contains('한국어') || 
-                     langLower.contains('coreano') ||
-                     langLower.contains('korean') ||
-                     langLower == 'ko';
+    final isKorean =
+        c.language.contains('한국어') ||
+        langLower.contains('coreano') ||
+        langLower.contains('korean') ||
+        langLower == 'ko';
     final isRussian = langLower.contains('russo') || langLower == 'ru';
-    final isBulgarian = langLower.contains('búlgar') || langLower.contains('bulgar') || langLower == 'bg';
+    final isBulgarian =
+        langLower.contains('búlgar') ||
+        langLower.contains('bulgar') ||
+        langLower == 'bg';
     final isCyrillic = isRussian || isBulgarian;
     final isTurkish = langLower.contains('turco') || langLower == 'tr';
     final isPolish = langLower.contains('polon') || langLower == 'pl';
     final isGerman = langLower.contains('alem') || langLower == 'de';
     // Latinos: en, es-mx, fr, it, ro (usam valores similares ao português)
-    final isLatin = langLower.contains('inglês') || langLower.contains('english') || langLower == 'en' ||
-                    langLower.contains('espanhol') || langLower.contains('español') || langLower.contains('es') ||
-                    langLower.contains('francês') || langLower.contains('français') || langLower == 'fr' ||
-                    langLower.contains('italiano') || langLower == 'it' ||
-                    langLower.contains('romeno') || langLower.contains('român') || langLower == 'ro';
+    final isLatin =
+        langLower.contains('inglês') ||
+        langLower.contains('english') ||
+        langLower == 'en' ||
+        langLower.contains('espanhol') ||
+        langLower.contains('español') ||
+        langLower.contains('es') ||
+        langLower.contains('francês') ||
+        langLower.contains('français') ||
+        langLower == 'fr' ||
+        langLower.contains('italiano') ||
+        langLower == 'it' ||
+        langLower.contains('romeno') ||
+        langLower.contains('român') ||
+        langLower == 'ro';
 
     // 🎯 TARGET DE PALAVRAS POR BLOCO (centro do range)
     int targetPalBloco;
     String langCategory;
-    
+
     if (isKorean) {
       targetPalBloco = 700; // 600-800 pal/bloco
       langCategory = '🇰🇷 COREANO';
@@ -1921,13 +1990,13 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
 
     // 📊 CÁLCULO DE BLOCOS: words / target
     int calculatedBlocks = (wordsEquivalent / targetPalBloco).ceil();
-    
+
     // 🔒 LIMITES DE SEGURANÇA
     // Mínimo: 2 blocos (intro + conclusão)
     // Máximo: varia por idioma para evitar erro 503
     int minBlocks = 2;
     int maxBlocks;
-    
+
     if (isKorean) {
       maxBlocks = 50; // Coreano precisa de mais blocos menores
     } else if (isCyrillic) {
@@ -1935,20 +2004,22 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     } else {
       maxBlocks = 25; // Latinos e outros são eficientes
     }
-    
+
     // Aplicar limites
     int finalBlocks = calculatedBlocks.clamp(minBlocks, maxBlocks);
-    
+
     // 🇰🇷 COMPENSAÇÃO COREANO: +18% blocos para compensar sub-geração natural
     if (isKorean) {
       finalBlocks = (finalBlocks * 1.18).ceil().clamp(minBlocks, maxBlocks);
     }
-    
+
     if (kDebugMode) {
       final actualPalBloco = (wordsEquivalent / finalBlocks).round();
-      debugPrint('   $langCategory: $wordsEquivalent palavras ÷ $targetPalBloco target = $calculatedBlocks → $finalBlocks blocos (~$actualPalBloco pal/bloco)');
+      debugPrint(
+        '   $langCategory: $wordsEquivalent palavras ÷ $targetPalBloco target = $calculatedBlocks → $finalBlocks blocos (~$actualPalBloco pal/bloco)',
+      );
     }
-    
+
     return finalBlocks;
   }
 
@@ -1961,19 +2032,20 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
 
     // 🔧 CORREÇÃO: Usar a mesma lógica de normalização que _calculateTotalBlocks
     // 🇰🇷 AJUSTE ESPECIAL PARA COREANO: Densidade de caracteres menor
-    final isKoreanTarget = c.language.contains('한국어') || 
-                           c.language.toLowerCase().contains('coreano') ||
-                           c.language.toLowerCase().contains('korean');
-    
-    final charToWordRatio = (c.measureType == 'caracteres' && isKoreanTarget) 
-        ? 4.2  // Coreano: alta densidade silábica
+    final isKoreanTarget =
+        c.language.contains('한국어') ||
+        c.language.toLowerCase().contains('coreano') ||
+        c.language.toLowerCase().contains('korean');
+
+    final charToWordRatio = (c.measureType == 'caracteres' && isKoreanTarget)
+        ? 4.2 // Coreano: alta densidade silábica
         : 5.5; // Outros idiomas: padrão
-    
+
     int targetQuantity = c.measureType == 'caracteres'
         ? (c.quantity / charToWordRatio)
               .round() // Conversão: chars → palavras
         : c.quantity;
-    
+
     // 🚫 v10: REMOVIDO boost artificial
     // Lição: Gemini ignora multiplicadores - gera naturalmente
     // Solução: Usar mesma tabela de blocos do português (comprovada)
@@ -2015,7 +2087,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     //   v6.4: 1.08 → Volta ao valor do v5.0 MAS ainda dá 503 com 12 blocos ❌
     //   v6.5: 1.05 → Reduz para 1.05 + AUMENTA blocos (12→14) = blocos 25% menores 🎯
     //   v7.6.42: 1.18 → Coreano específico para compensar sub-geração de ~15%
-    // 
+    //
     // 🇰🇷 COREANO v12: Multiplicador 1.18 para compensar sub-geração natural
     // ANÁLISE: Coreano gera apenas ~84.6% do pedido (11k de 13k)
     // SOLUÇÃO: Pedir 18% a mais para compensar
@@ -2176,14 +2248,14 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     candidateCounts.forEach((name, count) {
       final normalized = name.toLowerCase();
       if (existingLower.contains(normalized)) return;
-      
+
       // 🔥 v7.6.31: REMOVER filtro "count < 2" - BUG CRÍTICO!
       // PROBLEMA: "Janice" com 1 menção no Bloco 2 não entrava no tracker
       // RESULTADO: "Janice" no Bloco 9 passava na validação (tracker vazio)
       // SOLUÇÃO: Adicionar TODOS os nomes válidos, independente de contagem
       // A validação isValidName() já garante que são nomes reais
       // if (count < 2) return; // ❌ REMOVIDO - causava duplicações
-      
+
       if (locationLower.isNotEmpty && normalized == locationLower) return;
       if (_nameStopwords.contains(normalized)) return;
 
@@ -3011,19 +3083,19 @@ no vasto manto azul do infinito."
   String _removeDuplicateConsecutiveParagraphs(String fullScript) {
     // Dividir por quebras de linha duplas (parágrafos)
     final paragraphs = fullScript.split(RegExp(r'\n{2,}'));
-    
+
     if (paragraphs.length < 2) return fullScript;
-    
+
     final result = <String>[];
     String? previousParagraph;
     var removedCount = 0;
-    
+
     for (final rawParagraph in paragraphs) {
       final paragraph = rawParagraph.trim();
-      
+
       // Pular parágrafos vazios
       if (paragraph.isEmpty) continue;
-      
+
       // Verificar se é duplicata consecutiva
       if (previousParagraph != null && paragraph == previousParagraph) {
         removedCount++;
@@ -3035,29 +3107,36 @@ no vasto manto azul do infinito."
         }
         continue; // Pular duplicata
       }
-      
+
       // Também verificar duplicatas com pequenas variações (espaços extras)
       if (previousParagraph != null) {
         final normalizedCurrent = paragraph.replaceAll(RegExp(r'\s+'), ' ');
-        final normalizedPrevious = previousParagraph.replaceAll(RegExp(r'\s+'), ' ');
-        
+        final normalizedPrevious = previousParagraph.replaceAll(
+          RegExp(r'\s+'),
+          ' ',
+        );
+
         if (normalizedCurrent == normalizedPrevious) {
           removedCount++;
           if (kDebugMode) {
-            debugPrint('🧹 REMOVIDO parágrafo quase-duplicado (espaços diferentes)');
+            debugPrint(
+              '🧹 REMOVIDO parágrafo quase-duplicado (espaços diferentes)',
+            );
           }
           continue;
         }
       }
-      
+
       result.add(paragraph);
       previousParagraph = paragraph;
     }
-    
+
     if (removedCount > 0 && kDebugMode) {
-      debugPrint('✅ v7.6.43: Removidos $removedCount parágrafo(s) duplicado(s) consecutivo(s)');
+      debugPrint(
+        '✅ v7.6.43: Removidos $removedCount parágrafo(s) duplicado(s) consecutivo(s)',
+      );
     }
-    
+
     return result.join('\n\n');
   }
 
@@ -3065,22 +3144,24 @@ no vasto manto azul do infinito."
   /// Mantém a primeira ocorrência e remove todas as repetições posteriores
   String _removeAllDuplicateParagraphs(String fullScript) {
     final paragraphs = fullScript.split(RegExp(r'\n{2,}'));
-    
+
     if (paragraphs.length < 2) return fullScript;
-    
+
     final seen = <String>{};
     final seenNormalized = <String>{};
     final result = <String>[];
     var removedCount = 0;
-    
+
     for (final rawParagraph in paragraphs) {
       final paragraph = rawParagraph.trim();
-      
+
       if (paragraph.isEmpty) continue;
-      
+
       // Normalizar para comparação (ignorar espaços extras)
-      final normalized = paragraph.replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
-      
+      final normalized = paragraph
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .toLowerCase();
+
       // Verificar duplicata exata
       if (seen.contains(paragraph)) {
         removedCount++;
@@ -3092,7 +3173,7 @@ no vasto manto azul do infinito."
         }
         continue;
       }
-      
+
       // Verificar duplicata normalizada (ignora case e espaços)
       if (seenNormalized.contains(normalized)) {
         removedCount++;
@@ -3101,16 +3182,18 @@ no vasto manto azul do infinito."
         }
         continue;
       }
-      
+
       seen.add(paragraph);
       seenNormalized.add(normalized);
       result.add(paragraph);
     }
-    
+
     if (removedCount > 0) {
-      debugPrint('✅ v7.6.43: Total de $removedCount parágrafo(s) duplicado(s) removido(s) do roteiro final');
+      debugPrint(
+        '✅ v7.6.43: Total de $removedCount parágrafo(s) duplicado(s) removido(s) do roteiro final',
+      );
     }
-    
+
     return result.join('\n\n');
   }
 
@@ -3124,19 +3207,20 @@ no vasto manto azul do infinito."
   ) async {
     // Se a lista está vazia, retorna vazia
     if (keywords.isEmpty) return keywords;
-    
+
     // Detectar idioma de origem (assumimos português por padrão)
     final targetLower = targetLanguage.toLowerCase();
-    
+
     // Se o idioma alvo é português, não precisa traduzir
-    if (targetLower.contains('portugu') || 
-        targetLower.contains('pt-br') || 
+    if (targetLower.contains('portugu') ||
+        targetLower.contains('pt-br') ||
         targetLower == 'pt') {
       return keywords;
     }
 
     try {
-      final prompt = '''
+      final prompt =
+          '''
 TAREFA: Tradutor de Palavras-Chave para Validação de Roteiro.
 
 IDIOMA DE ORIGEM: Português
@@ -3167,9 +3251,9 @@ RESPONDA APENAS COM O JSON ARRAY:''';
           'contents': [
             {
               'parts': [
-                {'text': prompt}
-              ]
-            }
+                {'text': prompt},
+              ],
+            },
           ],
           'generationConfig': {
             'temperature': 0.1, // Baixa para tradução precisa
@@ -3178,26 +3262,30 @@ RESPONDA APENAS COM O JSON ARRAY:''';
         },
       );
 
-      final text = response.data['candidates'][0]['content']['parts'][0]['text']
-          ?.toString() ?? '';
+      final text =
+          response.data['candidates'][0]['content']['parts'][0]['text']
+              ?.toString() ??
+          '';
 
       // Parse do JSON array
       final cleanText = text
           .replaceAll('```json', '')
           .replaceAll('```', '')
           .trim();
-      
+
       final jsonMatch = RegExp(r'\[.*\]', dotAll: true).firstMatch(cleanText);
       if (jsonMatch != null) {
         final List<dynamic> parsed = jsonDecode(jsonMatch.group(0)!);
         final translated = parsed.map((e) => e.toString()).toList();
-        
+
         if (kDebugMode) {
           debugPrint('🌐 TRADUÇÃO DE KEYWORDS:');
           debugPrint('   Original (PT): ${keywords.join(", ")}');
-          debugPrint('   Traduzido ($targetLanguage): ${translated.join(", ")}');
+          debugPrint(
+            '   Traduzido ($targetLanguage): ${translated.join(", ")}',
+          );
         }
-        
+
         // Retorna AMBOS: original + traduzido (para busca mais robusta)
         return [...keywords, ...translated];
       }
@@ -3207,7 +3295,7 @@ RESPONDA APENAS COM O JSON ARRAY:''';
         debugPrint('   Usando keywords originais como fallback');
       }
     }
-    
+
     // Fallback: retorna keywords originais
     return keywords;
   }
@@ -3217,7 +3305,10 @@ RESPONDA APENAS COM O JSON ARRAY:''';
   /// usando o próprio Gemini para análise semântica
   /// 🆕 v7.6.44: EXTRAÇÃO AUTOMÁTICA DE ELEMENTOS-CHAVE DO TÍTULO
   /// Identifica personagens, ações e contextos que DEVEM aparecer na história
-  Map<String, List<String>> _extractTitleKeyElements(String title, String language) {
+  Map<String, List<String>> _extractTitleKeyElements(
+    String title,
+    String language,
+  ) {
     final result = <String, List<String>>{
       'personagens': [],
       'acoes': [],
@@ -3232,26 +3323,32 @@ RESPONDA APENAS COM O JSON ARRAY:''';
     // 🎯 DETECÇÃO DE PERSONAGENS (baseado em profissões/papéis)
     final personPatterns = {
       // Português
-      r'(?:funcionári[oa]|atendente|vendedor|caixa|balconista)\s+(?:de\s+)?(?:loja|mercado|supermercado|conveniência)': 'funcionário de loja/conveniência',
-      r'(?:garçom|garçonete|atendente)\s+(?:de\s+)?(?:restaurante|café|bar|lanchonete)': 'garçom/garçonete',
+      r'(?:funcionári[oa]|atendente|vendedor|caixa|balconista)\s+(?:de\s+)?(?:loja|mercado|supermercado|conveniência)':
+          'funcionário de loja/conveniência',
+      r'(?:garçom|garçonete|atendente)\s+(?:de\s+)?(?:restaurante|café|bar|lanchonete)':
+          'garçom/garçonete',
       r'(?:médic[oa]|enferm[oa]|doutor[a]?)': 'profissional de saúde',
       r'(?:advogad[oa]|juiz[a]?|promotor[a]?)': 'profissional jurídico',
       r'(?:CEO|empresári[oa]|dono|chefe|patrão|gerente)': 'executivo/chefe',
-      r'(?:mendigo|sem-teto|morador de rua|idoso faminto|noiva|noivo)': 'pessoa em situação especial',
-      
+      r'(?:mendigo|sem-teto|morador de rua|idoso faminto|noiva|noivo)':
+          'pessoa em situação especial',
+
       // English
-      r'(?:store|shop|convenience\s+store)\s+(?:clerk|employee|worker)': 'store employee',
+      r'(?:store|shop|convenience\s+store)\s+(?:clerk|employee|worker)':
+          'store employee',
       r'(?:waiter|waitress|server)': 'restaurant server',
       r'(?:doctor|nurse|physician)': 'healthcare worker',
       r'(?:lawyer|attorney|judge)': 'legal professional',
       r'(?:CEO|boss|manager|executive|owner)': 'executive',
-      r'(?:homeless|beggar|starving\s+(?:man|woman|elder))': 'person in special situation',
-      
+      r'(?:homeless|beggar|starving\s+(?:man|woman|elder))':
+          'person in special situation',
+
       // Español
-      r'(?:emplead[oa]|dependiente)\s+de\s+(?:tienda|supermercado)': 'empleado de tienda',
+      r'(?:emplead[oa]|dependiente)\s+de\s+(?:tienda|supermercado)':
+          'empleado de tienda',
       r'(?:camarero|camarera|mesero)': 'camarero',
       r'(?:médi[oa]|doctor[a]?|enfermer[oa])': 'profesional médico',
-      
+
       // 한국어 (Korean)
       r'(?:편의점|마트|가게)\s*알바생?': '편의점 알바생',
       r'(?:굶고\s*있는|배고픈)\s*(?:노인|할머니|할아버지)': '굶고 있는 노인',
@@ -3267,23 +3364,25 @@ RESPONDA APENAS COM O JSON ARRAY:''';
     // 🎯 DETECÇÃO DE AÇÕES PRINCIPAIS
     final actionPatterns = {
       // Português
-      r'(?:deu|ofereceu|compartilhou|dividiu)\s+(?:comida|marmita|dinheiro|ajuda)': 'compartilhar/ajudar',
+      r'(?:deu|ofereceu|compartilhou|dividiu)\s+(?:comida|marmita|dinheiro|ajuda)':
+          'compartilhar/ajudar',
       r'(?:salvou|resgatou|ajudou)': 'salvar/resgatar',
       r'(?:demitiu|despediu|expulsou)': 'demitir',
       r'(?:herdou|recebeu herança)': 'herdar',
       r'(?:traiu|enganou|mentiu)': 'trair/enganar',
       r'(?:vingou|se vingou)': 'vingar-se',
-      
+
       // English
       r'(?:gave|offered|shared)\s+(?:food|lunch|money|help)': 'share/help',
       r'(?:saved|rescued|helped)': 'save/rescue',
       r'(?:fired|dismissed)': 'fire/dismiss',
       r'(?:inherited|received inheritance)': 'inherit',
       r'(?:betrayed|cheated|lied)': 'betray',
-      
+
       // Español
-      r'(?:dio|ofreció|compartió)\s+(?:comida|almuerzo|dinero)': 'compartir/ayudar',
-      
+      r'(?:dio|ofreció|compartió)\s+(?:comida|almuerzo|dinero)':
+          'compartir/ayudar',
+
       // 한국어
       r'(?:나눠?준|주었|도와준)': '나눠주다/돕다',
       r'(?:건네며|주며)': '건네다',
@@ -3351,10 +3450,18 @@ RESPONDA APENAS COM O JSON ARRAY:''';
 
       if (kDebugMode) {
         debugPrint('🔍 ELEMENTOS-CHAVE DETECTADOS NO TÍTULO:');
-        debugPrint('   Personagens: ${keyElements['personagens']?.join(", ") ?? "nenhum"}');
-        debugPrint('   Ações: ${keyElements['acoes']?.join(", ") ?? "nenhuma"}');
-        debugPrint('   Contextos: ${keyElements['contextos']?.join(", ") ?? "nenhum"}');
-        debugPrint('   Objetos: ${keyElements['objetos']?.join(", ") ?? "nenhum"}');
+        debugPrint(
+          '   Personagens: ${keyElements['personagens']?.join(", ") ?? "nenhum"}',
+        );
+        debugPrint(
+          '   Ações: ${keyElements['acoes']?.join(", ") ?? "nenhuma"}',
+        );
+        debugPrint(
+          '   Contextos: ${keyElements['contextos']?.join(", ") ?? "nenhum"}',
+        );
+        debugPrint(
+          '   Objetos: ${keyElements['objetos']?.join(", ") ?? "nenhum"}',
+        );
       }
 
       // 🆕 v7.6.64: TRADUÇÃO MULTILÍNGUE DE KEYWORDS
@@ -3385,7 +3492,7 @@ RESPONDA APENAS COM O JSON ARRAY:''';
 
       // 2️⃣ VALIDAÇÃO BÁSICA: Verificar presença de palavras-chave
       final storyLower = story.toLowerCase();
-      
+
       // Validar personagens (agora com keywords traduzidas)
       for (final personagem in keyElements['personagens'] ?? []) {
         // Usar keywords traduzidas para busca
@@ -3445,11 +3552,12 @@ RESPONDA APENAS COM O JSON ARRAY:''';
       }
 
       // 3️⃣ VALIDAÇÃO AVANÇADA: Usar IA para análise semântica
-      final storyPreview = story.length > 2000 
+      final storyPreview = story.length > 2000
           ? story.substring(0, 2000) + '...'
           : story;
 
-      final validationPrompt = '''
+      final validationPrompt =
+          '''
 Você é um validador rigoroso de coerência narrativa. 
 
 TÍTULO: "$title"
@@ -3486,9 +3594,9 @@ RAZÃO: [explicação em português, máximo 2 linhas]
           'contents': [
             {
               'parts': [
-                {'text': validationPrompt}
-              ]
-            }
+                {'text': validationPrompt},
+              ],
+            },
           ],
           'generationConfig': {
             'temperature': 0.1, // Muito baixa para análise objetiva
@@ -3497,21 +3605,26 @@ RAZÃO: [explicação em português, máximo 2 linhas]
         },
       );
 
-      final text = response.data['candidates'][0]['content']['parts'][0]['text']
-          ?.toString() ?? '';
+      final text =
+          response.data['candidates'][0]['content']['parts'][0]['text']
+              ?.toString() ??
+          '';
 
       // Parse da resposta
       final isCoherent = text.toLowerCase().contains('coerente: sim');
       final confidenceMatch = RegExp(r'CONFIANÇA:\s*(\d+)').firstMatch(text);
-      final confidence = confidenceMatch != null 
+      final confidence = confidenceMatch != null
           ? int.tryParse(confidenceMatch.group(1) ?? '0') ?? 0
           : 0;
 
-      final reasonMatch = RegExp(r'RAZÃO:\s*(.+?)(?=\n|$)', dotAll: true)
-          .firstMatch(text);
+      final reasonMatch = RegExp(
+        r'RAZÃO:\s*(.+?)(?=\n|$)',
+        dotAll: true,
+      ).firstMatch(text);
 
       return {
-        'isCoherent': isCoherent && confidence >= 70, // Precisa 70%+ de confiança
+        'isCoherent':
+            isCoherent && confidence >= 70, // Precisa 70%+ de confiança
         'confidence': confidence,
         'missingElements': missingElements,
         'foundElements': foundElements,
@@ -3551,7 +3664,8 @@ RAZÃO: [explicação em português, máximo 2 linhas]
     };
 
     final langCode = language.toLowerCase().substring(0, 2);
-    final langInstruction = languageInstructions[langCode] ?? 'in the same language as the title';
+    final langInstruction =
+        languageInstructions[langCode] ?? 'in the same language as the title';
 
     return '''
 🎯 MISSÃO DE RECUPERAÇÃO: Adicionar elementos faltantes à história
@@ -3595,7 +3709,7 @@ APENAS o parágrafo final. Comece direto:
 
     // Extrair todos os nomes do texto
     final names = _extractNamesFromText(generatedText);
-    
+
     // Procurar o nome configurado
     if (names.contains(configName)) {
       tracker.setProtagonistName(configName);
@@ -3633,10 +3747,10 @@ APENAS o parágrafo final. Comece direto:
 
     // Extrair todos os nomes do bloco atual
     final currentNames = _extractNamesFromText(generatedText);
-    
+
     // Verificar se protagonista registrada aparece
     final protagonistPresent = currentNames.contains(registeredName);
-    
+
     // Verificar se há outros nomes válidos (possível troca)
     final otherValidNames = currentNames
         .where((n) => n != registeredName && _looksLikePersonName(n))
@@ -3651,17 +3765,18 @@ APENAS o parágrafo final. Comece direto:
         debugPrint('   Nomes encontrados: ${otherValidNames.join(", ")}');
         debugPrint('   ⚠️ Possível mudança de nome!');
       }
-      
+
       _debugLogger.error(
         'Mudança de protagonista detectada',
         blockNumber: blockNumber,
-        details: 'Esperado "$registeredName", encontrado ${otherValidNames.join(", ")}',
+        details:
+            'Esperado "$registeredName", encontrado ${otherValidNames.join(", ")}',
         metadata: {
           'protagonistaEsperada': registeredName,
           'nomesEncontrados': otherValidNames,
         },
       );
-      
+
       return true; // Bloco deve ser rejeitado
     }
 
@@ -3677,7 +3792,8 @@ APENAS o parágrafo final. Comece direto:
     int blockNumber,
   ) {
     final protagonistName = config.protagonistName.trim();
-    if (protagonistName.isEmpty) return true; // Sem protagonista configurada = ok
+    if (protagonistName.isEmpty)
+      return true; // Sem protagonista configurada = ok
 
     // 🚨 NOVA VALIDAÇÃO: Detectar auto-apresentações com nomes errados
     // Padrões: "my name is X", "i'm X", "call me X"
@@ -3692,9 +3808,8 @@ APENAS o parágrafo final. Comece direto:
       final match = pattern.firstMatch(generatedText);
       if (match != null) {
         final introducedName = match.group(1);
-        if (introducedName != null && 
+        if (introducedName != null &&
             introducedName.toLowerCase() != protagonistName.toLowerCase()) {
-          
           _log(
             '🚨 ERRO CRÍTICO: AUTO-APRESENTAÇÃO COM NOME ERRADO!',
             level: 'critical',
@@ -3707,15 +3822,9 @@ APENAS o parágrafo final. Comece direto:
             '   ❌ Nome na auto-apresentação: "$introducedName"',
             level: 'critical',
           );
-          _log(
-            '   📝 Trecho: "${match.group(0)}"',
-            level: 'critical',
-          );
-          _log(
-            '   🔄 BLOCO SERÁ REJEITADO E REGENERADO',
-            level: 'critical',
-          );
-          
+          _log('   📝 Trecho: "${match.group(0)}"', level: 'critical');
+          _log('   🔄 BLOCO SERÁ REJEITADO E REGENERADO', level: 'critical');
+
           return false; // 🚨 REJEITAR BLOCO
         }
       }
@@ -3795,11 +3904,8 @@ APENAS o parágrafo final. Comece direto:
           '   ⚠️ POSSÍVEL TROCA DE NOME DA PROTAGONISTA!',
           level: 'critical',
         );
-        _log(
-          '   🔄 BLOCO SERÁ REJEITADO E REGENERADO',
-          level: 'critical',
-        );
-        
+        _log('   🔄 BLOCO SERÁ REJEITADO E REGENERADO', level: 'critical');
+
         return false; // 🚨 REJEITAR BLOCO
       }
     }
@@ -3824,7 +3930,7 @@ APENAS o parágrafo final. Comece direto:
         metadata: {'protagonista': protagonistName},
       );
     }
-    
+
     return true; // Validação passou
   }
 
@@ -3840,50 +3946,113 @@ APENAS o parágrafo final. Comece direto:
     // Padrões de relacionamentos em múltiplos idiomas
     final patterns = {
       // Português
-      'marido': RegExp(r'meu marido(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'esposa': RegExp(r'minha esposa(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+      'marido': RegExp(
+        r'meu marido(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'esposa': RegExp(
+        r'minha esposa(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
       'pai': RegExp(r'meu pai(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'mãe': RegExp(r'minha mãe(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'irmão': RegExp(r'meu irmão(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'irmã': RegExp(r'minha irmã(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'sogro': RegExp(r'meu sogro(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'sogra': RegExp(r'minha sogra(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'cunhado': RegExp(r'meu cunhado(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'cunhada': RegExp(r'minha cunhada(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+      'sogra': RegExp(
+        r'minha sogra(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'cunhado': RegExp(
+        r'meu cunhado(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'cunhada': RegExp(
+        r'minha cunhada(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
       'genro': RegExp(r'meu genro(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'nora': RegExp(r'minha nora(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'neto': RegExp(r'meu neto(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'neta': RegExp(r'minha neta(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'avô': RegExp(r'meu avô(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'avó': RegExp(r'minha avó(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      
+
       // Inglês
-      'husband_en': RegExp(r'my husband(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+      'husband_en': RegExp(
+        r'my husband(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
       'wife_en': RegExp(r'my wife(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'father_en': RegExp(r'my father(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'mother_en': RegExp(r'my mother(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'brother_en': RegExp(r'my brother(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'sister_en': RegExp(r'my sister(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'father_in_law_en': RegExp(r'my father-in-law(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'mother_in_law_en': RegExp(r'my mother-in-law(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'brother_in_law_en': RegExp(r'my brother-in-law(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'sister_in_law_en': RegExp(r'my sister-in-law(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'son_in_law_en': RegExp(r'my son-in-law(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'daughter_in_law_en': RegExp(r'my daughter-in-law(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'grandson_en': RegExp(r'my grandson(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'granddaughter_en': RegExp(r'my granddaughter(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'grandfather_en': RegExp(r'my grandfather(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'grandmother_en': RegExp(r'my grandmother(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      
+      'father_en': RegExp(
+        r'my father(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'mother_en': RegExp(
+        r'my mother(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'brother_en': RegExp(
+        r'my brother(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'sister_en': RegExp(
+        r'my sister(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'father_in_law_en': RegExp(
+        r'my father-in-law(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'mother_in_law_en': RegExp(
+        r'my mother-in-law(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'brother_in_law_en': RegExp(
+        r'my brother-in-law(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'sister_in_law_en': RegExp(
+        r'my sister-in-law(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'son_in_law_en': RegExp(
+        r'my son-in-law(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'daughter_in_law_en': RegExp(
+        r'my daughter-in-law(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'grandson_en': RegExp(
+        r'my grandson(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'granddaughter_en': RegExp(
+        r'my granddaughter(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'grandfather_en': RegExp(
+        r'my grandfather(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+      'grandmother_en': RegExp(
+        r'my grandmother(?:,)?\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+
       // Padrões de casamento (detectar quem casa com quem)
-      'married_to': RegExp(r'([A-Z][a-z]+)\s+(?:casou com|married|se casou com)\s+([A-Z][a-z]+)', caseSensitive: false),
+      'married_to': RegExp(
+        r'([A-Z][a-z]+)\s+(?:casou com|married|se casou com)\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
     };
 
     // Extrair relacionamentos do texto
     for (final entry in patterns.entries) {
       final relationType = entry.key;
       final pattern = entry.value;
-      
+
       for (final match in pattern.allMatches(text)) {
         final name = match.group(1);
         if (name != null) {
@@ -3909,9 +4078,14 @@ APENAS o parágrafo final. Comece direto:
 
     for (final inLaw in [...brotherInLaw, ...sisterInLaw]) {
       // Se X é cunhado mas nunca mencionamos cônjuge nem irmãos = ERRO
-      if (husband.isEmpty && wife.isEmpty && brother.isEmpty && sister.isEmpty) {
+      if (husband.isEmpty &&
+          wife.isEmpty &&
+          brother.isEmpty &&
+          sister.isEmpty) {
         if (kDebugMode) {
-          debugPrint('🚨 ERRO: $inLaw é cunhado/cunhada mas não há cônjuge nem irmãos mencionados!');
+          debugPrint(
+            '🚨 ERRO: $inLaw é cunhado/cunhada mas não há cônjuge nem irmãos mencionados!',
+          );
         }
         hasError = true;
       }
@@ -3926,7 +4100,9 @@ APENAS o parágrafo final. Comece direto:
     if (fatherInLaw.isNotEmpty || motherInLaw.isNotEmpty) {
       if (husband.isEmpty && wife.isEmpty) {
         if (kDebugMode) {
-          debugPrint('🚨 ERRO: Tem sogro/sogra mas protagonista não tem cônjuge!');
+          debugPrint(
+            '🚨 ERRO: Tem sogro/sogra mas protagonista não tem cônjuge!',
+          );
           debugPrint('   ❌ Se X é sogro, protagonista DEVE ter esposa/marido');
         }
         hasError = true;
@@ -3941,12 +4117,19 @@ APENAS o parágrafo final. Comece direto:
 
     if (sonInLaw.isNotEmpty || daughterInLaw.isNotEmpty) {
       // Verificar se menciona filhos (procurar padrão mais amplo)
-      final hasChildren = text.contains(RegExp(r'meu filho|minha filha|my son|my daughter', caseSensitive: false));
-      
+      final hasChildren = text.contains(
+        RegExp(
+          r'meu filho|minha filha|my son|my daughter',
+          caseSensitive: false,
+        ),
+      );
+
       if (!hasChildren) {
         if (kDebugMode) {
           debugPrint('🚨 ERRO: Tem genro/nora mas não menciona filhos!');
-          debugPrint('   ❌ Se X é genro/nora, protagonista DEVE ter filho/filha');
+          debugPrint(
+            '   ❌ Se X é genro/nora, protagonista DEVE ter filho/filha',
+          );
         }
         hasError = true;
       }
@@ -3959,12 +4142,19 @@ APENAS o parágrafo final. Comece direto:
     final granddaughter = relationships['protagonist']?['neta'] ?? {};
 
     if (grandson.isNotEmpty || granddaughter.isNotEmpty) {
-      final hasChildren = text.contains(RegExp(r'meu filho|minha filha|my son|my daughter', caseSensitive: false));
-      
+      final hasChildren = text.contains(
+        RegExp(
+          r'meu filho|minha filha|my son|my daughter',
+          caseSensitive: false,
+        ),
+      );
+
       if (!hasChildren) {
         if (kDebugMode) {
           debugPrint('🚨 ERRO: Tem neto/neta mas não menciona filhos!');
-          debugPrint('   ❌ Se X é neto/neta, protagonista DEVE ter filho/filha');
+          debugPrint(
+            '   ❌ Se X é neto/neta, protagonista DEVE ter filho/filha',
+          );
         }
         hasError = true;
       }
@@ -3981,24 +4171,36 @@ APENAS o parágrafo final. Comece direto:
     for (final match in marriedPattern.allMatches(text)) {
       final sibling = match.group(2); // Nome do irmão/irmã
       final spouse = match.group(3); // Nome do cônjuge do irmão/irmã
-      
+
       if (sibling != null && spouse != null) {
         // Se texto diz "X's father Alan" ou "father of X"
         final parentPattern = RegExp(
-          r'(?:' + spouse + r"'s father|father of " + spouse + r'|pai de ' + spouse + r')(?:,)?\s+([A-Z][a-z]+)',
+          r'(?:' +
+              spouse +
+              r"'s father|father of " +
+              spouse +
+              r'|pai de ' +
+              spouse +
+              r')(?:,)?\s+([A-Z][a-z]+)',
           caseSensitive: false,
         );
-        
+
         for (final parentMatch in parentPattern.allMatches(text)) {
           final parentName = parentMatch.group(1);
-          
+
           // Se esse pai foi chamado de "my father-in-law" = ERRO
           if (parentName != null && fatherInLaw.contains(parentName)) {
             if (kDebugMode) {
               debugPrint('🚨 ERRO DE RELACIONAMENTO GENEALÓGICO!');
-              debugPrint('   ❌ $parentName é pai de $spouse (cônjuge de $sibling)');
-              debugPrint('   ❌ Mas texto chama $parentName de "my father-in-law"');
-              debugPrint('   ✅ CORRETO seria: "$parentName é sogro do meu irmão $sibling"');
+              debugPrint(
+                '   ❌ $parentName é pai de $spouse (cônjuge de $sibling)',
+              );
+              debugPrint(
+                '   ❌ Mas texto chama $parentName de "my father-in-law"',
+              );
+              debugPrint(
+                '   ✅ CORRETO seria: "$parentName é sogro do meu irmão $sibling"',
+              );
             }
             hasError = true;
           }
@@ -4008,8 +4210,12 @@ APENAS o parágrafo final. Comece direto:
 
     if (hasError) {
       if (kDebugMode) {
-        debugPrint('❌ BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!');
-        debugPrint('   🔄 Forçando regeneração com lógica genealógica correta...');
+        debugPrint(
+          '❌ BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!',
+        );
+        debugPrint(
+          '   🔄 Forçando regeneração com lógica genealógica correta...',
+        );
       }
     }
 
@@ -4022,20 +4228,20 @@ APENAS o parágrafo final. Comece direto:
   /// 🔥 v7.6.32: NOVA VALIDAÇÃO - Detecta quando MESMO PAPEL tem NOMES DIFERENTES
   /// 🆕 v7.6.33: PAPÉIS POSSESSIVOS SINGULARES - Detecta "my lawyer" como papel único
   /// 🔥 v7.6.34: FIX MULTI-WORD ROLES - Corrige detecção de "executive assistant", "financial advisor"
-  /// 
+  ///
   /// OBJETIVO 1 (v7.6.28): Detectar quando MESMO NOME aparece para PERSONAGENS DIFERENTES
   /// EXEMPLO RUIM: "Mark" como boyfriend + "Mark" como attorney
-  /// 
+  ///
   /// OBJETIVO 2 (v7.6.32): Detectar quando MESMO PAPEL é atribuído a NOMES DIFERENTES
   /// EXEMPLO RUIM: "Ashley" como protagonista + "Emily" como protagonista
-  /// 
+  ///
   /// OBJETIVO 3 (v7.6.33/34): Detectar quando PAPEL POSSESSIVO tem NOMES DIFERENTES
-  /// EXEMPLOS RUINS: 
+  /// EXEMPLOS RUINS:
   ///   - "my lawyer, Richard" (Bloco 5) → "my lawyer, Mark" (Bloco 10)
   ///   - "my executive assistant, Lauren" (Bloco 7) → "my executive assistant, Danielle" (Bloco 12)
   /// LÓGICA: "my X" = possessivo singular = papel único (não pode ter múltiplos)
   /// 🔥 v7.6.34: Agora captura corretamente multi-word roles (executive assistant, financial advisor, etc.)
-  /// 
+  ///
   /// Retorna TRUE se houver conflito (bloco deve ser rejeitado)
   /// Retorna FALSE se nomes são únicos (bloco pode ser aceito)
   bool _validateUniqueNames(
@@ -4047,7 +4253,7 @@ APENAS o parágrafo final. Comece direto:
 
     // Extrair nomes do bloco atual
     final namesInBlock = _extractNamesFromText(blockText);
-    
+
     // Verificar cada nome extraído
     for (final name in namesInBlock) {
       // ═══════════════════════════════════════════════════════════════
@@ -4055,132 +4261,152 @@ APENAS o parágrafo final. Comece direto:
       // ═══════════════════════════════════════════════════════════════
       if (tracker.hasName(name)) {
         // Nome já existe - verificar se é o MESMO personagem ou REUSO indevido
-        
+
         // Extrair papel atual deste nome no bloco
         final currentRole = _extractRoleForName(name, blockText);
-        
+
         // Extrair papel registrado anteriormente
         final previousRole = tracker.getRole(name);
-        
+
         if (currentRole != null && previousRole != null) {
           // Normalizar papéis para comparação
           final normalizedCurrent = _normalizeRole(currentRole);
           final normalizedPrevious = _normalizeRole(previousRole);
-          
+
           // Se papéis são DIFERENTES = NOME DUPLICADO (ERRO!)
-          if (normalizedCurrent != normalizedPrevious && 
-              normalizedCurrent != 'indefinido' && 
+          if (normalizedCurrent != normalizedPrevious &&
+              normalizedCurrent != 'indefinido' &&
               normalizedPrevious != 'indefinido') {
-            
             if (kDebugMode) {
               debugPrint('🚨🚨🚨 v7.6.28: NOME DUPLICADO DETECTADO! 🚨🚨🚨');
               debugPrint('   ❌ Nome: "$name"');
-              debugPrint('   ❌ Papel anterior: "$previousRole" → "$normalizedPrevious"');
-              debugPrint('   ❌ Papel atual: "$currentRole" → "$normalizedCurrent"');
-              debugPrint('   💡 EXEMPLO DO BUG: "Mark" sendo boyfriend E attorney!');
-              debugPrint('   🔄 Bloco $blockNumber será REJEITADO e REGENERADO');
+              debugPrint(
+                '   ❌ Papel anterior: "$previousRole" → "$normalizedPrevious"',
+              );
+              debugPrint(
+                '   ❌ Papel atual: "$currentRole" → "$normalizedCurrent"',
+              );
+              debugPrint(
+                '   💡 EXEMPLO DO BUG: "Mark" sendo boyfriend E attorney!',
+              );
+              debugPrint(
+                '   🔄 Bloco $blockNumber será REJEITADO e REGENERADO',
+              );
               debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
             }
-            
+
             _debugLogger.error(
               "Nome duplicado em papéis diferentes - Bloco $blockNumber",
               blockNumber: blockNumber,
-              details: "Nome '$name': papel anterior '$previousRole', papel atual '$currentRole'",
+              details:
+                  "Nome '$name': papel anterior '$previousRole', papel atual '$currentRole'",
               metadata: {
                 'nome': name,
                 'papelAnterior': previousRole,
                 'papelAtual': currentRole,
               },
             );
-            
+
             return true; // ❌ CONFLITO DETECTADO
           }
         }
       }
-      
+
       // ═══════════════════════════════════════════════════════════════
       // 🔥 VALIDAÇÃO 2 (v7.6.32): MESMO PAPEL em NOMES DIFERENTES
       // ═══════════════════════════════════════════════════════════════
       final currentRole = _extractRoleForName(name, blockText);
-      
+
       if (currentRole != null && currentRole != 'indefinido') {
         final normalizedCurrent = _normalizeRole(currentRole);
-        
+
         // Verificar se este PAPEL já existe com um NOME DIFERENTE
         for (final existingName in tracker.confirmedNames) {
           if (existingName.toLowerCase() == name.toLowerCase()) {
             continue; // Mesmo nome = OK (já validado acima)
           }
-          
+
           final existingRole = tracker.getRole(existingName);
           if (existingRole == null) continue;
-          
+
           final normalizedExisting = _normalizeRole(existingRole);
-          
+
           // 🎯 PAPÉIS CRÍTICOS que DEVEM ser únicos (1 nome por papel)
           final uniqueRoles = {
-            'protagonista', 'protagonist', 'main character',
-            'narradora', 'narrador', 'narrator',
-            'hero', 'heroine', 'herói', 'heroína',
+            'protagonista',
+            'protagonist',
+            'main character',
+            'narradora',
+            'narrador',
+            'narrator',
+            'hero',
+            'heroine',
+            'herói',
+            'heroína',
           };
-          
+
           // Se MESMO PAPEL com NOMES DIFERENTES = ERRO CRÍTICO!
           if (normalizedCurrent == normalizedExisting) {
             // Verificar se é papel crítico que deve ser único
             bool isCriticalRole = false;
             for (final uniqueRole in uniqueRoles) {
-              if (normalizedCurrent.contains(uniqueRole) || 
+              if (normalizedCurrent.contains(uniqueRole) ||
                   normalizedExisting.contains(uniqueRole)) {
                 isCriticalRole = true;
                 break;
               }
             }
-            
+
             if (isCriticalRole) {
               if (kDebugMode) {
                 debugPrint('🚨🚨🚨 v7.6.32: PAPEL DUPLICADO DETECTADO! 🚨🚨🚨');
                 debugPrint('   ❌ Papel: "$currentRole" → "$normalizedCurrent"');
                 debugPrint('   ❌ Nome anterior: "$existingName"');
                 debugPrint('   ❌ Nome atual: "$name"');
-                debugPrint('   💡 EXEMPLO DO BUG: "Ashley" sendo protagonista E "Emily" sendo protagonista!');
-                debugPrint('   🔄 Bloco $blockNumber será REJEITADO e REGENERADO');
+                debugPrint(
+                  '   💡 EXEMPLO DO BUG: "Ashley" sendo protagonista E "Emily" sendo protagonista!',
+                );
+                debugPrint(
+                  '   🔄 Bloco $blockNumber será REJEITADO e REGENERADO',
+                );
                 debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
               }
-              
+
               _debugLogger.error(
                 "Papel duplicado com nomes diferentes - Bloco $blockNumber",
                 blockNumber: blockNumber,
-                details: "Papel '$currentRole': nome anterior '$existingName', nome atual '$name'",
+                details:
+                    "Papel '$currentRole': nome anterior '$existingName', nome atual '$name'",
                 metadata: {
                   'papel': currentRole,
                   'nomeAnterior': existingName,
                   'nomeAtual': name,
                 },
               );
-              
+
               return true; // ❌ CONFLITO CRÍTICO DETECTADO
             }
           }
         }
       }
-      
+
       // ═══════════════════════════════════════════════════════════════
       // 🆕 VALIDAÇÃO 3 (v7.6.33): PAPÉIS POSSESSIVOS SINGULARES
       // ═══════════════════════════════════════════════════════════════
       // OBJETIVO: Detectar papéis únicos indicados por possessivos singulares
       // EXEMPLO RUIM: "my lawyer, Richard" (Bloco 5) → "my lawyer, Mark" (Bloco 10)
-      // 
+      //
       // Quando texto usa "my X" (possessive singular), indica papel único
       // Não pode haver múltiplas instâncias: "my lawyer" = apenas 1 advogado
-      // 
+      //
       // 🔍 Detecta padrões:
       // - "my lawyer", "my attorney", "my doctor"
       // - "my therapist", "my accountant", "my agent"
       // - "my boss", "my mentor", "my partner"
-      // 
+      //
       // ⚠️ IMPORTANTE: "my lawyers" (plural) NÃO é considerado único
       // ═══════════════════════════════════════════════════════════════
-      
+
       // Padrão para detectar possessivos singulares
       // Captura: "my [role]" mas NÃO "my [role]s" (plural)
       // 🔥 v7.6.34: EXPANDIDO para capturar multi-word roles (executive assistant, financial advisor, etc.)
@@ -4188,73 +4414,93 @@ APENAS o parágrafo final. Comece direto:
         r'\b(?:my|nossa)\s+(?:executive\s+assistant|personal\s+assistant|financial\s+advisor|real\s+estate\s+agent|estate\s+planner|tax\s+advisor|makeup\s+artist|physical\s+therapist|occupational\s+therapist|speech\s+therapist|au\s+pair|dalai\s+lama|vice[-\s]president|lawyer|attorney|doctor|therapist|accountant|agent|boss|mentor|partner|adviser|advisor|consultant|coach|teacher|tutor|counselor|psychologist|psychiatrist|dentist|surgeon|specialist|physician|nurse|caregiver|assistant|secretary|manager|supervisor|director|ceo|cfo|cto|president|chairman|investor|banker|auditor|notary|mediator|arbitrator|investigator|detective|officer|sergeant|captain|lieutenant|judge|magistrate|prosecutor|defender|guardian|curator|executor|trustee|beneficiary|architect|engineer|contractor|builder|designer|decorator|landscaper|gardener|housekeeper|maid|butler|chef|cook|driver|chauffeur|pilot|navigator|guide|translator|interpreter|editor|publisher|producer|publicist|stylist|hairdresser|barber|beautician|esthetician|masseuse|trainer|nutritionist|dietitian|pharmacist|optometrist|veterinarian|groomer|walker|sitter|nanny|governess|babysitter|midwife|doula|chiropractor|acupuncturist|hypnotist|healer|shaman|priest|pastor|minister|rabbi|imam|monk|nun|chaplain|deacon|elder|bishop|archbishop|cardinal|pope|guru|sensei|sifu|master|grandmaster)(?![a-z])',
         caseSensitive: false,
       );
-      
+
       final possessiveMatches = possessiveSingularPattern.allMatches(blockText);
-      
+
       for (final match in possessiveMatches) {
         // 🔥 v7.6.34: Captura o grupo completo (incluindo multi-word roles)
-        final possessiveRole = match.group(0)
-            ?.replaceFirst(RegExp(r'\b(?:my|nossa)\s+', caseSensitive: false), '')
+        final possessiveRole = match
+            .group(0)
+            ?.replaceFirst(
+              RegExp(r'\b(?:my|nossa)\s+', caseSensitive: false),
+              '',
+            )
             .toLowerCase()
             .trim();
-        
+
         if (possessiveRole == null || possessiveRole.isEmpty) continue;
-        
+
         // Verificar se JÁ existe este papel possessivo com NOME DIFERENTE
         for (final existingName in tracker.confirmedNames) {
           if (existingName.toLowerCase() == name.toLowerCase()) {
             continue; // Mesmo nome = OK
           }
-          
+
           final existingRole = tracker.getRole(existingName);
           if (existingRole == null) continue;
-          
+
           final normalizedExisting = _normalizeRole(existingRole).toLowerCase();
-          
+
           // 🔥 v7.6.34: Match exato ou contém o papel completo (executive assistant, etc.)
-          final possessiveRoleNormalized = possessiveRole.replaceAll(RegExp(r'\s+'), ' ');
-          
+          final possessiveRoleNormalized = possessiveRole.replaceAll(
+            RegExp(r'\s+'),
+            ' ',
+          );
+
           // Verificar se papel possessivo já existe
-          if (normalizedExisting.contains(possessiveRoleNormalized) || 
-              possessiveRoleNormalized.contains(normalizedExisting.split(' ').last)) {
+          if (normalizedExisting.contains(possessiveRoleNormalized) ||
+              possessiveRoleNormalized.contains(
+                normalizedExisting.split(' ').last,
+              )) {
             if (kDebugMode) {
-              debugPrint('🚨🚨🚨 v7.6.34: PAPEL POSSESSIVO SINGULAR DUPLICADO! 🚨🚨🚨');
+              debugPrint(
+                '🚨🚨🚨 v7.6.34: PAPEL POSSESSIVO SINGULAR DUPLICADO! 🚨🚨🚨',
+              );
               debugPrint('   ❌ Papel possessivo: "my $possessiveRole"');
-              debugPrint('   ❌ Nome anterior: "$existingName" (papel: "$existingRole")');
+              debugPrint(
+                '   ❌ Nome anterior: "$existingName" (papel: "$existingRole")',
+              );
               debugPrint('   ❌ Nome atual: "$name"');
               debugPrint('   💡 EXEMPLOS DO BUG:');
               debugPrint('      - "my lawyer, Richard" → "my lawyer, Mark"');
-              debugPrint('      - "my executive assistant, Lauren" → "my executive assistant, Danielle"');
-              debugPrint('   💡 "my X" indica papel ÚNICO - não pode haver múltiplos!');
-              debugPrint('   🔄 Bloco $blockNumber será REJEITADO e REGENERADO');
+              debugPrint(
+                '      - "my executive assistant, Lauren" → "my executive assistant, Danielle"',
+              );
+              debugPrint(
+                '   💡 "my X" indica papel ÚNICO - não pode haver múltiplos!',
+              );
+              debugPrint(
+                '   🔄 Bloco $blockNumber será REJEITADO e REGENERADO',
+              );
               debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
             }
-            
+
             _debugLogger.error(
               "Papel possessivo singular duplicado - Bloco $blockNumber",
               blockNumber: blockNumber,
-              details: "'my $possessiveRole': nome anterior '$existingName', nome atual '$name'",
+              details:
+                  "'my $possessiveRole': nome anterior '$existingName', nome atual '$name'",
               metadata: {
                 'papelPossessivo': possessiveRole,
                 'nomeAnterior': existingName,
                 'nomeAtual': name,
               },
             );
-            
+
             return true; // ❌ CONFLITO POSSESSIVO DETECTADO
           }
         }
       }
     }
-    
+
     return false; // ✅ Nenhum conflito de nomes ou papéis
   }
 
   /// 🔧 v7.6.26: Normaliza papel SELETIVAMENTE (evita falsos positivos)
-  /// 
+  ///
   /// PAPÉIS FAMILIARES: Mantém completo "mãe de Emily" ≠ "mãe de Michael"
   /// PAPÉIS GENÉRICOS: Normaliza "advogado de Sarah" → "advogado"
-  /// 
+  ///
   /// Exemplo:
   /// - "mãe de Emily" → "mãe de emily" (mantém relação)
   /// - "irmão de João" → "irmão de joão" (mantém relação)
@@ -4262,20 +4508,55 @@ APENAS o parágrafo final. Comece direto:
   /// - "médico de Michael" → "médico" (remove relação)
   String _normalizeRole(String role) {
     final roleLower = role.toLowerCase().trim();
-    
+
     // 🔥 v7.6.26: PAPÉIS FAMILIARES - NÃO normalizar (manter contexto familiar)
     // Permite múltiplas famílias na mesma história sem falsos positivos
     final familyRoles = [
-      'mãe', 'pai', 'filho', 'filha', 'irmão', 'irmã',
-      'avô', 'avó', 'tio', 'tia', 'primo', 'prima',
-      'sogro', 'sogra', 'cunhado', 'cunhada',
-      'mother', 'father', 'son', 'daughter', 'brother', 'sister',
-      'grandfather', 'grandmother', 'uncle', 'aunt', 'cousin',
-      'father-in-law', 'mother-in-law', 'brother-in-law', 'sister-in-law',
-      'mère', 'père', 'fils', 'fille', 'frère', 'sœur',
-      'grand-père', 'grand-mère', 'oncle', 'tante', 'cousin', 'cousine',
+      'mãe',
+      'pai',
+      'filho',
+      'filha',
+      'irmão',
+      'irmã',
+      'avô',
+      'avó',
+      'tio',
+      'tia',
+      'primo',
+      'prima',
+      'sogro',
+      'sogra',
+      'cunhado',
+      'cunhada',
+      'mother',
+      'father',
+      'son',
+      'daughter',
+      'brother',
+      'sister',
+      'grandfather',
+      'grandmother',
+      'uncle',
+      'aunt',
+      'cousin',
+      'father-in-law',
+      'mother-in-law',
+      'brother-in-law',
+      'sister-in-law',
+      'mère',
+      'père',
+      'fils',
+      'fille',
+      'frère',
+      'sœur',
+      'grand-père',
+      'grand-mère',
+      'oncle',
+      'tante',
+      'cousin',
+      'cousine',
     ];
-    
+
     // Verificar se é papel familiar
     for (final familyRole in familyRoles) {
       if (roleLower.contains(familyRole)) {
@@ -4289,21 +4570,20 @@ APENAS o parágrafo final. Comece direto:
         return roleLower;
       }
     }
-    
+
     // 🔧 PAPÉIS GENÉRICOS: Normalizar (remover sufixo "de [Nome]")
     // "advogado de Sarah" → "advogado"
     // "médico de João" → "médico"
-    final normalized = roleLower.replaceAll(
-      RegExp(r'\s+de\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇa-záàâãéêíóôõúç]+.*$'),
-      '',
-    ).trim();
-    
+    final normalized = roleLower
+        .replaceAll(RegExp(r'\s+de\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇa-záàâãéêíóôõúç]+.*$'), '')
+        .trim();
+
     if (kDebugMode && normalized != roleLower) {
       debugPrint(
         '🔧 v7.6.26: Papel genérico normalizado: "$roleLower" → "$normalized"',
       );
     }
-    
+
     return normalized;
   }
 
@@ -5239,7 +5519,9 @@ APENAS o parágrafo final. Comece direto:
     if (text.isEmpty) return false;
     // Aceita qualquer string que comece com letra maiuscula
     // e contenha apenas letras, espacos, hifens ou apostrofos
-    final nameRegex = RegExp(r"^[A-Z\u00C0-\u00DC\u0100-\u017F\uAC00-\uD7AF][a-zA-Z\u00C0-\u00FF\u0100-\u017F\uAC00-\uD7AF\s\-\']+$");
+    final nameRegex = RegExp(
+      r"^[A-Z\u00C0-\u00DC\u0100-\u017F\uAC00-\uD7AF][a-zA-Z\u00C0-\u00FF\u0100-\u017F\uAC00-\uD7AF\s\-\']+$",
+    );
     return nameRegex.hasMatch(text.trim());
   }
 
@@ -5247,14 +5529,14 @@ APENAS o parágrafo final. Comece direto:
   bool _hasValidNameStructure(String name) {
     // Mínimo 2 caracteres, máximo 15
     if (name.length < 2 || name.length > 15) return false;
-    
+
     // Primeira letra maiúscula
     if (name[0] != name[0].toUpperCase()) return false;
-    
+
     // Resto em minúsculas (permite acentos)
     final rest = name.substring(1);
     if (rest != rest.toLowerCase()) return false;
-    
+
     // Apenas letras (permite acentuação)
     final validPattern = RegExp(r'^[A-ZÀ-Ü][a-zà-ÿ]+$');
     return validPattern.hasMatch(name);
@@ -5263,7 +5545,7 @@ APENAS o parágrafo final. Comece direto:
   /// 🆕 v7.6.17: Verifica se é palavra comum (não-nome)
   bool _isCommonWord(String word) {
     final lower = word.toLowerCase();
-    
+
     // Palavras comuns em múltiplos idiomas (sem duplicações)
     final commonWords = {
       // Português
@@ -5284,7 +5566,7 @@ APENAS o parágrafo final. Comece direto:
       'mucho', 'alguien', 'nadie', 'mismo', 'pero', 'sin', 'aunque',
       'mientras',
     };
-    
+
     return commonWords.contains(lower);
   }
 
@@ -5419,7 +5701,7 @@ APENAS o parágrafo final. Comece direto:
     'semanas',
     'aconteceu',
     'todas', 'ajuda', 'consolo', 'vamos', 'conheço', 'conheco', 'lembra',
-    
+
     // 🆕 v7.6.39: Palavras em inglês que NÃO são nomes (evitar "Grand" etc.)
     'grand', 'grandfather', 'grandmother', 'grandpa', 'grandma',
     'father', 'mother', 'brother', 'sister', 'uncle', 'aunt',
@@ -5878,7 +6160,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         normalized.contains('korean') ||
         normalized.contains('한국어') ||
         normalized == 'ko') {
-      return 1.55; 
+      return 1.55;
     }
 
     // 🇧🇷 PORTUGUÊS ou OUTROS: Baseline perfeito
@@ -5936,39 +6218,53 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
 
     // 🔥 SOLUÇÃO 3: Reforçar os nomes confirmados no prompt para manter consistência
     String trackerInfo = '';
-    
+
     // 🆕 v7.6.36: LEMBRETE CRÍTICO DE NOMES - Muito mais agressivo!
     // Aparece no INÍCIO de cada bloco para evitar que Gemini "esqueça" nomes
     if (tracker.confirmedNames.isNotEmpty && blockNumber > 1) {
       final nameReminder = StringBuffer();
       nameReminder.writeln('');
-      nameReminder.writeln('🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨');
-      nameReminder.writeln('⚠️ LEMBRETE OBRIGATÓRIO DE NOMES - LEIA ANTES DE CONTINUAR! ⚠️');
-      nameReminder.writeln('🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨');
+      nameReminder.writeln(
+        '🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨',
+      );
+      nameReminder.writeln(
+        '⚠️ LEMBRETE OBRIGATÓRIO DE NOMES - LEIA ANTES DE CONTINUAR! ⚠️',
+      );
+      nameReminder.writeln(
+        '🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨',
+      );
       nameReminder.writeln('');
-      nameReminder.writeln('📋 PERSONAGENS DESTA HISTÓRIA (USE SEMPRE ESTES NOMES):');
+      nameReminder.writeln(
+        '📋 PERSONAGENS DESTA HISTÓRIA (USE SEMPRE ESTES NOMES):',
+      );
       nameReminder.writeln('');
-      
+
       // Listar cada personagem com seu papel de forma MUITO clara
       for (final name in tracker.confirmedNames) {
         final role = tracker.getRole(name) ?? 'personagem';
         nameReminder.writeln('   ✅ $name = $role');
       }
-      
+
       nameReminder.writeln('');
       nameReminder.writeln('❌ PROIBIDO MUDAR ESTES NOMES! ❌');
       nameReminder.writeln('');
-      
+
       // Adicionar protagonista de forma EXTRA enfática
       final protagonistName = c.protagonistName.trim();
       if (protagonistName.isNotEmpty) {
-        nameReminder.writeln('🔴 A PROTAGONISTA/NARRADORA SE CHAMA: $protagonistName');
+        nameReminder.writeln(
+          '🔴 A PROTAGONISTA/NARRADORA SE CHAMA: $protagonistName',
+        );
         nameReminder.writeln('   → Quando ela fala de si mesma: "i" ou "me"');
-        nameReminder.writeln('   → Quando outros falam dela: "$protagonistName"');
-        nameReminder.writeln('   → NUNCA mude para Emma, Jessica, Lauren, Sarah, etc!');
+        nameReminder.writeln(
+          '   → Quando outros falam dela: "$protagonistName"',
+        );
+        nameReminder.writeln(
+          '   → NUNCA mude para Emma, Jessica, Lauren, Sarah, etc!',
+        );
         nameReminder.writeln('');
       }
-      
+
       // Listar mapeamento reverso (papel → nome) para reforçar
       final roleMap = tracker.roleToNameMap;
       if (roleMap.isNotEmpty) {
@@ -5978,13 +6274,17 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         }
         nameReminder.writeln('');
       }
-      
-      nameReminder.writeln('⚠️ SE VOCÊ TROCAR UM NOME, O ROTEIRO SERÁ REJEITADO! ⚠️');
-      nameReminder.writeln('🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨');
+
+      nameReminder.writeln(
+        '⚠️ SE VOCÊ TROCAR UM NOME, O ROTEIRO SERÁ REJEITADO! ⚠️',
+      );
+      nameReminder.writeln(
+        '🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨',
+      );
       nameReminder.writeln('');
-      
+
       trackerInfo = nameReminder.toString();
-      
+
       if (kDebugMode) {
         debugPrint('🔥 Bloco $blockNumber - LEMBRETE DE NOMES INJETADO:');
         debugPrint('   Personagens: ${tracker.confirmedNames.join(", ")}');
@@ -5994,8 +6294,9 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       // Bloco 1: lista mais simples
       trackerInfo =
           '\n🚫 NOMES JÁ USADOS - NUNCA REUTILIZE: ${tracker.confirmedNames.join(", ")}\n';
-      trackerInfo += '⚠️ Se precisa de novo personagem, use NOME TOTALMENTE DIFERENTE!\n';
-      
+      trackerInfo +=
+          '⚠️ Se precisa de novo personagem, use NOME TOTALMENTE DIFERENTE!\n';
+
       final mapping = tracker.getCharacterMapping();
       if (mapping.isNotEmpty) {
         trackerInfo += mapping;
@@ -6021,7 +6322,9 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     if (worldState != null && blockNumber > 1) {
       worldStateContext = worldState.getContextForPrompt();
       if (kDebugMode && worldStateContext.isNotEmpty) {
-        debugPrint('🌍 World State injetado no prompt (${worldStateContext.length} chars)');
+        debugPrint(
+          '🌍 World State injetado no prompt (${worldStateContext.length} chars)',
+        );
       }
     }
 
@@ -6101,26 +6404,26 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     // O título NÃO é apenas decorativo - é a PREMISSA da história!
     final titleSection = c.title.trim().isNotEmpty
         ? '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
-          '🎯 TÍTULO/PREMISSA OBRIGATÓRIA DA HISTÓRIA:\n'
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
-          '"${c.title}"\n'
-          '\n'
-          '⚠️ REGRA ABSOLUTA:\n'
-          '   • A história DEVE desenvolver os elementos deste título\n'
-          '   • Personagens, ações e contexto do título são OBRIGATÓRIOS\n'
-          '   • NÃO invente uma história diferente da proposta no título\n'
-          '   • O título é a PROMESSA feita ao espectador - CUMPRA-A!\n'
-          '\n'
-          '📋 EXEMPLOS:\n'
-          '   ✅ Título: "굶고 있는 노인에게 도시락을 나눠준 편의점 알바생"\n'
-          '      → História DEVE ter: funcionário de conveniência + idoso faminto + marmita compartilhada\n'
-          '   \n'
-          '   ✅ Título: "Bilionário me ofereceu emprego após eu ajudar um mendigo"\n'
-          '      → História DEVE ter: protagonista + mendigo ajudado + revelação (mendigo = bilionário)\n'
-          '   \n'
-          '   ❌ ERRO: Ignorar título e criar história sobre CEO infiltrado em empresa\n'
-          '      → Isso QUEBRA a promessa feita ao espectador!\n'
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
+              '🎯 TÍTULO/PREMISSA OBRIGATÓRIA DA HISTÓRIA:\n'
+              '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+              '"${c.title}"\n'
+              '\n'
+              '⚠️ REGRA ABSOLUTA:\n'
+              '   • A história DEVE desenvolver os elementos deste título\n'
+              '   • Personagens, ações e contexto do título são OBRIGATÓRIOS\n'
+              '   • NÃO invente uma história diferente da proposta no título\n'
+              '   • O título é a PROMESSA feita ao espectador - CUMPRA-A!\n'
+              '\n'
+              '📋 EXEMPLOS:\n'
+              '   ✅ Título: "굶고 있는 노인에게 도시락을 나눠준 편의점 알바생"\n'
+              '      → História DEVE ter: funcionário de conveniência + idoso faminto + marmita compartilhada\n'
+              '   \n'
+              '   ✅ Título: "Bilionário me ofereceu emprego após eu ajudar um mendigo"\n'
+              '      → História DEVE ter: protagonista + mendigo ajudado + revelação (mendigo = bilionário)\n'
+              '   \n'
+              '   ❌ ERRO: Ignorar título e criar história sobre CEO infiltrado em empresa\n'
+              '      → Isso QUEBRA a promessa feita ao espectador!\n'
+              '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
         : '';
 
     // 🚫 CONSTRUIR LISTA DE NOMES PROIBIDOS (já usados nesta história)
@@ -6147,7 +6450,8 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     if (blockNumber == totalBlocks) {
       final unresolved = tracker.getUnresolvedCharacters();
       if (unresolved.isNotEmpty) {
-        closureWarning = '\n'
+        closureWarning =
+            '\n'
             '🚨🚨🚨 ATENÇÃO CRÍTICA - BLOCO FINAL 🚨🚨🚨\n'
             '\n'
             '⚠️ OS SEGUINTES PERSONAGENS AINDA NÃO TIVERAM FECHAMENTO:\n'
@@ -6175,11 +6479,13 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       } else {
         if (kDebugMode) {
           debugPrint('✅ TODOS os personagens importantes já têm fechamento!');
-          debugPrint('   Taxa de fechamento: ${(tracker.getClosureRate() * 100).toStringAsFixed(1)}%');
+          debugPrint(
+            '   Taxa de fechamento: ${(tracker.getClosureRate() * 100).toStringAsFixed(1)}%',
+          );
         }
       }
     }
-    
+
     final blockInfo =
         '\n'
         '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
@@ -6387,14 +6693,15 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         model: selectedModel,
         prompt: prompt,
         maxTokens: finalMaxTokens,
-        tryOpenAIOnFail: false, // 🚫 v7.6.19: Desabilitado - usar apenas API selecionada
+        tryOpenAIOnFail:
+            false, // 🚫 v7.6.19: Desabilitado - usar apenas API selecionada
       );
-      
+
       // 🚀 v7.6.20: Registrar sucesso da API para Adaptive Delay Manager
       if (data != null && data.isNotEmpty) {
         _recordApiSuccess();
       }
-      
+
       final text = data ?? '';
       final filtered = text.isNotEmpty
           ? await _filterDuplicateParagraphs(previous, text)
@@ -6402,45 +6709,66 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
 
       // 🚨 v7.6.21: VALIDAÇÃO CRÍTICA - Nome da protagonista
       if (filtered.isNotEmpty) {
-        final isValidProtagonist = _validateProtagonistName(filtered, c, blockNumber);
+        final isValidProtagonist = _validateProtagonistName(
+          filtered,
+          c,
+          blockNumber,
+        );
         if (!isValidProtagonist) {
           if (kDebugMode) {
-            debugPrint('❌ BLOCO $blockNumber REJEITADO: Nome errado da protagonista!');
+            debugPrint(
+              '❌ BLOCO $blockNumber REJEITADO: Nome errado da protagonista!',
+            );
             debugPrint('   🔄 Forçando regeneração...');
           }
           return ''; // Forçar regeneração
         }
-        
+
         // 🚨 v7.6.22: VALIDAÇÃO CRÍTICA - Relacionamentos familiares
-        final hasValidRelationships = _validateFamilyRelationships(filtered, blockNumber);
+        final hasValidRelationships = _validateFamilyRelationships(
+          filtered,
+          blockNumber,
+        );
         if (!hasValidRelationships) {
           if (kDebugMode) {
-            debugPrint('❌ BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!');
+            debugPrint(
+              '❌ BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!',
+            );
             debugPrint('   🔄 Forçando regeneração...');
           }
           return ''; // Forçar regeneração
         }
-        
+
         // 🚨 v7.6.22: RASTREAMENTO - Detectar resolução de personagens
         tracker.detectResolutionInText(filtered, blockNumber);
-        
+
         // 🚨 v7.6.23: VALIDAÇÃO CRÍTICA - Taxa de fechamento no bloco final
         if (blockNumber == totalBlocks) {
           final closureRate = tracker.getClosureRate();
           final minimumClosureRate = 0.90; // 90% mínimo
-          
+
           if (closureRate < minimumClosureRate) {
             final unresolved = tracker.getUnresolvedCharacters();
             if (kDebugMode) {
-              debugPrint('❌ BLOCO FINAL REJEITADO: Taxa de fechamento insuficiente!');
-              debugPrint('   Taxa atual: ${(closureRate * 100).toStringAsFixed(1)}% (mínimo: ${(minimumClosureRate * 100).toInt()}%)');
-              debugPrint('   Personagens sem fechamento: ${unresolved.join(", ")}');
-              debugPrint('   🔄 Forçando regeneração com fechamentos obrigatórios...');
+              debugPrint(
+                '❌ BLOCO FINAL REJEITADO: Taxa de fechamento insuficiente!',
+              );
+              debugPrint(
+                '   Taxa atual: ${(closureRate * 100).toStringAsFixed(1)}% (mínimo: ${(minimumClosureRate * 100).toInt()}%)',
+              );
+              debugPrint(
+                '   Personagens sem fechamento: ${unresolved.join(", ")}',
+              );
+              debugPrint(
+                '   🔄 Forçando regeneração com fechamentos obrigatórios...',
+              );
             }
             return ''; // Força regeneração do bloco final
           } else {
             if (kDebugMode) {
-              debugPrint('✅ BLOCO FINAL ACEITO: Taxa de fechamento suficiente!');
+              debugPrint(
+                '✅ BLOCO FINAL ACEITO: Taxa de fechamento suficiente!',
+              );
               debugPrint('   Taxa: ${(closureRate * 100).toStringAsFixed(1)}%');
             }
           }
@@ -6547,65 +6875,67 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         },
       );
 
-    // Debug completo da resposta
-    debugPrint('GeminiService: Status Code: ${resp.statusCode}');
-    debugPrint('GeminiService: Response Data: ${resp.data}');
+      // Debug completo da resposta
+      debugPrint('GeminiService: Status Code: ${resp.statusCode}');
+      debugPrint('GeminiService: Response Data: ${resp.data}');
 
-    // Verificar se há erro na resposta
-    if (resp.data['error'] != null) {
-      debugPrint('GeminiService: API Error: ${resp.data['error']}');
-      throw Exception('API Error: ${resp.data['error']['message']}');
-    }
-
-    // 🚨 VERIFICAR BLOQUEIO DE CONTEÚDO
-    final promptFeedback = resp.data['promptFeedback'];
-    if (promptFeedback != null && promptFeedback['blockReason'] != null) {
-      final blockReason = promptFeedback['blockReason'];
-      debugPrint('🚫 GeminiService: CONTEÚDO BLOQUEADO - Razão: $blockReason');
-      debugPrint(
-        '⚠️ GeminiService: Contexto contém conteúdo sensível detectado pela API',
-      );
-      // Retornar null para que o sistema continue sem este bloco
-      // O sistema vai tentar continuar com contexto reduzido
-      return null;
-    }
-
-    // Verificar finish reason
-    final finishReason = resp.data['candidates']?[0]?['finishReason'];
-    if (finishReason == 'MAX_TOKENS') {
-      debugPrint(
-        'GeminiService: Aviso - Resposta cortada por limite de tokens',
-      );
-    }
-
-    // Tentar extrair o texto da estrutura de resposta
-    String? result;
-    final candidate = resp.data['candidates']?[0];
-
-    if (candidate != null) {
-      // Primeiro tentar a estrutura padrão com parts
-      result = candidate['content']?['parts']?[0]?['text'] as String?;
-
-      // Se não encontrou, tentar outras estruturas possíveis
-      if (result == null || result.isEmpty) {
-        result = candidate['content']?['text'] as String?;
+      // Verificar se há erro na resposta
+      if (resp.data['error'] != null) {
+        debugPrint('GeminiService: API Error: ${resp.data['error']}');
+        throw Exception('API Error: ${resp.data['error']['message']}');
       }
 
-      // Se ainda não encontrou, tentar diretamente no candidate
-      if (result == null || result.isEmpty) {
-        result = candidate['text'] as String?;
+      // 🚨 VERIFICAR BLOQUEIO DE CONTEÚDO
+      final promptFeedback = resp.data['promptFeedback'];
+      if (promptFeedback != null && promptFeedback['blockReason'] != null) {
+        final blockReason = promptFeedback['blockReason'];
+        debugPrint(
+          '🚫 GeminiService: CONTEÚDO BLOQUEADO - Razão: $blockReason',
+        );
+        debugPrint(
+          '⚠️ GeminiService: Contexto contém conteúdo sensível detectado pela API',
+        );
+        // Retornar null para que o sistema continue sem este bloco
+        // O sistema vai tentar continuar com contexto reduzido
+        return null;
       }
-    }
 
-    debugPrint('GeminiService: Extracted text: ${result?.length ?? 0} chars');
-    debugPrint('GeminiService: Finish reason: $finishReason');
+      // Verificar finish reason
+      final finishReason = resp.data['candidates']?[0]?['finishReason'];
+      if (finishReason == 'MAX_TOKENS') {
+        debugPrint(
+          'GeminiService: Aviso - Resposta cortada por limite de tokens',
+        );
+      }
 
-    // Limpar o texto de marcações indesejadas
-    if (result != null) {
-      result = _cleanGeneratedText(result);
-    }
+      // Tentar extrair o texto da estrutura de resposta
+      String? result;
+      final candidate = resp.data['candidates']?[0];
 
-    return result;
+      if (candidate != null) {
+        // Primeiro tentar a estrutura padrão com parts
+        result = candidate['content']?['parts']?[0]?['text'] as String?;
+
+        // Se não encontrou, tentar outras estruturas possíveis
+        if (result == null || result.isEmpty) {
+          result = candidate['content']?['text'] as String?;
+        }
+
+        // Se ainda não encontrou, tentar diretamente no candidate
+        if (result == null || result.isEmpty) {
+          result = candidate['text'] as String?;
+        }
+      }
+
+      debugPrint('GeminiService: Extracted text: ${result?.length ?? 0} chars');
+      debugPrint('GeminiService: Finish reason: $finishReason');
+
+      // Limpar o texto de marcações indesejadas
+      if (result != null) {
+        result = _cleanGeneratedText(result);
+      }
+
+      return result;
     } catch (e) {
       // 🚫 v7.6.19: Fallback OpenAI REMOVIDO - respeitar escolha do usuário
       // Sempre re-throw o erro para que o sistema de retry padrão funcione
@@ -6758,7 +7088,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
   /// 🆕 v7.6.30: Verifica se frase composta é nome real ou expressão comum
   bool _isCommonPhrase(String phrase) {
     final phraseLower = phrase.toLowerCase();
-    
+
     // Frases comuns que não são nomes de pessoas
     final commonPhrases = {
       'new york', 'los angeles', 'san francisco', 'las vegas',
@@ -6937,7 +7267,8 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     required String prompt,
     required String apiKey,
     String? model, // Se null, usa qualityMode
-    String qualityMode = 'pro', // 🎯 NOVO: Para determinar modelo automaticamente
+    String qualityMode =
+        'pro', // 🎯 NOVO: Para determinar modelo automaticamente
     int maxTokens =
         16384, // AUMENTADO: Era 8192, agora 16384 para contextos mais ricos
   }) async {
@@ -6948,20 +7279,23 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
 
     return await _retryOnRateLimit(() async {
       try {
-        debugPrint('GeminiService: Iniciando requisição para modelo $effectiveModel');
+        debugPrint(
+          'GeminiService: Iniciando requisição para modelo $effectiveModel',
+        );
         final result = await _makeApiRequest(
           apiKey: apiKey,
           model: effectiveModel,
           prompt: prompt,
           maxTokens: maxTokens,
-          tryOpenAIOnFail: false, // 🚫 v7.6.19: Desabilitado - usar apenas API selecionada
+          tryOpenAIOnFail:
+              false, // 🚫 v7.6.19: Desabilitado - usar apenas API selecionada
         );
-        
+
         // 🚀 v7.6.20: Registrar sucesso da API para Adaptive Delay Manager
         if (result != null && result.isNotEmpty) {
           _recordApiSuccess();
         }
-        
+
         debugPrint(
           'GeminiService: Resposta recebida - ${result != null ? 'Success' : 'Null'}',
         );
@@ -7251,12 +7585,12 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
   // =============================================================================
 
   /// 🌍 v7.6.52: Atualiza o World State após gerar um bloco
-  /// 
+  ///
   /// Usa o MESMO modelo selecionado pelo usuário (qualityMode) para:
   /// 1. Analisar o bloco gerado
   /// 2. Extrair novos personagens/fatos/inventário
   /// 3. Atualizar o JSON de estado
-  /// 
+  ///
   /// Isso mantém a arquitetura de Pipeline de Modelo Único.
   Future<void> _updateWorldState({
     required _WorldState worldState,
@@ -7267,16 +7601,19 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     required String language,
   }) async {
     if (generatedBlock.trim().isEmpty) return;
-    
+
     try {
       final selectedModel = _getSelectedModel(qualityMode);
-      
+
       if (kDebugMode) {
-        debugPrint('🌍 [Bloco $blockNumber] Atualizando World State com modelo: $selectedModel');
+        debugPrint(
+          '🌍 [Bloco $blockNumber] Atualizando World State com modelo: $selectedModel',
+        );
       }
-      
+
       // Prompt para extrair informações do bloco
-      final extractionPrompt = '''
+      final extractionPrompt =
+          '''
 Analise o seguinte trecho de história e extraia as informações estruturadas.
 
 TRECHO (Bloco $blockNumber):
@@ -7317,22 +7654,25 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
         qualityMode: qualityMode, // 🎯 MESMO modelo do usuário
         maxTokens: 1024,
       );
-      
+
       // Parse da resposta JSON
       final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(response);
       if (jsonMatch == null) {
         if (kDebugMode) {
-          debugPrint('⚠️ WorldState: Não foi possível extrair JSON da resposta');
+          debugPrint(
+            '⚠️ WorldState: Não foi possível extrair JSON da resposta',
+          );
         }
         return;
       }
-      
+
       try {
         final extracted = _parseJsonSafely(jsonMatch.group(0)!);
         if (extracted == null) return;
-        
+
         // Atualizar personagens
-        final novosPersonagens = extracted['novos_personagens'] as List<dynamic>? ?? [];
+        final novosPersonagens =
+            extracted['novos_personagens'] as List<dynamic>? ?? [];
         for (final p in novosPersonagens) {
           if (p is Map<String, dynamic>) {
             final nome = p['nome'] as String? ?? '';
@@ -7349,7 +7689,7 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
             }
           }
         }
-        
+
         // Atualizar inventário
         final novosItens = extracted['novos_itens'] as List<dynamic>? ?? [];
         for (final item in novosItens) {
@@ -7361,7 +7701,7 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
             }
           }
         }
-        
+
         // Adicionar fatos
         final novosFatos = extracted['novos_fatos'] as List<dynamic>? ?? [];
         for (final fato in novosFatos) {
@@ -7369,7 +7709,7 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
             worldState.addFact(blockNumber, fato);
           }
         }
-        
+
         // Atualizar resumo acumulado
         final resumoBloco = extracted['resumo_bloco'] as String? ?? '';
         if (resumoBloco.isNotEmpty) {
@@ -7383,22 +7723,22 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
                 : novoResumo;
           }
         }
-        
+
         worldState.ultimoBloco = blockNumber;
-        
+
         if (kDebugMode) {
           debugPrint('✅ WorldState atualizado:');
           debugPrint('   Personagens: ${worldState.personagens.length}');
           debugPrint('   Fatos: ${worldState.fatos.length}');
-          debugPrint('   Itens: ${worldState.inventario.values.expand((x) => x).length}');
+          debugPrint(
+            '   Itens: ${worldState.inventario.values.expand((x) => x).length}',
+          );
         }
-        
       } catch (e) {
         if (kDebugMode) {
           debugPrint('⚠️ WorldState: Erro ao processar JSON: $e');
         }
       }
-      
     } catch (e) {
       // Erro não-crítico - não interrompe a geração
       if (kDebugMode) {
@@ -7406,7 +7746,7 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
       }
     }
   }
-  
+
   /// Helper para parse seguro de JSON
   Map<String, dynamic>? _parseJsonSafely(String jsonStr) {
     try {
@@ -7415,7 +7755,7 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
           .replaceAll('\n', ' ')
           .replaceAll('\r', '')
           .replaceAll(RegExp(r'\\(?!["\\/bfnrt])'), '\\\\');
-      
+
       // Tentar parse direto
       final decoded = _decodeJson(cleaned);
       if (decoded is Map<String, dynamic>) {
@@ -7429,7 +7769,7 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
       return null;
     }
   }
-  
+
   /// Decode JSON com tratamento de erros
   dynamic _decodeJson(String json) {
     // Usar dart:convert importado
@@ -7444,12 +7784,12 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
   // 🆕 v7.6.53: CAMADA 1 - SINOPSE COMPRIMIDA (≤500 tokens)
   // Gerada UMA VEZ no início e incluída em TODOS os blocos
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  
+
   /// Gera uma sinopse comprimida da história (Camada 1 - Contexto Estático)
-  /// 
+  ///
   /// Esta sinopse é gerada UMA VEZ no início da geração e incluída em TODOS os blocos.
   /// Serve como "bíblia" da história para manter consistência.
-  /// 
+  ///
   /// Parâmetros:
   /// - [tema]: O tema/prompt da história
   /// - [title]: O título da história
@@ -7457,7 +7797,7 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
   /// - [language]: Idioma da história
   /// - [apiKey]: Chave da API
   /// - [qualityMode]: Modo de qualidade (flash/pro/ultra) - usa mesmo modelo
-  /// 
+  ///
   /// Retorna: String com sinopse comprimida (≤150 palavras, ~500 tokens)
   static Future<String> _generateCompressedSynopsis({
     required String tema,
@@ -7470,12 +7810,13 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
     if (kDebugMode) {
       debugPrint('🔵 Gerando Sinopse Comprimida (Camada 1)...');
     }
-    
+
     try {
       // 🎯 Pipeline Modelo Único: Usar mesmo modelo selecionado pelo usuário
       final model = _getSelectedModel(qualityMode);
-      
-      final prompt = '''
+
+      final prompt =
+          '''
 Você é um assistente de escrita criativa. Gere uma SINOPSE COMPRIMIDA da história a seguir.
 
 TÍTULO: $title
@@ -7494,15 +7835,22 @@ Responda APENAS com a sinopse, sem formatação adicional ou explicações.
 Idioma da resposta: $language
 ''';
 
-      final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
-      
+      final url =
+          'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
+
       // Usar Dio para consistência com resto do código
       final dio = Dio();
       final response = await dio.post(
         url,
         options: Options(headers: {'Content-Type': 'application/json'}),
         data: {
-          'contents': [{'parts': [{'text': prompt}]}],
+          'contents': [
+            {
+              'parts': [
+                {'text': prompt},
+              ],
+            },
+          ],
           'generationConfig': {
             'temperature': 0.4, // Baixa temperatura para consistência
             'maxOutputTokens': 500, // Limite rígido de tokens
@@ -7510,18 +7858,21 @@ Idioma da resposta: $language
           },
         },
       );
-      
+
       if (response.statusCode == 200) {
         final decoded = response.data;
-        final synopsis = decoded['candidates']?[0]?['content']?['parts']?[0]?['text'] as String? ?? '';
-        
+        final synopsis =
+            decoded['candidates']?[0]?['content']?['parts']?[0]?['text']
+                as String? ??
+            '';
+
         if (synopsis.isNotEmpty) {
           // Limitar a ~150 palavras (~750 caracteres)
           final trimmed = synopsis.trim();
-          final limited = trimmed.length > 750 
+          final limited = trimmed.length > 750
               ? '${trimmed.substring(0, 750)}...'
               : trimmed;
-          
+
           if (kDebugMode) {
             debugPrint('✅ Sinopse Comprimida gerada: ${limited.length} chars');
           }
@@ -7537,7 +7888,7 @@ Idioma da resposta: $language
         debugPrint('⚠️ Exceção ao gerar sinopse: $e');
       }
     }
-    
+
     // Fallback: usar tema original truncado
     return tema.length > 500 ? '${tema.substring(0, 500)}...' : tema;
   }
@@ -7580,7 +7931,8 @@ Idioma da resposta: $language
       final result = await generateTextWithApiKey(
         prompt: prompt,
         apiKey: apiKey,
-        qualityMode: 'flash', // v7.6.62: CTAs sempre usam Flash (tarefa simples)
+        qualityMode:
+            'flash', // v7.6.62: CTAs sempre usam Flash (tarefa simples)
         maxTokens: 3072,
       );
 
@@ -8088,24 +8440,37 @@ EXEMPLOS DE DETALHES ESPECÍFICOS (use este nível de concretude):
 
           // 🔍 VALIDAÇÃO: Se for CTA final e temos conteúdo do roteiro, validar consistência
           if (type == 'final' && scriptContent.isNotEmpty) {
-            final inconsistency = _validateFinalCtaConsistency(ctaText, scriptContent);
+            final inconsistency = _validateFinalCtaConsistency(
+              ctaText,
+              scriptContent,
+            );
             if (inconsistency != null) {
               if (kDebugMode) {
-                debugPrint('⚠️ CTA final inconsistente detectado: $inconsistency');
+                debugPrint(
+                  '⚠️ CTA final inconsistente detectado: $inconsistency',
+                );
                 debugPrint('   Removendo frases problemáticas...');
               }
               // Remover frases específicas problemáticas automaticamente
               ctaText = ctaText.replaceAll(
-                RegExp('He.s behind bars[^.]*\\.|Ele está preso[^.]*\\.', caseSensitive: false),
+                RegExp(
+                  'He.s behind bars[^.]*\\.|Ele está preso[^.]*\\.',
+                  caseSensitive: false,
+                ),
                 '',
               );
               ctaText = ctaText.replaceAll(
-                RegExp('behind bars[^,]*,?|atrás das grades[^,]*,?', caseSensitive: false),
+                RegExp(
+                  'behind bars[^,]*,?|atrás das grades[^,]*,?',
+                  caseSensitive: false,
+                ),
                 '',
               );
               ctaText = ctaText.trim();
               if (kDebugMode) {
-                debugPrint('   CTA corrigido: ${ctaText.substring(0, ctaText.length > 100 ? 100 : ctaText.length)}');
+                debugPrint(
+                  '   CTA corrigido: ${ctaText.substring(0, ctaText.length > 100 ? 100 : ctaText.length)}',
+                );
               }
             }
           }
@@ -8138,10 +8503,7 @@ EXEMPLOS DE DETALHES ESPECÍFICOS (use este nível de concretude):
 
   /// 🔍 Valida consistência do CTA final com o roteiro
   /// Detecta menções a eventos que não aconteceram (ex: "behind bars" sem prisão)
-  String? _validateFinalCtaConsistency(
-    String finalCta,
-    String scriptContent,
-  ) {
+  String? _validateFinalCtaConsistency(String finalCta, String scriptContent) {
     if (kDebugMode) {
       debugPrint('🔍 Validando consistência do CTA final...');
     }
@@ -8198,7 +8560,9 @@ EXEMPLOS DE DETALHES ESPECÍFICOS (use este nível de concretude):
         if (!required.hasMatch(scriptContent)) {
           if (kDebugMode) {
             debugPrint('⚠️ INCONSISTÊNCIA DETECTADA: $errorMsg');
-            debugPrint('   CTA: ${finalCta.substring(0, finalCta.length > 100 ? 100 : finalCta.length)}');
+            debugPrint(
+              '   CTA: ${finalCta.substring(0, finalCta.length > 100 ? 100 : finalCta.length)}',
+            );
           }
           return errorMsg;
         }
@@ -8353,11 +8717,11 @@ class _CharacterTracker {
     // Evita: "Arthur" vs "Arthur Evans", "John" vs "John Smith"
     final nameLower = name.toLowerCase();
     final nameWords = nameLower.split(' ');
-    
+
     for (final existingName in _confirmedNames) {
       final existingLower = existingName.toLowerCase();
       final existingWords = existingLower.split(' ');
-      
+
       // Caso 1: Nome exato (case-insensitive)
       if (nameLower == existingLower) {
         if (kDebugMode) {
@@ -8368,11 +8732,11 @@ class _CharacterTracker {
         }
         return true; // Duplicata exata
       }
-      
+
       // Caso 2: Sobreposição de palavras (Arthur ⊂ Arthur Evans)
       // "Arthur" está contido em "Arthur Evans" ou vice-versa
       bool overlap = false;
-      
+
       if (nameWords.length == 1 && existingWords.length > 1) {
         // Novo nome simples, já existe composto
         if (existingWords.contains(nameLower)) {
@@ -8385,20 +8749,22 @@ class _CharacterTracker {
         }
       } else if (nameWords.length > 1 && existingWords.length > 1) {
         // Ambos compostos - verificar se compartilham palavras
-        final commonWords = nameWords.toSet().intersection(existingWords.toSet());
+        final commonWords = nameWords.toSet().intersection(
+          existingWords.toSet(),
+        );
         if (commonWords.isNotEmpty) {
           overlap = true;
         }
       }
-      
+
       if (overlap) {
         if (kDebugMode) {
           final existingRole = _characterRoles[existingName] ?? 'desconhecido';
-          debugPrint(
-            '🚨🚨🚨 v7.6.30: CONFLITO DE NOMES DETECTADO! 🚨🚨🚨',
-          );
+          debugPrint('🚨🚨🚨 v7.6.30: CONFLITO DE NOMES DETECTADO! 🚨🚨🚨');
           debugPrint('   ❌ Nome novo: "$name"');
-          debugPrint('   ❌ Nome existente: "$existingName" (papel: $existingRole)');
+          debugPrint(
+            '   ❌ Nome existente: "$existingName" (papel: $existingRole)',
+          );
           debugPrint('   ⚠️ PROBLEMA: Nomes com sobreposição de palavras!');
           debugPrint('   💡 EXEMPLO: "Arthur" conflita com "Arthur Evans"');
           debugPrint('   💡 SOLUÇÃO: Use nomes COMPLETAMENTE diferentes');
@@ -8473,42 +8839,76 @@ class _CharacterTracker {
         addNoteToCharacter(name, blockNumber, role);
       }
     }
-    
+
     return true; // ✅ SUCESSO
   }
 
   /// 🔧 v7.6.26: Normaliza papel SELETIVAMENTE (evita falsos positivos)
-  /// 
+  ///
   /// PAPÉIS FAMILIARES: Mantém completo "mãe de Emily" ≠ "mãe de Michael"
   /// PAPÉIS GENÉRICOS: Normaliza "advogado de Sarah" → "advogado"
   String _normalizeRole(String role) {
     final roleLower = role.toLowerCase().trim();
-    
+
     // 🔥 v7.6.26: PAPÉIS FAMILIARES - NÃO normalizar (manter contexto familiar)
     final familyRoles = [
-      'mãe', 'pai', 'filho', 'filha', 'irmão', 'irmã',
-      'avô', 'avó', 'tio', 'tia', 'primo', 'prima',
-      'sogro', 'sogra', 'cunhado', 'cunhada',
-      'mother', 'father', 'son', 'daughter', 'brother', 'sister',
-      'grandfather', 'grandmother', 'uncle', 'aunt', 'cousin',
-      'father-in-law', 'mother-in-law', 'brother-in-law', 'sister-in-law',
-      'mère', 'père', 'fils', 'fille', 'frère', 'sœur',
-      'grand-père', 'grand-mère', 'oncle', 'tante', 'cousin', 'cousine',
+      'mãe',
+      'pai',
+      'filho',
+      'filha',
+      'irmão',
+      'irmã',
+      'avô',
+      'avó',
+      'tio',
+      'tia',
+      'primo',
+      'prima',
+      'sogro',
+      'sogra',
+      'cunhado',
+      'cunhada',
+      'mother',
+      'father',
+      'son',
+      'daughter',
+      'brother',
+      'sister',
+      'grandfather',
+      'grandmother',
+      'uncle',
+      'aunt',
+      'cousin',
+      'father-in-law',
+      'mother-in-law',
+      'brother-in-law',
+      'sister-in-law',
+      'mère',
+      'père',
+      'fils',
+      'fille',
+      'frère',
+      'sœur',
+      'grand-père',
+      'grand-mère',
+      'oncle',
+      'tante',
+      'cousin',
+      'cousine',
     ];
-    
+
     // Verificar se é papel familiar
     for (final familyRole in familyRoles) {
       if (roleLower.contains(familyRole)) {
         return roleLower; // Manter completo
       }
     }
-    
+
     // 🔧 PAPÉIS GENÉRICOS: Normalizar
-    final normalized = roleLower.replaceAll(
-      RegExp(r'\s+de\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇa-záàâãéêíóôõúç]+.*$'),
-      '',
-    ).trim();
-    
+    final normalized = roleLower
+        .replaceAll(RegExp(r'\s+de\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇa-záàâãéêíóôõúç]+.*$'), '')
+        .trim();
+
     return normalized;
   }
 
@@ -8597,7 +8997,9 @@ class _CharacterTracker {
       }
       buffer.writeln('\n⚠️ REGRA ABSOLUTA: Cada nome deve ser ÚNICO!');
       buffer.writeln('⚠️ Se precisa de novo personagem, use NOME DIFERENTE!');
-      buffer.writeln('⚠️ NUNCA use "Mark", "Charles", etc se já estão acima!\n');
+      buffer.writeln(
+        '⚠️ NUNCA use "Mark", "Charles", etc se já estão acima!\n',
+      );
     }
 
     // v1.7: Mostrar mapeamento reverso (papel → nome) para reforçar consistência
@@ -8650,7 +9052,7 @@ class _CharacterTracker {
   /// 🆕 v7.6.22: RASTREAMENTO DE FECHAMENTO DE PERSONAGENS
   /// Marca um personagem como "resolvido" no final da história
   final Map<String, bool> _characterResolution = {};
-  
+
   /// Marca um personagem como tendo recebido fechamento/resolução
   void markCharacterAsResolved(String name) {
     if (_confirmedNames.contains(name)) {
@@ -8666,20 +9068,44 @@ class _CharacterTracker {
     // Padrões que indicam fechamento de personagem
     final resolutionPatterns = [
       // Conclusão física/localização
-      RegExp(r'([A-Z][a-z]+)\s+(?:foi embora|left|partiu|morreu|died|desapareceu|vanished)', caseSensitive: false),
-      RegExp(r'([A-Z][a-z]+)\s+(?:nunca mais|never again|jamais)', caseSensitive: false),
-      
+      RegExp(
+        r'([A-Z][a-z]+)\s+(?:foi embora|left|partiu|morreu|died|desapareceu|vanished)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'([A-Z][a-z]+)\s+(?:nunca mais|never again|jamais)',
+        caseSensitive: false,
+      ),
+
       // Justiça/vingança
-      RegExp(r'([A-Z][a-z]+)\s+(?:foi preso|was arrested|foi condenado|was convicted)', caseSensitive: false),
-      RegExp(r'([A-Z][a-z]+)\s+(?:confessou|confessed|admitiu|admitted)', caseSensitive: false),
-      
+      RegExp(
+        r'([A-Z][a-z]+)\s+(?:foi preso|was arrested|foi condenado|was convicted)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'([A-Z][a-z]+)\s+(?:confessou|confessed|admitiu|admitted)',
+        caseSensitive: false,
+      ),
+
       // Reconciliação/paz
-      RegExp(r'([A-Z][a-z]+)\s+(?:me perdoou|forgave me|fez as pazes|made peace)', caseSensitive: false),
-      RegExp(r'([A-Z][a-z]+)\s+(?:finalmente|finally|por fim|at last)\s+(?:tinha|had|conseguiu|achieved)', caseSensitive: false),
-      
+      RegExp(
+        r'([A-Z][a-z]+)\s+(?:me perdoou|forgave me|fez as pazes|made peace)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'([A-Z][a-z]+)\s+(?:finalmente|finally|por fim|at last)\s+(?:tinha|had|conseguiu|achieved)',
+        caseSensitive: false,
+      ),
+
       // Estado emocional final
-      RegExp(r'([A-Z][a-z]+)\s+(?:estava feliz|was happy|encontrou paz|found peace)', caseSensitive: false),
-      RegExp(r'([A-Z][a-z]+)\s+(?:seguiu em frente|moved on|superou|overcame)', caseSensitive: false),
+      RegExp(
+        r'([A-Z][a-z]+)\s+(?:estava feliz|was happy|encontrou paz|found peace)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'([A-Z][a-z]+)\s+(?:seguiu em frente|moved on|superou|overcame)',
+        caseSensitive: false,
+      ),
     ];
 
     for (final pattern in resolutionPatterns) {
@@ -8696,22 +9122,23 @@ class _CharacterTracker {
   /// Retorna lista de personagens sem fechamento
   List<String> getUnresolvedCharacters() {
     final unresolved = <String>[];
-    
+
     for (final name in _confirmedNames) {
       // Ignorar protagonista (sempre tem fechamento implícito)
       if (name == _detectedProtagonistName) continue;
-      
+
       final role = _characterRoles[name]?.toLowerCase() ?? '';
-      
+
       // 🐛 FIX v7.6.24: Ignorar personagens SEM histórico OU muito secundários (≤1 aparição)
       final history = _characterHistories[name];
       if (history == null || history.appearanceCount <= 1) continue;
-      
+
       // Personagens importantes que precisam de fechamento:
       // - Família próxima (pai, mãe, irmão, filho, cônjuge)
       // - Antagonistas/vilões
       // - Ajudantes/aliados que apareceram múltiplas vezes (3+)
-      final needsClosure = role.contains('marido') ||
+      final needsClosure =
+          role.contains('marido') ||
           role.contains('esposa') ||
           role.contains('pai') ||
           role.contains('mãe') ||
@@ -8734,12 +9161,12 @@ class _CharacterTracker {
           role.contains('sócio') ||
           role.contains('partner') ||
           history.appearanceCount >= 3; // history guaranteed non-null here
-      
+
       if (needsClosure && !(_characterResolution[name] ?? false)) {
         unresolved.add(name);
       }
     }
-    
+
     return unresolved;
   }
 
@@ -8752,10 +9179,12 @@ class _CharacterTracker {
       if (history == null || history.appearanceCount <= 1) return false;
       return true;
     }).toList();
-    
+
     if (important.isEmpty) return 1.0;
-    
-    final resolved = important.where((name) => _characterResolution[name] ?? false).length;
+
+    final resolved = important
+        .where((name) => _characterResolution[name] ?? false)
+        .length;
     return resolved / important.length;
   }
 
@@ -8784,7 +9213,7 @@ class _WorldCharacter {
   String status; // 'vivo', 'morto', 'desaparecido', etc.
   String? localAtual;
   List<String> relacionamentos;
-  
+
   _WorldCharacter({
     required this.nome,
     required this.papel,
@@ -8793,7 +9222,7 @@ class _WorldCharacter {
     this.localAtual,
     List<String>? relacionamentos,
   }) : relacionamentos = relacionamentos ?? [];
-  
+
   Map<String, dynamic> toJson() => {
     'nome': nome,
     'papel': papel,
@@ -8802,21 +9231,24 @@ class _WorldCharacter {
     if (localAtual != null) 'local_atual': localAtual,
     if (relacionamentos.isNotEmpty) 'relacionamentos': relacionamentos,
   };
-  
-  factory _WorldCharacter.fromJson(Map<String, dynamic> json) => _WorldCharacter(
-    nome: json['nome'] as String? ?? '',
-    papel: json['papel'] as String? ?? 'personagem',
-    idade: json['idade'] as String?,
-    status: json['status'] as String? ?? 'vivo',
-    localAtual: json['local_atual'] as String?,
-    relacionamentos: (json['relacionamentos'] as List<dynamic>?)
-        ?.map((e) => e.toString())
-        .toList() ?? [],
-  );
+
+  factory _WorldCharacter.fromJson(Map<String, dynamic> json) =>
+      _WorldCharacter(
+        nome: json['nome'] as String? ?? '',
+        papel: json['papel'] as String? ?? 'personagem',
+        idade: json['idade'] as String?,
+        status: json['status'] as String? ?? 'vivo',
+        localAtual: json['local_atual'] as String?,
+        relacionamentos:
+            (json['relacionamentos'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [],
+      );
 }
 
 /// 🌍 v7.6.52: WORLD STATE - Estado completo do mundo da história
-/// 
+///
 /// Estrutura JSON de memória infinita que rastreia:
 /// - Personagens (nome, papel, status, localização)
 /// - Inventário (objetos importantes por personagem)
@@ -8826,49 +9258,52 @@ class _WorldCharacter {
 class _WorldState {
   /// Personagens indexados por papel normalizado
   final Map<String, _WorldCharacter> personagens;
-  
+
   /// Inventário: papel → lista de itens
   final Map<String, List<String>> inventario;
-  
+
   /// Fatos importantes da história (com bloco onde ocorreram)
   final List<Map<String, dynamic>> fatos;
-  
+
   /// Último bloco processado
   int ultimoBloco;
-  
+
   /// Resumo cumulativo da história
   String resumoAcumulado;
-  
+
   /// 🆕 v7.6.53: Sinopse Comprimida (Camada 1 - Contexto Estático ≤500 tokens)
   /// Gerada UMA VEZ no início e incluída em TODOS os blocos
   String sinopseComprimida;
-  
+
   _WorldState()
-      : personagens = {},
-        inventario = {},
-        fatos = [],
-        ultimoBloco = 0,
-        resumoAcumulado = '',
-        sinopseComprimida = '';
-  
+    : personagens = {},
+      inventario = {},
+      fatos = [],
+      ultimoBloco = 0,
+      resumoAcumulado = '',
+      sinopseComprimida = '';
+
   /// Converte para JSON string para incluir no prompt
   String toJsonString() {
     // Formato compacto para economizar tokens
     final buffer = StringBuffer();
     buffer.writeln('{');
-    
+
     // Personagens
     buffer.writeln('  "personagens": {');
     final chars = personagens.entries.toList();
     for (var i = 0; i < chars.length; i++) {
       final c = chars[i];
-      buffer.write('    "${c.key}": {"nome":"${c.value.nome}","papel":"${c.value.papel}","status":"${c.value.status}"');
-      if (c.value.localAtual != null) buffer.write(',"local":"${c.value.localAtual}"');
+      buffer.write(
+        '    "${c.key}": {"nome":"${c.value.nome}","papel":"${c.value.papel}","status":"${c.value.status}"',
+      );
+      if (c.value.localAtual != null)
+        buffer.write(',"local":"${c.value.localAtual}"');
       buffer.write('}');
       if (i < chars.length - 1) buffer.writeln(',');
     }
     buffer.writeln('\n  },');
-    
+
     // Inventário (só se não vazio)
     if (inventario.isNotEmpty) {
       buffer.writeln('  "inventario": {');
@@ -8880,9 +9315,11 @@ class _WorldState {
       }
       buffer.writeln('\n  },');
     }
-    
+
     // Fatos (últimos 10 para economizar tokens)
-    final recentFatos = fatos.length > 10 ? fatos.sublist(fatos.length - 10) : fatos;
+    final recentFatos = fatos.length > 10
+        ? fatos.sublist(fatos.length - 10)
+        : fatos;
     if (recentFatos.isNotEmpty) {
       buffer.writeln('  "fatos_recentes": [');
       for (var i = 0; i < recentFatos.length; i++) {
@@ -8892,24 +9329,31 @@ class _WorldState {
       }
       buffer.writeln('\n  ],');
     }
-    
+
     buffer.writeln('  "ultimo_bloco": $ultimoBloco');
     buffer.writeln('}');
-    
+
     return buffer.toString();
   }
-  
+
   /// Retorna contexto formatado para incluir no prompt de geração
   /// 🆕 v7.6.53: Estrutura "Sanduíche" de 3 Camadas
   String getContextForPrompt() {
-    if (personagens.isEmpty && fatos.isEmpty && sinopseComprimida.isEmpty) return '';
-    
+    if (personagens.isEmpty && fatos.isEmpty && sinopseComprimida.isEmpty)
+      return '';
+
     final buffer = StringBuffer();
     buffer.writeln('');
-    buffer.writeln('═══════════════════════════════════════════════════════════');
-    buffer.writeln('📊 CONTEXTO ESTRUTURADO - Pipeline de Modelo Único v7.6.53');
-    buffer.writeln('═══════════════════════════════════════════════════════════');
-    
+    buffer.writeln(
+      '═══════════════════════════════════════════════════════════',
+    );
+    buffer.writeln(
+      '📊 CONTEXTO ESTRUTURADO - Pipeline de Modelo Único v7.6.53',
+    );
+    buffer.writeln(
+      '═══════════════════════════════════════════════════════════',
+    );
+
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // 🔵 CAMADA 1 - CONTEXTO ESTÁTICO (Sinopse Comprimida ≤500 tokens)
     // Gerada uma vez, incluída em todos os blocos
@@ -8919,20 +9363,20 @@ class _WorldState {
       buffer.writeln('🔵 CAMADA 1 - SINOPSE DA HISTÓRIA:');
       buffer.writeln('   $sinopseComprimida');
     }
-    
+
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // 🟢 CAMADA 2 - JANELA DESLIZANTE (Últimos N blocos)
     // Incluída via contextoPrevio no buildCompactPrompt
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // (Esta camada é gerenciada externamente via contextoPrevio)
-    
+
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // 🟡 CAMADA 3 - WORLD STATE JSON (Estado do Mundo)
     // Estrutura persistente de personagens, inventário, fatos
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     buffer.writeln('');
     buffer.writeln('🟡 CAMADA 3 - ESTADO DO MUNDO (Bloco $ultimoBloco):');
-    
+
     // Personagens
     if (personagens.isNotEmpty) {
       buffer.writeln('');
@@ -8940,12 +9384,13 @@ class _WorldState {
       for (final entry in personagens.entries) {
         final c = entry.value;
         buffer.write('      • ${c.nome} (${c.papel})');
-        if (c.status != 'vivo') buffer.write(' - STATUS: ${c.status.toUpperCase()}');
+        if (c.status != 'vivo')
+          buffer.write(' - STATUS: ${c.status.toUpperCase()}');
         if (c.localAtual != null) buffer.write(' - Local: ${c.localAtual}');
         buffer.writeln();
       }
     }
-    
+
     // Inventário
     if (inventario.isNotEmpty) {
       buffer.writeln('');
@@ -8956,9 +9401,11 @@ class _WorldState {
         }
       }
     }
-    
+
     // Fatos recentes
-    final recentFatos = fatos.length > 5 ? fatos.sublist(fatos.length - 5) : fatos;
+    final recentFatos = fatos.length > 5
+        ? fatos.sublist(fatos.length - 5)
+        : fatos;
     if (recentFatos.isNotEmpty) {
       buffer.writeln('');
       buffer.writeln('   📝 FATOS RECENTES:');
@@ -8966,27 +9413,31 @@ class _WorldState {
         buffer.writeln('      • [Bloco ${f['bloco']}] ${f['evento']}');
       }
     }
-    
+
     // Resumo
     if (resumoAcumulado.isNotEmpty) {
       buffer.writeln('');
       buffer.writeln('   📖 RESUMO ATÉ AGORA:');
       buffer.writeln('      $resumoAcumulado');
     }
-    
-    buffer.writeln('═══════════════════════════════════════════════════════════');
+
+    buffer.writeln(
+      '═══════════════════════════════════════════════════════════',
+    );
     return buffer.toString();
   }
-  
+
   /// Adiciona ou atualiza um personagem
   void upsertCharacter(String papel, _WorldCharacter character) {
     final normalizedRole = _normalizeRole(papel);
     personagens[normalizedRole] = character;
     if (kDebugMode) {
-      debugPrint('🌍 WorldState: Personagem atualizado - ${character.nome} ($papel)');
+      debugPrint(
+        '🌍 WorldState: Personagem atualizado - ${character.nome} ($papel)',
+      );
     }
   }
-  
+
   /// Adiciona item ao inventário de um personagem
   void addToInventory(String papel, String item) {
     final normalizedRole = _normalizeRole(papel);
@@ -8998,13 +9449,13 @@ class _WorldState {
       }
     }
   }
-  
+
   /// Remove item do inventário
   void removeFromInventory(String papel, String item) {
     final normalizedRole = _normalizeRole(papel);
     inventario[normalizedRole]?.remove(item);
   }
-  
+
   /// Adiciona um fato importante
   void addFact(int bloco, String evento) {
     fatos.add({'bloco': bloco, 'evento': evento});
@@ -9012,7 +9463,7 @@ class _WorldState {
       debugPrint('🌍 WorldState: Fato adicionado - [B$bloco] $evento');
     }
   }
-  
+
   /// Atualiza status de um personagem
   void updateCharacterStatus(String papel, String novoStatus) {
     final normalizedRole = _normalizeRole(papel);
@@ -9023,7 +9474,7 @@ class _WorldState {
       }
     }
   }
-  
+
   /// Atualiza localização de um personagem
   void updateCharacterLocation(String papel, String novoLocal) {
     final normalizedRole = _normalizeRole(papel);
@@ -9031,7 +9482,7 @@ class _WorldState {
       personagens[normalizedRole]!.localAtual = novoLocal;
     }
   }
-  
+
   /// Normaliza papel para chave consistente
   static String _normalizeRole(String role) {
     return role
@@ -9040,7 +9491,7 @@ class _WorldState {
         .replaceAll(RegExp(r'\s+'), '_')
         .replaceAll(RegExp(r'[^a-z0-9_]'), '');
   }
-  
+
   /// Limpa estado para nova geração
   void clear() {
     personagens.clear();

@@ -212,7 +212,8 @@ $scriptText
       final response = await _geminiService.generateTextWithApiKey(
         prompt: youtubePrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
+        model:
+            'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
       );
 
       print('✅ Resposta recebida do Gemini');
@@ -426,7 +427,8 @@ OU se foi consistente:
       final result = await _geminiService.generateTextWithApiKey(
         prompt: protagonistPrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
+        model:
+            'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
       );
 
       state = state.copyWith(
@@ -654,7 +656,8 @@ Exemplo:
       final result = await _geminiService.generateTextWithApiKey(
         prompt: keyScenesPrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
+        model:
+            'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
       );
 
       print('✅ Resposta key scenes recebida do Gemini');
@@ -727,7 +730,8 @@ Responda em ${config.language} com prompts detalhados e criativos.
       final response = await _geminiService.generateTextWithApiKey(
         prompt: promptsTemplate,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
+        model:
+            'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
       );
 
       state = state.copyWith(

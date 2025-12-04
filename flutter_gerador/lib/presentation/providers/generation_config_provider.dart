@@ -25,7 +25,9 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
   }
 
   void updateOpenAIKey(String openAIKey) {
-    print('🤖 updateOpenAIKey chamado: "${openAIKey.isEmpty ? "(vazia)" : "***"}"');
+    print(
+      '🤖 updateOpenAIKey chamado: "${openAIKey.isEmpty ? "(vazia)" : "***"}"',
+    );
     state = state.copyWith(openAIKey: openAIKey.isEmpty ? null : openAIKey);
     print('🤖 state.openAIKey configurada');
   }
@@ -44,13 +46,13 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
     state = state.copyWith(qualityMode: mode);
     debugPrint('🔄 Provider updateQualityMode($mode)');
     debugPrint('🔍 state.qualityMode = "${state.qualityMode}"');
-    
-    final modelName = mode == 'flash' 
-        ? 'Gemini 2.5-FLASH (Rápido)' 
+
+    final modelName = mode == 'flash'
+        ? 'Gemini 2.5-FLASH (Rápido)'
         : mode == 'ultra'
-            ? 'Gemini 3.0-PRO PREVIEW (Ultra)'
-            : 'Gemini 2.5-PRO (Qualidade)';
-    
+        ? 'Gemini 3.0-PRO PREVIEW (Ultra)'
+        : 'Gemini 2.5-PRO (Qualidade)';
+
     print('🤖 Modelo alterado para: $modelName');
   }
 

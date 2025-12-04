@@ -379,7 +379,8 @@ Escreva o contexto agora:
       final response = await _geminiService.generateTextWithApiKey(
         prompt: contextPrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas auxiliares (independente do modo)
+        model:
+            'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas auxiliares (independente do modo)
       );
 
       debugPrint(
@@ -476,7 +477,8 @@ Responda apenas com o prompt final em inglês, sem explicações adicionais.
       final response = await _geminiService.generateTextWithApiKey(
         prompt: imagePromptTemplate,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas auxiliares (independente do modo)
+        model:
+            'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas auxiliares (independente do modo)
       );
 
       state = state.copyWith(
