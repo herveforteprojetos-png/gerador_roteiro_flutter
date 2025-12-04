@@ -400,6 +400,7 @@ RESPONDA APENAS COM O JSON ARRAY:''';
       }
 
       // 4️⃣ Validação avançada com IA
+      // 🏗️ v7.6.64: Usar LlmClient se disponível
       final storyPreview =
           story.length > 2000 ? '${story.substring(0, 2000)}...' : story;
 
@@ -429,28 +430,39 @@ RESPONDA EM JSON:
 }
 ''';
 
-      final response = await _dio.post(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
-        queryParameters: {'key': apiKey},
-        data: {
-          'contents': [
-            {
-              'parts': [
-                {'text': validationPrompt},
-              ],
+      String text;
+      if (_llmClient != null) {
+        text = await _llmClient.generateText(
+          prompt: validationPrompt,
+          apiKey: apiKey,
+          model: 'gemini-2.0-flash-exp',
+          maxTokens: 500,
+          temperature: 0.1,
+        );
+      } else {
+        // Fallback para Dio direto
+        final response = await _dio.post(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+          queryParameters: {'key': apiKey},
+          data: {
+            'contents': [
+              {
+                'parts': [
+                  {'text': validationPrompt},
+                ],
+              },
+            ],
+            'generationConfig': {
+              'temperature': 0.1,
+              'maxOutputTokens': 500,
             },
-          ],
-          'generationConfig': {
-            'temperature': 0.1,
-            'maxOutputTokens': 500,
           },
-        },
-      );
+        );
 
-      final text =
-          response.data['candidates'][0]['content']['parts'][0]['text']
-                  ?.toString() ??
-              '';
+        text = response.data['candidates'][0]['content']['parts'][0]['text']
+                ?.toString() ??
+            '';
+      }
 
       // Parse do resultado
       final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(text);
