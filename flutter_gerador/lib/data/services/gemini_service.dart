@@ -1,5 +1,4 @@
 ﻿import 'dart:async';
-import 'dart:convert'; // 🆕 v7.6.52: Para JSON parsing do World State
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
@@ -11,7 +10,6 @@ import 'package:flutter_gerador/data/models/debug_log.dart';
 import 'gemini/gemini_modules.dart'; // 🆕 v7.6.35: Inclui PostGenerationFixer via barrel
 
 // 🚀 NOVOS MÓDULOS DE PROMPTS (Refatoração v2.0)
-import 'package:flutter_gerador/data/services/prompts/base_rules.dart';
 import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart';
 
 // 🏗️ v7.6.64: MÓDULOS REFATORADOS (Arquitetura SOLID)
