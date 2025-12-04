@@ -144,7 +144,9 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
       );
       try {
         await generationNotifier.generateScript(config);
+        if (!mounted) return;
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erro ao gerar roteiro: ${e.toString()}'),
@@ -322,6 +324,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                               );
                               final context = await auxiliaryNotifier
                                   .generateContext(config);
+                              if (!mounted) return;
                               contextController.text = context;
                             } catch (e) {
                               // Melhorar mensagem de erro
@@ -343,9 +346,10 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                                     'ðŸ”‘ Verifique sua chave API nas configuraÃ§Ãµes.';
                               } else {
                                 errorMessage =
-                                    'âŒ Erro inesperado. Tente novamente.';
+                                    'âŒ Erro inesperado. Tente novamente.';
                               }
 
+                              if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(errorMessage),

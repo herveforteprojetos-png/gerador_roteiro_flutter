@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_print
 import 'package:flutter/foundation.dart';
-import '../../name_generator_service.dart';
 
 /// 🔧 v7.6.39: Corretor Pós-Geração de Nomes (VERSÃO COM VALIDAÇÃO DE NOMES)
 /// 
@@ -99,17 +98,13 @@ class PostGenerationFixer {
       return false;
     }
     
-    // 2. Verificar se é um nome real usando o banco curado
-    // Se não temos o serviço, aceitar (fallback permissivo)
-    try {
-      if (!NameGeneratorService.isValidName(name)) {
-        if (kDebugMode) {
-          debugPrint('⚠️ v7.6.39: "$name" bloqueado (não é nome válido no banco)');
-        }
-        return false;
+    // 2. v7.6.56: Validação estrutural (Casting Director cria os nomes)
+    // Aceitar nomes com estrutura válida (primeira letra maiúscula, tamanho razoável)
+    if (name.length < 2 || name.length > 30) {
+      if (kDebugMode) {
+        debugPrint('⚠️ v7.6.56: "$name" bloqueado (tamanho inválido)');
       }
-    } catch (_) {
-      // Se o serviço falhar, aceitar o nome (fallback permissivo)
+      return false;
     }
     
     return true;

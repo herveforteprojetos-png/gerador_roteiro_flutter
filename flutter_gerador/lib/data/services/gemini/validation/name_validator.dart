@@ -1,6 +1,3 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter_gerador/data/services/name_generator_service.dart';
-
 /// 🔍 Validador de nomes de personagens
 class NameValidator {
   /// Stopwords - palavras que NÃO são nomes de pessoas
@@ -259,21 +256,22 @@ class NameValidator {
   };
 
   /// Verifica se uma string parece um nome de pessoa
-  /// 🔥 VALIDAÇÃO RIGOROSA: Usa banco de dados curado
+  /// 🔥 VALIDAÇÃO v7.6.56: Estrutural (Casting Director cria os nomes)
   static bool looksLikePersonName(String value) {
     final cleaned = value.trim();
     if (cleaned.isEmpty) return false;
 
-    // Verificar se está no banco curado
-    if (NameGeneratorService.isValidName(cleaned)) {
-      return true; // ✅ Nome 100% confirmado
-    }
-
-    // 🚫 Se NÃO está no banco curado, REJEITAR
-    if (kDebugMode) {
-      debugPrint('⚠️ NOME REJEITADO (não está no banco curado): "$cleaned"');
-    }
-    return false;
+    // v7.6.56: Validação estrutural - Gemini é o Casting Director
+    // Verificar estrutura básica de nome próprio
+    if (cleaned.length < 2 || cleaned.length > 30) return false;
+    
+    // Primeira letra maiúscula
+    if (!RegExp(r'^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇÑ]').hasMatch(cleaned)) return false;
+    
+    // Não é stopword conhecida
+    if (nameStopwords.contains(cleaned.toLowerCase())) return false;
+    
+    return true;
   }
 
   /// Extrai nomes de um texto usando regex

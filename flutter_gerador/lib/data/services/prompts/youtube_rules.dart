@@ -116,6 +116,20 @@ OBRIGATÓRIO: Texto limpo, narrativo, fluido, pronto para narração direta. NUN
    ✅ Evite usar a mesma palavra temática 3+ vezes em 5 parágrafos
    ✅ Use palavras concretas e visuais (ouvinte precisa "ver" mentalmente)
 
+🚫 ANTI-ECHO (PROIBIÇÃO DE REPETIÇÃO DE FRASES DE EFEITO):
+   ⚠️ É PROIBIDO repetir frases inteiras, ditados populares ou metáforas do bloco anterior!
+   ⚠️ Se o personagem já lembrou de um conselho (pai/mãe/avó), NÃO repita a mesma lembrança!
+   ✅ Se mencionou "Como dizia meu pai..." em um bloco, no próximo NÃO use a mesma frase!
+   ✅ Crie uma NOVA reflexão ou simplesmente foque na AÇÃO do presente!
+   ✅ Cada bloco = descrições NOVAS, vocabulário FRESCO!
+   
+   ❌ PROIBIDO: Repetir "A vida é um rio..." em múltiplos blocos
+   ❌ PROIBIDO: Usar o mesmo ditado/provérbio mais de 1 vez na história
+   ❌ PROIBIDO: Fazer o personagem ter a "mesma lembrança" repetidamente
+   
+   ✅ CORRETO: Se usou um ditado no bloco 2, no bloco 3 avance sem filosofar
+   ✅ CORRETO: Variar entre reflexão e ação para manter frescor narrativo
+
 🎭 RITMO E PAUSAS DRAMÁTICAS:
    • Momentos de tensão: frases curtas e diretas
    • Momentos de reflexão: frases mais longas e poéticas
@@ -188,6 +202,20 @@ Se você não usaria essa palavra conversando com sua AVÓ de 70 anos → NÃO U
 4. SEM TERMOS TÉCNICOS: Explique tudo com palavras comuns
 5. TESTE MENTAL: "Minha avó de 70 anos entenderia facilmente?"
 6. EVITE: Palavras literárias, filosóficas, poéticas demais
+
+🎧 OTIMIZAÇÃO PARA NARRAÇÃO TTS (Text-to-Speech):
+7. NÚMEROS POR EXTENSO: Evite leitura robótica de números/siglas
+   ❌ ERRADO: "10 anos", "R\$ 500", "5km", "3h"
+   ✅ CORRETO: "dez anos", "quinhentos reais", "cinco quilômetros", "três horas"
+   
+8. VALORES E MEDIDAS: Sempre escreva por extenso
+   ❌ ERRADO: "US\$ 1.000", "50%", "2m de altura"
+   ✅ CORRETO: "mil dólares", "cinquenta por cento", "dois metros de altura"
+
+9. PONTUAÇÃO PARA ENTONAÇÃO: A IA de voz usa pontuação para pausas e ênfase
+   ✅ Use PONTOS FINAIS (.) para pausas dramáticas
+   ✅ Use VÍRGULAS (,) para ditar o ritmo da respiração
+   ✅ Use DOIS-PONTOS (:) antes de falas para criar expectativa
 
 📝 EXEMPLOS DE SIMPLIFICAÇÃO:
 ❌ "A confissão foi proferida com uma solenidade que beirava o absurdo"

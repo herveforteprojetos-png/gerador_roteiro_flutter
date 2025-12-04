@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/generation_config.dart';
 import '../../data/models/localization_level.dart';
 import '../../data/services/gemini_service.dart';
-import '../../data/services/name_generator_service.dart';
 import 'script_generation_provider.dart'; // Para acessar defaultGeminiServiceProvider
 
 class AuxiliaryToolsNotifier extends StateNotifier<AuxiliaryToolsState> {
@@ -93,37 +92,15 @@ class AuxiliaryToolsNotifier extends StateNotifier<AuxiliaryToolsState> {
           break;
       }
 
+      // v7.6.56: Casting Director - Gemini cria os nomes apropriados
       final protagonistName = config.protagonistName.trim().isNotEmpty
           ? config.protagonistName.trim()
-          : (protagonistGender == 'neutro'
-                ? '' // Deixar Gemini decidir o nome
-                : NameGeneratorService.generateName(
-                    gender: protagonistGender,
-                    ageGroup: 'maduro',
-                    language: config.language.toLowerCase() == 'português'
-                        ? 'pt'
-                        : 'en',
-                  ));
+          : ''; // Deixar Gemini decidir o nome
 
-      // 🎭 PERSONAGEM SECUNDÁRIO: Gênero oposto e faixa etária complementar
-      String secondaryGender = protagonistGender == 'masculino'
-          ? 'feminino'
-          : (protagonistGender == 'feminino' ? 'masculino' : 'neutro');
-      String secondaryAge = protagonistAge == 'jovem'
-          ? 'idoso'
-          : 'jovem'; // Contraste interessante
-
+      // v7.6.56: Casting Director - Gemini cria os nomes apropriados
       final secondaryName = config.secondaryCharacterName.trim().isNotEmpty
           ? config.secondaryCharacterName.trim()
-          : (secondaryGender == 'neutro'
-                ? '' // Deixar Gemini decidir
-                : NameGeneratorService.generateName(
-                    gender: secondaryGender,
-                    ageGroup: secondaryAge,
-                    language: config.language.toLowerCase() == 'português'
-                        ? 'pt'
-                        : 'en',
-                  ));
+          : ''; // Deixar Gemini decidir
 
       // 🎯 PROMPT MELHORADO: Sistema completo de perspectivas
       final perspectiveLabel =
@@ -402,7 +379,7 @@ Escreva o contexto agora:
       final response = await _geminiService.generateTextWithApiKey(
         prompt: contextPrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash-lite', // Ultra-rápido para geração de contexto
+        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas auxiliares (independente do modo)
       );
 
       debugPrint(
@@ -499,7 +476,7 @@ Responda apenas com o prompt final em inglês, sem explicações adicionais.
       final response = await _geminiService.generateTextWithApiKey(
         prompt: imagePromptTemplate,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash-lite', // Ultra-rápido para prompts de imagem
+        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas auxiliares (independente do modo)
       );
 
       state = state.copyWith(

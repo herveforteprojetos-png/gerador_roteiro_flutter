@@ -208,11 +208,11 @@ $scriptText
 - ✅ Separe as tags com vírgula: tag1, tag2, tag3
 ''';
 
-      print('📤 Enviando para Gemini...');
+      print('📤 Enviando para Gemini (Flash fixo)...');
       final response = await _geminiService.generateTextWithApiKey(
         prompt: youtubePrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
+        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
       );
 
       print('✅ Resposta recebida do Gemini');
@@ -426,7 +426,7 @@ OU se foi consistente:
       final result = await _geminiService.generateTextWithApiKey(
         prompt: protagonistPrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
+        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
       );
 
       state = state.copyWith(
@@ -650,11 +650,11 @@ Exemplo:
 **IMPORTANTE:** Cada prompt deve ser PHOTOREALISTIC (não cinematográfico artificial), com iluminação natural, pronto para colar diretamente no Midjourney!
 ''';
 
-      print('📤 Enviando key scenes prompts para Gemini (v7.6.13)...');
+      print('📤 Enviando key scenes prompts para Gemini (Flash fixo)...');
       final result = await _geminiService.generateTextWithApiKey(
         prompt: keyScenesPrompt,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
+        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
       );
 
       print('✅ Resposta key scenes recebida do Gemini');
@@ -727,7 +727,7 @@ Responda em ${config.language} com prompts detalhados e criativos.
       final response = await _geminiService.generateTextWithApiKey(
         prompt: promptsTemplate,
         apiKey: config.apiKey,
-        model: 'gemini-2.5-flash-lite', // Ultra rápido e econômico
+        model: 'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
       );
 
       state = state.copyWith(

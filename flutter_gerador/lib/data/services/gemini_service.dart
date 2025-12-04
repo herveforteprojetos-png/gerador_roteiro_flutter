@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert'; // 🆕 v7.6.52: Para JSON parsing do World State
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -7,7 +7,6 @@ import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/models/script_result.dart';
 import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/data/models/localization_level.dart';
-import 'package:flutter_gerador/data/services/name_generator_service.dart';
 import 'package:flutter_gerador/data/models/debug_log.dart';
 import 'gemini/gemini_modules.dart'; // 🆕 v7.6.35: Inclui PostGenerationFixer via barrel
 
@@ -2188,12 +2187,10 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
       if (locationLower.isNotEmpty && normalized == locationLower) return;
       if (_nameStopwords.contains(normalized)) return;
 
-      // 🔥 VALIDAÇÃO RIGOROSA: Só adicionar se estiver no banco curado
-      if (!NameGeneratorService.isValidName(name)) {
+      // v7.6.63: Validação estrutural (aceita nomes do LLM)
+      if (!_isLikelyName(name)) {
         if (kDebugMode) {
-          debugPrint(
-            '⚠️ Tracker REJEITOU nome não validado: "$name" (não está no banco curado)',
-          );
+          debugPrint('Tracker ignorou texto invalido: "$name"');
         }
         return;
       }
@@ -3117,6 +3114,104 @@ no vasto manto azul do infinito."
     return result.join('\n\n');
   }
 
+  /// 🆕 v7.6.64: TRADUÇÃO DE KEYWORDS PARA VALIDAÇÃO MULTILÍNGUE
+  /// Traduz palavras-chave do título para o idioma do roteiro gerado
+  /// Isso resolve falsos alertas quando título está em PT mas roteiro em KO/EN/ES
+  Future<List<String>> _translateKeywordsToTargetLang(
+    List<String> keywords,
+    String targetLanguage,
+    String apiKey,
+  ) async {
+    // Se a lista está vazia, retorna vazia
+    if (keywords.isEmpty) return keywords;
+    
+    // Detectar idioma de origem (assumimos português por padrão)
+    final targetLower = targetLanguage.toLowerCase();
+    
+    // Se o idioma alvo é português, não precisa traduzir
+    if (targetLower.contains('portugu') || 
+        targetLower.contains('pt-br') || 
+        targetLower == 'pt') {
+      return keywords;
+    }
+
+    try {
+      final prompt = '''
+TAREFA: Tradutor de Palavras-Chave para Validação de Roteiro.
+
+IDIOMA DE ORIGEM: Português
+IDIOMA DE DESTINO: $targetLanguage
+
+PALAVRAS-CHAVE PARA TRADUZIR:
+${keywords.map((k) => '- $k').join('\n')}
+
+INSTRUÇÕES:
+1. Traduza cada palavra/frase para o idioma de destino
+2. Mantenha o significado semântico, não literal
+3. Se uma palavra tem múltiplas traduções, escolha a mais comum
+
+FORMATO DE SAÍDA (JSON array apenas, sem markdown):
+["tradução1", "tradução2", "tradução3"]
+
+EXEMPLO:
+Entrada: ["marmita", "funcionário", "ajudar"]
+Saída para Coreano: ["도시락", "직원", "돕다"]
+Saída para Inglês: ["lunch box", "employee", "help"]
+
+RESPONDA APENAS COM O JSON ARRAY:''';
+
+      final response = await _dio.post(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+        queryParameters: {'key': apiKey},
+        data: {
+          'contents': [
+            {
+              'parts': [
+                {'text': prompt}
+              ]
+            }
+          ],
+          'generationConfig': {
+            'temperature': 0.1, // Baixa para tradução precisa
+            'maxOutputTokens': 500,
+          },
+        },
+      );
+
+      final text = response.data['candidates'][0]['content']['parts'][0]['text']
+          ?.toString() ?? '';
+
+      // Parse do JSON array
+      final cleanText = text
+          .replaceAll('```json', '')
+          .replaceAll('```', '')
+          .trim();
+      
+      final jsonMatch = RegExp(r'\[.*\]', dotAll: true).firstMatch(cleanText);
+      if (jsonMatch != null) {
+        final List<dynamic> parsed = jsonDecode(jsonMatch.group(0)!);
+        final translated = parsed.map((e) => e.toString()).toList();
+        
+        if (kDebugMode) {
+          debugPrint('🌐 TRADUÇÃO DE KEYWORDS:');
+          debugPrint('   Original (PT): ${keywords.join(", ")}');
+          debugPrint('   Traduzido ($targetLanguage): ${translated.join(", ")}');
+        }
+        
+        // Retorna AMBOS: original + traduzido (para busca mais robusta)
+        return [...keywords, ...translated];
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Erro na tradução de keywords: $e');
+        debugPrint('   Usando keywords originais como fallback');
+      }
+    }
+    
+    // Fallback: retorna keywords originais
+    return keywords;
+  }
+
   /// 🆕 v7.6.44: VALIDAÇÃO DE COERÊNCIA TÍTULO ↔ HISTÓRIA
   /// Verifica se a história gerada é coerente com o título fornecido
   /// usando o próprio Gemini para análise semântica
@@ -3241,6 +3336,7 @@ no vasto manto azul do infinito."
 
   /// 🆕 v7.6.44: VALIDAÇÃO RIGOROSA DE COERÊNCIA TÍTULO ↔ HISTÓRIA
   /// Verifica se elementos-chave do título aparecem na história
+  /// 🆕 v7.6.64: SUPORTE MULTILÍNGUE - Traduz keywords para o idioma do roteiro
   Future<Map<String, dynamic>> _validateTitleCoherenceRigorous({
     required String title,
     required String story,
@@ -3261,15 +3357,43 @@ no vasto manto azul do infinito."
         debugPrint('   Objetos: ${keyElements['objetos']?.join(", ") ?? "nenhum"}');
       }
 
+      // 🆕 v7.6.64: TRADUÇÃO MULTILÍNGUE DE KEYWORDS
+      // Traduz keywords para o idioma do roteiro antes de validar
+      // Isso resolve falsos alertas quando título está em PT mas roteiro em KO/EN/ES
+      final translatedPersonagens = await _translateKeywordsToTargetLang(
+        keyElements['personagens'] ?? [],
+        language,
+        apiKey,
+      );
+      final translatedContextos = await _translateKeywordsToTargetLang(
+        keyElements['contextos'] ?? [],
+        language,
+        apiKey,
+      );
+      final translatedObjetos = await _translateKeywordsToTargetLang(
+        keyElements['objetos'] ?? [],
+        language,
+        apiKey,
+      );
+
+      if (kDebugMode) {
+        debugPrint('🌐 KEYWORDS TRADUZIDAS PARA $language:');
+        debugPrint('   Personagens: ${translatedPersonagens.join(", ")}');
+        debugPrint('   Contextos: ${translatedContextos.join(", ")}');
+        debugPrint('   Objetos: ${translatedObjetos.join(", ")}');
+      }
+
       // 2️⃣ VALIDAÇÃO BÁSICA: Verificar presença de palavras-chave
       final storyLower = story.toLowerCase();
       
-      // Validar personagens
+      // Validar personagens (agora com keywords traduzidas)
       for (final personagem in keyElements['personagens'] ?? []) {
-        // Extrair palavra principal do padrão
-        final mainWords = personagem.split(' ').where((String w) => w.length > 3).toList();
+        // Usar keywords traduzidas para busca
+        final searchWords = translatedPersonagens
+            .where((String w) => w.length > 2)
+            .toList();
         var found = false;
-        for (final word in mainWords) {
+        for (final word in searchWords) {
           if (storyLower.contains(word.toLowerCase())) {
             found = true;
             break;
@@ -3282,11 +3406,13 @@ no vasto manto azul do infinito."
         }
       }
 
-      // Validar contextos
+      // Validar contextos (agora com keywords traduzidas)
       for (final contexto in keyElements['contextos'] ?? []) {
-        final mainWords = contexto.split(' ').where((String w) => w.length > 3).toList();
+        final searchWords = translatedContextos
+            .where((String w) => w.length > 2)
+            .toList();
         var found = false;
-        for (final word in mainWords) {
+        for (final word in searchWords) {
           if (storyLower.contains(word.toLowerCase())) {
             found = true;
             break;
@@ -3299,11 +3425,13 @@ no vasto manto azul do infinito."
         }
       }
 
-      // Validar objetos importantes
+      // Validar objetos importantes (agora com keywords traduzidas)
       for (final objeto in keyElements['objetos'] ?? []) {
-        final mainWords = objeto.split(' ').where((String w) => w.length > 3).toList();
+        final searchWords = translatedObjetos
+            .where((String w) => w.length > 2)
+            .toList();
         var found = false;
-        for (final word in mainWords) {
+        for (final word in searchWords) {
           if (storyLower.contains(word.toLowerCase())) {
             found = true;
             break;
@@ -5091,29 +5219,28 @@ APENAS o parágrafo final. Comece direto:
     final cleaned = value.trim();
     if (cleaned.isEmpty) return false;
 
-    // 🔥 VALIDAÇÃO v7.6.17: Dois níveis de checagem
-    // Nível 1: Banco curado (100% confiável)
-    // Nível 2: Estrutura válida + não é palavra comum (fallback)
-
-    // ✅ NÍVEL 1: Verificar se está no banco curado
-    if (NameGeneratorService.isValidName(cleaned)) {
-      return true; // ✅ Nome 100% confirmado no banco de dados curado
-    }
-
-    // 🆕 NÍVEL 2: FALLBACK INTELIGENTE para nomes personalizados/variações
-    // Aceitar se: estrutura válida + não é palavra comum conhecida
-    if (_hasValidNameStructure(cleaned) && !_isCommonWord(cleaned)) {
-      if (kDebugMode) {
-        debugPrint('✅ Nome aceito (fallback estrutural): "$cleaned"');
-      }
+    // v7.6.63: Validação estrutural simples (Gemini é o Casting Director)
+    // Aceitar se parece nome próprio e não é palavra comum
+    if (_isLikelyName(cleaned) && !_isCommonWord(cleaned)) {
       return true;
     }
 
-    // 🚫 Rejeitar palavras comuns/inválidas
-    if (kDebugMode) {
-      debugPrint('⚠️ NOME REJEITADO: "$cleaned"');
+    // Fallback: estrutura válida
+    if (_hasValidNameStructure(cleaned) && !_isCommonWord(cleaned)) {
+      return true;
     }
+
     return false;
+  }
+
+  /// v7.6.63: Validação simples de nome (aceita criatividade do LLM)
+  /// Resolve bug de rejeitar nomes coreanos, compostos, etc.
+  bool _isLikelyName(String text) {
+    if (text.isEmpty) return false;
+    // Aceita qualquer string que comece com letra maiuscula
+    // e contenha apenas letras, espacos, hifens ou apostrofos
+    final nameRegex = RegExp(r"^[A-Z\u00C0-\u00DC\u0100-\u017F\uAC00-\uD7AF][a-zA-Z\u00C0-\u00FF\u0100-\u017F\uAC00-\uD7AF\s\-\']+$");
+    return nameRegex.hasMatch(text.trim());
   }
 
   /// 🆕 v7.6.17: Verifica estrutura válida de nome próprio
@@ -5958,33 +6085,9 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       instruction = _getContinueInstruction(c.language);
     }
 
-    // 🐛 DEBUG: Verificar se genre está sendo passado
-    if (kDebugMode) {
-      debugPrint('🎯 GENRE RECEBIDO: ${c.genre}');
-      debugPrint('🌍 LANGUAGE RECEBIDO: ${c.language}');
-    }
-
-    // Gerar lista de nomes curados do banco de dados
-    // 🆕 v7.6.29: FILTRAR nomes já usados para prevenir duplicação
-    final nameList = NameGeneratorService.getNameListForPrompt(
-      language: c.language,
-      genre: c
-          .genre, // NOVO: Usa genre do config (null = nomes do idioma, 'western' = nomes western)
-      maxNamesPerCategory: 30,
-      excludedNames: tracker.confirmedNames, // 🆕 v7.6.29: Nomes proibidos
-    );
-
-    // 🐛 DEBUG: Verificar lista de nomes gerada
-    if (kDebugMode) {
-      if (tracker.confirmedNames.isNotEmpty) {
-        debugPrint(
-          '🚫 v7.6.29: ${tracker.confirmedNames.length} nomes removidos da lista disponível',
-        );
-      }
-      debugPrint(
-        '📝 PRIMEIROS 500 CHARS DA LISTA DE NOMES:\n${nameList.substring(0, nameList.length > 500 ? 500 : nameList.length)}',
-      );
-    }
+    // v7.6.63: Gemini é o Casting Director - cria nomes apropriados para o idioma
+    // Removido banco de nomes estático em favor de geração dinâmica via LLM
+    final nameList = ''; // Não mais necessário - LLM gera nomes contextualmente
 
     // 🌍 Obter labels traduzidos para os metadados
     final labels = _getMetadataLabels(c.language);
@@ -7456,12 +7559,12 @@ Idioma da resposta: $language
       // Usar idioma e perspectiva configurados pelo usuário (não detectar)
       final finalLanguage = language;
 
-      // Analisar contexto da história (usando mesmo modelo)
+      // Analisar contexto da história (Flash para tarefa simples)
       final scriptContext = await _analyzeScriptContext(
         scriptContent,
         apiKey,
         finalLanguage,
-        qualityMode, // 🎯 Propagar qualityMode
+        'flash', // v7.6.62: Forcar Flash para analise simples
       );
 
       // Gerar CTAs contextualizados COM A PERSPECTIVA CONFIGURADA
@@ -7477,7 +7580,7 @@ Idioma da resposta: $language
       final result = await generateTextWithApiKey(
         prompt: prompt,
         apiKey: apiKey,
-        qualityMode: qualityMode, // 🎯 v7.6.51: Usar modelo selecionado pelo usuário
+        qualityMode: 'flash', // v7.6.62: CTAs sempre usam Flash (tarefa simples)
         maxTokens: 3072,
       );
 

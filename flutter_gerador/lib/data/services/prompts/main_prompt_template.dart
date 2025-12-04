@@ -195,51 +195,64 @@ TODO o texto DEVE estar em $language - SEM EXCEÇÕES!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║ 🔤 REGRA DE CAPITALIZAÇÃO - LEIA ANTES DE ESCREVER! 🔤                      ║
+║ 🎧 DIRETRIZES DE ESCRITA PARA ÁUDIO (CRÍTICO PARA TTS) 🎧                   ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-🚨 CRÍTICO: Use MINÚSCULAS para TUDO, exceto NOMES PRÓPRIOS de personagens!
+⚠️ CONTEXTO: Este roteiro será narrado por IA de Voz (Text-to-Speech).
+   O texto DEVE ser formatado para guiar a entonação e evitar leitura robótica!
 
-✅ CORRETO:
-   • "ele disse que estava cansado." (pronomes em minúsculas)
-   • "meu pai sempre me dizia isso." (possessivos em minúsculas)
-   • "eles foram embora na terça-feira." (dias da semana em minúsculas)
-   • "o suíço falou com o italiano." (nacionalidades em minúsculas)
-   • "mas Bruce não estava lá." (conjunções em minúsculas, NOME em maiúscula)
-
-❌ ERRADO:
-   • "Ele disse que estava cansado." → "he", não "He"
-   • "My pai sempre me dizia isso." → "my", não "My"
-   • "Eles foram embora na Terça-feira." → "eles" e "terça-feira", não "Eles" e "Terça-feira"
-   • "O Suíço falou com o Italiano." → "suíço" e "italiano", não "Suíço" e "Italiano"
-
-🎯 ÚNICA EXCEÇÃO - NOMES PRÓPRIOS DE PERSONAGENS:
-   ✅ "Bruce estava nervoso." (nome próprio em maiúscula)
-   ✅ "Sarah olhou para Frank." (nomes próprios em maiúscula)
-   ✅ "o avô de Bruce falou." (apenas "Bruce" em maiúscula)
-   ✅ "my lawyer, Richard, advised me" (Richard em maiúscula)
-   ✅ "i called Charles for help" (Charles em maiúscula)
-
-🔴 ERRO CRÍTICO DETECTADO EM GERAÇÕES ANTERIORES:
-   ❌ "my lawyer, mark, advised me" → ERRADO! "mark" em minúsculas
-   ✅ "my lawyer, Mark, advised me" → CORRETO! "Mark" em maiúscula
+1️⃣ **CAPITALIZAÇÃO & PONTUAÇÃO (ENTONAÇÃO):**
+   - O texto DEVE seguir a NORMA CULTA RIGOROSA do idioma.
+   - A IA de voz usa letras maiúsculas e pontuação para saber onde colocar emoção.
+   - Início de frase SEMPRE com maiúscula!
+   - Nomes próprios SEMPRE com maiúscula!
    
-   ⚠️ POR QUE ISSO É CRÍTICO:
-   • Nomes em minúsculas NÃO SÃO DETECTADOS pelo sistema de validação
-   • Sistema permite duplicação se nome não estiver capitalizado
-   • SEMPRE capitalize nomes próprios, mesmo após vírgula/preposição
+   ❌ ERRADO: "o presidente olhou e disse oi." (Gera voz robótica/monótona)
+   ✅ CORRETO: "O Presidente olhou e disse: 'Oi!'" (Gera pausa dramática e ênfase)
+   
+   ❌ ERRADO: "ele foi até a casa. ela estava esperando."
+   ✅ CORRETO: "Ele foi até a casa. Ela estava esperando."
 
-🚫 NUNCA USE MAIÚSCULAS EM:
-   • Pronomes: he, she, it, they, we, you, I
-   • Possessivos: my, your, his, her, their, our
-   • Conjunções: and, but, or, because, so
-   • Artigos: the, a, an
-   • Preposições: in, on, at, for, with, to
-   • Dias/meses: monday, tuesday, january, february
-   • Nacionalidades: american, swiss, italian, brazilian
-   • Palavras no início de frase: use minúsculas!
+2️⃣ **NÚMEROS E SIGLAS POR EXTENSO:**
+   - Escreva números e valores SEMPRE por extenso para evitar erros de leitura.
+   - A IA de voz pode ler "R\$" como "erre cifrão" se não estiver por extenso!
+   
+   ❌ ERRADO: "10 anos", "R\$ 500", "5km", "3h", "US\$ 1.000", "50%"
+   ✅ CORRETO: "dez anos", "quinhentos reais", "cinco quilômetros", "três horas", "mil dólares", "cinquenta por cento"
 
-💡 BENEFÍCIO: Sistema detecta nomes com precisão e evita falsos positivos!
+3️⃣ **RITMO DE FALA (RESPIRAÇÃO):**
+   - Evite orações muito longas. Escreva frases curtas e diretas para dar "ar" à narração.
+   - Use PONTOS FINAIS (.) para criar pausas dramáticas.
+   - Use VÍRGULAS (,) para ditar o ritmo da leitura.
+   - Máximo 20-25 palavras por frase!
+   
+   ❌ ERRADO: "Ele correu pela rua enquanto pensava em tudo que tinha acontecido naquele dia terrível quando descobriu a verdade sobre sua família."
+   ✅ CORRETO: "Ele correu pela rua. Pensava em tudo que tinha acontecido. Naquele dia terrível, descobriu a verdade sobre sua família."
+
+4️⃣ **CONTINUIDADE FLUÍDA (SEM RECAPS):**
+   - Você está escrevendo a continuação de uma cena em andamento.
+   - NÃO comece o bloco descrevendo o cenário novamente ou resumindo o bloco anterior.
+   - Comece a ação imediatamente. A transição entre blocos deve ser invisível para o ouvinte.
+   
+   ❌ ERRADO: "Na mansão onde tudo tinha começado, Maria ainda estava processando a revelação..."
+   ✅ CORRETO: "Maria fechou os olhos. Precisava de um momento. A revelação ainda ecoava em sua mente."
+
+5️⃣ **RESTRIÇÃO DE REPETIÇÃO (ANTI-ECHO) 🚫:**
+   - É PROIBIDO repetir frases inteiras, ditados populares ou metáforas usadas no bloco anterior!
+   - Se o personagem já lembrou de um conselho do pai/mãe/avó recentemente, NÃO repita a mesma lembrança.
+   - Crie uma NOVA reflexão ou foque no PRESENTE da cena.
+   - Cada bloco deve trazer NOVAS descrições. Não descreva o cenário com as mesmas palavras!
+   
+   ❌ ERRADO: Bloco 1: "Como dizia meu pai: a vida é um rio..."
+             Bloco 2: "Lembrei do que meu pai dizia: a vida é um rio..."
+             Bloco 3: "Meu pai sempre dizia: a vida é um rio..."
+   
+   ✅ CORRETO: Bloco 1: "Como dizia meu pai: a vida é um rio..."
+              Bloco 2: "Precisava agir. Não havia tempo para filosofias."
+              Bloco 3: "Pela primeira vez, entendi o que meu pai quis dizer."
+   
+   ⚠️ REGRA DE OURO: Se você leu uma frase bonita no contexto anterior, NÃO a repita!
+      Invente algo novo ou avance a história sem reflexões repetidas.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
