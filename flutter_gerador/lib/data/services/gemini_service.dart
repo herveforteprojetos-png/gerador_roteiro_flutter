@@ -332,7 +332,7 @@ class GeminiService {
     // 🏗️ v7.6.64: Inicializar módulos refatorados
     _llmClient = LlmClient(instanceId: _instanceId);
     _worldStateManager = WorldStateManager(llmClient: _llmClient);
-    _scriptValidator = ScriptValidator();
+    _scriptValidator = ScriptValidator(llmClient: _llmClient);
 
     _dio.interceptors.add(
       InterceptorsWrapper(

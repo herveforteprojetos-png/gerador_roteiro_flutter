@@ -79,28 +79,40 @@ Saída para Inglês: ["lunch box", "employee", "help"]
 
 RESPONDA APENAS COM O JSON ARRAY:''';
 
-      final response = await _dio.post(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
-        queryParameters: {'key': apiKey},
-        data: {
-          'contents': [
-            {
-              'parts': [
-                {'text': prompt},
-              ],
+      // 🏗️ v7.6.64: Usar LlmClient se disponível
+      String text;
+      if (_llmClient != null) {
+        text = await _llmClient.generateText(
+          prompt: prompt,
+          apiKey: apiKey,
+          model: 'gemini-2.0-flash-exp',
+          maxTokens: 500,
+          temperature: 0.1,
+        );
+      } else {
+        // Fallback para Dio direto (compatibilidade)
+        final response = await _dio.post(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+          queryParameters: {'key': apiKey},
+          data: {
+            'contents': [
+              {
+                'parts': [
+                  {'text': prompt},
+                ],
+              },
+            ],
+            'generationConfig': {
+              'temperature': 0.1,
+              'maxOutputTokens': 500,
             },
-          ],
-          'generationConfig': {
-            'temperature': 0.1,
-            'maxOutputTokens': 500,
           },
-        },
-      );
+        );
 
-      final text =
-          response.data['candidates'][0]['content']['parts'][0]['text']
-                  ?.toString() ??
-              '';
+        text = response.data['candidates'][0]['content']['parts'][0]['text']
+                ?.toString() ??
+            '';
+      }
 
       final cleanText =
           text.replaceAll('```json', '').replaceAll('```', '').trim();
