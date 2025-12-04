@@ -101,13 +101,21 @@ GeminiService (Coordinator)
 
 | Componente | Status | Descrição |
 |------------|--------|-----------|
-| LlmClient | ✅ Criado | Pronto para uso |
-| PromptBuilder | ✅ Criado | Pronto para uso |
-| WorldStateManager | ✅ Criado | Pronto para uso |
-| ScriptValidator | ✅ Criado | Pronto para uso |
-| Integração GeminiService | 🔄 Parcial | Módulos inicializados |
-| Migração chamadas internas | ⏳ Pendente | Próxima fase |
-| Remoção código legado | ⏳ Pendente | Após testes |
+| LlmClient | ✅ Completo | Comunicação centralizada com Gemini API |
+| ScriptPromptBuilder | ✅ Completo | Construção de prompts (renomeado de PromptBuilder) |
+| WorldStateManager | ✅ Completo | Gerenciamento do estado do mundo |
+| ScriptValidator | ✅ Completo | Validação de título↔história |
+| Integração GeminiService | ✅ Completo | Todos os módulos integrados |
+| Migração _makeApiRequest | ✅ Completo | Todas as chamadas usam LlmClient |
+| Remoção código legado | ✅ Completo | ~1275 linhas removidas |
+
+## Métricas da Refatoração
+
+| Métrica | Antes | Depois | Mudança |
+|---------|-------|--------|---------|
+| gemini_service.dart | 9514 linhas | 8239 linhas | **-13.4%** |
+| Commits de refatoração | - | 18 | - |
+| Novos módulos | 0 | 4 | +4 arquivos SOLID |
 
 ## Uso
 
@@ -117,17 +125,11 @@ import 'package:flutter_gerador/data/services/scripting/scripting_modules.dart';
 // Todos os módulos disponíveis via barrel export
 final llm = LlmClient(instanceId: 'test');
 final world = WorldStateManager(llmClient: llm);
-final validator = ScriptValidator();
+final validator = ScriptValidator(llmClient: llm);
 ```
-
-## Próximos Passos
-
-1. **Migração Gradual**: Substituir chamadas `_makeApiRequest` por `_llmClient.generateText()`
-2. **Migração WorldState**: Usar `WorldStateManager` em vez de `_WorldState` interno
-3. **Testes Unitários**: Adicionar testes para cada módulo
-4. **Remoção Legacy**: Remover código duplicado após validação
 
 ## Versão
 
 - Criado em: v7.6.64
 - Última atualização: Dezembro 2024
+- Refatoração SOLID: 18 commits
