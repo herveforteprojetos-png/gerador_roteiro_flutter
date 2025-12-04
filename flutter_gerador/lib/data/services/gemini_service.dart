@@ -1017,15 +1017,17 @@ class GeminiService {
               // 🆕 v7.6.52: ATUALIZAR WORLD STATE - Pipeline Modelo Único
               // O MESMO modelo selecionado pelo usuário atualiza o JSON de estado
               // Isso garante consistência e respeita a config do cliente
+              // 🏗️ v7.6.64: Migrado para usar WorldStateManager (SOLID)
               if (added.trim().isNotEmpty) {
-                await _updateWorldState(
-                  worldState: worldState,
+                await _worldStateManager.updateFromGeneratedBlock(
                   generatedBlock: added,
                   blockNumber: block,
                   apiKey: config.apiKey,
                   qualityMode: config.qualityMode,
                   language: config.language,
                 );
+                // Sincronizar resumo de volta para o worldState local (compatibilidade)
+                worldState.resumoAcumulado = _worldStateManager.state.resumoAcumulado;
               }
             }
           }
