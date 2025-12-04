@@ -395,20 +395,20 @@ class GeminiService {
     final persistentTracker = _CharacterTracker();
     _bootstrapCharacterTracker(persistentTracker, config);
 
-    // 🆕 v7.6.52: WORLD STATE - Memória Infinita via JSON
+    // 🏗️ v7.6.64: WORLD STATE - Agora usa WorldState do módulo (SOLID)
     // Rastreia personagens, inventário, fatos e resumo da história
     // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
-    final worldState = _WorldState();
+    final worldState = WorldState();
 
     // 🏗️ v7.6.64: Reset e inicialização do WorldStateManager (SOLID)
     _worldStateManager.reset();
     _worldStateManager.initializeProtagonist(config.protagonistName);
 
-    // Inicializar protagonista no World State (legacy - mantido para compatibilidade)
+    // Inicializar protagonista no World State usando classe do módulo
     if (config.protagonistName.trim().isNotEmpty) {
       worldState.upsertCharacter(
         'protagonista',
-        _WorldCharacter(
+        WorldCharacter(
           nome: config.protagonistName.trim(),
           papel: 'protagonista/narradora',
           status: 'vivo',
@@ -5675,7 +5675,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     int totalBlocks, {
     bool avoidRepetition =
         false, // 🔥 NOVO: Flag para regeneração anti-repetição
-    _WorldState? worldState, // 🆕 v7.6.52: World State para contexto rico
+    WorldState? worldState, // 🏗️ v7.6.64: Usa WorldState do módulo (SOLID)
   }) async {
     // 🔧 IMPORTANTE: target vem SEMPRE em PALAVRAS de _calculateTargetForBlock()
     // Mesmo quando measureType='caracteres', _calculateTargetForBlock já converteu caracteres→palavras
@@ -8387,293 +8387,8 @@ class _CharacterTracker {
 }
 
 // =============================================================================
-// 🆕 v7.6.52: WORLD STATE - Sistema de Memória Infinita via JSON
+// 🏗️ v7.6.64: WORLD STATE migrado para scripting/world_state_manager.dart
 // =============================================================================
-// Arquitetura Pipeline de Modelo Único: O mesmo modelo selecionado pelo usuário
-// é responsável por GERAR o texto E por ATUALIZAR o estado do mundo.
+// As classes WorldState e WorldCharacter agora estão no módulo dedicado.
+// Import: package:flutter_gerador/data/services/scripting/scripting_modules.dart
 // =============================================================================
-
-/// 📊 Representa um personagem no estado do mundo
-class _WorldCharacter {
-  String nome;
-  String papel;
-  String? idade;
-  String status; // 'vivo', 'morto', 'desaparecido', etc.
-  String? localAtual;
-  List<String> relacionamentos;
-
-  _WorldCharacter({
-    required this.nome,
-    required this.papel,
-    this.idade,
-    this.status = 'vivo',
-    this.localAtual,
-    List<String>? relacionamentos,
-  }) : relacionamentos = relacionamentos ?? [];
-
-  Map<String, dynamic> toJson() => {
-    'nome': nome,
-    'papel': papel,
-    if (idade != null) 'idade': idade,
-    'status': status,
-    if (localAtual != null) 'local_atual': localAtual,
-    if (relacionamentos.isNotEmpty) 'relacionamentos': relacionamentos,
-  };
-
-  // 🏗️ v7.6.64: fromJson disponível em WorldCharacter (scripting/world_state_manager.dart)
-}
-
-/// 🌍 v7.6.52: WORLD STATE - Estado completo do mundo da história
-///
-/// Estrutura JSON de memória infinita que rastreia:
-/// - Personagens (nome, papel, status, localização)
-/// - Inventário (objetos importantes por personagem)
-/// - Fatos (eventos importantes que aconteceram)
-/// - Linha do tempo (blocos onde eventos ocorreram)
-/// - 🆕 v7.6.53: Sinopse Comprimida (Camada 1 - Contexto Estático)
-class _WorldState {
-  /// Personagens indexados por papel normalizado
-  final Map<String, _WorldCharacter> personagens;
-
-  /// Inventário: papel → lista de itens
-  final Map<String, List<String>> inventario;
-
-  /// Fatos importantes da história (com bloco onde ocorreram)
-  final List<Map<String, dynamic>> fatos;
-
-  /// Último bloco processado
-  int ultimoBloco;
-
-  /// Resumo cumulativo da história
-  String resumoAcumulado;
-
-  /// 🆕 v7.6.53: Sinopse Comprimida (Camada 1 - Contexto Estático ≤500 tokens)
-  /// Gerada UMA VEZ no início e incluída em TODOS os blocos
-  String sinopseComprimida;
-
-  _WorldState()
-    : personagens = {},
-      inventario = {},
-      fatos = [],
-      ultimoBloco = 0,
-      resumoAcumulado = '',
-      sinopseComprimida = '';
-
-  /// Converte para JSON string para incluir no prompt
-  String toJsonString() {
-    // Formato compacto para economizar tokens
-    final buffer = StringBuffer();
-    buffer.writeln('{');
-
-    // Personagens
-    buffer.writeln('  "personagens": {');
-    final chars = personagens.entries.toList();
-    for (var i = 0; i < chars.length; i++) {
-      final c = chars[i];
-      buffer.write(
-        '    "${c.key}": {"nome":"${c.value.nome}","papel":"${c.value.papel}","status":"${c.value.status}"',
-      );
-      if (c.value.localAtual != null)
-        buffer.write(',"local":"${c.value.localAtual}"');
-      buffer.write('}');
-      if (i < chars.length - 1) buffer.writeln(',');
-    }
-    buffer.writeln('\n  },');
-
-    // Inventário (só se não vazio)
-    if (inventario.isNotEmpty) {
-      buffer.writeln('  "inventario": {');
-      final invs = inventario.entries.toList();
-      for (var i = 0; i < invs.length; i++) {
-        final inv = invs[i];
-        buffer.write('    "${inv.key}": ${inv.value}');
-        if (i < invs.length - 1) buffer.writeln(',');
-      }
-      buffer.writeln('\n  },');
-    }
-
-    // Fatos (últimos 10 para economizar tokens)
-    final recentFatos = fatos.length > 10
-        ? fatos.sublist(fatos.length - 10)
-        : fatos;
-    if (recentFatos.isNotEmpty) {
-      buffer.writeln('  "fatos_recentes": [');
-      for (var i = 0; i < recentFatos.length; i++) {
-        final f = recentFatos[i];
-        buffer.write('    {"bloco":${f['bloco']},"evento":"${f['evento']}"}');
-        if (i < recentFatos.length - 1) buffer.writeln(',');
-      }
-      buffer.writeln('\n  ],');
-    }
-
-    buffer.writeln('  "ultimo_bloco": $ultimoBloco');
-    buffer.writeln('}');
-
-    return buffer.toString();
-  }
-
-  /// Retorna contexto formatado para incluir no prompt de geração
-  /// 🆕 v7.6.53: Estrutura "Sanduíche" de 3 Camadas
-  String getContextForPrompt() {
-    if (personagens.isEmpty && fatos.isEmpty && sinopseComprimida.isEmpty)
-      return '';
-
-    final buffer = StringBuffer();
-    buffer.writeln('');
-    buffer.writeln(
-      '═══════════════════════════════════════════════════════════',
-    );
-    buffer.writeln(
-      '📊 CONTEXTO ESTRUTURADO - Pipeline de Modelo Único v7.6.53',
-    );
-    buffer.writeln(
-      '═══════════════════════════════════════════════════════════',
-    );
-
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // 🔵 CAMADA 1 - CONTEXTO ESTÁTICO (Sinopse Comprimida ≤500 tokens)
-    // Gerada uma vez, incluída em todos os blocos
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    if (sinopseComprimida.isNotEmpty) {
-      buffer.writeln('');
-      buffer.writeln('🔵 CAMADA 1 - SINOPSE DA HISTÓRIA:');
-      buffer.writeln('   $sinopseComprimida');
-    }
-
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // 🟢 CAMADA 2 - JANELA DESLIZANTE (Últimos N blocos)
-    // Incluída via contextoPrevio no buildCompactPrompt
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // (Esta camada é gerenciada externamente via contextoPrevio)
-
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // 🟡 CAMADA 3 - WORLD STATE JSON (Estado do Mundo)
-    // Estrutura persistente de personagens, inventário, fatos
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    buffer.writeln('');
-    buffer.writeln('🟡 CAMADA 3 - ESTADO DO MUNDO (Bloco $ultimoBloco):');
-
-    // Personagens
-    if (personagens.isNotEmpty) {
-      buffer.writeln('');
-      buffer.writeln('   🎭 PERSONAGENS ATIVOS:');
-      for (final entry in personagens.entries) {
-        final c = entry.value;
-        buffer.write('      • ${c.nome} (${c.papel})');
-        if (c.status != 'vivo')
-          buffer.write(' - STATUS: ${c.status.toUpperCase()}');
-        if (c.localAtual != null) buffer.write(' - Local: ${c.localAtual}');
-        buffer.writeln();
-      }
-    }
-
-    // Inventário
-    if (inventario.isNotEmpty) {
-      buffer.writeln('');
-      buffer.writeln('   🎒 INVENTÁRIO/OBJETOS IMPORTANTES:');
-      for (final entry in inventario.entries) {
-        if (entry.value.isNotEmpty) {
-          buffer.writeln('      • ${entry.key}: ${entry.value.join(", ")}');
-        }
-      }
-    }
-
-    // Fatos recentes
-    final recentFatos = fatos.length > 5
-        ? fatos.sublist(fatos.length - 5)
-        : fatos;
-    if (recentFatos.isNotEmpty) {
-      buffer.writeln('');
-      buffer.writeln('   📝 FATOS RECENTES:');
-      for (final f in recentFatos) {
-        buffer.writeln('      • [Bloco ${f['bloco']}] ${f['evento']}');
-      }
-    }
-
-    // Resumo
-    if (resumoAcumulado.isNotEmpty) {
-      buffer.writeln('');
-      buffer.writeln('   📖 RESUMO ATÉ AGORA:');
-      buffer.writeln('      $resumoAcumulado');
-    }
-
-    buffer.writeln(
-      '═══════════════════════════════════════════════════════════',
-    );
-    return buffer.toString();
-  }
-
-  /// Adiciona ou atualiza um personagem
-  void upsertCharacter(String papel, _WorldCharacter character) {
-    final normalizedRole = _normalizeRole(papel);
-    personagens[normalizedRole] = character;
-    if (kDebugMode) {
-      debugPrint(
-        '🌍 WorldState: Personagem atualizado - ${character.nome} ($papel)',
-      );
-    }
-  }
-
-  /// Adiciona item ao inventário de um personagem
-  void addToInventory(String papel, String item) {
-    final normalizedRole = _normalizeRole(papel);
-    inventario.putIfAbsent(normalizedRole, () => []);
-    if (!inventario[normalizedRole]!.contains(item)) {
-      inventario[normalizedRole]!.add(item);
-      if (kDebugMode) {
-        debugPrint('🌍 WorldState: Item adicionado - $item para $papel');
-      }
-    }
-  }
-
-  /// Remove item do inventário
-  void removeFromInventory(String papel, String item) {
-    final normalizedRole = _normalizeRole(papel);
-    inventario[normalizedRole]?.remove(item);
-  }
-
-  /// Adiciona um fato importante
-  void addFact(int bloco, String evento) {
-    fatos.add({'bloco': bloco, 'evento': evento});
-    if (kDebugMode) {
-      debugPrint('🌍 WorldState: Fato adicionado - [B$bloco] $evento');
-    }
-  }
-
-  /// Atualiza status de um personagem
-  void updateCharacterStatus(String papel, String novoStatus) {
-    final normalizedRole = _normalizeRole(papel);
-    if (personagens.containsKey(normalizedRole)) {
-      personagens[normalizedRole]!.status = novoStatus;
-      if (kDebugMode) {
-        debugPrint('🌍 WorldState: Status atualizado - $papel → $novoStatus');
-      }
-    }
-  }
-
-  /// Atualiza localização de um personagem
-  void updateCharacterLocation(String papel, String novoLocal) {
-    final normalizedRole = _normalizeRole(papel);
-    if (personagens.containsKey(normalizedRole)) {
-      personagens[normalizedRole]!.localAtual = novoLocal;
-    }
-  }
-
-  /// Normaliza papel para chave consistente
-  static String _normalizeRole(String role) {
-    return role
-        .toLowerCase()
-        .trim()
-        .replaceAll(RegExp(r'\s+'), '_')
-        .replaceAll(RegExp(r'[^a-z0-9_]'), '');
-  }
-
-  /// Limpa estado para nova geração
-  void clear() {
-    personagens.clear();
-    inventario.clear();
-    fatos.clear();
-    ultimoBloco = 0;
-    resumoAcumulado = '';
-  }
-}
