@@ -440,9 +440,12 @@ class GeminiService {
         debugPrint('⚠️ Erro ao gerar sinopse (não-crítico): $e');
       }
       // Fallback: usar tema truncado
-      worldState.sinopseComprimida = config.tema.length > 500
+      final fallbackSynopsis = config.tema.length > 500
           ? '${config.tema.substring(0, 500)}...'
           : config.tema;
+      worldState.sinopseComprimida = fallbackSynopsis;
+      // 🏗️ v7.6.64: Sincronizar fallback para WorldStateManager
+      _worldStateManager.setSynopsis(fallbackSynopsis);
     }
 
     _startWatchdog();
