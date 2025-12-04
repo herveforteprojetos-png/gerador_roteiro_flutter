@@ -673,4 +673,19 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
       );
     }
   }
+
+  /// 🔄 v7.6.64: Obtém contexto estruturado para prompts
+  /// Retorna representação formatada do estado do mundo
+  String getStructuredContext() => _worldState.getContextForPrompt();
+
+  /// 📝 v7.6.64: Obtém JSON string do estado (para debug/logging)
+  String toJsonString() => _worldState.toJsonString();
+
+  /// 🔄 v7.6.64: Atualiza sinopse comprimida diretamente
+  void setSynopsis(String synopsis) {
+    _worldState.sinopseComprimida = synopsis;
+  }
+
+  /// 📊 v7.6.64: Obtém sinopse comprimida atual
+  String get synopsis => _worldState.sinopseComprimida;
 }
