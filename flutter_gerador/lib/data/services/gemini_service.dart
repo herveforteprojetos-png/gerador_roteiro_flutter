@@ -402,7 +402,11 @@ class GeminiService {
     // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
     final worldState = _WorldState();
 
-    // Inicializar protagonista no World State
+    // 🏗️ v7.6.64: Reset e inicialização do WorldStateManager (SOLID)
+    _worldStateManager.reset();
+    _worldStateManager.initializeProtagonist(config.protagonistName);
+
+    // Inicializar protagonista no World State (legacy - mantido para compatibilidade)
     if (config.protagonistName.trim().isNotEmpty) {
       worldState.upsertCharacter(
         'protagonista',
