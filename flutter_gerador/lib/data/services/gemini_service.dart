@@ -1284,17 +1284,16 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
               config.language,
             );
 
-            // Gerar bloco de recuperação com o MESMO modelo selecionado pelo usuário
+            // 🏗️ v7.6.64: Usar LlmClient para gerar bloco de recuperação (SOLID)
             // 🎯 v7.6.51: Arquitetura Modelo Único - usar config.qualityMode
-            final recoveryResponse = await _makeApiRequest(
+            final recoveryResponse = await _llmClient.generateText(
               apiKey: config.apiKey,
               model: _getSelectedModel(config.qualityMode),
               prompt: recoveryPrompt,
               maxTokens: 500, // Bloco pequeno de recuperação
             );
 
-            if (recoveryResponse != null &&
-                recoveryResponse.trim().isNotEmpty) {
+            if (recoveryResponse.isNotEmpty) {
               // Adicionar bloco de recuperação ao final
               deduplicatedScript = '$deduplicatedScript\n\n$recoveryResponse';
               _debugLogger.success(
@@ -6138,21 +6137,20 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         debugPrint('[$_instanceId] 🤖 selectedModel = "$selectedModel"');
       }
 
-      final data = await _makeApiRequest(
+      // 🏗️ v7.6.64: Usar LlmClient para geração principal (SOLID)
+      final data = await _llmClient.generateText(
         apiKey: c.apiKey,
         model: selectedModel,
         prompt: prompt,
         maxTokens: finalMaxTokens,
-        tryOpenAIOnFail:
-            false, // 🚫 v7.6.19: Desabilitado - usar apenas API selecionada
       );
 
       // 🚀 v7.6.20: Registrar sucesso da API para Adaptive Delay Manager
-      if (data != null && data.isNotEmpty) {
+      if (data.isNotEmpty) {
         _recordApiSuccess();
       }
 
-      final text = data ?? '';
+      final text = data;
       final filtered = text.isNotEmpty
           ? await _filterDuplicateParagraphs(previous, text)
           : '';
@@ -6269,11 +6267,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       if (filtered.isEmpty) {
         if (kDebugMode) {
           debugPrint('⚠️ BLOCO $blockNumber VAZIO DETECTADO!');
-          if (data == null) {
-            debugPrint(
-              '   Causa: API retornou null (bloqueio de conteúdo ou erro)',
-            );
-          } else if (text.isEmpty) {
+          if (text.isEmpty) {
             debugPrint('   Causa: Resposta da API estava vazia');
           } else {
             debugPrint('   Causa: Conteúdo filtrado como duplicado');
@@ -6291,107 +6285,8 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     }
   }
 
-  Future<String?> _makeApiRequest({
-    required String apiKey,
-    required String model,
-    required String prompt,
-    required int maxTokens,
-    bool tryOpenAIOnFail = false, // 🤖 Novo parâmetro
-  }) async {
-    try {
-      // 🚀 Gemini 2.5 Pro suporta até 65.535 tokens de saída
-      // Usando limite generoso para aproveitar capacidade total
-      final adjustedMaxTokens = maxTokens < 8192
-          ? 8192
-          : min(maxTokens * 2, 32768);
-
-      final resp = await _dio.post(
-        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent',
-        queryParameters: {'key': apiKey},
-        data: {
-          'contents': [
-            {
-              'parts': [
-                {'text': prompt},
-              ],
-            },
-          ],
-          'generationConfig': {
-            'temperature': 0.8,
-            'topK': 40,
-            'topP': 0.95,
-            'maxOutputTokens': adjustedMaxTokens,
-          },
-        },
-      );
-
-      // Debug completo da resposta
-      debugPrint('GeminiService: Status Code: ${resp.statusCode}');
-      debugPrint('GeminiService: Response Data: ${resp.data}');
-
-      // Verificar se há erro na resposta
-      if (resp.data['error'] != null) {
-        debugPrint('GeminiService: API Error: ${resp.data['error']}');
-        throw Exception('API Error: ${resp.data['error']['message']}');
-      }
-
-      // 🚨 VERIFICAR BLOQUEIO DE CONTEÚDO
-      final promptFeedback = resp.data['promptFeedback'];
-      if (promptFeedback != null && promptFeedback['blockReason'] != null) {
-        final blockReason = promptFeedback['blockReason'];
-        debugPrint(
-          '🚫 GeminiService: CONTEÚDO BLOQUEADO - Razão: $blockReason',
-        );
-        debugPrint(
-          '⚠️ GeminiService: Contexto contém conteúdo sensível detectado pela API',
-        );
-        // Retornar null para que o sistema continue sem este bloco
-        // O sistema vai tentar continuar com contexto reduzido
-        return null;
-      }
-
-      // Verificar finish reason
-      final finishReason = resp.data['candidates']?[0]?['finishReason'];
-      if (finishReason == 'MAX_TOKENS') {
-        debugPrint(
-          'GeminiService: Aviso - Resposta cortada por limite de tokens',
-        );
-      }
-
-      // Tentar extrair o texto da estrutura de resposta
-      String? result;
-      final candidate = resp.data['candidates']?[0];
-
-      if (candidate != null) {
-        // Primeiro tentar a estrutura padrão com parts
-        result = candidate['content']?['parts']?[0]?['text'] as String?;
-
-        // Se não encontrou, tentar outras estruturas possíveis
-        if (result == null || result.isEmpty) {
-          result = candidate['content']?['text'] as String?;
-        }
-
-        // Se ainda não encontrou, tentar diretamente no candidate
-        if (result == null || result.isEmpty) {
-          result = candidate['text'] as String?;
-        }
-      }
-
-      debugPrint('GeminiService: Extracted text: ${result?.length ?? 0} chars');
-      debugPrint('GeminiService: Finish reason: $finishReason');
-
-      // Limpar o texto de marcações indesejadas
-      if (result != null) {
-        result = _cleanGeneratedText(result);
-      }
-
-      return result;
-    } catch (e) {
-      // 🚫 v7.6.19: Fallback OpenAI REMOVIDO - respeitar escolha do usuário
-      // Sempre re-throw o erro para que o sistema de retry padrão funcione
-      rethrow;
-    }
-  }
+  // 🏗️ v7.6.64: _makeApiRequest migrado para LlmClient._makeRequest (SOLID)
+  // Todas as chamadas agora usam _llmClient.generateText()
 
   // Limpar texto de marcações indesejadas
   String _cleanGeneratedText(String text) {
@@ -6713,6 +6608,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
 
   // Método público para uso nos providers - OTIMIZADO PARA CONTEXTO
   // 🎯 v7.6.51: Suporte a qualityMode para Pipeline Modelo Único
+  // 🏗️ v7.6.64: Agora delega para LlmClient (SOLID)
   Future<String> generateTextWithApiKey({
     required String prompt,
     required String apiKey,
@@ -6732,29 +6628,26 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         debugPrint(
           'GeminiService: Iniciando requisição para modelo $effectiveModel',
         );
-        final result = await _makeApiRequest(
+        // 🏗️ v7.6.64: Usar LlmClient.generateText (SOLID)
+        final result = await _llmClient.generateText(
           apiKey: apiKey,
           model: effectiveModel,
           prompt: prompt,
           maxTokens: maxTokens,
-          tryOpenAIOnFail:
-              false, // 🚫 v7.6.19: Desabilitado - usar apenas API selecionada
         );
 
         // 🚀 v7.6.20: Registrar sucesso da API para Adaptive Delay Manager
-        if (result != null && result.isNotEmpty) {
+        if (result.isNotEmpty) {
           _recordApiSuccess();
         }
 
         debugPrint(
-          'GeminiService: Resposta recebida - ${result != null ? 'Success' : 'Null'}',
+          'GeminiService: Resposta recebida - ${result.isNotEmpty ? 'Success' : 'Empty'}',
         );
-        if (result != null) {
-          debugPrint('GeminiService: Length: ${result.length}');
-        }
+        debugPrint('GeminiService: Length: ${result.length}');
 
         // Aplicar limpeza adicional se necessário
-        final cleanResult = result != null ? _cleanGeneratedText(result) : '';
+        final cleanResult = result.isNotEmpty ? _cleanGeneratedText(result) : '';
         return cleanResult;
       } catch (e) {
         debugPrint('GeminiService: Erro ao gerar texto: $e');
