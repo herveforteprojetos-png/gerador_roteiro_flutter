@@ -722,7 +722,7 @@ Responda apenas com o prompt final em inglês, sem explicações adicionais.
     }
 
     // Idiomas sem especificação de etnia
-    return '''O protagonista deve ter **etnia coerente com o contexto cultural do idioma ${language}**.
+    return '''O protagonista deve ter **etnia coerente com o contexto cultural do idioma $language**.
    - Aparência física: apropriada ao contexto linguístico e geográfico da história
    - ✅ Etnia deve fazer sentido com localização e cultura apresentadas''';
   }

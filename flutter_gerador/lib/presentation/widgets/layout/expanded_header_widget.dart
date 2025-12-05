@@ -136,7 +136,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
 
     // ✅ ATUALIZAR O PROVIDER IMEDIATAMENTE (para habilitar botão)
     debugPrint(
-      '🔑 _onApiKeyChanged: API Key = "${apiKey}" (${apiKey.length} chars)',
+      '🔑 _onApiKeyChanged: API Key = "$apiKey" (${apiKey.length} chars)',
     );
     ref.read(generationConfigProvider.notifier).updateApiKey(apiKey);
     debugPrint('✅ Provider atualizado com API Key');

@@ -952,7 +952,7 @@ Responda em ${config.language} com prompts detalhados e criativos.
     }
 
     // Idiomas sem especificação de etnia
-    return '''🎭 **ETNIA:** Protagonista deve ter etnia coerente com contexto cultural do idioma ${language}.
+    return '''🎭 **ETNIA:** Protagonista deve ter etnia coerente com contexto cultural do idioma $language.
    - Aparência física apropriada ao contexto linguístico e geográfico
    - ✅ Todos os 4 prompts devem manter esta etnia IDÊNTICA''';
   }
