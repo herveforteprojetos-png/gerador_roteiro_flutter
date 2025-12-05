@@ -289,8 +289,9 @@ class NameValidator {
 
       // Filtros
       if (potentialName.length < 3) continue;
-      if (potentialName.length > 30)
+      if (potentialName.length > 30) {
         continue; // Nomes muito longos não são pessoas
+      }
 
       // Verificar se é stopword
       if (nameStopwords.contains(potentialName.toLowerCase())) continue;

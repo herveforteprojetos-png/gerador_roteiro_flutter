@@ -135,7 +135,7 @@ class ModernGenerationProgressView extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+          border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [

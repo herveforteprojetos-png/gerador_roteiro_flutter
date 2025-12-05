@@ -161,7 +161,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             padding: AppDesignSystem.paddingHorizontalL.add(
               AppDesignSystem.paddingVerticalS,
             ),
-            decoration: BoxDecoration(color: Colors.black.withOpacity(0.2)),
+            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -220,7 +220,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                     color: AppColors.darkCard,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppColors.fireOrange.withOpacity(0.3),
+                      color: AppColors.fireOrange.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -289,7 +289,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                   icon: const Text('🎯', style: TextStyle(fontSize: 16)),
                   label: const Text('Ver Combinações'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.withOpacity(0.2),
+                    backgroundColor: Colors.blue.withValues(alpha: 0.2),
                     foregroundColor: Colors.blue,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -298,7 +298,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(
-                        color: Colors.blue.withOpacity(0.5),
+                        color: Colors.blue.withValues(alpha: 0.5),
                         width: 1,
                       ),
                     ),
@@ -527,7 +527,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                         ),
                       ],
                     ),
-                    Divider(color: Colors.grey.withOpacity(0.3), height: 32),
+                    Divider(color: Colors.grey.withValues(alpha: 0.3), height: 32),
 
                     // Texto explicativo sobre os modelos
                     Container(
@@ -538,7 +538,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                           AppDesignSystem.borderRadius,
                         ),
                         border: Border.all(
-                          color: AppColors.fireOrange.withOpacity(0.3),
+                          color: AppColors.fireOrange.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Column(
@@ -719,7 +719,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     required VoidCallback onToggleVisibility,
   }) {
     final hasKey = controller.text.trim().isNotEmpty;
-    final borderColor = hasKey ? Colors.green : iconColor.withOpacity(0.5);
+    final borderColor = hasKey ? Colors.green : iconColor.withValues(alpha: 0.5);
 
     // Suffix icon com botão de visibilidade E check
     Widget suffixIcon = Row(
@@ -878,7 +878,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                 size: 20,
               ),
               filled: true,
-              fillColor: Colors.black.withOpacity(0.3),
+              fillColor: Colors.black.withValues(alpha: 0.3),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 12,
@@ -890,7 +890,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: AppColors.fireOrange.withOpacity(0.5),
+                  color: AppColors.fireOrange.withValues(alpha: 0.5),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
@@ -1029,7 +1029,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
               size: 20,
             ),
             filled: true,
-            fillColor: Colors.black.withOpacity(0.3),
+            fillColor: Colors.black.withValues(alpha: 0.3),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 12,
@@ -1041,7 +1041,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: AppColors.fireOrange.withOpacity(0.5),
+                color: AppColors.fireOrange.withValues(alpha: 0.5),
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -1094,7 +1094,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             hintStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
             prefixIcon: Icon(Icons.edit, color: AppColors.fireOrange, size: 20),
             filled: true,
-            fillColor: Colors.black.withOpacity(0.3),
+            fillColor: Colors.black.withValues(alpha: 0.3),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 12,
@@ -1106,7 +1106,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: AppColors.fireOrange.withOpacity(0.5),
+                color: AppColors.fireOrange.withValues(alpha: 0.5),
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -1143,7 +1143,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
               size: 20,
             ),
             filled: true,
-            fillColor: Colors.black.withOpacity(0.3),
+            fillColor: Colors.black.withValues(alpha: 0.3),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 12,
@@ -1155,7 +1155,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: AppColors.fireOrange.withOpacity(0.5),
+                color: AppColors.fireOrange.withValues(alpha: 0.5),
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -1193,7 +1193,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
               size: 20,
             ),
             filled: true,
-            fillColor: Colors.black.withOpacity(0.3),
+            fillColor: Colors.black.withValues(alpha: 0.3),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 12,
@@ -1205,7 +1205,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: AppColors.fireOrange.withOpacity(0.5),
+                color: AppColors.fireOrange.withValues(alpha: 0.5),
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -1232,9 +1232,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.2),
+        color: Colors.black.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+        border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -1250,7 +1250,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                   ? 'Usando tema personalizado'
                   : 'Usando tema predefinido',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -1260,9 +1260,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             value: config.usePersonalizedTheme,
             onChanged: configNotifier.updateUsePersonalizedTheme,
             activeThumbColor: AppColors.fireOrange,
-            activeTrackColor: AppColors.fireOrange.withOpacity(0.3),
+            activeTrackColor: AppColors.fireOrange.withValues(alpha: 0.3),
             inactiveThumbColor: Colors.grey,
-            inactiveTrackColor: Colors.grey.withOpacity(0.3),
+            inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
           ),
         ],
       ),
@@ -1877,7 +1877,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           isExpanded: true,
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.black.withOpacity(0.3),
+            fillColor: Colors.black.withValues(alpha: 0.3),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 8,
               vertical: 6,
@@ -1889,7 +1889,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: BorderSide(
-                color: AppColors.fireOrange.withOpacity(0.5),
+                color: AppColors.fireOrange.withValues(alpha: 0.5),
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -1926,12 +1926,12 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       decoration: BoxDecoration(
         color: config.useCustomPrompt
-            ? AppColors.fireOrange.withOpacity(0.05)
+            ? AppColors.fireOrange.withValues(alpha: 0.05)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: config.useCustomPrompt
-              ? AppColors.fireOrange.withOpacity(0.3)
+              ? AppColors.fireOrange.withValues(alpha: 0.3)
               : Colors.transparent,
           width: 1,
         ),
@@ -2008,10 +2008,10 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.fireOrange.withOpacity(0.03),
+        color: AppColors.fireOrange.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.fireOrange.withOpacity(0.2),
+          color: AppColors.fireOrange.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -2066,19 +2066,19 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
               hintText:
                   'Ex: Foco em diálogos intensos. Protagonista advogada. Tom sério, sem humor.',
               hintStyle: TextStyle(
-                color: AppColors.textSecondary.withOpacity(0.5),
+                color: AppColors.textSecondary.withValues(alpha: 0.5),
                 fontSize: 12,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
                 borderSide: BorderSide(
-                  color: AppColors.textSecondary.withOpacity(0.3),
+                  color: AppColors.textSecondary.withValues(alpha: 0.3),
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(6),
                 borderSide: BorderSide(
-                  color: AppColors.textSecondary.withOpacity(0.3),
+                  color: AppColors.textSecondary.withValues(alpha: 0.3),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
@@ -2103,7 +2103,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
           Text(
             '⚠️ Avançado: Estas instruções serão adicionadas ao prompt da IA. Use apenas se souber o que está fazendo.',
             style: AppDesignSystem.bodySmall.copyWith(
-              color: AppColors.textSecondary.withOpacity(0.7),
+              color: AppColors.textSecondary.withValues(alpha: 0.7),
               fontSize: 11,
               fontStyle: FontStyle.italic,
             ),
@@ -2175,7 +2175,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                     color: AppColors.darkSecondary,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppColors.fireOrange.withOpacity(0.3),
+                      color: AppColors.fireOrange.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
@@ -2236,7 +2236,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
       decoration: BoxDecoration(
         color: AppColors.darkSecondary,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.2)),
+        border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

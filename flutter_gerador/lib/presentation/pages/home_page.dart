@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gerador/data/models/generation_progress.dart';
@@ -22,7 +22,7 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   final ScrollController _mainScrollController = ScrollController();
   final ScrollController _scriptScrollController = ScrollController();
-  bool _isScriptScrollLocked = true; // Começa bloqueado
+  bool _isScriptScrollLocked = true; // Come�a bloqueado
   bool _isHoveringScriptArea = false; // Para efeito visual
 
   @override
@@ -38,7 +38,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.dispose();
   }
 
-  /// Carrega as configurações salvas
+  /// Carrega as configura��es salvas
   Future<void> _loadSavedSettings() async {
     try {
       final configNotifier = ref.read(generationConfigProvider.notifier);
@@ -55,13 +55,13 @@ class _HomePageState extends ConsumerState<HomePage> {
         configNotifier.updateModel(savedModel);
       }
 
-      // Carregar preferências do usuário
+      // Carregar prefer�ncias do usu�rio
       final preferences = await StorageService.getUserPreferences();
       configNotifier.updateQuantity(preferences['quantity'] ?? 2000);
       configNotifier.updateMeasureType(
         preferences['measureType'] ?? 'palavras',
       );
-      configNotifier.updateLanguage(preferences['language'] ?? 'Português');
+      configNotifier.updateLanguage(preferences['language'] ?? 'Portugu�s');
       configNotifier.updatePerspective(
         preferences['perspective'] ?? 'terceira',
       );
@@ -72,11 +72,11 @@ class _HomePageState extends ConsumerState<HomePage> {
         preferences['usePersonalizedTheme'] ?? false,
       );
     } catch (e) {
-      debugPrint('Erro ao carregar configurações salvas: $e');
+      debugPrint('Erro ao carregar configura��es salvas: $e');
     }
   }
 
-  /// Salva a chave API e preferências quando alteradas
+  /// Salva a chave API e prefer�ncias quando alteradas
   Future<void> _saveSettings() async {
     final config = ref.read(generationConfigProvider);
 
@@ -94,72 +94,72 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  /// Gera o roteiro com base nas configurações
+  /// Gera o roteiro com base nas configura��es
   void _generateScript() async {
     debugPrint('\n');
     debugPrint(
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '????????????????????????????????????????????????????????????????????????????????????????',
     );
-    debugPrint('🎬 HOME_PAGE: _generateScript() CHAMADO');
+    debugPrint('?? HOME_PAGE: _generateScript() CHAMADO');
     debugPrint(
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '????????????????????????????????????????????????????????????????????????????????????????',
     );
 
     final config = ref.read(generationConfigProvider);
     final generationNotifier = ref.read(scriptGenerationProvider.notifier);
 
-    debugPrint('📋 HOME_PAGE: Validando configuração...');
+    debugPrint('?? HOME_PAGE: Validando configura��o...');
 
-    // Validação direta do estado (não do notifier.isValid que pode estar desatualizado)
+    // Valida��o direta do estado (n�o do notifier.isValid que pode estar desatualizado)
     final isValid =
         config.apiKey.isNotEmpty &&
         config.title.isNotEmpty &&
         config.quantity > 0;
 
     if (!isValid) {
-      debugPrint('✖ HOME_PAGE: Configuração INVÁLIDA');
+      debugPrint('? HOME_PAGE: Configura��o INV�LIDA');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Por favor, preencha todos os campos obrigatórios.'),
+          content: Text('Por favor, preencha todos os campos obrigat�rios.'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    debugPrint('✅ HOME_PAGE: Configuração VÁLIDA');
+    debugPrint('? HOME_PAGE: Configura��o V�LIDA');
 
-    // 🚨 DEBUG: Verificando language antes de usar config
-    debugPrint('🚨 HOME_PAGE: config.language = "${config.language}"');
+    // ?? DEBUG: Verificando language antes de usar config
+    debugPrint('?? HOME_PAGE: config.language = "${config.language}"');
     debugPrint(
-      '🚨 HOME_PAGE: config.language.codeUnits = ${config.language.codeUnits}',
+      '?? HOME_PAGE: config.language.codeUnits = ${config.language.codeUnits}',
     );
 
-    // Usar a configuração atual sem modificações
+    // Usar a configura��o atual sem modifica��es
     final finalConfig = config;
 
-    // 🚨 DEBUG: Verificando language depois de criar final config
+    // ?? DEBUG: Verificando language depois de criar final config
     debugPrint(
-      '🚨 HOME_PAGE: finalConfig.language = "${finalConfig.language}"',
+      '?? HOME_PAGE: finalConfig.language = "${finalConfig.language}"',
     );
     debugPrint(
-      '🚨 HOME_PAGE: finalConfig.language.codeUnits = ${finalConfig.language.codeUnits}',
+      '?? HOME_PAGE: finalConfig.language.codeUnits = ${finalConfig.language.codeUnits}',
     );
 
     try {
       debugPrint(
-        '🛠️ HOME_PAGE: Chamando generationNotifier.generateScript()...',
+        '??? HOME_PAGE: Chamando generationNotifier.generateScript()...',
       );
 
       await generationNotifier.generateScript(finalConfig);
 
-      debugPrint('✅ HOME_PAGE: generationNotifier.generateScript() retornou');
+      debugPrint('? HOME_PAGE: generationNotifier.generateScript() retornou');
 
-      await _saveSettings(); // Salvar configurações após geração bem-sucedida
+      await _saveSettings(); // Salvar configura��es ap�s gera��o bem-sucedida
 
-      debugPrint('💾 HOME_PAGE: Configurações salvas');
+      debugPrint('?? HOME_PAGE: Configura��es salvas');
     } catch (e) {
-      debugPrint('❌ HOME_PAGE: EXCEÇÃO capturada: $e');
+      debugPrint('? HOME_PAGE: EXCE��O capturada: $e');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -171,9 +171,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       }
     }
 
-    debugPrint('🏁 HOME_PAGE: _generateScript() FINALIZADO');
+    debugPrint('?? HOME_PAGE: _generateScript() FINALIZADO');
     debugPrint(
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      '????????????????????????????????????????????????????????????????????????????????????????',
     );
     debugPrint('\n');
   }
@@ -181,12 +181,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   /// Alterna o bloqueio do scroll do roteiro
   void _toggleScriptScrollLock() {
     print(
-      '🔄 Alternando scroll lock de $_isScriptScrollLocked para ${!_isScriptScrollLocked}',
+      '?? Alternando scroll lock de $_isScriptScrollLocked para ${!_isScriptScrollLocked}',
     );
     setState(() {
       _isScriptScrollLocked = !_isScriptScrollLocked;
     });
-    print('✅ Novo estado: $_isScriptScrollLocked');
+    print('? Novo estado: $_isScriptScrollLocked');
   }
 
   Future<void> _showExpandedScriptEditor(
@@ -201,7 +201,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       },
     );
 
-    // Se o usuário salvou, atualizar o resultado
+    // Se o usu�rio salvou, atualizar o resultado
     if (result != null) {
       // Atualizar o resultado do script no provider
       ref.read(scriptGenerationProvider.notifier).updateScriptText(result);
@@ -214,7 +214,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final generationNotifier = ref.read(scriptGenerationProvider.notifier);
     final config = ref.watch(
       generationConfigProvider,
-    ); // ✅ WATCH o estado para reagir a mudanças
+    ); // ? WATCH o estado para reagir a mudan�as
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
       body: SingleChildScrollView(
@@ -225,13 +225,13 @@ class _HomePageState extends ConsumerState<HomePage> {
             // HEADER COMPACTO
             const ExpandedHeaderWidget(),
 
-            // ÁREA PRINCIPAL UNIFICADA
+            // �REA PRINCIPAL UNIFICADA
             Padding(
               padding: const EdgeInsets.all(8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // SEÇÃO: PROGRESSO OU RESULTADO
+                  // SE��O: PROGRESSO OU RESULTADO
                   if (generationState.isGenerating)
                     GenerationProgressView(
                       progress:
@@ -243,7 +243,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             totalPhases: 6,
                             currentBlock: 0,
                             totalBlocks: 10,
-                            logs: ['Iniciando geração...'],
+                            logs: ['Iniciando gera��o...'],
                             wordsGenerated: 0,
                           ),
                       onCancel: () => generationNotifier.cancelGeneration(),
@@ -280,7 +280,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       ),
                                     ],
                                   ),
-                                  // Botão de expandir roteiro
+                                  // Bot�o de expandir roteiro
                                   IconButton(
                                     onPressed: () => _showExpandedScriptEditor(
                                       context,
@@ -294,7 +294,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     tooltip: 'Expandir e editar roteiro',
                                     style: IconButton.styleFrom(
                                       backgroundColor: AppColors.fireOrange
-                                          .withOpacity(0.1),
+                                          .withValues(alpha: 0.1),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(6),
                                       ),
@@ -306,15 +306,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                               Container(
                                 height: 320,
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   border: Border.all(
                                     color:
                                         _isHoveringScriptArea &&
                                             !_isScriptScrollLocked
-                                        ? Colors.green.withOpacity(0.6)
+                                        ? Colors.green.withValues(alpha: 0.6)
                                         : _isScriptScrollLocked
-                                        ? Colors.red.withOpacity(0.4)
-                                        : AppColors.fireOrange.withOpacity(0.3),
+                                        ? Colors.red.withValues(alpha: 0.4)
+                                        : AppColors.fireOrange.withValues(alpha: 0.3),
                                     width: _isHoveringScriptArea ? 2 : 1,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
@@ -328,7 +328,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   ),
                                   child: Stack(
                                     children: [
-                                      // Área do roteiro com scroll controlado
+                                      // �rea do roteiro com scroll controlado
                                       Padding(
                                         padding: const EdgeInsets.all(16),
                                         child: NotificationListener<ScrollNotification>(
@@ -336,7 +336,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                               (
                                                 ScrollNotification notification,
                                               ) {
-                                                // Se estiver bloqueado, não permite scroll
+                                                // Se estiver bloqueado, n�o permite scroll
                                                 return _isScriptScrollLocked;
                                               },
                                           child: Scrollbar(
@@ -357,7 +357,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                 style: TextStyle(
                                                   color: _isScriptScrollLocked
                                                       ? Colors.white
-                                                            .withOpacity(0.7)
+                                                            .withValues(alpha: 0.7)
                                                       : Colors.white,
                                                   fontSize: 14,
                                                   height: 1.4,
@@ -367,7 +367,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           ),
                                         ),
                                       ),
-                                      // Botão de cadeado estilo moderno
+                                      // Bot�o de cadeado estilo moderno
                                       Positioned(
                                         top: 12,
                                         right: 12,
@@ -414,7 +414,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                                 : const Color(
                                                                     0xFF44FF44,
                                                                   ))
-                                                            .withOpacity(0.4),
+                                                            .withValues(alpha: 0.4),
                                                     blurRadius: 8,
                                                     offset: const Offset(0, 2),
                                                   ),
@@ -462,20 +462,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                                               color: _isScriptScrollLocked
                                                   ? const Color(
                                                       0xFF2D1B1B,
-                                                    ).withOpacity(0.9)
+                                                    ).withValues(alpha: 0.9)
                                                   : const Color(
                                                       0xFF1B2D1B,
-                                                    ).withOpacity(0.9),
+                                                    ).withValues(alpha: 0.9),
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               border: Border.all(
                                                 color: _isScriptScrollLocked
                                                     ? const Color(
                                                         0xFFFF4444,
-                                                      ).withOpacity(0.7)
+                                                      ).withValues(alpha: 0.7)
                                                     : const Color(
                                                         0xFF44FF44,
-                                                      ).withOpacity(0.7),
+                                                      ).withValues(alpha: 0.7),
                                                 width: 1,
                                               ),
                                             ),
@@ -495,7 +495,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                 Text(
                                                   _isScriptScrollLocked
                                                       ? 'BLOQUEADO'
-                                                      : 'SCROLLÁVEL',
+                                                      : 'SCROLL�VEL',
                                                   style: TextStyle(
                                                     color: _isScriptScrollLocked
                                                         ? const Color(
@@ -513,7 +513,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           ),
                                         ),
                                       ),
-                                      // Overlay leve quando bloqueado (NÃO bloqueia cliques)
+                                      // Overlay leve quando bloqueado (N�O bloqueia cliques)
                                       if (_isScriptScrollLocked)
                                         Positioned.fill(
                                           child: IgnorePointer(
@@ -523,7 +523,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                               decoration: BoxDecoration(
                                                 color: const Color(
                                                   0xFF000000,
-                                                ).withOpacity(0.05),
+                                                ).withValues(alpha: 0.05),
                                                 borderRadius:
                                                     BorderRadius.circular(8),
                                               ),
@@ -538,7 +538,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
 
-                        // MÉTRICAS
+                        // M�TRICAS
                         Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: _buildScriptMetrics(
@@ -546,7 +546,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
 
-                        // BOTÕES DE AÇÃO
+                        // BOT�ES DE A��O
                         Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: _buildActionButtons(
@@ -554,7 +554,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
 
-                        // BOTÃO NOVA GERAÇÃO
+                        // BOT�O NOVA GERA��O
                         Row(
                           children: [
                             // Ferramentas Extras (lado esquerdo)
@@ -565,9 +565,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 padding: const EdgeInsets.all(16),
                                 margin: const EdgeInsets.only(right: 8),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   border: Border.all(
-                                    color: AppColors.fireOrange.withOpacity(
+                                    color: AppColors.fireOrange.withValues(alpha: 
                                       0.3,
                                     ),
                                   ),
@@ -579,7 +579,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                               ),
                             ),
-                            // Botão Gerar Novo (lado direito)
+                            // Bot�o Gerar Novo (lado direito)
                             Expanded(
                               flex: 1,
                               child: Container(
@@ -643,7 +643,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     )
                   else
-                    // BOTÃO GERAR ROTEIRO (estado inicial)
+                    // BOT�O GERAR ROTEIRO (estado inicial)
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.all(40.0),
@@ -706,8 +706,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.fireOrange.withOpacity(0.1),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+        color: AppColors.fireOrange.withValues(alpha: 0.1),
+        border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -721,7 +721,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           Container(
             width: 1,
             height: 30,
-            color: AppColors.fireOrange.withOpacity(0.3),
+            color: AppColors.fireOrange.withValues(alpha: 0.3),
           ),
           _buildMetricCard(
             icon: Icons.article,
@@ -753,7 +753,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         const SizedBox(height: 2),
         Text(
           label,
-          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
         ),
       ],
     );
@@ -768,9 +768,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             icon: const Icon(Icons.copy, size: 16),
             label: const Text('Copiar'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.1),
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
               foregroundColor: Colors.white,
-              side: BorderSide(color: Colors.white.withOpacity(0.3)),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
               padding: const EdgeInsets.symmetric(vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -803,7 +803,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Roteiro copiado para a área de transferência!'),
+          content: const Text('Roteiro copiado para a �rea de transfer�ncia!'),
           backgroundColor: AppColors.fireOrange,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -829,7 +829,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-// Widget separado para o dialog expandido de edição de roteiro
+// Widget separado para o dialog expandido de edi��o de roteiro
 class _ExpandedScriptDialog extends StatefulWidget {
   final String initialText;
 
@@ -888,7 +888,7 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.fireOrange.withOpacity(0.1),
+                color: AppColors.fireOrange.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(14),
                   topRight: Radius.circular(14),
@@ -908,17 +908,17 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                       ),
                     ),
                   ),
-                  // Contadores dinâmicos
+                  // Contadores din�micos
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: AppColors.fireOrange.withOpacity(0.3),
+                        color: AppColors.fireOrange.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -927,7 +927,7 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                         Text(
                           '$characterCount chars',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -936,13 +936,13 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                         Container(
                           width: 1,
                           height: 12,
-                          color: AppColors.fireOrange.withOpacity(0.3),
+                          color: AppColors.fireOrange.withValues(alpha: 0.3),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '$wordCount palavras',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -969,24 +969,24 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                   ),
                   decoration: InputDecoration(
                     hintText:
-                        'Edite seu roteiro aqui...\n\n💡 Este editor expandido permite:\n\n• Editar o roteiro gerado com facilidade\n• Ver todo o texto de uma só vez\n• Fazer correções e ajustes precisos\n• Acompanhar contadores de caracteres e palavras\n• Usar Ctrl+A para selecionar tudo\n• Usar Ctrl+Z para desfazer\n• Usar Ctrl+F para buscar texto\n\nFaça os ajustes necessários! ✅',
+                        'Edite seu roteiro aqui...\n\n?? Este editor expandido permite:\n\n� Editar o roteiro gerado com facilidade\n� Ver todo o texto de uma s� vez\n� Fazer corre��es e ajustes precisos\n� Acompanhar contadores de caracteres e palavras\n� Usar Ctrl+A para selecionar tudo\n� Usar Ctrl+Z para desfazer\n� Usar Ctrl+F para buscar texto\n\nFa�a os ajustes necess�rios! ?',
                     hintStyle: TextStyle(
                       color: Colors.grey[500],
                       fontSize: 15,
                       height: 1.4,
                     ),
                     filled: true,
-                    fillColor: Colors.black.withOpacity(0.3),
+                    fillColor: Colors.black.withValues(alpha: 0.3),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: AppColors.fireOrange.withOpacity(0.3),
+                        color: AppColors.fireOrange.withValues(alpha: 0.3),
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: AppColors.fireOrange.withOpacity(0.3),
+                        color: AppColors.fireOrange.withValues(alpha: 0.3),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -1001,11 +1001,11 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                 ),
               ),
             ),
-            // Botões de ação
+            // Bot�es de a��o
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(14),
                   bottomRight: Radius.circular(14),
@@ -1013,22 +1013,22 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
               ),
               child: Row(
                 children: [
-                  // Informações adicionais
+                  // Informa��es adicionais
                   Expanded(
                     child: Text(
-                      'Faça os ajustes necessários no seu roteiro e salve as alterações',
+                      'Fa�a os ajustes necess�rios no seu roteiro e salve as altera��es',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
                   ),
-                  // Botões
+                  // Bot�es
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(null),
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.white.withOpacity(0.7),
+                      foregroundColor: Colors.white.withValues(alpha: 0.7),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
                         vertical: 12,
@@ -1041,7 +1041,7 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                     onPressed: () =>
                         Navigator.of(context).pop(expandedController.text),
                     icon: const Icon(Icons.save, size: 18),
-                    label: const Text('Salvar Alterações'),
+                    label: const Text('Salvar Altera��es'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.fireOrange,
                       foregroundColor: Colors.white,

@@ -78,7 +78,7 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+        border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -175,7 +175,7 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.fireOrange.withOpacity(0.8),
+                    AppColors.fireOrange.withValues(alpha: 0.8),
                     AppColors.fireOrange,
                   ],
                 ),
@@ -217,7 +217,7 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
       decoration: BoxDecoration(
         color: Colors.black,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+        border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -290,9 +290,9 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
       width: double.infinity,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.grey[900]?.withOpacity(0.5),
+        color: Colors.grey[900]?.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.2)),
+        border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [

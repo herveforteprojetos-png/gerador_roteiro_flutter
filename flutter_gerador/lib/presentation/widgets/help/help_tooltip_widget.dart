@@ -26,7 +26,7 @@ class HelpTooltipWidget extends StatelessWidget {
         color: Colors.black87,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Colors.orange.withOpacity(0.3),
+          color: Colors.orange.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

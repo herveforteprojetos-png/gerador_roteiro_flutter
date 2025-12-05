@@ -754,8 +754,9 @@ class PostGenerationFixer {
                 entry.key != role &&
                 entry.value.toLowerCase() == foundName.toLowerCase(),
           );
-          if (isOtherCharacter)
+          if (isOtherCharacter) {
             continue; // Pular - é outro personagem, não o advogado
+          }
         }
 
         // Se o nome é diferente do registrado, corrigir

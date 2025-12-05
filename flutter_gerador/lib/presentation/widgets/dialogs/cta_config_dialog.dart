@@ -210,8 +210,8 @@ class _CtaConfigDialogState extends ConsumerState<CtaConfigDialog> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
-        border: Border.all(color: color.withOpacity(0.4)),
+        color: Colors.black.withValues(alpha: 0.3),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(

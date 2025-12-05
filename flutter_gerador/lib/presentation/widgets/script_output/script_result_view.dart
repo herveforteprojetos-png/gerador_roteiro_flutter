@@ -67,7 +67,7 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: SingleChildScrollView(
@@ -78,7 +78,7 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                           : widget.scriptController.text,
                       style: TextStyle(
                         color: widget.scriptController.text.isEmpty 
-                            ? Colors.white.withOpacity(0.5) 
+                            ? Colors.white.withValues(alpha: 0.5) 
                             : Colors.white,
                         fontSize: 14,
                         height: 1.5,
@@ -95,7 +95,7 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                     icon: const Icon(Icons.edit, color: AppColors.fireOrange),
                     tooltip: 'Expandir para edição',
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.black.withOpacity(0.7),
+                      backgroundColor: Colors.black.withValues(alpha: 0.7),
                       padding: const EdgeInsets.all(8),
                     ),
                   ),
@@ -359,11 +359,11 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
   @override
   Widget build(BuildContext context) {
     return Dialog.fullscreen(
-      backgroundColor: Colors.black.withOpacity(0.95),
+      backgroundColor: Colors.black.withValues(alpha: 0.95),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          backgroundColor: Colors.black.withOpacity(0.8),
+          backgroundColor: Colors.black.withValues(alpha: 0.8),
           title: Row(
             children: [
               Icon(Icons.edit_note, color: AppColors.fireOrange),
@@ -393,9 +393,9 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: AppColors.fireOrange.withOpacity(0.2),
+                color: AppColors.fireOrange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.fireOrange.withOpacity(0.5)),
+                border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.5)),
               ),
               child: Text(
                 '${_editController.text.length} chars | ${_editController.text.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length} palavras',
@@ -434,7 +434,7 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+        border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.3)),
       ),
       child: TextField(
         controller: _editController,
@@ -464,7 +464,7 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+        border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.3)),
       ),
       child: SingleChildScrollView(
         child: SelectableText(

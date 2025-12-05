@@ -94,7 +94,7 @@ class AppDesignSystem {
   static BoxDecoration get cardDecoration => BoxDecoration(
     color: AppColors.darkCard,
     borderRadius: BorderRadius.circular(borderRadius),
-    border: Border.all(color: AppColors.fireOrange.withOpacity(0.3)),
+    border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.3)),
   );
 
   static BoxDecoration get headerDecoration => BoxDecoration(
@@ -149,7 +149,7 @@ class AppDesignSystem {
     textStyle: labelMedium,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(borderRadius),
-      side: BorderSide(color: AppColors.fireOrange.withOpacity(0.5)),
+      side: BorderSide(color: AppColors.fireOrange.withValues(alpha: 0.5)),
     ),
     minimumSize: Size(0, fieldHeight),
   );
