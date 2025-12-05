@@ -10,8 +10,8 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
           apiKey: '',
           model: 'gemini-2.5-pro',
           title: '',
-          tema: 'Vingança',
-          subtema: 'Vingança Destrutiva',
+          tema: 'Vinganï¿½a',
+          subtema: 'Vinganï¿½a Destrutiva',
           localizacao: '',
           personalizedTheme: '',
           usePersonalizedTheme: false,
@@ -19,9 +19,9 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
       );
 
   void updateApiKey(String apiKey) {
-    debugPrint('?? updateApiKey chamado: "${apiKey}"');
+    debugPrint('?? updateApiKey chamado: "$apiKey"');
     state = state.copyWith(apiKey: apiKey);
-    debugPrint('?? state.apiKey agora é: "${state.apiKey}"');
+    debugPrint('?? state.apiKey agora ï¿½: "$state.apiKey"');
   }
 
   void updateOpenAIKey(String openAIKey) {
@@ -35,7 +35,9 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
   void updateSelectedProvider(String provider) {
     debugPrint('?? updateSelectedProvider chamado: "$provider"');
     state = state.copyWith(selectedProvider: provider);
-    debugPrint('?? state.selectedProvider agora é: "${state.selectedProvider}"');
+    debugPrint(
+      '?? state.selectedProvider agora ï¿½: "${state.selectedProvider}"',
+    );
   }
 
   void updateModel(String model) {
@@ -48,7 +50,7 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
     debugPrint('?? state.qualityMode = "${state.qualityMode}"');
 
     final modelName = mode == 'flash'
-        ? 'Gemini 2.5-FLASH (Rápido)'
+        ? 'Gemini 2.5-FLASH (Rï¿½pido)'
         : mode == 'ultra'
         ? 'Gemini 3.0-PRO PREVIEW (Ultra)'
         : 'Gemini 2.5-PRO (Qualidade)';
@@ -57,9 +59,9 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
   }
 
   void updateTitle(String title) {
-    debugPrint('?? updateTitle chamado: "${title}"');
+    debugPrint('?? updateTitle chamado: "$title"');
     state = state.copyWith(title: title);
-    debugPrint('?? state.title agora é: "${state.title}"');
+    debugPrint('?? state.title agora ï¿½: "$state.title"');
   }
 
   void updateTema(String tema) {
@@ -160,8 +162,8 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
       apiKey: currentApiKey,
       model: currentModel,
       title: '',
-      tema: 'Vingança',
-      subtema: 'Vingança Destrutiva',
+      tema: 'Vinganï¿½a',
+      subtema: 'Vinganï¿½a Destrutiva',
       localizacao: '',
       personalizedTheme: '',
       usePersonalizedTheme: false,
@@ -170,24 +172,24 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
   }
 
   bool get isValid {
-    // ? VALIDAÇÃO SIMPLIFICADA: Apenas API Key + Título são obrigatórios
-    // Tema, localização e outros campos são OPCIONAIS
+    // ? VALIDAï¿½ï¿½O SIMPLIFICADA: Apenas API Key + Tï¿½tulo sï¿½o obrigatï¿½rios
+    // Tema, localizaï¿½ï¿½o e outros campos sï¿½o OPCIONAIS
     final apiKeyValid = state.apiKey.isNotEmpty;
     final titleValid = state.title.isNotEmpty;
     final quantityValid = state.quantity > 0;
     final result = apiKeyValid && titleValid && quantityValid;
 
-    debugPrint('?? VALIDAÇÃO isValid:');
+    debugPrint('?? VALIDAï¿½ï¿½O isValid:');
     debugPrint(
-      '  ? API Key: "${state.apiKey}" -> ${apiKeyValid ? "VÁLIDO" : "INVÁLIDO (vazio)"}',
+      '  ? API Key: "${state.apiKey}" -> ${apiKeyValid ? "Vï¿½LIDO" : "INVï¿½LIDO (vazio)"}',
     );
     debugPrint(
-      '  ? Título: "${state.title}" -> ${titleValid ? "VÁLIDO" : "INVÁLIDO (vazio)"}',
+      '  ? Tï¿½tulo: "${state.title}" -> ${titleValid ? "Vï¿½LIDO" : "INVï¿½LIDO (vazio)"}',
     );
     debugPrint(
-      '  ? Quantidade: ${state.quantity} -> ${quantityValid ? "VÁLIDO" : "INVÁLIDO"}',
+      '  ? Quantidade: ${state.quantity} -> ${quantityValid ? "Vï¿½LIDO" : "INVï¿½LIDO"}',
     );
-    debugPrint('  ?? RESULTADO FINAL: ${result ? "? VÁLIDO" : "? INVÁLIDO"}');
+    debugPrint('  ?? RESULTADO FINAL: ${result ? "? Vï¿½LIDO" : "? INVï¿½LIDO"}');
 
     return result;
   }

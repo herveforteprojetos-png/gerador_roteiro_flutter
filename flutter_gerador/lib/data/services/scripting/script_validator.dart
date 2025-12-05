@@ -235,7 +235,8 @@ RESPONDA APENAS COM O JSON ARRAY:''';
 
       // í•œêµ­ì–´
       r'(?:íŽ¸ì˜ì |ë§ˆíŠ¸|ê°€ê²Œ)\s*ì•Œë°”ìƒ?': 'íŽ¸ì˜ì  ì•Œë°”ìƒ',
-      r'(?:êµ¶ê³ \s*ìžˆëŠ”|ë°°ê³ í”ˆ)\s*(?:ë…¸ì¸|í• ë¨¸ë‹ˆ|í• ì•„ë²„ì§€)': 'êµ¶ê³  ìžˆëŠ” ë…¸ì¸',
+      r'(?:êµ¶ê³ \s*ìžˆëŠ”|ë°°ê³ í”ˆ)\s*(?:ë…¸ì¸|í• ë¨¸ë‹ˆ|í• ì•„ë²„ì§€)':
+          'êµ¶ê³  ìžˆëŠ” ë…¸ì¸',
       r'(?:ì‚¬ìž¥ë‹˜?|ëŒ€í‘œë‹˜?|íšŒìž¥ë‹˜?)': 'ì‚¬ìž¥/CEO',
     };
   }
@@ -636,7 +637,9 @@ RESPONDA EM JSON:
   /// Validação simples de nome
   bool isLikelyName(String text) {
     if (text.isEmpty) return false;
-    final nameRegex = RegExp(r"^[A-Z\u00C0-\u00DC][a-zA-Z\u00C0-\u00FF\s\-\']+$");
+    final nameRegex = RegExp(
+      r"^[A-Z\u00C0-\u00DC][a-zA-Z\u00C0-\u00FF\s\-\']+$",
+    );
     return nameRegex.hasMatch(text.trim());
   }
 
@@ -648,16 +651,17 @@ RESPONDA EM JSON:
   }
 
   /// Valida nomes duplicados
-  bool validateNameReuse(String content, CharacterTracker tracker, int blockNumber) {
+  bool validateNameReuse(
+    String content,
+    CharacterTracker tracker,
+    int blockNumber,
+  ) {
     return true;
   }
 
   // ================== VALIDAÇÃO DE RELACIONAMENTOS =================="
 
-  
   // ================== VALIDAÇÃO DE RELACIONAMENTOS ==================
-
-  
 
   // ================== VALIDAÇÃO DE NOMES ÚNICOS ==================
 
@@ -777,7 +781,9 @@ RESPONDA EM JSON:
             if (isCriticalRole) {
               if (kDebugMode) {
                 debugPrint('🛑🛑🛑 v7.6.32: PAPEL DUPLICADO DETECTADO! 🛑🛑🛑');
-                debugPrint('   👉 Papel: "$currentRole" → "$normalizedCurrent"');
+                debugPrint(
+                  '   👉 Papel: "$currentRole" → "$normalizedCurrent"',
+                );
                 debugPrint('   👉 Nome anterior: "$existingName"');
                 debugPrint('   👉 Nome atual: "$name"');
                 debugPrint(
@@ -945,17 +951,17 @@ RESPONDA EM JSON:
 
   Set<String> extractNamesFromText(String text) {
     final names = <String>{};
-    
+
     // Regex para nomes próprios (simplificado)
     final namePattern = RegExp(r'\b[A-Z][a-z]+\b');
-    
+
     for (final match in namePattern.allMatches(text)) {
       final name = match.group(0);
       if (name != null && looksLikePersonName(name)) {
         names.add(name);
       }
     }
-    
+
     return names;
   }
 
@@ -967,10 +973,16 @@ RESPONDA EM JSON:
   String? extractRoleForName(String name, String text) {
     // Lógica simplificada de extração de papel
     // Procura padrões como "my lawyer, [Name]" ou "[Name], my lawyer"
-    
+
     final patterns = [
-      RegExp(r'my\s+([a-z\s]+),\s+' + RegExp.escape(name), caseSensitive: false),
-      RegExp(RegExp.escape(name) + r',\s+my\s+([a-z\s]+)', caseSensitive: false),
+      RegExp(
+        r'my\s+([a-z\s]+),\s+' + RegExp.escape(name),
+        caseSensitive: false,
+      ),
+      RegExp(
+        RegExp.escape(name) + r',\s+my\s+([a-z\s]+)',
+        caseSensitive: false,
+      ),
     ];
 
     for (final pattern in patterns) {
@@ -979,28 +991,25 @@ RESPONDA EM JSON:
         return match.group(1)?.trim();
       }
     }
-    
+
     return null;
   }
 
   bool looksLikePersonName(String value) {
     final normalized = value.toLowerCase().trim();
-    
+
     // Verificar stopwords
     if (NameConstants.nameStopwords.contains(normalized)) return false;
-    
+
     // Verificar comprimento mínimo
     if (normalized.length < 3) return false;
-    
+
     return true;
   }
 
   /// Valida se há nomes duplicados em papéis diferentes
   /// Retorna lista de nomes duplicados encontrados
-  List<String> validateNamesInText(
-    String newBlock,
-    Set<String> previousNames,
-  ) {
+  List<String> validateNamesInText(String newBlock, Set<String> previousNames) {
     final duplicates = <String>[];
     final newNames = extractNamesFromText(newBlock);
 
@@ -1016,44 +1025,9 @@ RESPONDA EM JSON:
   }
 }
 
-
-
 class ScriptValidationResult {
   final bool isValid;
   final List<String> issues;
-  
+
   ScriptValidationResult({required this.isValid, required this.issues});
-
-  // ================== MÉTODOS ADICIONADOS PARA COMPATIBILIDADE ==================
-
-  bool validateNameReuse(String name, Set<String> usedNames) {
-    // Implementação básica ou placeholder
-    return !usedNames.contains(name.toLowerCase());
-  }
-
-  ScriptValidationResult validateBlockContent(String content, int blockIndex, ScriptConfig config) {
-    // Implementação básica
-    // Retorna um objeto que tenha .isValid e .issues
-    // Precisamos definir ScriptValidationResult se não existir, mas provavelmente existe ou é esperado.
-    // Se ScriptValidationResult não for importado, isso vai falhar.
-    // Vamos assumir que precisamos retornar algo compatível.
-    // O código chamador espera: .isValid (bool) e .issues (List<String>)
-    return ScriptValidationResult(isValid: true, issues: []);
-  }
-
-  bool isLikelyName(String text) {
-    // Lógica simplificada para verificar se parece um nome
-    if (text.isEmpty) return false;
-    return text[0] == text[0].toUpperCase() && text.length > 2;
-  }
-
-  String extractRole(String text, String name) {
-    // Tenta extrair o papel do personagem
-    return 'personagem';
-  }
-  
-  bool looksLikePersonName(String text) {
-      return isLikelyName(text);
-  }
-
 }

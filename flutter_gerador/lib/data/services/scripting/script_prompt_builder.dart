@@ -334,34 +334,31 @@ $idadeInstrucao
     final blockInfo = _buildBlockInfo(blockNumber, totalBlocks, trackerInfo);
 
     // Montar prompt final
-    return perspectiveInstruction +
-        '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-        worldStateContext +
-        titleSection +
-        MainPromptTemplate.buildCompactPrompt(
-          language: getLanguageInstruction(config.language),
-          instruction: instruction,
-          temaSection: temaSection,
-          localizacao: config.localizacao,
-          localizationGuidance: localizationGuidance,
-          narrativeStyleGuidance: narrativeStyleGuidance,
-          customPrompt: config.customPrompt,
-          useCustomPrompt: config.useCustomPrompt,
-          nameList: '', // LLM gera nomes contextualmente
-          trackerInfo: trackerInfo,
-          measure: measure,
-          isSpanish: isSpanish,
-          adjustedTarget: adjustedTarget,
-          minAcceptable: minAcceptable,
-          maxAcceptable: maxAcceptable,
-          limitedNeeded: limitedNeeded,
-          contextoPrevio: contextoPrevio,
-          avoidRepetition: avoidRepetition,
-          characterGuidance: characterGuidance,
-          forbiddenNamesWarning: forbiddenNamesWarning,
-          labels: labels,
-        ) +
-        blockInfo;
+    final compactPrompt = MainPromptTemplate.buildCompactPrompt(
+      language: getLanguageInstruction(config.language),
+      instruction: instruction,
+      temaSection: temaSection,
+      localizacao: config.localizacao,
+      localizationGuidance: localizationGuidance,
+      narrativeStyleGuidance: narrativeStyleGuidance,
+      customPrompt: config.customPrompt,
+      useCustomPrompt: config.useCustomPrompt,
+      nameList: '', // LLM gera nomes contextualmente
+      trackerInfo: trackerInfo,
+      measure: measure,
+      isSpanish: isSpanish,
+      adjustedTarget: adjustedTarget,
+      minAcceptable: minAcceptable,
+      maxAcceptable: maxAcceptable,
+      limitedNeeded: limitedNeeded,
+      contextoPrevio: contextoPrevio,
+      avoidRepetition: avoidRepetition,
+      characterGuidance: characterGuidance,
+      forbiddenNamesWarning: forbiddenNamesWarning,
+      labels: labels,
+    );
+
+    return '$perspectiveInstruction\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$worldStateContext$titleSection$compactPrompt$blockInfo';
   }
 
   /// 🎬 Constrói seção do título
@@ -1255,4 +1252,3 @@ EXEMPLOS DE DETALHES ESPECÍFICOS (use este nível de concretude):
     };
   }
 }
-

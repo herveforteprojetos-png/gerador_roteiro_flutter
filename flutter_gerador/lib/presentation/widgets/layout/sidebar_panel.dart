@@ -140,14 +140,16 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
       // ðŸš¨ DEBUG: Verificando language depois de criar GenerationConfig (SIDEBAR)
       debugPrint('ðŸš¨ SIDEBAR_PANEL: config.language = "${config.language}"');
       debugPrint(
-        'ðŸš¨ SIDEBAR_PANEL: config.language.codeUnits = ${config.language.codeUnits}',
+        '🚨 SIDEBAR_PANEL: config.language.codeUnits = ${config.language.codeUnits}',
       );
+
+      final messenger = ScaffoldMessenger.of(context);
+
       try {
         await generationNotifier.generateScript(config);
-        if (!mounted) return;
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             content: Text('Erro ao gerar roteiro: ${e.toString()}'),
             backgroundColor: Colors.red,
@@ -307,6 +309,10 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                               return;
                             }
                             setState(() => _isGeneratingContext = true);
+
+                            // Capturar messenger antes do async
+                            final messenger = ScaffoldMessenger.of(context);
+
                             try {
                               final config = GenerationConfig(
                                 apiKey: apiKeyController.text,
@@ -322,10 +328,10 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                               final auxiliaryNotifier = ref.read(
                                 auxiliaryToolsProvider.notifier,
                               );
-                              final context = await auxiliaryNotifier
+                              final generatedContext = await auxiliaryNotifier
                                   .generateContext(config);
                               if (!mounted) return;
-                              contextController.text = context;
+                              contextController.text = generatedContext;
                             } catch (e) {
                               // Melhorar mensagem de erro
                               String errorMessage;
@@ -350,7 +356,7 @@ class _SidebarPanelState extends ConsumerState<SidebarPanel> {
                               }
 
                               if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              messenger.showSnackBar(
                                 SnackBar(
                                   content: Text(errorMessage),
                                   backgroundColor: Colors.red,

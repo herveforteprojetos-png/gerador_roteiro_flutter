@@ -420,14 +420,15 @@ class GeminiService {
     // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
     // 🏗️ v7.6.64: Migrado para usar WorldStateManager (SOLID)
     try {
-      worldState.sinopseComprimida = await _worldStateManager.generateCompressedSynopsis(
-        tema: config.tema,
-        title: config.title,
-        protagonistName: config.protagonistName,
-        language: config.language,
-        apiKey: config.apiKey,
-        qualityMode: config.qualityMode,
-      );
+      worldState.sinopseComprimida = await _worldStateManager
+          .generateCompressedSynopsis(
+            tema: config.tema,
+            title: config.title,
+            protagonistName: config.protagonistName,
+            language: config.language,
+            apiKey: config.apiKey,
+            qualityMode: config.qualityMode,
+          );
       if (kDebugMode) {
         debugPrint(
           '🔵 Camada 1 (Sinopse) gerada: ${worldState.sinopseComprimida.length} chars',
@@ -1032,7 +1033,8 @@ class GeminiService {
                   language: config.language,
                 );
                 // Sincronizar resumo de volta para o worldState local (compatibilidade)
-                worldState.resumoAcumulado = _worldStateManager.state.resumoAcumulado;
+                worldState.resumoAcumulado =
+                    _worldStateManager.state.resumoAcumulado;
               }
             }
           }
@@ -1224,12 +1226,13 @@ class GeminiService {
       // 🎯 v7.6.45: VALIDAÇÃO RIGOROSA DE COERÊNCIA COM TÍTULO
       // 🏗️ v7.6.64: Migrado para usar ScriptValidator (SOLID)
       if (config.title.trim().isNotEmpty) {
-        final validationResult = await _scriptValidator.validateTitleCoherenceRigorous(
-          title: config.title,
-          story: deduplicatedScript,
-          language: config.language,
-          apiKey: config.apiKey,
-        );
+        final validationResult = await _scriptValidator
+            .validateTitleCoherenceRigorous(
+              title: config.title,
+              story: deduplicatedScript,
+              language: config.language,
+              apiKey: config.apiKey,
+            );
 
         final isCoherent = validationResult['isValid'] as bool? ?? true;
         final confidence = validationResult['confidence'] as int? ?? 0;
@@ -6060,35 +6063,32 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     final perspectiveInstruction = _getPerspectiveInstruction(c.perspective, c);
 
     // 🔥 NOVO: Combinar prompt do template (compacto) + informações de bloco
+    final compactPrompt = MainPromptTemplate.buildCompactPrompt(
+      language: _getLanguageInstruction(c.language),
+      instruction: instruction,
+      temaSection: temaSection,
+      localizacao: c.localizacao,
+      localizationGuidance: localizationGuidance,
+      narrativeStyleGuidance: narrativeStyleGuidance,
+      customPrompt: c.customPrompt,
+      useCustomPrompt: c.useCustomPrompt,
+      nameList: nameList,
+      trackerInfo: trackerInfo,
+      measure: measure,
+      isSpanish: isSpanish,
+      adjustedTarget: adjustedTarget,
+      minAcceptable: minAcceptable,
+      maxAcceptable: maxAcceptable,
+      limitedNeeded: limitedNeeded,
+      contextoPrevio: contextoPrevio,
+      avoidRepetition: avoidRepetition,
+      characterGuidance: characterGuidance,
+      forbiddenNamesWarning: forbiddenNamesWarning,
+      labels: labels,
+    );
+
     final prompt =
-        perspectiveInstruction + // ✅ AGORA A INSTRUÇÃO DE GÊNERO VEM PRIMEIRO!
-        '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-        worldStateContext + // 🆕 v7.6.52: WORLD STATE CONTEXT - Memória Infinita
-        titleSection + // 🆕 v7.6.44: TÍTULO SEMPRE INCLUÍDO PARA GARANTIR COERÊNCIA
-        MainPromptTemplate.buildCompactPrompt(
-          language: _getLanguageInstruction(c.language),
-          instruction: instruction,
-          temaSection: temaSection,
-          localizacao: c.localizacao,
-          localizationGuidance: localizationGuidance,
-          narrativeStyleGuidance: narrativeStyleGuidance,
-          customPrompt: c.customPrompt,
-          useCustomPrompt: c.useCustomPrompt,
-          nameList: nameList,
-          trackerInfo: trackerInfo,
-          measure: measure,
-          isSpanish: isSpanish,
-          adjustedTarget: adjustedTarget,
-          minAcceptable: minAcceptable,
-          maxAcceptable: maxAcceptable,
-          limitedNeeded: limitedNeeded,
-          contextoPrevio: contextoPrevio,
-          avoidRepetition: avoidRepetition,
-          characterGuidance: characterGuidance,
-          forbiddenNamesWarning: forbiddenNamesWarning,
-          labels: labels,
-        ) +
-        blockInfo;
+        '$perspectiveInstruction\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$worldStateContext$titleSection$compactPrompt$blockInfo';
 
     if (kDebugMode) {
       debugPrint(
@@ -6648,7 +6648,9 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         debugPrint('GeminiService: Length: ${result.length}');
 
         // Aplicar limpeza adicional se necessário
-        final cleanResult = result.isNotEmpty ? _cleanGeneratedText(result) : '';
+        final cleanResult = result.isNotEmpty
+            ? _cleanGeneratedText(result)
+            : '';
         return cleanResult;
       } catch (e) {
         debugPrint('GeminiService: Erro ao gerar texto: $e');

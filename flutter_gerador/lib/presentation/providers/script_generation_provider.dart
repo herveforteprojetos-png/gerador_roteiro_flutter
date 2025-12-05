@@ -6,9 +6,9 @@ import 'package:flutter_gerador/data/models/generation_config.dart';
 import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
-import 'cta_config_provider.dart';
-import 'generation_config_provider.dart';
-import '../../data/utils/cta_inserter.dart';
+import 'package:flutter_gerador/presentation/providers/cta_config_provider.dart';
+import 'package:flutter_gerador/presentation/providers/generation_config_provider.dart';
+import 'package:flutter_gerador/data/utils/cta_inserter.dart';
 
 class ScriptGenerationState {
   final bool isGenerating;
@@ -26,12 +26,13 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
   final GeminiService geminiService;
   final Ref ref;
   bool _cancelRequested = false;
-  
+
   // 🚀 OTIMIZAÇÃO: Timer para debouncing de atualizações
   Timer? _debounceTimer;
   GenerationProgress? _pendingProgress;
 
-  ScriptGenerationNotifier(this.geminiService, this.ref) : super(ScriptGenerationState());
+  ScriptGenerationNotifier(this.geminiService, this.ref)
+    : super(ScriptGenerationState());
 
   @override
   void dispose() {
@@ -42,14 +43,25 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
   // 🚀 OTIMIZAÇÃO CRÍTICA: Método para atualizar progresso com debounce aumentado
   void _updateProgressDebounced(GenerationProgress progress) {
     _pendingProgress = progress;
-    
+
     // Cancelar timer anterior se existir
     _debounceTimer?.cancel();
-    
-    // 🔥 AUMENTADO: 100ms → 300ms → 1500ms para reduzir sobrecarga de renderização
-    // Isso evita travamentos em 37-62% causados por rebuilds excessivos
-    // Atualiza UI apenas a cada 1.5 segundos = MUITO mais suave!
-    _debounceTimer = Timer(const Duration(milliseconds: 1500), () {
+
+    // 🔥 DEBOUNCE SUPER AGRESSIVO para máxima performance
+    // 0-30%: 1500ms (início moderado)
+    // 30-50%: 3000ms (contexto crescendo)
+    // 50-70%: 5000ms (contexto grande, operações pesadas)
+    // 70-100%: 8000ms (máximo overhead, mínimas atualizações)
+    final percentage = progress.percentage;
+    final debounceMs = percentage < 0.3
+        ? 1500
+        : percentage < 0.5
+        ? 3000
+        : percentage < 0.7
+        ? 5000
+        : 8000;
+
+    _debounceTimer = Timer(Duration(milliseconds: debounceMs), () {
       if (_pendingProgress != null && !_cancelRequested) {
         state = ScriptGenerationState(
           isGenerating: true,
@@ -65,46 +77,52 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
       debugPrint('\n');
       debugPrint('═══════════════════════════════════════════════════════');
       debugPrint('🎬 PROVIDER: generateScript() CHAMADO');
-      debugPrint('   API Key: ${config.apiKey.substring(0, 10)}...');
+      debugPrint(
+        '   API Key: ${config.apiKey.isNotEmpty ? config.apiKey.substring(0, config.apiKey.length < 10 ? config.apiKey.length : 10) : "(vazia)"}...',
+      );
+      debugPrint('   Título: ${config.title}');
       debugPrint('   Tema: ${config.tema}');
       debugPrint('   Quantidade: ${config.quantity} ${config.measureType}');
       debugPrint('═══════════════════════════════════════════════════════');
       debugPrint('\n');
     }
-    
+
     // CORREÇÃO: Reset completo de estado antes de nova geração
     _cancelRequested = false;
     geminiService.resetState(); // Reset do estado interno do service
-    
+
     // Limpar resultado anterior e definir estado inicial
     state = ScriptGenerationState(
       isGenerating: true,
       progress: null,
       result: null,
     );
-    
+
     if (kDebugMode) {
       debugPrint('📊 PROVIDER: Estado inicial definido (isGenerating: true)');
     }
-    
+
     try {
       if (kDebugMode) {
         debugPrint('🚀 PROVIDER: Chamando geminiService.generateScript()...');
       }
-      
+
       final result = await geminiService.generateScript(
-        ScriptConfig.fromGenerationConfig(config), 
+        ScriptConfig.fromGenerationConfig(config),
         (progress) {
-        if (_cancelRequested) return;
-        
-        if (kDebugMode) {
-          debugPrint('📈 PROVIDER: Progresso recebido: ${progress.currentPhase}');
-        }
-        
-        // 🚀 OTIMIZAÇÃO: Usar debounce em vez de atualização imediata
-        _updateProgressDebounced(progress);
-      });
-      
+          if (_cancelRequested) return;
+
+          if (kDebugMode) {
+            debugPrint(
+              '📈 PROVIDER: Progresso recebido: ${progress.currentPhase}',
+            );
+          }
+
+          // 🚀 OTIMIZAÇÃO: Usar debounce em vez de atualização imediata
+          _updateProgressDebounced(progress);
+        },
+      );
+
       if (kDebugMode) {
         debugPrint('✅ PROVIDER: geminiService.generateScript() retornou');
         debugPrint('   Resultado: ${result.scriptText.length} caracteres');
@@ -113,42 +131,46 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
           debugPrint('   ❌ ERRO: ${result.errorMessage}');
         }
       }
-      
+
       if (!_cancelRequested) {
         // Gerar CTAs automáticos se habilitados
         ScriptResult finalResult = result;
-        
+
         try {
           final ctaConfig = ref.read(ctaConfigProvider);
-          if (ctaConfig.isEnabled && ctaConfig.ctasNeedingGeneration.isNotEmpty) {
+          if (ctaConfig.isEnabled &&
+              ctaConfig.ctasNeedingGeneration.isNotEmpty) {
             // Gerar CTAs automáticos
             final ctaNotifier = ref.read(ctaConfigProvider.notifier);
             final generationConfig = ref.read(generationConfigProvider);
-            
+
             await ctaNotifier.generateAutomaticCtas(
               scriptContent: result.scriptText,
               apiKey: config.apiKey,
-              customTheme: generationConfig.usePersonalizedTheme ? generationConfig.personalizedTheme : null,
+              customTheme: generationConfig.usePersonalizedTheme
+                  ? generationConfig.personalizedTheme
+                  : null,
             );
-            
+
             // Inserir CTAs no roteiro
             final updatedCtaConfig = ref.read(ctaConfigProvider);
             final enabledCtas = updatedCtaConfig.enabledCtas
                 .where((cta) => cta.content.isNotEmpty)
                 .toList();
-            
+
             if (enabledCtas.isNotEmpty) {
               final scriptWithCtas = CtaInserter.insertCtasIntoScript(
                 scriptContent: result.scriptText,
                 ctas: enabledCtas,
               );
-              
+
               finalResult = ScriptResult(
                 scriptText: scriptWithCtas,
                 wordCount: _countWords(scriptWithCtas),
                 charCount: scriptWithCtas.length,
                 paragraphCount: scriptWithCtas.split('\n\n').length,
-                readingTime: (_countWords(scriptWithCtas) / 200).ceil(), // ~200 wpm
+                readingTime: (_countWords(scriptWithCtas) / 200)
+                    .ceil(), // ~200 wpm
                 generationTime: result.generationTime,
                 model: result.model,
                 hasCtaIntegration: true,
@@ -160,7 +182,7 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
           if (kDebugMode) debugPrint('Erro ao processar CTAs: $e');
           // Manter resultado original se CTAs falharem
         }
-        
+
         state = ScriptGenerationState(
           isGenerating: false,
           progress: null, // Limpar progresso
@@ -174,7 +196,7 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
         debugPrint('   Stack trace:');
         debugPrint('$e');
       }
-      
+
       if (!_cancelRequested) {
         state = ScriptGenerationState(
           isGenerating: false,
@@ -201,7 +223,7 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
     geminiService.cancel(); // Chamar cancelamento no serviço
     state = ScriptGenerationState(isGenerating: false);
   }
-  
+
   void forceReset() {
     if (kDebugMode) debugPrint('Force resetting generation state...');
     _cancelRequested = false;
@@ -212,11 +234,11 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
       result: null,
     );
   }
-  
+
   void clearResult() {
     if (kDebugMode) debugPrint('Clearing previous result...');
     if (state.isGenerating) return; // Não limpar se estiver gerando
-    
+
     state = ScriptGenerationState(
       isGenerating: false,
       progress: null,
@@ -239,7 +261,7 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
         model: state.result!.model,
         hasCtaIntegration: state.result!.hasCtaIntegration,
       );
-      
+
       state = ScriptGenerationState(
         isGenerating: false,
         progress: state.progress,
@@ -252,7 +274,7 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
   void applyCtasToScript(List<String> ctas, dynamic position) {
     if (state.result != null && ctas.isNotEmpty) {
       String scriptWithCtas = state.result!.scriptText;
-      
+
       // Handle both single position (String) and multiple positions (List<String>)
       if (position is String) {
         // Single position for all CTAs
@@ -264,29 +286,31 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
         for (int i = 0; i < ctas.length && i < position.length; i++) {
           final cta = ctas[i];
           final pos = position[i];
-          
+
           scriptWithCtas = _insertCtaAtPosition(scriptWithCtas, cta, pos);
         }
       }
-      
+
       // Update the script with CTAs
       updateScriptText(scriptWithCtas);
     }
   }
-  
+
   /// Insert CTA at specific position in script
   String _insertCtaAtPosition(String script, String cta, String position) {
     final lines = script.split('\n');
     // Formato limpo e destacado sem emoticons
-    final ctaWithMarkers = '\n▶ CTA - ${_getPositionLabel(position).toUpperCase()}\n$cta\n';
-    
+    final ctaWithMarkers =
+        '\n▶ CTA - ${_getPositionLabel(position).toUpperCase()}\n$cta\n';
+
     switch (position.toLowerCase()) {
       case 'beginning':
         // CORRIGIDO: Inserir após conclusão do primeiro parágrafo ou introdução
         // Procurar pela primeira linha vazia após texto para inserir CTA mais cedo
         int insertIndex = 1;
-        for (int i = 1; i < lines.length && i < 8; i++) { // Primeiras 8 linhas para aparecer mais cedo
-          if (lines[i].trim().isEmpty && lines[i-1].trim().isNotEmpty) {
+        for (int i = 1; i < lines.length && i < 8; i++) {
+          // Primeiras 8 linhas para aparecer mais cedo
+          if (lines[i].trim().isEmpty && lines[i - 1].trim().isNotEmpty) {
             insertIndex = i + 1;
             break;
           }
@@ -298,22 +322,22 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
         }
         lines.insert(insertIndex, ctaWithMarkers);
         break;
-        
+
       case 'middle':
         // Mantém posicionamento no meio (está bem posicionado)
         final middleIndex = (lines.length * 0.5).round();
         lines.insert(middleIndex, ctaWithMarkers);
         break;
-        
+
       case 'end':
         // CORRIGIDO: Inserir sempre no final absoluto do roteiro
         lines.add(ctaWithMarkers);
         break;
     }
-    
+
     return lines.join('\n');
   }
-  
+
   /// Get position label for display
   String _getPositionLabel(String position) {
     switch (position.toLowerCase()) {
@@ -327,7 +351,7 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
         return position.toUpperCase();
     }
   }
-  
+
   /// Generate CTAs based on script content and position
   Future<List<String>> generateCtas(String scriptText, String position) async {
     try {
@@ -337,9 +361,9 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
       if (generationConfig.apiKey.isEmpty) {
         throw Exception('Chave da API não configurada');
       }
-      
+
       debugPrint('🎯 [Script Provider] Gerando CTAs para posição: $position');
-      
+
       // Map position to specific CTA types usando os tipos corretos que o parser espera
       List<String> ctaTypes = [];
       switch (position) {
@@ -358,22 +382,29 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
         default:
           ctaTypes = ['final'];
       }
-      
+
       debugPrint('🎯 [Script Provider] Tipos de CTA mapeados: $ctaTypes');
-      debugPrint('🎯 [Script Provider] Perspectiva: ${generationConfig.perspective}');
-      
-      // Generate CTAs using Gemini service
+      debugPrint(
+        '🎯 [Script Provider] Perspectiva: ${generationConfig.perspective}',
+      );
+
+      // Generate CTAs using Gemini service (🎯 v7.6.51: Pipeline Modelo Único)
       final ctaMap = await geminiService.generateCtasForScript(
         scriptContent: scriptText,
         apiKey: generationConfig.apiKey,
         ctaTypes: ctaTypes,
         language: generationConfig.language,
-        perspective: generationConfig.perspective, // 🔥 CORRIGIDO: Passar perspectiva configurada!
+        perspective: generationConfig
+            .perspective, // 🔥 CORRIGIDO: Passar perspectiva configurada!
+        qualityMode:
+            generationConfig.qualityMode, // 🎯 v7.6.51: Pipeline Modelo Único
       );
-      
-      debugPrint('🎯 [Script Provider] CTAs recebidos: ${ctaMap.keys.toList()}');
+
+      debugPrint(
+        '🎯 [Script Provider] CTAs recebidos: ${ctaMap.keys.toList()}',
+      );
       debugPrint('🎯 [Script Provider] Total: ${ctaMap.length}');
-      
+
       // Convert map to list
       final ctaList = ctaMap.values.toList();
       debugPrint('✅ [Script Provider] Retornando ${ctaList.length} CTA(s)');
@@ -401,9 +432,15 @@ final defaultGeminiServiceProvider = Provider<GeminiService>((ref) {
   return ref.watch(geminiServiceProvider);
 });
 
-final scriptGenerationProvider = StateNotifierProvider<ScriptGenerationNotifier, ScriptGenerationState>((ref) {
-  return ScriptGenerationNotifier(ref.watch(defaultGeminiServiceProvider), ref);
-});
+final scriptGenerationProvider =
+    StateNotifierProvider<ScriptGenerationNotifier, ScriptGenerationState>((
+      ref,
+    ) {
+      return ScriptGenerationNotifier(
+        ref.watch(defaultGeminiServiceProvider),
+        ref,
+      );
+    });
 
 // REMOVIDO: workspaceScriptGenerationProvider para evitar conflitos
 // Agora usa apenas o provider global, workspaceId é usado apenas para UI

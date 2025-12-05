@@ -30,20 +30,16 @@ class _MainContentAreaState extends ConsumerState<MainContentArea> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(scriptGenerationProvider);
-    
+
     // 🚀 OTIMIZAÇÃO: Atualizar controller apenas quando resultado mudar
-    if (state.result != null && _scriptController.text != state.result!.scriptText) {
+    if (state.result != null &&
+        _scriptController.text != state.result!.scriptText) {
       _scriptController.text = state.result!.scriptText;
     }
 
     if (state.isGenerating && state.progress != null) {
       final progress = state.progress!;
-      return GenerationProgressView(
-        progress: progress,
-        onCancel: () {
-          // TODO: Cancelar geração via provider
-        },
-      );
+      return GenerationProgressView(progress: progress, onCancel: () {});
     } else if (state.result != null) {
       final result = state.result!;
       return ScriptResultView(
@@ -52,18 +48,17 @@ class _MainContentAreaState extends ConsumerState<MainContentArea> {
         paragraphCount: result.paragraphCount,
         readingTime: result.readingTime,
         scriptController: _scriptController,
-        onDownloadTxt: () {
-          // TODO: Implementar download TXT
-        },
-        onDownloadFormatted: () {
-          // TODO: Implementar download formatado
-        },
+        onDownloadTxt: () {},
+        onDownloadFormatted: () {},
         context: context,
         onShowExtraTools: () {},
       );
     } else {
       return const Center(
-        child: Text('Nenhum roteiro gerado ainda.', style: TextStyle(color: Colors.white)),
+        child: Text(
+          'Nenhum roteiro gerado ainda.',
+          style: TextStyle(color: Colors.white),
+        ),
       );
     }
   }

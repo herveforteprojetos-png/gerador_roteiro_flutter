@@ -164,7 +164,7 @@ class BlockPromptBuilder {
     final measure = isSpanish
         ? 'GERE EXATAMENTE $adjustedTarget palabras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable). É MELHOR ficar perto de $adjustedTarget do que muito abaixo!'
         : 'GERE EXATAMENTE $adjustedTarget palavras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable). É MELHOR ficar perto de $adjustedTarget do que muito abaixo!';
-    
+
     final localizationGuidance = BaseRules.buildLocalizationGuidance(c);
     final narrativeStyleGuidance = NarrativeStyleManager.getStyleGuidance(c);
 
@@ -214,7 +214,10 @@ class BlockPromptBuilder {
           title: c.title,
         );
       } else {
-        instruction = BaseRules.getStartInstruction(c.language, withTitle: false);
+        instruction = BaseRules.getStartInstruction(
+          c.language,
+          withTitle: false,
+        );
       }
     } else {
       instruction = BaseRules.getContinueInstruction(c.language);
@@ -271,11 +274,9 @@ class BlockPromptBuilder {
           '\n';
     }
 
-
     // Personagens sem fechamento são agora gerenciados automaticamente pelo tracker
 
-
-        '   \n'
+    '   \n'
         '   ✅ Se "Robert revelou que seu pai Harold foi enganado":\n'
         '      👉 No clímax: "Robert entrou no tribunal. Olhou Alan nos olhos..."\n'
         '      👉 No desfecho: "Robert finalmente tinha paz. A verdade sobre Harold veio à tona."\n'
@@ -338,38 +339,38 @@ class BlockPromptBuilder {
         '🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑\n';
 
     // 🎭 CRITICAL: ADICIONAR INSTRUÇÃO DE PERSPECTIVA/GÊNERO NO INÍCIO DO PROMPT
-    final perspectiveInstruction = PerspectiveUtils.getPerspectiveInstruction(c.perspective, c);
+    final perspectiveInstruction = PerspectiveUtils.getPerspectiveInstruction(
+      c.perspective,
+      c,
+    );
 
     // 🎣 NOVO: Combinar prompt do template (compacto) + informações de bloco
+    final compactPrompt = MainPromptTemplate.buildCompactPrompt(
+      language: BaseRules.getLanguageInstruction(c.language),
+      instruction: instruction,
+      temaSection: temaSection,
+      localizacao: c.localizacao,
+      localizationGuidance: localizationGuidance,
+      narrativeStyleGuidance: narrativeStyleGuidance,
+      customPrompt: c.customPrompt,
+      useCustomPrompt: c.useCustomPrompt,
+      nameList: '', // Não mais necessário
+      trackerInfo: trackerInfo,
+      characterGuidance: characterGuidance,
+      forbiddenNamesWarning: forbiddenNamesWarning,
+      isSpanish: c.language.toLowerCase().contains('espanhol'),
+      adjustedTarget: needed,
+      minAcceptable: minAcceptable,
+      maxAcceptable: maxAcceptable,
+      limitedNeeded: needed,
+      contextoPrevio: contextoPrevio,
+      measure: measure,
+      avoidRepetition: avoidRepetition,
+      labels: {},
+    );
+
     final prompt =
-        perspectiveInstruction + // ✅ AGORA A INSTRUÇÃO DE GÊNERO VEM PRIMEIRO!
-        '\n🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑\n\n' +
-        viralHookSection + // 🎣 v7.6.65: VIRAL HOOK para primeiro bloco
-        worldStateContext + // 🌍 v7.6.52: WORLD STATE CONTEXT - Memória Infinita
-        titleSection + // 📌 v7.6.44: TÍTULO SEMPRE INCLUÍDO PARA GARANTIR COERÊNCIA
-        MainPromptTemplate.buildCompactPrompt(
-          language: BaseRules.getLanguageInstruction(c.language),
-          instruction: instruction,
-          temaSection: temaSection,
-          localizacao: c.localizacao,
-          localizationGuidance: localizationGuidance,
-          narrativeStyleGuidance: narrativeStyleGuidance,
-          customPrompt: c.customPrompt,
-          useCustomPrompt: c.useCustomPrompt,
-          nameList: '', // Não mais necessário
-          trackerInfo: trackerInfo,
-          characterGuidance: characterGuidance,
-          forbiddenNamesWarning: forbiddenNamesWarning,
-          isSpanish: c.language.toLowerCase().contains('espanhol'),
-          adjustedTarget: needed,
-          minAcceptable: minAcceptable,
-          maxAcceptable: maxAcceptable,
-          limitedNeeded: needed,
-          contextoPrevio: contextoPrevio,
-          measure: measure,
-          avoidRepetition: avoidRepetition,
-          labels: {},
-        );
+        '$perspectiveInstruction\n🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑\n\n$viralHookSection$worldStateContext$titleSection$compactPrompt';
 
     return prompt;
   }
@@ -544,7 +545,10 @@ class BlockPromptBuilder {
           '- Personagem mencionado: $translatedName (manter como referência familiar)',
         );
       } else {
-        final translatedName = BaseRules.translateFamilyTerms(config.language, name);
+        final translatedName = BaseRules.translateFamilyTerms(
+          config.language,
+          name,
+        );
         lines.add(
           '- Personagem estabelecido: "$translatedName" — não altere este nome nem invente apelidos.',
         );

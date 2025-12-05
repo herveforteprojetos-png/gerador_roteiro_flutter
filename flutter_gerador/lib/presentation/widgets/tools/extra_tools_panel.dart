@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/extra_tools_provider.dart';
-import '../../providers/generation_config_provider.dart';
+import 'package:flutter_gerador/presentation/providers/extra_tools_provider.dart';
+import 'package:flutter_gerador/presentation/providers/generation_config_provider.dart';
 import '../../providers/auxiliary_tools_provider.dart';
 import 'package:flutter_gerador/core/theme/app_colors.dart';
 import '../download/download_manager.dart';

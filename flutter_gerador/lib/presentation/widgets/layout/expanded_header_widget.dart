@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/generation_config_provider.dart';
+import 'package:flutter_gerador/presentation/providers/generation_config_provider.dart';
 // import '../../providers/license_provider.dart'; // Removido - usando autenticação por senha
 import '../../../data/models/generation_config.dart';
 import '../../../data/models/localization_level.dart';
