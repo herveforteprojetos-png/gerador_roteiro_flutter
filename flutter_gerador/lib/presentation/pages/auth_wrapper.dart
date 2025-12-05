@@ -99,13 +99,13 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.4),
+                    color: Colors.black.withValues(alpha: 0.4),
                     blurRadius: 30,
                     offset: const Offset(0, 15),
                   ),
                 ],
                 border: Border.all(
-                  color: const Color(0xFFFF6B35).withOpacity(0.2),
+                  color: const Color(0xFFFF6B35).withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
@@ -153,10 +153,10 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A).withOpacity(0.6),
+                      color: const Color(0xFF1A1A1A).withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: const Color(0xFFFF6B35).withOpacity(0.3),
+                        color: const Color(0xFFFF6B35).withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -217,7 +217,7 @@ class _AuthWrapperState extends ConsumerState<AuthWrapper> {
                         margin: const EdgeInsets.all(8),
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF6B35).withOpacity(0.2),
+                          color: const Color(0xFFFF6B35).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
