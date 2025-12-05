@@ -10,8 +10,8 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
           apiKey: '',
           model: 'gemini-2.5-pro',
           title: '',
-          tema: 'Vingan�a',
-          subtema: 'Vingan�a Destrutiva',
+          tema: 'Vingança',
+          subtema: 'Vingança Destrutiva',
           localizacao: '',
           personalizedTheme: '',
           usePersonalizedTheme: false,
@@ -19,24 +19,24 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
       );
 
   void updateApiKey(String apiKey) {
-    debugPrint('?? updateApiKey chamado: "$apiKey"');
+    debugPrint('🔑 updateApiKey chamado: "$apiKey"');
     state = state.copyWith(apiKey: apiKey);
-    debugPrint('?? state.apiKey agora �: "$state.apiKey"');
+    debugPrint('🔑 state.apiKey agora é: "$state.apiKey"');
   }
 
   void updateOpenAIKey(String openAIKey) {
     debugPrint(
-      '?? updateOpenAIKey chamado: "${openAIKey.isEmpty ? "(vazia)" : "***"}"',
+      '🔑 updateOpenAIKey chamado: "${openAIKey.isEmpty ? "(vazia)" : "***"}"',
     );
     state = state.copyWith(openAIKey: openAIKey.isEmpty ? null : openAIKey);
-    debugPrint('?? state.openAIKey configurada');
+    debugPrint('🔑 state.openAIKey configurada');
   }
 
   void updateSelectedProvider(String provider) {
-    debugPrint('?? updateSelectedProvider chamado: "$provider"');
+    debugPrint('🔄 updateSelectedProvider chamado: "$provider"');
     state = state.copyWith(selectedProvider: provider);
     debugPrint(
-      '?? state.selectedProvider agora �: "${state.selectedProvider}"',
+      '🔄 state.selectedProvider agora é: "${state.selectedProvider}"',
     );
   }
 
@@ -46,22 +46,22 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
 
   void updateQualityMode(String mode) {
     state = state.copyWith(qualityMode: mode);
-    debugPrint('?? Provider updateQualityMode($mode)');
-    debugPrint('?? state.qualityMode = "${state.qualityMode}"');
+    debugPrint('🎯 Provider updateQualityMode($mode)');
+    debugPrint('🎯 state.qualityMode = "${state.qualityMode}"');
 
     final modelName = mode == 'flash'
-        ? 'Gemini 2.5-FLASH (R�pido)'
+        ? 'Gemini 2.5-FLASH (Rápido)'
         : mode == 'ultra'
         ? 'Gemini 3.0-PRO PREVIEW (Ultra)'
         : 'Gemini 2.5-PRO (Qualidade)';
 
-    debugPrint('?? Modelo alterado para: $modelName');
+    debugPrint('🎯 Modelo alterado para: $modelName');
   }
 
   void updateTitle(String title) {
-    debugPrint('?? updateTitle chamado: "$title"');
+    debugPrint('📝 updateTitle chamado: "$title"');
     state = state.copyWith(title: title);
-    debugPrint('?? state.title agora �: "$state.title"');
+    debugPrint('📝 state.title agora é: "$state.title"');
   }
 
   void updateTema(String tema) {
@@ -162,8 +162,8 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
       apiKey: currentApiKey,
       model: currentModel,
       title: '',
-      tema: 'Vingan�a',
-      subtema: 'Vingan�a Destrutiva',
+      tema: 'Vingança',
+      subtema: 'Vingança Destrutiva',
       localizacao: '',
       personalizedTheme: '',
       usePersonalizedTheme: false,
@@ -172,24 +172,24 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
   }
 
   bool get isValid {
-    // ? VALIDA��O SIMPLIFICADA: Apenas API Key + T�tulo s�o obrigat�rios
-    // Tema, localiza��o e outros campos s�o OPCIONAIS
+    // ✓ VALIDAÇÃO SIMPLIFICADA: Apenas API Key + Título são obrigatórios
+    // Tema, localização e outros campos são OPCIONAIS
     final apiKeyValid = state.apiKey.isNotEmpty;
     final titleValid = state.title.isNotEmpty;
     final quantityValid = state.quantity > 0;
     final result = apiKeyValid && titleValid && quantityValid;
 
-    debugPrint('?? VALIDA��O isValid:');
+    debugPrint('🔍 VALIDAÇÃO isValid:');
     debugPrint(
-      '  ? API Key: "${state.apiKey}" -> ${apiKeyValid ? "V�LIDO" : "INV�LIDO (vazio)"}',
+      '  ✓ API Key: "${state.apiKey}" -> ${apiKeyValid ? "VÁLIDO" : "INVÁLIDO (vazio)"}',
     );
     debugPrint(
-      '  ? T�tulo: "${state.title}" -> ${titleValid ? "V�LIDO" : "INV�LIDO (vazio)"}',
+      '  ✓ Título: "${state.title}" -> ${titleValid ? "VÁLIDO" : "INVÁLIDO (vazio)"}',
     );
     debugPrint(
-      '  ? Quantidade: ${state.quantity} -> ${quantityValid ? "V�LIDO" : "INV�LIDO"}',
+      '  ✓ Quantidade: ${state.quantity} -> ${quantityValid ? "VÁLIDO" : "INVÁLIDO"}',
     );
-    debugPrint('  ?? RESULTADO FINAL: ${result ? "? V�LIDO" : "? INV�LIDO"}');
+    debugPrint('  🔍 RESULTADO FINAL: ${result ? "✅ VÁLIDO" : "❌ INVÁLIDO"}');
 
     return result;
   }
