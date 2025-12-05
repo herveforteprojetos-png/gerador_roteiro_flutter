@@ -16,36 +16,45 @@ import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart'
 /// Parte da refatoração SOLID do GeminiService v7.6.64
 /// Renomeado de PromptBuilder para evitar conflito com prompts/prompt_builder.dart
 class ScriptPromptBuilder {
-  /// 🚫 Regras ANTI-REPETIÇÃO e ANTI-LOOP (CRÍTICO)
+  /// 🚫 Regras ANTI-REPETIÇÃO e ANTI-LOOP (CRÍTICO - DEVE VIR PRIMEIRO)
   static const String antiRepetitionRules = """
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ 🚨 REGRAS ANTI-REPETIÇÃO - LEIA ANTES DE GERAR (PRIORIDADE MÁXIMA) 🚨       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+⛔ REGRA #1: AVANCE O TEMPO (NÃO REESCREVA)
+   • Você está escrevendo a CONTINUAÇÃO, não um resumo
+   • Bloco anterior = PASSADO. Novo bloco = FUTURO
+   • Se leu "김태준 회장이 방을 나선 후..." → NÃO repita essa frase
+   • Comece IMEDIATAMENTE na PRÓXIMA ação: "복도에서..." ou "다음 날..."
+
+⛔ REGRA #2: PROIBIDO RECAPITULAR
+   • NUNCA inicie com "Depois de...", "Após...", "Como vimos..."
+   • EXEMPLO ERRADO: "김지훈은 박 회장과 만난 후..." (isso JÁ ACONTECEU!)
+   • EXEMPLO CORRETO: "김지훈은 사무실로 돌아왔다." (próxima cena)
+
+⛔ REGRA #3: AÇÃO > PENSAMENTO (Máximo 2 frases consecutivas de monólogo)
+   • ❌ RUIM: 5 parágrafos de "그의 마음속에는... 그는 생각했다..."
+   • ✅ BOM: "Ele pensou. Então agiu." (ação imediata após reflexão)
+
+⛔ REGRA #4: SHOW, DON'T TELL
+   • ❌ RUIM: "그는 긴장했다" (telling)
+   • ✅ BOM: "그의 손이 떨렸다" (showing)
+
+⛔ REGRA #5: NÃO REPITA FRASES/CENAS DO CONTEXTO ANTERIOR
+   • Se vê "선한 마음은 언젠가 반드시 돌아온다" 3x no contexto → NÃO use mais
+   • Se vê "회장실 문을 두드렸다" no contexto → Use sinônimo ou omita
+
+⛔ REGRA #6: RITMO CINEMATOGRÁFICO
+   • Alterne: Diálogo → Ação → Reflexão breve → Diálogo → Ação
+   • Máximo 2 parágrafos de pensamentos → VOLTE à ação concreta
+
+🎬 REGRA DE OURO: CADA BLOCO = NOVA CENA OU SALTO TEMPORAL
+   • Bloco anterior terminou em X → Novo bloco começa em X+1
+   • NUNCA reescreva X. Vá direto para X+1.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚫 REGRAS DE CONTINUIDADE (CRÍTICO - ÚLTIMA INSTRUÇÃO):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. **AVANCE O TEMPO:** Você está escrevendo a CONTINUAÇÃO. O bloco anterior 
-   já terminou a cena. NÃO reescreva o que acabou de acontecer. Comece 
-   IMEDIATAMENTE na próxima ação.
-
-2. **PROIBIDO RECAPITULAR:** Se o bloco anterior terminou com "Ele saiu da sala", 
-   o novo bloco DEVE começar com "No corredor..." ou "No dia seguinte...". 
-   NUNCA repita "Ele saiu da sala".
-
-3. **AÇÃO > PENSAMENTO:** Limite monólogos internos a no máximo 2 frases 
-   consecutivas. Foque no que os personagens FAZEM e FALAM.
-
-4. **SHOW, DON'T TELL:** Em vez de escrever "Ele estava nervoso", escreva 
-   "Suas mãos tremiam enquanto segurava o copo".
-
-5. **BLOCOS ANTERIORES JÁ EXISTEM:** Não reescreva parágrafos que já foram 
-   escritos. Se você lê "Kim Tae-jun saiu da sala" no contexto anterior, 
-   isso JÁ ACONTECEU. Pule para a PRÓXIMA cena.
-
-6. **RITMO CINEMATOGRÁFICO:** Alterne entre ação externa e reflexão interna. 
-   Máximo 2 parágrafos de pensamentos antes de voltar à ação concreta.
-
-🎬 REGRA DE OURO: CADA NOVO BLOCO = NOVA CENA OU AVANÇO DE TEMPO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-""";
+"""
 
   /// 📏 Regras de formatação para TTS (Text-to-Speech)
   static const String ttsFormattingRules = '''
@@ -389,7 +398,8 @@ $idadeInstrucao
       labels: labels,
     );
 
-    return '$perspectiveInstruction\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$worldStateContext$titleSection$compactPrompt$blockInfo\n$antiRepetitionRules\n$ttsFormattingRules';
+    // ⚠️ CRÍTICO: antiRepetitionRules ANTES de tudo para IA ler primeiro
+    return '$antiRepetitionRules\n\n$perspectiveInstruction\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$worldStateContext$titleSection$compactPrompt$blockInfo\n\n$ttsFormattingRules';
   }
 
   /// 🎬 Constrói seção do título
