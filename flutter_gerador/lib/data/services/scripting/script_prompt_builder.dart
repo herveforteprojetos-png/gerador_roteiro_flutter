@@ -1251,4 +1251,33 @@ EXEMPLOS DE DETALHES ESPECÍFICOS (use este nível de concretude):
       'final': 'CTA de fechamento',
     };
   }
+
+  // ================== VIRAL HOOK GENERATION ==================
+
+  /// 🎣 Gera o prompt para criar um gancho viral de alta retenção
+  /// Usado apenas quando startWithTitlePhrase = false
+  static String buildViralHookPrompt({
+    required String title,
+    required String tema,
+    required String language,
+  }) {
+    return """
+ROLE: Especialista em YouTube e Copywriting Viral (Estilo MrBeast/Canais Dark).
+TAREFA: Criar um "Hook" (Gancho de Retenção) para os primeiros 5 segundos deste vídeo.
+
+DADOS DO VÍDEO:
+- Título: "$title"
+- Tema: "$tema"
+- Idioma: "$language"
+
+INSTRUÇÃO DE PENSAMENTO (Oculto):
+1. Analise o título e crie 3 opções mentais: uma pergunta chocante, uma afirmação polêmica ou um mistério imediato.
+2. Selecione a MELHOR opção (a que gera mais curiosidade e retenção).
+3. O texto deve ser curto, direto e impactante (máximo 2 frases).
+
+SAÍDA FINAL (Obrigatório):
+Escreva APENAS o texto do gancho escolhido no idioma "$language". 
+NÃO coloque aspas, NÃO coloque "Opção 1". Apenas a frase pronta para o narrador ler.
+""";
+  }
 }

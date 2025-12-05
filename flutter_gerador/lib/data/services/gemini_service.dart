@@ -447,6 +447,49 @@ class GeminiService {
       _worldStateManager.setSynopsis(fallbackSynopsis);
     }
 
+    // -----------------------------------------------------------------------
+    // 🎣 HOOK VIRAL (Feature Nova)
+    // Gera uma frase de impacto antes de começar a escrever a história
+    // CONDIÇÃO: Só gera se startWithTitlePhrase = false (usuário não quer começar com título)
+    // -----------------------------------------------------------------------
+    String viralHook = "";
+    if (!config.startWithTitlePhrase && config.title.trim().isNotEmpty) {
+      try {
+        if (kDebugMode) debugPrint('🎣 Gerando Hook Viral...');
+
+        // 1. Monta o prompt usando o Builder novo
+        final hookPrompt = ScriptPromptBuilder.buildViralHookPrompt(
+          title: config.title,
+          tema: config.tema,
+          language: config.language,
+        );
+
+        // 2. Chama API usando o Client novo (Flash para rapidez)
+        viralHook = await _llmClient.generateText(
+          prompt: hookPrompt,
+          apiKey: config.apiKey,
+          model: LlmClient.modelFlash, // Usa modelo rápido e barato
+          maxTokens: 150,
+        );
+
+        // Limpeza básica
+        viralHook = viralHook.replaceAll('"', '').trim();
+
+        if (kDebugMode && viralHook.isNotEmpty) {
+          debugPrint('🔥 Hook Gerado: "$viralHook"');
+        }
+      } catch (e) {
+        // Se o hook falhar, não trava o roteiro. Apenas segue sem hook.
+        if (kDebugMode) {
+          debugPrint('⚠️ Erro não-crítico no Hook (ignorando): $e');
+        }
+      }
+    } else if (kDebugMode) {
+      debugPrint(
+        '⏭️ Hook Viral DESABILITADO (startWithTitlePhrase = ${config.startWithTitlePhrase})',
+      );
+    }
+
     _startWatchdog();
     final start = DateTime.now();
     try {
@@ -766,6 +809,17 @@ class GeminiService {
         } else {
           // ✅ Primeiro bloco ou contexto pequeno - adicionar direto
           acc += added;
+        }
+
+        // 🎣 INSERIR HOOK VIRAL no início do Bloco 1 (se disponível)
+        if (block == 1 && viralHook.isNotEmpty && added.trim().isNotEmpty) {
+          // Remove o added que acabou de ser adicionado
+          acc = acc.substring(0, acc.length - added.length);
+          // Adiciona com o hook no topo
+          acc += '🔥 GANCHO VIRAL:\n$viralHook\n\n$added';
+          if (kDebugMode) {
+            debugPrint('🎣 Hook Viral inserido no início do roteiro!');
+          }
         }
 
         if (added.trim().isNotEmpty) {
