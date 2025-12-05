@@ -12,7 +12,7 @@ export 'tracking/character_tracker.dart';
 export 'progress/generation_progress_manager.dart';
 
 // Prompts (export com hide para evitar conflitos de classes com o tracker)
-export '../prompts/prompt_builder.dart';
+// export '../prompts/prompt_builder.dart'; // REMOVIDO: Arquivo deletado na limpeza v7.6.65
 export '../prompts/base_rules.dart';
 export '../prompts/structure_rules.dart';
 export '../prompts/youtube_rules.dart';

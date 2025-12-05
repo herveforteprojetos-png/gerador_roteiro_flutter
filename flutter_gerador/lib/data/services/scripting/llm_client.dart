@@ -33,11 +33,9 @@ class LlmClient {
   static const String modelUltra = 'gemini-3-pro-preview';
 
   /// Construtor com injeção de dependências opcional
-  LlmClient({
-    Dio? dio,
-    String? instanceId,
-  })  : _dio = dio ?? _createDefaultDio(),
-        _instanceId = instanceId ?? _genInstanceId();
+  LlmClient({Dio? dio, String? instanceId})
+    : _dio = dio ?? _createDefaultDio(),
+      _instanceId = instanceId ?? _genInstanceId();
 
   /// Cria instância padrão do Dio com configurações otimizadas
   static Dio _createDefaultDio() {
@@ -188,17 +186,16 @@ class LlmClient {
       final promptFeedback = resp.data['promptFeedback'];
       if (promptFeedback != null && promptFeedback['blockReason'] != null) {
         final blockReason = promptFeedback['blockReason'];
-        _log(
-          '🚫 CONTEÚDO BLOQUEADO - Razão: $blockReason',
-          level: 'error',
-        );
+        _log('🚫 CONTEÚDO BLOQUEADO - Razão: $blockReason', level: 'error');
         return null;
       }
 
       // Verificar finish reason
       final finishReason = resp.data['candidates']?[0]?['finishReason'];
       if (finishReason == 'MAX_TOKENS' && kDebugMode) {
-        debugPrint('[$_instanceId] Aviso - Resposta cortada por limite de tokens');
+        debugPrint(
+          '[$_instanceId] Aviso - Resposta cortada por limite de tokens',
+        );
       }
 
       // Extrair texto da resposta
@@ -218,7 +215,9 @@ class LlmClient {
       }
 
       if (kDebugMode) {
-        debugPrint('[$_instanceId] Extracted text: ${result?.length ?? 0} chars');
+        debugPrint(
+          '[$_instanceId] Extracted text: ${result?.length ?? 0} chars',
+        );
       }
 
       // Limpar texto de marcações indesejadas
@@ -256,9 +255,7 @@ class LlmClient {
               ],
             },
           ],
-          'generationConfig': {
-            'maxOutputTokens': 10,
-          },
+          'generationConfig': {'maxOutputTokens': 10},
         },
       );
 

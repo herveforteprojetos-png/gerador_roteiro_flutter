@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/services/prompts/base_rules.dart';
 import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart';
@@ -466,24 +467,239 @@ ${!isFinalBlock ? '🚫 NUNCA finalize a história antes do bloco final ($totalB
   /// [language]: Idioma do roteiro
   ///
   /// Retorna: String com hook otimizado para engajamento
+  /// 🎣 Gera gancho viral para abertura do roteiro
+  ///
+  /// Analisa título, tema e idioma para criar um hook impactante
+  /// que prende a atenção nos primeiros 5 segundos.
+  ///
+  /// [title]: Título do roteiro
+  /// [tema]: Tema/categoria do conteúdo
+  /// [language]: Idioma do roteiro (pt, en, es)
+  ///
+  /// Retorna: String com gancho viral contextualizado
   static String generateViralHook({
     required String title,
     required String tema,
     required String language,
   }) {
-    // Hook baseado em elementos do título
-    if (title.contains('bilionário') || title.contains('billionaire')) {
-      return 'O que acontece quando você ajuda um estranho... e descobre que ele pode mudar sua vida para sempre?';
-    }
-    if (title.contains('traição') || title.contains('betrayal')) {
-      return 'Algumas verdades deveriam permanecer enterradas. Esta é a história de quando descobri a minha.';
-    }
-    if (title.contains('segredo') || title.contains('secret')) {
-      return 'Todo mundo tem segredos. O problema é quando eles começam a te caçar.';
+    final titleLower = title.toLowerCase();
+    final temaLower = tema.toLowerCase();
+
+    // 🌍 Hooks por idioma
+    final hooks = _getHooksByLanguage(language);
+
+    // 🎯 Hook específico por elementos do título (prioridade)
+
+    // 💰 Histórias de riqueza/bilionários
+    if (_containsAny(titleLower, [
+      'bilionário',
+      'billionaire',
+      'rico',
+      'millonario',
+      'fortuna',
+      'herdeiro',
+      'heir',
+    ])) {
+      return hooks['billionaire']!;
     }
 
-    // Hook genérico mas eficaz
-    return 'Esta história mudou tudo o que eu pensava saber sobre confiança.';
+    // 💔 Histórias de traição/vingança
+    if (_containsAny(titleLower, [
+      'traição',
+      'betrayal',
+      'traicion',
+      'vingança',
+      'revenge',
+      'venganza',
+    ])) {
+      return hooks['betrayal']!;
+    }
+
+    // 🔒 Histórias de segredos/mistérios
+    if (_containsAny(titleLower, [
+      'segredo',
+      'secret',
+      'secreto',
+      'mistério',
+      'mystery',
+      'misterio',
+      'oculto',
+      'hidden',
+    ])) {
+      return hooks['secret']!;
+    }
+
+    // 👨‍👩‍👧 Histórias de família/relacionamentos
+    if (_containsAny(titleLower, [
+      'mãe',
+      'pai',
+      'filho',
+      'filha',
+      'família',
+      'mother',
+      'father',
+      'son',
+      'daughter',
+      'family',
+      'esposa',
+      'marido',
+      'wife',
+      'husband',
+    ])) {
+      return hooks['family']!;
+    }
+
+    // 😢 Histórias de superação/emoção
+    if (_containsAny(titleLower, [
+      'chorei',
+      'cried',
+      'lloré',
+      'emocionante',
+      'touching',
+      'lágrimas',
+      'tears',
+    ])) {
+      return hooks['emotional']!;
+    }
+
+    // 🏥 Histórias de doença/hospital
+    if (_containsAny(titleLower, [
+      'hospital',
+      'médico',
+      'doctor',
+      'doença',
+      'cancer',
+      'câncer',
+      'sick',
+      'enfermo',
+    ])) {
+      return hooks['medical']!;
+    }
+
+    // 💼 Histórias de trabalho/chefe
+    if (_containsAny(titleLower, [
+      'chefe',
+      'boss',
+      'jefe',
+      'emprego',
+      'job',
+      'trabajo',
+      'demitido',
+      'fired',
+      'despedido',
+    ])) {
+      return hooks['work']!;
+    }
+
+    // 👻 Histórias de terror/medo
+    if (_containsAny(temaLower, [
+      'terror',
+      'horror',
+      'medo',
+      'fear',
+      'miedo',
+      'sobrenatural',
+      'supernatural',
+    ])) {
+      return hooks['horror']!;
+    }
+
+    // 💕 Histórias de romance
+    if (_containsAny(temaLower, [
+      'romance',
+      'amor',
+      'love',
+      'relacionamento',
+      'relationship',
+    ])) {
+      return hooks['romance']!;
+    }
+
+    // 🎬 Hook genérico mas eficaz (fallback)
+    return hooks['generic']!;
+  }
+
+  /// Helper para verificar se string contém qualquer termo da lista
+  static bool _containsAny(String text, List<String> terms) {
+    return terms.any((term) => text.contains(term));
+  }
+
+  /// Retorna mapa de hooks por idioma
+  static Map<String, String> _getHooksByLanguage(String language) {
+    switch (language.toLowerCase()) {
+      case 'en':
+      case 'english':
+        return {
+          'billionaire':
+              'What happens when you help a stranger... and discover they could change your life forever?',
+          'betrayal':
+              'Some truths should remain buried. This is the story of when I discovered mine.',
+          'secret':
+              'Everyone has secrets. The problem is when they start hunting you.',
+          'family':
+              'The last words she said to me changed everything. I just wish I had listened sooner.',
+          'emotional': 'I never cry. But this story... this story broke me.',
+          'medical':
+              'The doctor called it a miracle. I call it the day everything changed.',
+          'work':
+              'My boss laughed when he fired me. He stopped laughing three months later.',
+          'horror':
+              'I used to think monsters were just stories. That was before I met one.',
+          'romance':
+              'They say you only truly love once. I thought that was true... until that day.',
+          'generic':
+              'This story changed everything I thought I knew about trust.',
+        };
+
+      case 'es':
+      case 'spanish':
+        return {
+          'billionaire':
+              '¿Qué pasa cuando ayudas a un extraño... y descubres que podría cambiar tu vida para siempre?',
+          'betrayal':
+              'Algunas verdades deberían permanecer enterradas. Esta es la historia de cuando descubrí la mía.',
+          'secret':
+              'Todos tienen secretos. El problema es cuando empiezan a cazarte.',
+          'family':
+              'Las últimas palabras que me dijo lo cambiaron todo. Ojalá hubiera escuchado antes.',
+          'emotional':
+              'Nunca lloro. Pero esta historia... esta historia me quebró.',
+          'medical':
+              'El doctor lo llamó un milagro. Yo lo llamo el día que todo cambió.',
+          'work':
+              'Mi jefe se rió cuando me despidió. Dejó de reír tres meses después.',
+          'horror':
+              'Solía pensar que los monstruos eran solo cuentos. Eso fue antes de conocer uno.',
+          'romance':
+              'Dicen que solo amas de verdad una vez. Yo creía eso... hasta ese día.',
+          'generic':
+              'Esta historia cambió todo lo que pensaba saber sobre la confianza.',
+        };
+
+      default: // Portuguese
+        return {
+          'billionaire':
+              'O que acontece quando você ajuda um estranho... e descobre que ele pode mudar sua vida para sempre?',
+          'betrayal':
+              'Algumas verdades deveriam permanecer enterradas. Esta é a história de quando descobri a minha.',
+          'secret':
+              'Todo mundo tem segredos. O problema é quando eles começam a te caçar.',
+          'family':
+              'As últimas palavras que ela me disse mudaram tudo. Eu só queria ter ouvido antes.',
+          'emotional':
+              'Eu nunca choro. Mas essa história... essa história me quebrou.',
+          'medical':
+              'O médico chamou de milagre. Eu chamo de o dia em que tudo mudou.',
+          'work':
+              'Meu chefe riu quando me demitiu. Ele parou de rir três meses depois.',
+          'horror':
+              'Eu costumava pensar que monstros eram só histórias. Isso foi antes de conhecer um.',
+          'romance':
+              'Dizem que você só ama de verdade uma vez. Eu acreditava nisso... até aquele dia.',
+          'generic':
+              'Esta história mudou tudo o que eu pensava saber sobre confiança.',
+        };
+    }
   }
 
   /// ⏱️ Obtém instrução de pacing baseado no progresso
@@ -636,4 +852,407 @@ Escreva UM PARÁGRAFO FINAL (100-150 palavras) $langInstruction que:
 APENAS o parágrafo final. Comece direto:
 ''';
   }
+
+  // ================== CTA PROMPTS ==================
+
+  static String buildAdvancedCtaPrompt(
+    String scriptContent,
+    List<String> ctaTypes,
+    String? customTheme,
+    String language,
+    String scriptContext,
+    String perspective, // PERSPECTIVA CONFIGURADA PELO USUÁRIO
+  ) {
+    final ctaDescriptions = getCtaTypeDescriptions(language);
+    final requestedTypes = ctaTypes
+        .map(
+          (type) =>
+              '"$type": ${ctaDescriptions[type] ?? "Call-to-action personalizado"}',
+        )
+        .join('\n');
+
+    // 🔍 USAR PERSPECTIVA CONFIGURADA PELO USUÁRIO (não detectar)
+    final isPrimeiraPessoa = perspective.contains('primeira_pessoa');
+
+    if (kDebugMode) {
+      debugPrint('🔍 Perspectiva Configurada pelo Usuário: $perspective');
+      debugPrint(
+        '   👉 ${isPrimeiraPessoa ? "PRIMEIRA PESSOA" : "TERCEIRA PESSOA"}',
+      );
+    }
+
+    final perspectiveInstruction = isPrimeiraPessoa
+        ? '''
++----------------------------------------------------------------+
+│ 👤 OBRIGATÓRIO: PRIMEIRA PESSOA - NARRADOR = PROTAGONISTA     │
++----------------------------------------------------------------+
+
+O NARRADOR É O PROTAGONISTA CONTANDO SUA PRÓPRIA HISTÓRIA.
+
+⚠️ REGRA ABSOLUTA: CTAs devem falar como se o PERSONAGEM estivesse pedindo apoio.
+
+✅ CAPITALIZAÇÃO CORRETA:
+- "eu", "meu/minha" (MINÚSCULAS no meio da frase!)
+- "Eu" (Maiúscula APENAS no início da frase)
+- ❌ ERRADO: "EU pensei", "MEU filho", "MINHA casa"
+- ✅ CERTO: "Eu pensei", "meu filho", "minha casa"
+
+✅ PALAVRAS OBRIGATÓRIAS:
+- "eu", "meu/minha", "minha história", "meu relato", "comigo", "me"
+
+✅ EXEMPLOS CORRETOS (Primeira Pessoa):
+• CTA INÍCIO: "Eu estava sem-teto e herdei 47 milhões. Mas a fortuna veio com um diário de vingança. Inscreva-se e deixe seu like para ver onde isso me levou."
+• CTA INÍCIO: "Um estranho na rua mudou minha vida em um segundo. Quer saber o que ele me ofereceu? Inscreva-se e deixe seu like!"
+• CTA MEIO: "O que você faria no meu lugar? Descobri que meu tio foi traído pelo próprio irmão. Comente o que você acha e compartilhe."
+• CTA FINAL: "Minha jornada da rua à redenção acabou. O que você achou dessa reviravolta? Inscreva-se para mais histórias intensas como esta."
+
+❌ PROIBIDO (quebra a perspectiva):
+• Falar sobre "o protagonista", "ele/ela", "a história dele/dela"
+• Usar "esta história" → Use "minha história"
+• Usar nomes próprios em 3ª pessoa → Use "eu/meu"
+• Capitalizar tudo: "EU/MEU/MINHA" → Use "eu/meu/minha"
+• ⚠️ NUNCA use "Se essa reviravolta ME atingiu" → O narrador ESTÁ vivendo a história, não assistindo!
+• ⚠️ NUNCA use "Se isso TE impactou..." sem contexto específico → Muito genérico!
+'''
+        : '''
++----------------------------------------------------------------+
+│ 👁️ OBRIGATÓRIO: TERCEIRA PESSOA - NARRADOR EXTERNO ENVOLVENTE │
++----------------------------------------------------------------+
+
+O NARRADOR É UM OBSERVADOR EXTERNO contando a história de outras pessoas.
+
+⚠️ REGRA ABSOLUTA: CTAs devem falar dos PERSONAGENS de forma externa, MAS mantendo a INTENSIDADE EMOCIONAL do roteiro!
+
+✅ CAPITALIZAÇÃO CORRETA:
+- "esta/esse/essa" (minúsculas no meio da frase!)
+- "Esta/Este/Essa" (Maiúscula APENAS no início da frase)
+- Nomes próprios sempre com inicial maiúscula: "Kátia", "William"
+
+✅ PALAVRAS OBRIGATÓRIAS:
+- Nomes dos personagens (Kátia, William, etc.)
+- "ela/dele", "esta história"
+- Tom DRAMÁTICO, não jornalístico!
+
+✅ EXEMPLOS CORRETOS (Terceira Pessoa ENVOLVENTE):
+• "Kátia descobriu que seu próprio filho transformou sua casa em uma arma. Se esta traição te chocou, inscreva-se e deixe seu like"
+• "William escondeu segredos nas paredes por anos. O que você faria no lugar de Kátia? Comente o que está achando"
+• "A história de Kátia chegou ao fim com um desfecho poderoso. O que você achou? Inscreva-se para mais histórias como esta"
+• "Esta família foi destroçada pela vingança. Compartilhe com quem entende dor de verdade"
+
+❌ EXEMPLOS RUINS (muito formais/distantes):
+• "A jornada de [personagem] revelou..." → Parece documentário chato
+• "Narrativas que exploram..." → Parece crítica literária
+• "Compartilhe esta história com quem aprecia..." → Muito genérico
+
+❌ PROIBIDO (quebra a perspectiva):
+• Usar "eu", "meu/minha", "comigo" → Isso é primeira pessoa!
+• "Se minha história te tocou" → Use "Se a história de [personagem] te tocou"
+• "O que você faria no meu lugar?" → Use "no lugar de [personagem]"
+
+⚠️ REGRA DE OURO: Use DETALHES ESPECÍFICOS DO ROTEIRO nos CTAs!
+- Não diga "segredo chocante" → Diga "dispositivo de metal corrosivo nas paredes"
+- Não diga "decisão difícil" → Diga "expulsar o próprio filho de casa"
+- Não diga "jornada emocional" → Diga "descobrir que seu filho é um vingador"
+''';
+
+    // 🐛 CORREÇÃO CRÍTICA: Enviar INÍCIO + FINAL do roteiro
+    // Para que CTAs de início usem detalhes iniciais E CTAs finais reflitam o desfecho real
+    final scriptLength = scriptContent.length;
+    final initialChunk = scriptContent.substring(
+      0,
+      scriptLength > 2000 ? 2000 : scriptLength,
+    );
+
+    // Extrair últimos 1500 caracteres (para CTA final analisar o desfecho)
+    final finalChunk = scriptLength > 1500
+        ? scriptContent.substring(scriptLength - 1500)
+        : ''; // Se roteiro for muito curto, final chunk fica vazio
+
+    return '''
+🛑🛑🛑 REGRA #0: IDIOMA OBRIGATÓRIO - $language 🛑🛑🛑
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ ERRO CRÍTICO REAL DETECTADO EM GERAÇÕES ANTERIORES:
+
+❌ ROTEIRO em Français (French), mas CTAs em Português (PT-BR):
+   Roteiro: "ma femme m'a quitté pour son patron..."
+   CTA ERRADO: "De um professor humilhado a uma fortuna que apaga o passado..."
+   👉 IDIOMA INCONSISTENTE! CTA REJEITADO! 🚫
+
+✅ REGRA ABSOLUTA DE IDIOMA:
+   • Se roteiro está em $language → TODOS os CTAs em $language
+   • ZERO palavras em outro idioma
+   • ZERO mistura de idiomas
+   • 100% pureza linguística!
+
+🔍 VALIDAÇÃO ANTES DE GERAR:
+   1. 🤔 "O roteiro está em $language?"
+   2. 🤔 "Vou escrever os CTAs em $language?"
+   3. 🤔 "Há alguma palavra em outro idioma nos meus CTAs?"
+   👉 Se SIM na pergunta 3 = PARE! Reescreva em $language!
+
+⚠️ CUIDADO ESPECIAL - ERROS COMUNS POR IDIOMA:
+   • English → Não misture: português ("mas", "quando"), espanhol ("pero")
+   • Français → Não misture: português ("mas", "de", "para"), inglês ("but", "from")
+   • Español → Não misture: português ("mas", "quando"), inglês ("but", "when")
+   • Português → Não misture: inglês ("but", "when"), espanhol ("pero", "cuando")
+
+🛑 SE HOUVER UMA ÚNICA PALAVRA EM OUTRO IDIOMA, TODOS OS CTAs SERÃO REJEITADOS!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🛑🛑🛑 ATENÇÃO CRÍTICA: PERSPECTIVA NARRATIVA É A REGRA #1 🛑🛑🛑
+
+$perspectiveInstruction
+
+---------------------------------------------------------------
+
+Gere CTAs (calls-to-action) personalizados em $language para este roteiro.
+
+CONTEXTO DO ROTEIRO: $scriptContext
+TEMA PERSONALIZADO: ${customTheme ?? 'Não especificado'}
+
+ROTEIRO - TRECHO INICIAL (para CTAs de início/meio):
+$initialChunk
+
+${finalChunk.isNotEmpty ? '''
+---------------------------------------------------------------
+ROTEIRO - TRECHO FINAL (para CTA de conclusão):
+$finalChunk
+---------------------------------------------------------------
+''' : ''}
+---------------------------------------------------------------
+🎯 PROPÓSITO ESPECÍFICO DE CADA TIPO DE CTA:
+---------------------------------------------------------------
+
+🔔 "subscription" (CTA DE INÍCIO):
+   • Objetivo: Pedir INSCRIÇÃO no canal + LIKE
+   • Momento: Logo no INÍCIO da história, após o gancho inicial
+   
+   ⚠️ ERRO COMUM A EVITAR:
+   ❌ "Se essa reviravolta ME atingiu..." → Narrador falando de si mesmo em 3ª pessoa (ERRADO!)
+   ❌ "Se essa reviravolta TE atingiu..." → Muito genérico, sem gancho específico
+   ❌ "No meu aniversário, meu marido levou tudo..." → NÃO REPITA A PRIMEIRA FRASE DO ROTEIRO! (ERRO FATAL!)
+   
+   ✅ REGRA CRÍTICA - EXTRAIR DETALHES DO ROTEIRO:
+   👉 PROIBIDO copiar ou parafrasear a primeira frase do roteiro
+   👉 PROIBIDO usar frases genéricas desconectadas do conteúdo
+   👉 OBRIGATÓRIO ler os primeiros 3-5 parágrafos e extrair:
+      • Objetos específicos mencionados (bolo, tapete persa, envelope, carro, etc.)
+      • Ações concretas (ele saiu, ela encontrou, queimaram, esconderam)
+      • Nomes de personagens secundários que aparecem logo no início
+      • Locações específicas (sala vazia, escritório, rua X)
+   👉 Use ESSES detalhes para criar o gancho (não invente detalhes!)
+   
+   ✅ MÉTODO CORRETO - ANÁLISE DO INÍCIO DO ROTEIRO:
+   1. Leia os primeiros 3-5 parágrafos do roteiro
+   2. Liste mentalmente: Quais objetos? Quais ações? Quais nomes?
+   3. Escolha 2-3 detalhes MARCANTES (não a primeira frase)
+   4. Monte o CTA usando ESSES detalhes específicos
+   
+   • Exemplo ERRADO (genérico, desconectado):
+     ❌ "Minha vida virou do avesso. Inscreva-se para ver o que aconteceu."
+   
+   • Exemplo CERTO (detalhes reais do roteiro):
+     ✅ "Eles levaram tudo, até o tapete persa que herdei. Mas esqueceram meu celular com a gravação. Inscreva-se e deixe seu like para ver minha vingança."
+     ✅ "Um bolo de 45 velinhas intacto, uma casa vazia e um envelope pardo. Inscreva-se para descobrir como transformei essa traição em justiça."
+   
+   👉 ESTRUTURA CORRETA:
+   [2-3 detalhes específicos DO ROTEIRO] + [Promessa de reviravolta/vingança] + "Inscreva-se e deixe seu like"
+   
+   • Exemplo (1ª pessoa): "Encontrei documentos escondidos no sótão e uma chave que não reconheci. Inscreva-se e deixe seu like para descobrir o que eles revelaram."
+   • Exemplo (3ª pessoa): "Kátia descobriu um dispositivo nos canos instalado pelo próprio filho. Inscreva-se para ver sua vingança."
+
+💬 "engagement" (CTA DE MEIO):
+   • Objetivo: Pedir COMENTÁRIOS sobre o que estão achando + COMPARTILHAMENTOS
+   • Momento: No MEIO da história, após uma reviravolta importante
+   • Estrutura: Pergunta direta sobre opinião + "comente o que está achando" + "compartilhe"
+   • Exemplo (1ª pessoa): "O que você faria no meu lugar? Comente o que está achando dessa situação e compartilhe com quem entenderia."
+   • Exemplo (3ª pessoa): "O que você acha da decisão de Kátia? Comente o que está achando e compartilhe com amigos."
+
+🏁 "final" (CTA DE CONCLUSÃO):
+   • Objetivo: CTA CONCLUSIVO - história acabou, pedir FEEDBACK + INSCRIÇÃO para mais histórias
+   • Momento: No FINAL da história, após a resolução
+   
+   🛑🛑🛑 ERRO CRÍTICO QUE VOCÊ COMETE SEMPRE:
+   ❌ "Levaram tudo... O que você achou dessa frieza?" → Fala como se protagonista ainda estivesse PERDENDO!
+   ❌ "Eles me destruíram... Inscreva-se..." → Ignora que a história JÁ TEVE RESOLUÇÃO!
+   ❌ Focar na TRAGÉDIA INICIAL em vez do DESFECHO REAL!
+   
+   ✅ REGRA ABSOLUTA - CTA DEVE REFLETIR O FINAL REAL:
+   👉 OBRIGATÓRIO usar o TRECHO FINAL DO ROTEIRO fornecido acima
+   👉 Identificar o DESFECHO REAL no trecho final:
+      • Protagonista venceu? → CTA de VITÓRIA
+      • Protagonista perdeu? → CTA de DERROTA
+      • Final ambíguo? → CTA de REFLEXÃO
+   👉 Mencionar COMO a história terminou (prisão do vilão, vingança concluída, fuga, morte, reconciliação)
+   
+   ✅ MÉTODO CORRETO - ANÁLISE DO TRECHO FINAL:
+   1. Leia o TRECHO FINAL DO ROTEIRO fornecido acima
+   2. Pergunte: "Como a protagonista está AGORA?"
+      • Vencedora? → "Consegui fazer justiça"
+      • Destruída? → "Perdi tudo"
+      • Reconstruindo? → "Estou começando de novo"
+   3. O CTA deve COMBINAR com esse estado final!
+   
+   👉 EXEMPLO ERRADO (final de vitória com CTA de derrota):
+   Final do roteiro: "Marcos foi preso. Recuperei meu dinheiro. Era justiça."
+   CTA ERRADO: "Levaram tudo e me deixaram sem nada. O que você achou?" ❌
+   
+   👉 EXEMPLO CERTO (final de vitória com CTA de vitória):
+   Final do roteiro: "Marcos foi preso. Recuperei meu dinheiro. Era justiça."
+   CTA CERTO: "Da casa vazia à prisão dele. Recuperei tudo e o coloquei atrás das grades. O que você achou da minha vingança? Inscreva-se para mais histórias de justiça como esta." ✅
+   
+   👉 ESTRUTURA CORRETA:
+   [Resumo do DESFECHO REAL] + [Mencionar resultado final] + "O que você achou?" + "Inscreva-se para mais histórias"
+   
+   • Exemplo (final de vitória - 1ª pessoa): 
+     ✅ "De vítima a vencedora. Ele está preso, eu recuperei o que era meu. O que você achou dessa virada? Inscreva-se para mais histórias de vingança como esta."
+   
+   • Exemplo (final de derrota - 1ª pessoa):
+     ✅ "Perdi tudo, mas ganhei minha liberdade. Às vezes, recomeçar é a única vitória possível. O que você achou? Inscreva-se para mais histórias intensas."
+   
+   • Exemplo (final ambíguo - 3ª pessoa):
+     ✅ "Kátia expulsou o filho, mas a casa ficou vazia. Será que valeu a pena? O que você acha? Inscreva-se para mais dilemas como este."
+   
+   ✅ CHECKLIST DO CTA FINAL:
+   ☑️ Li o TRECHO FINAL DO ROTEIRO fornecido acima?
+   ☑️ Identifiquei se protagonista venceu/perdeu/ficou no meio-termo?
+   ☑️ Meu CTA reflete esse desfecho REAL?
+   ☑️ Mencionei o resultado concreto (prisão, vitória, perda, fuga)?
+   ☑️ Não estou falando da tragédia inicial quando a história já teve resolução?
+
+---------------------------------------------------------------
+
+GERE OS SEGUINTES TIPOS DE CTA:
+$requestedTypes
+
+---------------------------------------------------------------
+
+FORMATO DE RESPOSTA (JSON):
+{
+  "subscription": "texto do CTA aqui",
+  "engagement": "texto do CTA aqui",
+  "pre_conclusion": "texto do CTA aqui",
+  "final": "texto do CTA aqui"
 }
+
+---------------------------------------------------------------
+
+REQUISITOS OBRIGATÓRIOS:
+1. 👁️ PERSPECTIVA NARRATIVA É PRIORIDADE #1 - RELEIA AS INSTRUÇÕES NO TOPO AGORA!
+2. ✅ CAPITALIZAÇÃO CORRETA - "eu/meu/minha" em MINÚSCULAS (não "EU/MEU/MINHA")!
+3. 🎯 CADA CTA TEM UM PROPÓSITO ESPECÍFICO - Releia a seção "PROPÓSITO ESPECÍFICO" acima!
+   • subscription = inscrição + like
+   • engagement = comentários + compartilhamento
+   • final = feedback + inscrição para mais histórias
+4. 🔔 CTA DE INÍCIO: Extraia detalhes REAIS do TRECHO INICIAL fornecido (objetos, ações, nomes)
+5. 🏁 CTA FINAL: Use o TRECHO FINAL fornecido e reflita o DESFECHO REAL (vitória/derrota/recomeço)
+6. 🚫 PROIBIDO usar palavras genéricas: "jornada", "narrativa", "explorar", "revelar"
+7. ⚠️ OBRIGATÓRIO mencionar ELEMENTOS CHOCANTES: nomes, objetos, ações específicas
+8. Cada CTA: 25-45 palavras (DIRETO E IMPACTANTE, com espaço para CTAs completos)
+9. Linguagem VISCERAL e DRAMÁTICA em $language (não formal/acadêmica)
+10. Tom emocional IGUAL ao do roteiro (se é intenso, CTA é intenso; se é suave, CTA é suave)
+11. Se protagonista tomou DECISÃO EXTREMA (expulsar filho, confrontar vilão), mencione isso!
+12. NÃO prometa eventos futuros que já aconteceram no roteiro
+13. Retorne JSON válido apenas
+
+🛑🛑🛑 CHECKLIST FINAL - RESPONDA ANTES DE GERAR: 🛑🛑🛑
+❓ 🌐 TODOS os CTAs estão 100% em $language (ZERO palavras em outro idioma)?
+❓ Reli as instruções de PERSPECTIVA NARRATIVA no topo?
+❓ ${isPrimeiraPessoa ? "Vou usar 'eu/meu/minha' em MINÚSCULAS (não EU/MEU/MINHA)?" : "Vou usar nomes próprios/ela/ele/esta história?"}
+❓ Cada CTA segue seu PROPÓSITO ESPECÍFICO?
+  • subscription = inscrição + like?
+  • engagement = comentários + compartilhamento?
+  • final = feedback + inscrição para mais histórias?
+❓ No CTA DE INÍCIO: Extraí detalhes REAIS do TRECHO INICIAL fornecido (objetos, ações, nomes)?
+❓ No CTA DE INÍCIO: NÃO repeti/parafraseei a primeira frase do roteiro?
+❓ No CTA FINAL: Li o TRECHO FINAL DO ROTEIRO fornecido e identifiquei o DESFECHO REAL?
+❓ No CTA FINAL: Meu CTA reflete se protagonista venceu/perdeu/está recomeçando?
+❓ Mencionei DETALHES ESPECÍFICOS do roteiro (nomes, objetos-chave, ações concretas)?
+❓ EVITEI palavras genéricas ("jornada", "narrativa", "revelar", "explorar")?
+❓ O tom do CTA está TÃO INTENSO quanto o roteiro?
+❓ Formato JSON está correto?
+
+⚠️ ERROS FATAIS A EVITAR NO CTA DE INÍCIO:
+❌ "Se essa reviravolta ME atingiu, inscreva-se..." → Narrador falando de si em 3ª pessoa!
+❌ "Se essa história TE impactou..." → Muito genérico, sem gancho!
+❌ "No meu aniversário, meu marido levou tudo..." → NUNCA REPITA A PRIMEIRA FRASE DO ROTEIRO! (ERRO CRÍTICO!)
+❌ Copiar ou parafrasear a frase de abertura do roteiro → Use OUTROS detalhes específicos!
+❌ Frases genéricas desconectadas do texto → Leia os primeiros parágrafos e extraia objetos/ações REAIS!
+✅ CORRETO: Extrair 2-3 detalhes específicos dos primeiros parágrafos + promessa de reviravolta
+• Exemplo: "Eles levaram até o tapete persa. Mas esqueceram meu celular com a gravação. Inscreva-se para ver minha vingança."
+• Exemplo: "45 velinhas, um bolo intacto e documentos escondidos no sótão. Inscreva-se para descobrir o que eles revelaram."
+
+⚠️ ERROS FATAIS A EVITAR NO CTA FINAL:
+❌ "Levaram tudo... O que você achou dessa frieza?" → Fala do início quando história já teve resolução!
+❌ Ignorar o desfecho real e focar na tragédia inicial → Use o TRECHO FINAL fornecido!
+❌ CTA de vítima quando protagonista VENCEU → Desonesto com a história!
+❌ CTA de vitória quando protagonista PERDEU → Também desonesto!
+
+⚠️ ERRO REAL DETECTADO - AMBIGUIDADE FATAL:
+❌ "Da caixa de papelão aos portões da prisão" → Quem foi preso? Protagonista ou vilão?
+   • Se VILÃO foi preso: "Da caixa de papelão ao império - e ele atrás das grades"
+   • Se PROTAGONISTA foi preso: "Da caixa de papelão à prisão - minha vingança falhou"
+   
+❌ "Do fracasso à redenção" → Redenção de quem? Protagonista ou antagonista?
+   • SEMPRE especifique: "Do fracasso à MINHA redenção" ou "Do fracasso à redenção DELE"
+
+✅ REGRA ABSOLUTA DE CLAREZA:
+   • CTAs finais DEVEM especificar quem sofreu/venceu
+   • Use "EU" (1ª pessoa) ou NOME/ELE/ELA (3ª pessoa)
+   • Nunca deixe ambíguo quem foi preso/derrotado/venceu
+   
+✅ CORRETO: Resumir o DESFECHO REAL do TRECHO FINAL (prisão, vingança concluída, perda, recomeço)
+• Exemplo (vitória): "Da casa vazia à prisão DELE. Recuperei tudo e o coloquei atrás das grades. O que você achou?"
+• Exemplo (derrota): "Perdi tudo, mas ganhei liberdade. Recomeçar é a única vitória. O que você achou?"
+• Exemplo (vitória 3ª pessoa): "Robert passou de mendigo a milionário - e Marcus está na cadeia. O que você achou?"
+
+🛑 SE VOCÊ USAR LINGUAGEM GENÉRICA, CAPITALIZAÇÃO ERRADA, QUEBRAR A PERSPECTIVA OU MISTURAR IDIOMAS, O CTA SERÁ REJEITADO! 🛑
+
+🛑🛑🛑 VALIDAÇÃO FINAL DE IDIOMA ANTES DE ENVIAR: 🛑🛑🛑
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ANTES DE ENVIAR O JSON, RELEIA CADA CTA E PERGUNTE:
+❓ "Este CTA está 100% em $language?"
+❓ "Há alguma palavra em português/inglês/espanhol/francês (outro idioma)?"
+❓ "Se o roteiro é em français, meus CTAs estão em français?"
+❓ "Se o roteiro é em english, meus CTAs estão em english?"
+
+SE VOCÊ ENCONTRAR UMA PALAVRA EM IDIOMA ERRADO:
+🛑 PARE AGORA!
+🛑 REESCREVA O CTA INTEIRO EM $language!
+🛑 NÃO ENVIE COM IDIOMA MISTURADO!
+
+⚠️ EXEMPLOS DE ERROS FATAIS:
+❌ Roteiro em French, CTA: "De um professor humilhado..." → Português! ERRO!
+❌ Roteiro em Spanish, CTA: "But when everything changed..." → Inglês! ERRO!
+❌ Roteiro em English, CTA: "mas quando tudo mudou..." → Português! ERRO!
+
+✅ VALIDAÇÃO PASSOU SE:
+• Cada CTA usa APENAS palavras de $language
+• ZERO palavras de outro idioma
+• Linguagem 100% coerente com o roteiro
+
+🛑 LEMBRE-SE: Um único erro de idioma invalida TODOS os CTAs! 🛑
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXEMPLOS DE DETALHES ESPECÍFICOS (use este nível de concretude):
+❌ RUIM: "A protagonista descobriu um segredo"
+✅ BOM: "Kátia encontrou um dispositivo corrosivo escondido nos canos por William"
+
+❌ RUIM: "Uma decisão difícil foi tomada"
+✅ BOM: "Kátia expulsou o próprio filho de casa após descobrir sua vingança"
+
+❌ RUIM: "Se esta história te impactou"
+✅ BOM: "Se a traição de William dentro das paredes te chocou"
+''';
+  }
+
+  static Map<String, String> getCtaTypeDescriptions(String language) {
+    return {
+      'subscription': 'CTA para inscrição no canal',
+      'engagement': 'CTA para interação (like, comentário)',
+      'pre_conclusion': 'CTA antes da conclusão',
+      'final': 'CTA de fechamento',
+    };
+  }
+}
+

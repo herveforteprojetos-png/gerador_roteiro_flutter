@@ -28,26 +28,27 @@ class WorldCharacter {
 
   /// Converte para JSON
   Map<String, dynamic> toJson() => {
-        'nome': nome,
-        'papel': papel,
-        if (idade != null) 'idade': idade,
-        'status': status,
-        if (localAtual != null) 'local_atual': localAtual,
-        if (relacionamentos.isNotEmpty) 'relacionamentos': relacionamentos,
-      };
+    'nome': nome,
+    'papel': papel,
+    if (idade != null) 'idade': idade,
+    'status': status,
+    if (localAtual != null) 'local_atual': localAtual,
+    if (relacionamentos.isNotEmpty) 'relacionamentos': relacionamentos,
+  };
 
   /// Cria a partir de JSON
   factory WorldCharacter.fromJson(Map<String, dynamic> json) => WorldCharacter(
-        nome: json['nome'] as String? ?? '',
-        papel: json['papel'] as String? ?? 'personagem',
-        idade: json['idade'] as String?,
-        status: json['status'] as String? ?? 'vivo',
-        localAtual: json['local_atual'] as String?,
-        relacionamentos: (json['relacionamentos'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [],
-      );
+    nome: json['nome'] as String? ?? '',
+    papel: json['papel'] as String? ?? 'personagem',
+    idade: json['idade'] as String?,
+    status: json['status'] as String? ?? 'vivo',
+    localAtual: json['local_atual'] as String?,
+    relacionamentos:
+        (json['relacionamentos'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [],
+  );
 
   @override
   String toString() => '$nome ($papel) - $status';
@@ -84,12 +85,12 @@ class WorldState {
   String sinopseComprimida;
 
   WorldState()
-      : personagens = {},
-        inventario = {},
-        fatos = [],
-        ultimoBloco = 0,
-        resumoAcumulado = '',
-        sinopseComprimida = '';
+    : personagens = {},
+      inventario = {},
+      fatos = [],
+      ultimoBloco = 0,
+      resumoAcumulado = '',
+      sinopseComprimida = '';
 
   /// Converte para JSON string para incluir no prompt
   String toJsonString() {
@@ -125,8 +126,9 @@ class WorldState {
     }
 
     // Fatos (últimos 10 para economizar tokens)
-    final recentFatos =
-        fatos.length > 10 ? fatos.sublist(fatos.length - 10) : fatos;
+    final recentFatos = fatos.length > 10
+        ? fatos.sublist(fatos.length - 10)
+        : fatos;
     if (recentFatos.isNotEmpty) {
       buffer.writeln('  "fatos_recentes": [');
       for (var i = 0; i < recentFatos.length; i++) {
@@ -202,8 +204,9 @@ class WorldState {
     }
 
     // Fatos recentes
-    final recentFatos =
-        fatos.length > 5 ? fatos.sublist(fatos.length - 5) : fatos;
+    final recentFatos = fatos.length > 5
+        ? fatos.sublist(fatos.length - 5)
+        : fatos;
     if (recentFatos.isNotEmpty) {
       buffer.writeln('');
       buffer.writeln('   📝 FATOS RECENTES:');
@@ -303,9 +306,7 @@ class WorldState {
   /// Cria snapshot para backup
   Map<String, dynamic> createSnapshot() {
     return {
-      'personagens': personagens.map(
-        (k, v) => MapEntry(k, v.toJson()),
-      ),
+      'personagens': personagens.map((k, v) => MapEntry(k, v.toJson())),
       'inventario': Map<String, List<String>>.from(inventario),
       'fatos': List<Map<String, dynamic>>.from(fatos),
       'ultimoBloco': ultimoBloco,
@@ -321,7 +322,9 @@ class WorldState {
     final persMap = snapshot['personagens'] as Map<String, dynamic>?;
     if (persMap != null) {
       persMap.forEach((key, value) {
-        personagens[key] = WorldCharacter.fromJson(value as Map<String, dynamic>);
+        personagens[key] = WorldCharacter.fromJson(
+          value as Map<String, dynamic>,
+        );
       });
     }
 
@@ -359,10 +362,9 @@ class WorldStateManager {
   /// Lista de snapshots para histórico/backup
   final List<Map<String, dynamic>> _snapshots = [];
 
-  WorldStateManager({
-    LlmClient? llmClient,
-  })  : _llmClient = llmClient ?? LlmClient(),
-        _worldState = WorldState();
+  WorldStateManager({LlmClient? llmClient})
+    : _llmClient = llmClient ?? LlmClient(),
+      _worldState = WorldState();
 
   /// Acesso ao estado atual
   WorldState get state => _worldState;
@@ -386,7 +388,8 @@ class WorldStateManager {
     try {
       final model = LlmClient.getModelForQuality(qualityMode);
 
-      final prompt = '''
+      final prompt =
+          '''
 Você é um assistente de escrita criativa. Gere uma SINOPSE COMPRIMIDA da história a seguir.
 
 TÍTULO: $title
@@ -465,7 +468,8 @@ Idioma da resposta: $language
       }
 
       // Prompt para extrair informações do bloco
-      final extractionPrompt = '''
+      final extractionPrompt =
+          '''
 Analise o seguinte trecho de história e extraia as informações estruturadas.
 
 TRECHO (Bloco $blockNumber):
@@ -569,8 +573,7 @@ IMPORTANTE: Responda APENAS com o JSON, sem explicações.
             _worldState.resumoAcumulado = resumoBloco;
           } else {
             // Manter resumo conciso (últimos 500 chars)
-            final novoResumo =
-                '${_worldState.resumoAcumulado} $resumoBloco';
+            final novoResumo = '${_worldState.resumoAcumulado} $resumoBloco';
             _worldState.resumoAcumulado = novoResumo.length > 500
                 ? novoResumo.substring(novoResumo.length - 500)
                 : novoResumo;

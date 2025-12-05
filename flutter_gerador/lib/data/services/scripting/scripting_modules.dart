@@ -8,8 +8,10 @@
 // - ScriptPromptBuilder: Construção de prompts para geração de scripts
 // - WorldStateManager: Gerenciamento do estado do mundo
 // - ScriptValidator: Validação de roteiros
+// - NarrativeStyleManager: Orientação de estilo narrativo por período/gênero
 
 export 'llm_client.dart';
 export 'script_prompt_builder.dart';
 export 'world_state_manager.dart';
 export 'script_validator.dart';
+export 'narrative_style_manager.dart';
