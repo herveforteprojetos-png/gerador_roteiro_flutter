@@ -16,6 +16,37 @@ import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart'
 /// Parte da refatoração SOLID do GeminiService v7.6.64
 /// Renomeado de PromptBuilder para evitar conflito com prompts/prompt_builder.dart
 class ScriptPromptBuilder {
+  /// 🚫 Regras ANTI-REPETIÇÃO e ANTI-LOOP (CRÍTICO)
+  static const String antiRepetitionRules = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚫 REGRAS DE CONTINUIDADE (CRÍTICO - ÚLTIMA INSTRUÇÃO):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. **AVANCE O TEMPO:** Você está escrevendo a CONTINUAÇÃO. O bloco anterior 
+   já terminou a cena. NÃO reescreva o que acabou de acontecer. Comece 
+   IMEDIATAMENTE na próxima ação.
+
+2. **PROIBIDO RECAPITULAR:** Se o bloco anterior terminou com "Ele saiu da sala", 
+   o novo bloco DEVE começar com "No corredor..." ou "No dia seguinte...". 
+   NUNCA repita "Ele saiu da sala".
+
+3. **AÇÃO > PENSAMENTO:** Limite monólogos internos a no máximo 2 frases 
+   consecutivas. Foque no que os personagens FAZEM e FALAM.
+
+4. **SHOW, DON'T TELL:** Em vez de escrever "Ele estava nervoso", escreva 
+   "Suas mãos tremiam enquanto segurava o copo".
+
+5. **BLOCOS ANTERIORES JÁ EXISTEM:** Não reescreva parágrafos que já foram 
+   escritos. Se você lê "Kim Tae-jun saiu da sala" no contexto anterior, 
+   isso JÁ ACONTECEU. Pule para a PRÓXIMA cena.
+
+6. **RITMO CINEMATOGRÁFICO:** Alterne entre ação externa e reflexão interna. 
+   Máximo 2 parágrafos de pensamentos antes de voltar à ação concreta.
+
+🎬 REGRA DE OURO: CADA NOVO BLOCO = NOVA CENA OU AVANÇO DE TEMPO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+""";
+
   /// 📏 Regras de formatação para TTS (Text-to-Speech)
   static const String ttsFormattingRules = '''
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -358,7 +389,7 @@ $idadeInstrucao
       labels: labels,
     );
 
-    return '$perspectiveInstruction\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$worldStateContext$titleSection$compactPrompt$blockInfo';
+    return '$perspectiveInstruction\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$worldStateContext$titleSection$compactPrompt$blockInfo\n$antiRepetitionRules\n$ttsFormattingRules';
   }
 
   /// 🎬 Constrói seção do título

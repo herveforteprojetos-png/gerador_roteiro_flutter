@@ -77,7 +77,8 @@ class LlmClient {
   /// [apiKey]: Chave da API Gemini
   /// [model]: Modelo a ser usado (use [getModelForQuality] para obter)
   /// [maxTokens]: Máximo de tokens na resposta
-  /// [temperature]: Temperatura (criatividade) - padrão 0.8
+  /// [temperature]: Temperatura (criatividade) - padrão ajustado por modelo
+  /// [frequencyPenalty]: Penalidade de frequência para evitar repetições (0.0-2.0)
   ///
   /// Retorna: Texto gerado ou string vazia em caso de erro
   Future<String> generateText({
@@ -85,21 +86,52 @@ class LlmClient {
     required String apiKey,
     required String model,
     int maxTokens = 8192,
-    double temperature = 0.8,
+    double? temperature,
+    double? frequencyPenalty,
   }) async {
     try {
+      // Ajustar temperatura baseado no modelo se não especificado
+      final effectiveTemperature = temperature ?? _getDefaultTemperature(model);
+      final effectivePenalty = frequencyPenalty ?? _getDefaultFrequencyPenalty(model);
+
       final response = await _makeRequest(
         apiKey: apiKey,
         model: model,
         prompt: prompt,
         maxTokens: maxTokens,
-        temperature: temperature,
+        temperature: effectiveTemperature,
+        frequencyPenalty: effectivePenalty,
       );
 
       return response ?? '';
     } catch (e) {
       _log('❌ Erro em generateText: $e', level: 'error');
       rethrow;
+    }
+  }
+
+  /// 🎯 Obtém temperatura padrão otimizada por modelo
+  double _getDefaultTemperature(String model) {
+    if (model == modelFlash) {
+      // Flash: temperatura moderada para evitar repetições mas manter criatividade
+      return 0.6;
+    } else if (model == modelPro) {
+      // Pro: temperatura alta para máxima criatividade
+      return 0.8;
+    } else {
+      // Ultra: temperatura balanceada
+      return 0.7;
+    }
+  }
+
+  /// 🎯 Obtém frequency penalty padrão otimizado por modelo
+  double _getDefaultFrequencyPenalty(String model) {
+    if (model == modelFlash) {
+      // Flash: penalty moderado para evitar loops
+      return 0.3;
+    } else {
+      // Pro/Ultra: penalty leve
+      return 0.1;
     }
   }
 
@@ -145,12 +177,26 @@ class LlmClient {
     required String prompt,
     required int maxTokens,
     double temperature = 0.8,
+    double frequencyPenalty = 0.0,
   }) async {
     try {
       // Ajustar maxTokens para limites da API
       final adjustedMaxTokens = maxTokens < 8192
           ? 8192
           : min(maxTokens * 2, 32768);
+
+      // Configuração base
+      final generationConfig = <String, dynamic>{
+        'temperature': temperature,
+        'topK': 40,
+        'topP': 0.95,
+        'maxOutputTokens': adjustedMaxTokens,
+      };
+
+      // Adicionar frequencyPenalty se disponível (versão beta da API)
+      if (frequencyPenalty > 0.0) {
+        generationConfig['frequencyPenalty'] = frequencyPenalty;
+      }
 
       final resp = await _dio.post(
         'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent',
@@ -163,12 +209,7 @@ class LlmClient {
               ],
             },
           ],
-          'generationConfig': {
-            'temperature': temperature,
-            'topK': 40,
-            'topP': 0.95,
-            'maxOutputTokens': adjustedMaxTokens,
-          },
+          'generationConfig': generationConfig,
         },
       );
 
