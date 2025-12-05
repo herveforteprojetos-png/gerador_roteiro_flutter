@@ -46,11 +46,11 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     // Adicionar listeners para atualizar provider em tempo real
     apiKeyController.addListener(_onApiKeyChanged);
     titleController.addListener(() {
-      print('📝 titleController listener: Título = "${titleController.text}"');
+      debugPrint('📝 titleController listener: Título = "${titleController.text}"');
       ref
           .read(generationConfigProvider.notifier)
           .updateTitle(titleController.text);
-      print('✅ Provider atualizado com Título');
+      debugPrint('✅ Provider atualizado com Título');
     });
 
     // Carregar configurações salvas
@@ -135,11 +135,11 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     final apiKey = apiKeyController.text.trim();
 
     // ✅ ATUALIZAR O PROVIDER IMEDIATAMENTE (para habilitar botão)
-    print(
+    debugPrint(
       '🔑 _onApiKeyChanged: API Key = "${apiKey}" (${apiKey.length} chars)',
     );
     ref.read(generationConfigProvider.notifier).updateApiKey(apiKey);
-    print('✅ Provider atualizado com API Key');
+    debugPrint('✅ Provider atualizado com API Key');
   }
 
   @override

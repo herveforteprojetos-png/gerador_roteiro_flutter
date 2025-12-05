@@ -64,7 +64,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           state = AuthState.authenticated(updatedLicense);
         }
       } catch (e) {
-        print('Erro ao incrementar uso: $e');
+        debugPrint('Erro ao incrementar uso: $e');
       }
     }
   }

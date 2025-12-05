@@ -1,4 +1,4 @@
-Ôªøimport 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/generation_config.dart';
 import '../../data/models/localization_level.dart';
@@ -10,8 +10,8 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
           apiKey: '',
           model: 'gemini-2.5-pro',
           title: '',
-          tema: 'Vingan√ßa',
-          subtema: 'Vingan√ßa Destrutiva',
+          tema: 'VinganÁa',
+          subtema: 'VinganÁa Destrutiva',
           localizacao: '',
           personalizedTheme: '',
           usePersonalizedTheme: false,
@@ -19,23 +19,23 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
       );
 
   void updateApiKey(String apiKey) {
-    print('üîê updateApiKey chamado: "${apiKey}"');
+    debugPrint('?? updateApiKey chamado: "${apiKey}"');
     state = state.copyWith(apiKey: apiKey);
-    print('üîê state.apiKey agora √©: "${state.apiKey}"');
+    debugPrint('?? state.apiKey agora È: "${state.apiKey}"');
   }
 
   void updateOpenAIKey(String openAIKey) {
-    print(
-      'ü§ñ updateOpenAIKey chamado: "${openAIKey.isEmpty ? "(vazia)" : "***"}"',
+    debugPrint(
+      '?? updateOpenAIKey chamado: "${openAIKey.isEmpty ? "(vazia)" : "***"}"',
     );
     state = state.copyWith(openAIKey: openAIKey.isEmpty ? null : openAIKey);
-    print('ü§ñ state.openAIKey configurada');
+    debugPrint('?? state.openAIKey configurada');
   }
 
   void updateSelectedProvider(String provider) {
-    print('üéØ updateSelectedProvider chamado: "$provider"');
+    debugPrint('?? updateSelectedProvider chamado: "$provider"');
     state = state.copyWith(selectedProvider: provider);
-    print('üéØ state.selectedProvider agora √©: "${state.selectedProvider}"');
+    debugPrint('?? state.selectedProvider agora È: "${state.selectedProvider}"');
   }
 
   void updateModel(String model) {
@@ -44,22 +44,22 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
 
   void updateQualityMode(String mode) {
     state = state.copyWith(qualityMode: mode);
-    debugPrint('üîÑ Provider updateQualityMode($mode)');
-    debugPrint('üîç state.qualityMode = "${state.qualityMode}"');
+    debugPrint('?? Provider updateQualityMode($mode)');
+    debugPrint('?? state.qualityMode = "${state.qualityMode}"');
 
     final modelName = mode == 'flash'
-        ? 'Gemini 2.5-FLASH (R√°pido)'
+        ? 'Gemini 2.5-FLASH (R·pido)'
         : mode == 'ultra'
         ? 'Gemini 3.0-PRO PREVIEW (Ultra)'
         : 'Gemini 2.5-PRO (Qualidade)';
 
-    print('ü§ñ Modelo alterado para: $modelName');
+    debugPrint('?? Modelo alterado para: $modelName');
   }
 
   void updateTitle(String title) {
-    print('üì∞ updateTitle chamado: "${title}"');
+    debugPrint('?? updateTitle chamado: "${title}"');
     state = state.copyWith(title: title);
-    print('üì∞ state.title agora √©: "${state.title}"');
+    debugPrint('?? state.title agora È: "${state.title}"');
   }
 
   void updateTema(String tema) {
@@ -160,8 +160,8 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
       apiKey: currentApiKey,
       model: currentModel,
       title: '',
-      tema: 'Vingan√ßa',
-      subtema: 'Vingan√ßa Destrutiva',
+      tema: 'VinganÁa',
+      subtema: 'VinganÁa Destrutiva',
       localizacao: '',
       personalizedTheme: '',
       usePersonalizedTheme: false,
@@ -170,24 +170,24 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
   }
 
   bool get isValid {
-    // ‚úÖ VALIDA√á√ÉO SIMPLIFICADA: Apenas API Key + T√≠tulo s√£o obrigat√≥rios
-    // Tema, localiza√ß√£o e outros campos s√£o OPCIONAIS
+    // ? VALIDA«√O SIMPLIFICADA: Apenas API Key + TÌtulo s„o obrigatÛrios
+    // Tema, localizaÁ„o e outros campos s„o OPCIONAIS
     final apiKeyValid = state.apiKey.isNotEmpty;
     final titleValid = state.title.isNotEmpty;
     final quantityValid = state.quantity > 0;
     final result = apiKeyValid && titleValid && quantityValid;
 
-    print('üîç VALIDA√á√ÉO isValid:');
-    print(
-      '  ‚úÖ API Key: "${state.apiKey}" -> ${apiKeyValid ? "V√ÅLIDO" : "INV√ÅLIDO (vazio)"}',
+    debugPrint('?? VALIDA«√O isValid:');
+    debugPrint(
+      '  ? API Key: "${state.apiKey}" -> ${apiKeyValid ? "V¡LIDO" : "INV¡LIDO (vazio)"}',
     );
-    print(
-      '  ‚úÖ T√≠tulo: "${state.title}" -> ${titleValid ? "V√ÅLIDO" : "INV√ÅLIDO (vazio)"}',
+    debugPrint(
+      '  ? TÌtulo: "${state.title}" -> ${titleValid ? "V¡LIDO" : "INV¡LIDO (vazio)"}',
     );
-    print(
-      '  ‚úÖ Quantidade: ${state.quantity} -> ${quantityValid ? "V√ÅLIDO" : "INV√ÅLIDO"}',
+    debugPrint(
+      '  ? Quantidade: ${state.quantity} -> ${quantityValid ? "V¡LIDO" : "INV¡LIDO"}',
     );
-    print('  üéØ RESULTADO FINAL: ${result ? "‚úÖ V√ÅLIDO" : "‚ùå INV√ÅLIDO"}');
+    debugPrint('  ?? RESULTADO FINAL: ${result ? "? V¡LIDO" : "? INV¡LIDO"}');
 
     return result;
   }

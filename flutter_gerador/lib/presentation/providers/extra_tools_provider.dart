@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gerador/data/models/generation_config.dart';
 import 'package:flutter_gerador/data/services/gemini_service.dart';
@@ -48,16 +49,16 @@ class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
     final hasSourceText = state.srtSourceText != null;
     final textChanged = state.srtSourceText != currentScriptText;
 
-    print('🔍 Verificando validade do SRT:');
-    print('  - Tem SRT gerado: $hasGeneratedSrt');
-    print('  - Tem texto fonte: $hasSourceText');
-    print('  - Texto mudou: $textChanged');
-    print('  - SRT atual válido: ${state.isSrtValid}');
+    debugPrint('🔍 Verificando validade do SRT:');
+    debugPrint('  - Tem SRT gerado: $hasGeneratedSrt');
+    debugPrint('  - Tem texto fonte: $hasSourceText');
+    debugPrint('  - Texto mudou: $textChanged');
+    debugPrint('  - SRT atual válido: ${state.isSrtValid}');
 
     if (hasGeneratedSrt && textChanged) {
-      print('🔄 SRT invalidado: texto do roteiro foi editado');
-      print('  - Texto antigo: ${state.srtSourceText?.length ?? 0} chars');
-      print('  - Texto novo: ${currentScriptText.length} chars');
+      debugPrint('🔄 SRT invalidado: texto do roteiro foi editado');
+      debugPrint('  - Texto antigo: ${state.srtSourceText?.length ?? 0} chars');
+      debugPrint('  - Texto novo: ${currentScriptText.length} chars');
 
       state = state.copyWith(
         isSrtValid: false,
@@ -73,11 +74,11 @@ class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
   ) async {
     // Se não há SRT ou não é válido, regenera automaticamente
     if (state.generatedSRT == null || !state.isSrtValid) {
-      print('🔄 Auto-regenerando SRT...');
+      debugPrint('🔄 Auto-regenerando SRT...');
       try {
         return await generateSRTSubtitles(config, currentScriptText);
       } catch (e) {
-        print('❌ Erro na auto-regeneração do SRT: $e');
+        debugPrint('❌ Erro na auto-regeneração do SRT: $e');
         return null;
       }
     }
@@ -92,13 +93,13 @@ class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
     final shouldRegenerate =
         state.srtSourceText != scriptText || !state.isSrtValid;
 
-    print('🔄 generateSRTSubtitles chamado:');
-    print('  - Texto atual: ${scriptText.length} caracteres');
-    print(
+    debugPrint('🔄 generateSRTSubtitles chamado:');
+    debugPrint('  - Texto atual: ${scriptText.length} caracteres');
+    debugPrint(
       '  - Texto fonte SRT: ${state.srtSourceText?.length ?? 0} caracteres',
     );
-    print('  - SRT válido: ${state.isSrtValid}');
-    print('  - Deve regenerar: $shouldRegenerate');
+    debugPrint('  - SRT válido: ${state.isSrtValid}');
+    debugPrint('  - Deve regenerar: $shouldRegenerate');
 
     // 🔄 SEMPRE limpar SRT anterior para garantir regeneração com texto atual
     state = state.copyWith(
@@ -150,18 +151,18 @@ class ExtraToolsNotifier extends StateNotifier<ExtraToolsState> {
     GenerationConfig config,
     String scriptText,
   ) async {
-    print('🎬 ExtraTools: Iniciando geração YouTube Description');
-    print(
+    debugPrint('🎬 ExtraTools: Iniciando geração YouTube Description');
+    debugPrint(
       '  📋 Config: ${config.title}, ${config.language}, API Key: ${config.apiKey.isNotEmpty ? "Present" : "Missing"}',
     );
-    print('  📝 Script length: ${scriptText.length} chars');
+    debugPrint('  📝 Script length: ${scriptText.length} chars');
 
     state = state.copyWith(isGeneratingYouTube: true, youtubeError: null);
 
     try {
-      print('🏷️ Gerando language tag para: ${config.language}');
+      debugPrint('🏷️ Gerando language tag para: ${config.language}');
       final languageTag = _getLanguageTag(config.language);
-      print('✅ Language tag gerada: $languageTag');
+      debugPrint('✅ Language tag gerada: $languageTag');
 
       final youtubePrompt =
           '''
@@ -208,7 +209,7 @@ $scriptText
 - ✅ Separe as tags com vírgula: tag1, tag2, tag3
 ''';
 
-      print('📤 Enviando para Gemini (Flash fixo)...');
+      debugPrint('📤 Enviando para Gemini (Flash fixo)...');
       final response = await _geminiService.generateTextWithApiKey(
         prompt: youtubePrompt,
         apiKey: config.apiKey,
@@ -216,8 +217,8 @@ $scriptText
             'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
       );
 
-      print('✅ Resposta recebida do Gemini');
-      print('📊 Response length: ${response.length} chars');
+      debugPrint('✅ Resposta recebida do Gemini');
+      debugPrint('📊 Response length: ${response.length} chars');
 
       state = state.copyWith(
         isGeneratingYouTube: false,
@@ -226,7 +227,7 @@ $scriptText
 
       return response;
     } catch (e) {
-      print('❌ ERRO na geração YouTube: $e');
+      debugPrint('❌ ERRO na geração YouTube: $e');
       state = state.copyWith(
         isGeneratingYouTube: false,
         youtubeError: 'Erro ao gerar descrição: ${e.toString()}',
@@ -453,11 +454,11 @@ OU se foi consistente:
     GenerationConfig config,
     String scriptText,
   ) async {
-    print('🎬 ExtraTools: Iniciando geração CENAS PRINCIPAIS (v7.6.13)');
-    print(
+    debugPrint('🎬 ExtraTools: Iniciando geração CENAS PRINCIPAIS (v7.6.13)');
+    debugPrint(
       '  📋 Config: ${config.title}, ${config.language}, API Key: ${config.apiKey.isNotEmpty ? "Present" : "Missing"}',
     );
-    print('  📝 Script length: ${scriptText.length} chars');
+    debugPrint('  📝 Script length: ${scriptText.length} chars');
 
     state = state.copyWith(isGeneratingScenario: true, scenarioError: null);
 
@@ -652,7 +653,7 @@ Exemplo:
 **IMPORTANTE:** Cada prompt deve ser PHOTOREALISTIC (não cinematográfico artificial), com iluminação natural, pronto para colar diretamente no Midjourney!
 ''';
 
-      print('📤 Enviando key scenes prompts para Gemini (Flash fixo)...');
+      debugPrint('📤 Enviando key scenes prompts para Gemini (Flash fixo)...');
       final result = await _geminiService.generateTextWithApiKey(
         prompt: keyScenesPrompt,
         apiKey: config.apiKey,
@@ -660,8 +661,8 @@ Exemplo:
             'gemini-2.5-flash', // 🚀 v7.6.60: Sempre Flash para ferramentas extras (independente do modo)
       );
 
-      print('✅ Resposta key scenes recebida do Gemini');
-      print('📊 Result length: ${result.length} chars');
+      debugPrint('✅ Resposta key scenes recebida do Gemini');
+      debugPrint('📊 Result length: ${result.length} chars');
 
       state = state.copyWith(
         isGeneratingScenario: false,
@@ -670,7 +671,7 @@ Exemplo:
 
       return result;
     } catch (e) {
-      print('❌ ERRO na geração Key Scenes: $e');
+      debugPrint('❌ ERRO na geração Key Scenes: $e');
       state = state.copyWith(
         isGeneratingScenario: false,
         scenarioError:

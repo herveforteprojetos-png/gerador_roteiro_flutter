@@ -294,12 +294,12 @@ class ProtectedLicenseService {
 
   // Status das ativações (admin)
   static void printActivationStatus() {
-    print('\n${'=' * 60}');
-    print('STATUS DAS ATIVAÇÕES - CONTROLE ANTI-PIRATARIA');
-    print('=' * 60);
+    debugPrint('\n${'=' * 60}');
+    debugPrint('STATUS DAS ATIVAÇÕES - CONTROLE ANTI-PIRATARIA');
+    debugPrint('=' * 60);
 
     if (_globalActivations.isEmpty) {
-      print('Nenhuma licença ativada ainda.');
+      debugPrint('Nenhuma licença ativada ainda.');
       return;
     }
 
@@ -307,12 +307,12 @@ class ProtectedLicenseService {
       final licenseKey = entry.key;
       final data = entry.value;
 
-      print('\n📄 Licença: $licenseKey');
-      print('   🖥️  Dispositivo: ${data['deviceId']}');
-      print('   📅 Ativada: ${data['activatedAt']}');
-      print('   ⏰ Último uso: ${data['lastUsed']}');
+      debugPrint('\n📄 Licença: $licenseKey');
+      debugPrint('   🖥️  Dispositivo: ${data['deviceId']}');
+      debugPrint('   📅 Ativada: ${data['activatedAt']}');
+      debugPrint('   ⏰ Último uso: ${data['lastUsed']}');
     }
 
-    print('\n${'=' * 60}');
+    debugPrint('\n${'=' * 60}');
   }
 }

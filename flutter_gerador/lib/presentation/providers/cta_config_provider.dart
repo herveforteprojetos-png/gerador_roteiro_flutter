@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -291,8 +292,8 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
       final geminiService = GeminiService();
       final scriptConfig = ref.read(scriptConfigProvider);
 
-      print('🎯 [CTA Provider] Gerando CTAs - Tipos solicitados: $ctaTypes');
-      print('🎯 [CTA Provider] Mapa de IDs: $ctaIdMap');
+      debugPrint('🎯 [CTA Provider] Gerando CTAs - Tipos solicitados: $ctaTypes');
+      debugPrint('🎯 [CTA Provider] Mapa de IDs: $ctaIdMap');
 
       // 🎯 v7.6.51: Pipeline Modelo Único - usar mesmo modelo do config
       final generatedCtas = await geminiService.generateCtasForScript(
@@ -307,12 +308,12 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
             scriptConfig.qualityMode, // 🎯 v7.6.51: Pipeline Modelo Único
       );
 
-      print(
+      debugPrint(
         '🎯 [CTA Provider] CTAs recebidos do Gemini: ${generatedCtas.keys.toList()}',
       );
-      print('🎯 [CTA Provider] Total de CTAs: ${generatedCtas.length}');
+      debugPrint('🎯 [CTA Provider] Total de CTAs: ${generatedCtas.length}');
       generatedCtas.forEach((key, value) {
-        print(
+        debugPrint(
           '🎯 [CTA Provider] $key: ${value.substring(0, value.length > 50 ? 50 : value.length)}...',
         );
       });
@@ -326,7 +327,7 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
           for (final entry in ctaIdMap.entries) {
             if (entry.value == cta.id && generatedCtas.containsKey(entry.key)) {
               generatedContent = generatedCtas[entry.key];
-              print(
+              debugPrint(
                 '✅ [CTA Provider] Match encontrado: ${entry.key} → ${cta.title}',
               );
               break;
@@ -334,12 +335,12 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
           }
 
           if (generatedContent != null) {
-            print(
+            debugPrint(
               '✅ [CTA Provider] Atualizando CTA "${cta.title}" com conteúdo gerado',
             );
             updatedCtas.add(cta.copyWith(content: generatedContent));
           } else {
-            print(
+            debugPrint(
               '⚠️ [CTA Provider] Nenhum conteúdo gerado para CTA "${cta.title}"',
             );
             updatedCtas.add(cta);

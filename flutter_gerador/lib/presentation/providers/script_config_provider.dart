@@ -1,4 +1,5 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/models/localization_level.dart';
 
@@ -8,12 +9,12 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
           apiKey: '',
           model: 'gemini-2.5-pro',
           title: '',
-          tema: 'História',
-          subtema: 'Narrativa Básica',
+          tema: 'Hist�ria',
+          subtema: 'Narrativa B�sica',
           localizacao: '',
           measureType: 'palavras',
           quantity: 2000,
-          language: 'Português',
+          language: 'Portugu�s',
           perspective: 'terceira_pessoa',
           localizationLevel: LocalizationLevel.national,
           startWithTitlePhrase: false, // NOVO: Default false
@@ -21,32 +22,32 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
           secondaryCharacterName: '',
         ));
 
-  // 🚨 FUNÇÃO PARA DETECTAR IDIOMAS PROBLEMÁTICOS
+  // ?? FUN��O PARA DETECTAR IDIOMAS PROBLEM�TICOS
   String _getOptimalModelForLanguage(String language, String currentModel) {
-    // Idiomas do leste europeu que têm problemas com filtros de conteúdo do Pro
-    const problematicLanguages = ['Búlgaro', 'Polonês', 'Croata', 'Romeno', 'Turco', 'Russo'];
+    // Idiomas do leste europeu que t�m problemas com filtros de conte�do do Pro
+    const problematicLanguages = ['B�lgaro', 'Polon�s', 'Croata', 'Romeno', 'Turco', 'Russo'];
     
     if (problematicLanguages.contains(language)) {
-      // CORREÇÃO: Sempre usar 2.5 Pro para qualidade máxima
-      return 'gemini-2.5-pro'; // ÚNICO MODELO DISPONÍVEL: Pro 2.5
+      // CORRE��O: Sempre usar 2.5 Pro para qualidade m�xima
+      return 'gemini-2.5-pro'; // �NICO MODELO DISPON�VEL: Pro 2.5
     }
     
-    // Para outros idiomas, manter o modelo escolhido pelo usuário
+    // Para outros idiomas, manter o modelo escolhido pelo usu�rio
     return currentModel;
   }
 
-  // Lista de temas disponíveis
+  // Lista de temas dispon�veis
   static const List<String> temas = [
-    'História',
-    'Ciência',
-    'Saúde',
+    'Hist�ria',
+    'Ci�ncia',
+    'Sa�de',
     'Tecnologia',
     'Natureza',
-    'Mistério/Suspense',
+    'Mist�rio/Suspense',
     'Terror/Sobrenatural',
-    'Ficção Científica',
+    'Fic��o Cient�fica',
     'Drama/Romance',
-    'Comédia/Humor',
+    'Com�dia/Humor',
     'Curiosidades',
     'Biografias',
     'Viagens/Lugares',
@@ -57,13 +58,13 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
   }
 
   void updateModel(String value) {
-    // 🚨 VERIFICAÇÃO: Sempre usar Pro 2.5 para qualidade máxima
+    // ?? VERIFICA��O: Sempre usar Pro 2.5 para qualidade m�xima
     final finalModel = _getOptimalModelForLanguage(state.language, value);
     state = state.copyWith(model: finalModel);
     
-    // 🚨 AVISO se modelo foi sobrescrito
+    // ?? AVISO se modelo foi sobrescrito
     if (finalModel != value) {
-      print('🚨 ScriptConfig: Modelo $value não compatível com idioma ${state.language} - usando $finalModel');
+      debugPrint('?? ScriptConfig: Modelo $value n�o compat�vel com idioma ${state.language} - usando $finalModel');
     }
   }
 
@@ -79,7 +80,7 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
     state = state.copyWith(localizacao: value);
   }
 
-  // Context removido - método não é mais necessário
+  // Context removido - m�todo n�o � mais necess�rio
 
   void updateMeasureType(String value) {
     state = state.copyWith(measureType: value);
@@ -90,21 +91,21 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
   }
 
   void updateLanguage(String value) {
-    // 🚨 AJUSTE AUTOMÁTICO: Sempre usar Pro 2.5 para qualidade máxima
+    // ?? AJUSTE AUTOM�TICO: Sempre usar Pro 2.5 para qualidade m�xima
     final optimalModel = _getOptimalModelForLanguage(value, state.model);
     final previousModel = state.model;
 
     state = state.copyWith(language: value, model: optimalModel);
 
     if (optimalModel != previousModel) {
-      print('🚨 ScriptConfig: Idioma $value detectado - modelo mudado automaticamente para $optimalModel');
+      debugPrint('?? ScriptConfig: Idioma $value detectado - modelo mudado automaticamente para $optimalModel');
     }
   }
 
   void updateQualityMode(String mode) {
-    // Atualizar qualityMode que será usado pelo gemini_service
+    // Atualizar qualityMode que ser� usado pelo gemini_service
     state = state.copyWith(qualityMode: mode);
-    print('🤖 ScriptConfig: Modelo alterado para ${mode == "pro" ? "2.5-PRO (Qualidade Máxima)" : "2.5-FLASH (4x Mais Rápido)"}');
+    debugPrint('?? ScriptConfig: Modelo alterado para ${mode == "pro" ? "2.5-PRO (Qualidade M�xima)" : "2.5-FLASH (4x Mais R�pido)"}');
   }
 
   void updatePerspective(String value) {

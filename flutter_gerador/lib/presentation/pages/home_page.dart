@@ -180,13 +180,13 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   /// Alterna o bloqueio do scroll do roteiro
   void _toggleScriptScrollLock() {
-    print(
+    debugPrint(
       '?? Alternando scroll lock de $_isScriptScrollLocked para ${!_isScriptScrollLocked}',
     );
     setState(() {
       _isScriptScrollLocked = !_isScriptScrollLocked;
     });
-    print('? Novo estado: $_isScriptScrollLocked');
+    debugPrint('? Novo estado: $_isScriptScrollLocked');
   }
 
   Future<void> _showExpandedScriptEditor(
