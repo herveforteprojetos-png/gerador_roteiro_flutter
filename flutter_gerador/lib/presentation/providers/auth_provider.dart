@@ -10,7 +10,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _checkSavedLicense() async {
     state = const AuthState.loading();
-    
+
     try {
       final savedLicense = await ProtectedLicenseService.loadSavedLicenseData();
       if (savedLicense != null && savedLicense.isValid) {
@@ -25,19 +25,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> login(String licenseKey) async {
     state = const AuthState.loading();
-    
+
     try {
       final cleanKey = licenseKey.trim().toUpperCase();
       if (kDebugMode) debugPrint('Debug - Tentando validar chave: $cleanKey');
-      
+
       final license = await ProtectedLicenseService.validateLicense(cleanKey);
-      
+
       if (license != null) {
-        if (kDebugMode) debugPrint('Debug - Licença válida encontrada: ${license.clientName}');
+        if (kDebugMode) {
+          debugPrint(
+            'Debug - Licença válida encontrada: ${license.clientName}',
+          );
+        }
         await ProtectedLicenseService.saveLicenseData(license);
         state = AuthState.authenticated(license);
       } else {
-        if (kDebugMode) debugPrint('Debug - Licença não encontrada ou inválida para: $cleanKey');
+        if (kDebugMode) {
+          debugPrint(
+            'Debug - Licença não encontrada ou inválida para: $cleanKey',
+          );
+        }
         state = const AuthState.error('Chave de licença inválida ou expirada');
       }
     } catch (e) {
@@ -59,12 +67,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final currentState = state;
     if (currentState is AuthenticatedState) {
       try {
-        final updatedLicense = await ProtectedLicenseService.incrementUsage(currentState.license.licenseKey);
+        final updatedLicense = await ProtectedLicenseService.incrementUsage(
+          currentState.license.licenseKey,
+        );
         if (updatedLicense != null) {
           state = AuthState.authenticated(updatedLicense);
         }
       } catch (e) {
-        debugPrint('Erro ao incrementar uso: $e');
+        if (kDebugMode) debugPrint('Erro ao incrementar uso: $e');
       }
     }
   }
@@ -96,11 +106,13 @@ sealed class AuthState {
 
   const factory AuthState.loading() = LoadingState;
   const factory AuthState.unauthenticated() = UnauthenticatedState;
-  const factory AuthState.authenticated(LicenseModel license) = AuthenticatedState;
+  const factory AuthState.authenticated(LicenseModel license) =
+      AuthenticatedState;
   const factory AuthState.error(String message) = ErrorState;
-  
+
   bool get isAuthenticated => this is AuthenticatedState;
-  LicenseModel? get license => this is AuthenticatedState ? (this as AuthenticatedState).license : null;
+  LicenseModel? get license =>
+      this is AuthenticatedState ? (this as AuthenticatedState).license : null;
 }
 
 class LoadingState extends AuthState {
@@ -114,13 +126,13 @@ class UnauthenticatedState extends AuthState {
 class AuthenticatedState extends AuthState {
   @override
   final LicenseModel license;
-  
+
   const AuthenticatedState(this.license);
 }
 
 class ErrorState extends AuthState {
   final String message;
-  
+
   const ErrorState(this.message);
 }
 

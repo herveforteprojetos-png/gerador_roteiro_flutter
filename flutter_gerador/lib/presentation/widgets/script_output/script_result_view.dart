@@ -38,7 +38,6 @@ class ScriptResultView extends StatefulWidget {
 }
 
 class _ScriptResultViewState extends State<ScriptResultView> {
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -47,10 +46,30 @@ class _ScriptResultViewState extends State<ScriptResultView> {
           height: 120,
           child: Row(
             children: [
-              Expanded(child: MetricCard(title: 'Palavras', value: '${widget.wordCount}')),
-              Expanded(child: MetricCard(title: 'Caracteres', value: '${widget.charCount}')),
-              Expanded(child: MetricCard(title: 'Parágrafos', value: '${widget.paragraphCount}')),
-              Expanded(child: MetricCard(title: 'Tempo Leitura', value: '${widget.readingTime}min')),
+              Expanded(
+                child: MetricCard(
+                  title: 'Palavras',
+                  value: '${widget.wordCount}',
+                ),
+              ),
+              Expanded(
+                child: MetricCard(
+                  title: 'Caracteres',
+                  value: '${widget.charCount}',
+                ),
+              ),
+              Expanded(
+                child: MetricCard(
+                  title: 'Parágrafos',
+                  value: '${widget.paragraphCount}',
+                ),
+              ),
+              Expanded(
+                child: MetricCard(
+                  title: 'Tempo Leitura',
+                  value: '${widget.readingTime}min',
+                ),
+              ),
             ],
           ),
         ),
@@ -67,18 +86,20 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: const Color.fromRGBO(0, 0, 0, 0.3),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: SingleChildScrollView(
                     child: SelectableText(
-                      key: ValueKey(widget.scriptController.text.length), // 🚀 OTIMIZAÇÃO: Previne rebuilds desnecessários
-                      widget.scriptController.text.isEmpty 
-                          ? 'Seu roteiro aparecerá aqui...' 
+                      key: ValueKey(
+                        widget.scriptController.text.length,
+                      ), // 🚀 OTIMIZAÇÃO: Previne rebuilds desnecessários
+                      widget.scriptController.text.isEmpty
+                          ? 'Seu roteiro aparecerá aqui...'
                           : widget.scriptController.text,
                       style: TextStyle(
-                        color: widget.scriptController.text.isEmpty 
-                            ? Colors.white.withValues(alpha: 0.5) 
+                        color: widget.scriptController.text.isEmpty
+                            ? const Color.fromRGBO(255, 255, 255, 0.5)
                             : Colors.white,
                         fontSize: 14,
                         height: 1.5,
@@ -91,11 +112,13 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                   top: 8,
                   right: 8,
                   child: IconButton(
-                    onPressed: () => _showExpandedEditor(context),
+                    onPressed: () {
+                      _showExpandedEditor(context);
+                    },
                     icon: const Icon(Icons.edit, color: AppColors.fireOrange),
                     tooltip: 'Expandir para edição',
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.black.withValues(alpha: 0.7),
+                      backgroundColor: const Color.fromRGBO(0, 0, 0, 0.7),
                       padding: const EdgeInsets.all(8),
                     ),
                   ),
@@ -115,11 +138,16 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                   final directory = await getApplicationDocumentsDirectory();
                   final file = File('${directory.path}/roteiro.txt');
                   await file.writeAsString(text);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Arquivo TXT salvo!')));
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Arquivo TXT salvo!')),
+                  );
                 },
                 icon: const Icon(Icons.download),
                 label: const Text('Download TXT'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.fireOrange),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.fireOrange,
+                ),
               ),
               OutlinedButton.icon(
                 onPressed: () {
@@ -132,15 +160,17 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                           SimpleDialogOption(
                             child: const Text('Gerar SRT'),
                             onPressed: () {
-                              Navigator.of(ctx).pop();
+                              final navigator = Navigator.of(ctx);
+                              final currentContext = context;
+                              navigator.pop();
                               showDialog(
-                                context: context,
+                                context: currentContext,
                                 builder: (_) => SrtGeneratorDialog(
                                   scriptController: widget.scriptController,
                                   onGenerateSrt: (srtContent) {
                                     // Criar um novo dialog para mostrar o resultado SRT
                                     showDialog(
-                                      context: context,
+                                      context: currentContext,
                                       builder: (_) => AlertDialog(
                                         title: const Text('SRT Gerado'),
                                         content: SizedBox(
@@ -149,21 +179,32 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                                           child: SingleChildScrollView(
                                             child: SelectableText(
                                               srtContent,
-                                              style: const TextStyle(fontFamily: 'monospace'),
+                                              style: const TextStyle(
+                                                fontFamily: 'monospace',
+                                              ),
                                             ),
                                           ),
                                         ),
                                         actions: [
                                           TextButton(
-                                            onPressed: () => Navigator.of(context).pop(),
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(),
                                             child: const Text('Fechar'),
                                           ),
                                           ElevatedButton(
                                             onPressed: () async {
                                               // Copiar para clipboard
-                                              await Clipboard.setData(ClipboardData(text: srtContent));
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('SRT copiado para a área de transferência!')),
+                                              await Clipboard.setData(
+                                                ClipboardData(text: srtContent),
+                                              );
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'SRT copiado para a área de transferência!',
+                                                  ),
+                                                ),
                                               );
                                             },
                                             child: const Text('Copiar'),
@@ -185,7 +226,6 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                                 builder: (_) => CharacterPromptDialog(
                                   characterController: TextEditingController(),
                                   onGeneratePrompt: () {
-                                    // TODO: Implementar prompt de personagem
                                     Navigator.of(context).pop();
                                   },
                                 ),
@@ -201,7 +241,6 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                                 builder: (_) => ScenarioPromptDialog(
                                   scenarioController: TextEditingController(),
                                   onGeneratePrompt: () {
-                                    // TODO: Implementar prompt de cenário
                                     Navigator.of(context).pop();
                                   },
                                 ),
@@ -215,7 +254,9 @@ class _ScriptResultViewState extends State<ScriptResultView> {
                 },
                 icon: const Icon(Icons.build),
                 label: const Text('Ferramentas Extras'),
-                style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.fireOrange)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.fireOrange),
+                ),
               ),
             ],
           ),
@@ -228,9 +269,8 @@ class _ScriptResultViewState extends State<ScriptResultView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => _ExpandedScriptEditor(
-        scriptController: widget.scriptController,
-      ),
+      builder: (context) =>
+          _ExpandedScriptEditor(scriptController: widget.scriptController),
     );
   }
 }
@@ -249,9 +289,19 @@ class MetricCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(title, style: const TextStyle(color: Colors.white, fontSize: 12)),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
             const SizedBox(height: 4),
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
@@ -263,12 +313,11 @@ class MetricCard extends StatelessWidget {
 class _ExpandedScriptEditor extends ConsumerStatefulWidget {
   final TextEditingController scriptController;
 
-  const _ExpandedScriptEditor({
-    required this.scriptController,
-  });
+  const _ExpandedScriptEditor({required this.scriptController});
 
   @override
-  ConsumerState<_ExpandedScriptEditor> createState() => _ExpandedScriptEditorState();
+  ConsumerState<_ExpandedScriptEditor> createState() =>
+      _ExpandedScriptEditorState();
 }
 
 class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
@@ -305,11 +354,11 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
     setState(() {
       _hasChanges = false;
     });
-    
+
     // 🔄 Invalidar SRT se texto mudou
     final extraNotifier = ref.read(extraToolsProvider.notifier);
     extraNotifier.invalidateSrtIfTextChanged(_editController.text);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Roteiro salvo com sucesso!'),
@@ -325,9 +374,15 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Descartar Alterações?'),
-          content: const Text('Você tem alterações não salvas. Deseja realmente descartar?'),
+          content: const Text(
+            'Você tem alterações não salvas. Deseja realmente descartar?',
+          ),
           backgroundColor: Colors.grey[900],
-          titleTextStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          titleTextStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
           contentTextStyle: const TextStyle(color: Colors.white70),
           actions: [
             TextButton(
@@ -359,18 +414,21 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
   @override
   Widget build(BuildContext context) {
     return Dialog.fullscreen(
-      backgroundColor: Colors.black.withValues(alpha: 0.95),
+      backgroundColor: const Color.fromRGBO(0, 0, 0, 0.95),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          backgroundColor: Colors.black.withValues(alpha: 0.8),
+          backgroundColor: const Color.fromRGBO(0, 0, 0, 0.8),
           title: Row(
             children: [
               Icon(Icons.edit_note, color: AppColors.fireOrange),
               const SizedBox(width: 8),
               const Text(
                 'Editor de Roteiro',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -393,9 +451,11 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: AppColors.fireOrange.withValues(alpha: 0.2),
+                color: const Color.fromRGBO(255, 107, 53, 0.2),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.5)),
+                border: Border.all(
+                  color: const Color.fromRGBO(255, 107, 53, 0.5),
+                ),
               ),
               child: Text(
                 '${_editController.text.length} chars | ${_editController.text.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length} palavras',
@@ -415,7 +475,10 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.fireOrange,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                 ),
               ),
             const SizedBox(width: 16),
@@ -434,7 +497,7 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.3)),
+        border: Border.all(color: const Color.fromRGBO(255, 107, 53, 0.3)),
       ),
       child: TextField(
         controller: _editController,
@@ -464,13 +527,13 @@ class _ExpandedScriptEditorState extends ConsumerState<_ExpandedScriptEditor> {
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.fireOrange.withValues(alpha: 0.3)),
+        border: Border.all(color: const Color.fromRGBO(255, 107, 53, 0.3)),
       ),
       child: SingleChildScrollView(
         child: SelectableText(
-          _editController.text.isEmpty 
-            ? 'Nenhum conteúdo para visualizar...'
-            : _editController.text,
+          _editController.text.isEmpty
+              ? 'Nenhum conteúdo para visualizar...'
+              : _editController.text,
           style: TextStyle(
             color: _editController.text.isEmpty ? Colors.grey : Colors.white,
             fontSize: 16,

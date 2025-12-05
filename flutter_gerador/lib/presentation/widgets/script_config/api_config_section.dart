@@ -20,7 +20,9 @@ class ApiConfigSection extends StatefulWidget {
 
 class _ApiConfigSectionState extends State<ApiConfigSection> {
   String? _apiError;
-  bool get _isApiKeyValid => widget.apiKeyController.text.isNotEmpty && widget.apiKeyController.text.length >= 20;
+  bool get _isApiKeyValid =>
+      widget.apiKeyController.text.isNotEmpty &&
+      widget.apiKeyController.text.length >= 20;
 
   @override
   void initState() {
@@ -81,8 +83,16 @@ class _ApiConfigSectionState extends State<ApiConfigSection> {
           initialValue: widget.selectedModel,
           decoration: InputDecoration(labelText: AppStrings.modelLabel),
           items: const [
-            DropdownMenuItem(value: 'gemini-2.5-pro', child: Text('Gemini 2.5 Pro 🏆 (Qualidade Máxima - Único Disponível)')),
-            DropdownMenuItem(value: 'gemini-2.5-pro', child: Text('Gemini 2.5 Pro 🏆 (Melhor Qualidade)')),
+            DropdownMenuItem(
+              value: 'gemini-2.5-pro',
+              child: Text(
+                'Gemini 2.5 Pro 🏆 (Qualidade Máxima - Único Disponível)',
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'gemini-2.5-pro',
+              child: Text('Gemini 2.5 Pro 🏆 (Melhor Qualidade)'),
+            ),
           ],
           onChanged: widget.onModelChanged,
         ),

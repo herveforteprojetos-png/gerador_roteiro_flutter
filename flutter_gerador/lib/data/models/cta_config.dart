@@ -6,18 +6,18 @@ part 'cta_config.g.dart';
 enum CtaPosition {
   @JsonValue('beginning')
   beginning('beginning', 'Início do roteiro'),
-  
+
   @JsonValue('middle')
   middle('middle', 'Meio do roteiro'),
-  
+
   @JsonValue('end')
   end('end', 'Final do roteiro'),
-  
+
   @JsonValue('custom')
   custom('custom', 'Posição personalizada');
 
   const CtaPosition(this.value, this.displayName);
-  
+
   final String value;
   final String displayName;
 }
@@ -26,12 +26,12 @@ enum CtaPosition {
 enum CtaGenerationType {
   @JsonValue('automatic')
   automatic('automatic', 'Automático (baseado no conteúdo)'),
-  
+
   @JsonValue('manual')
   manual('manual', 'Manual (personalizado)');
 
   const CtaGenerationType(this.value, this.displayName);
-  
+
   final String value;
   final String displayName;
 }
@@ -121,14 +121,16 @@ class CtaItem {
       content: content ?? this.content,
       position: position ?? this.position,
       generationType: generationType ?? this.generationType,
-      customPositionPercentage: customPositionPercentage ?? this.customPositionPercentage,
+      customPositionPercentage:
+          customPositionPercentage ?? this.customPositionPercentage,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
   }
 
   /// Check if CTA needs content generation
-  bool get needsGeneration => generationType == CtaGenerationType.automatic && content.isEmpty;
+  bool get needsGeneration =>
+      generationType == CtaGenerationType.automatic && content.isEmpty;
 
   /// Get position description for UI
   String get positionDescription {
@@ -138,15 +140,14 @@ class CtaItem {
     return position.displayName;
   }
 
-  factory CtaItem.fromJson(Map<String, dynamic> json) => _$CtaItemFromJson(json);
+  factory CtaItem.fromJson(Map<String, dynamic> json) =>
+      _$CtaItemFromJson(json);
   Map<String, dynamic> toJson() => _$CtaItemToJson(this);
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is CtaItem &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
+      other is CtaItem && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;
@@ -169,11 +170,7 @@ class CtaConfig {
 
   /// Create empty CTA configuration
   factory CtaConfig.empty() {
-    return CtaConfig(
-      ctas: [],
-      isEnabled: true,
-      updatedAt: DateTime.now(),
-    );
+    return CtaConfig(ctas: [], isEnabled: true, updatedAt: DateTime.now());
   }
 
   /// Create default CTA configuration with common CTAs
@@ -189,10 +186,7 @@ class CtaConfig {
           title: 'CTA de Engajamento',
           position: CtaPosition.middle,
         ),
-        CtaItem.createAutomatic(
-          title: 'CTA Final',
-          position: CtaPosition.end,
-        ),
+        CtaItem.createAutomatic(title: 'CTA Final', position: CtaPosition.end),
       ],
       isEnabled: true,
       updatedAt: now,
@@ -203,7 +197,7 @@ class CtaConfig {
   List<CtaItem> get enabledCtas => ctas.where((cta) => cta.isEnabled).toList();
 
   /// Get CTAs that need content generation
-  List<CtaItem> get ctasNeedingGeneration => 
+  List<CtaItem> get ctasNeedingGeneration =>
       enabledCtas.where((cta) => cta.needsGeneration).toList();
 
   /// Check if can add more CTAs
@@ -217,10 +211,8 @@ class CtaConfig {
     if (!canAddMore) {
       throw Exception('Maximum number of CTAs ($maxCtas) reached');
     }
-    
-    return copyWith(
-      ctas: [...ctas, cta],
-    );
+
+    return copyWith(ctas: [...ctas, cta]);
   }
 
   /// Update an existing CTA
@@ -238,9 +230,7 @@ class CtaConfig {
 
   /// Remove a CTA
   CtaConfig removeCta(String ctaId) {
-    return copyWith(
-      ctas: ctas.where((cta) => cta.id != ctaId).toList(),
-    );
+    return copyWith(ctas: ctas.where((cta) => cta.id != ctaId).toList());
   }
 
   /// Copy with method for updates
@@ -258,7 +248,8 @@ class CtaConfig {
     );
   }
 
-  factory CtaConfig.fromJson(Map<String, dynamic> json) => _$CtaConfigFromJson(json);
+  factory CtaConfig.fromJson(Map<String, dynamic> json) =>
+      _$CtaConfigFromJson(json);
   Map<String, dynamic> toJson() => _$CtaConfigToJson(this);
 
   @override
