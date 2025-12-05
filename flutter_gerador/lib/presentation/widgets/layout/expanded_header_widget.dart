@@ -589,7 +589,7 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                         SizedBox(
                           height: AppDesignSystem.fieldHeight,
                           child: DropdownButtonFormField<String>(
-                            value: ref
+                            initialValue: ref
                                 .watch(generationConfigProvider)
                                 .qualityMode,
                             style: AppDesignSystem.bodyMedium,

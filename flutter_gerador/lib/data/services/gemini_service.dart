@@ -3241,8 +3241,9 @@ no vasto manto azul do infinito."
     int blockNumber,
   ) {
     final protagonistName = config.protagonistName.trim();
-    if (protagonistName.isEmpty)
+    if (protagonistName.isEmpty) {
       return true; // Sem protagonista configurada = ok
+    }
 
     // 🚨 NOVA VALIDAÇÃO: Detectar auto-apresentações com nomes errados
     // Padrões: "my name is X", "i'm X", "call me X"
