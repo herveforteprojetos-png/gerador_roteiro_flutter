@@ -7,62 +7,65 @@ import 'package:flutter_gerador/data/models/script_result.dart';
 import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/data/models/localization_level.dart';
 import 'package:flutter_gerador/data/models/debug_log.dart';
-import 'gemini/gemini_modules.dart'; // 🆕 v7.6.35: Inclui PostGenerationFixer via barrel
+import 'gemini/gemini_modules.dart'; // ?? v7.6.35: Inclui PostGenerationFixer via barrel
 
-// 🚀 NOVOS MÓDULOS DE PROMPTS (Refatoração v2.0)
+// ?? NOVOS M�DULOS DE PROMPTS (Refatora��o v2.0)
 import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart';
 
-// 🏗️ v7.6.64: MÓDULOS REFATORADOS (Arquitetura SOLID)
+// ??? v7.6.64: M�DULOS REFATORADOS (Arquitetura SOLID)
 import 'package:flutter_gerador/data/services/scripting/scripting_modules.dart';
 
-// 🏗️ v7.6.65: MÓDULOS EXTRAÍDOS (Refatoração SOLID - Fase 1)
+// ??? v7.6.65: M�DULOS EXTRA�DOS (Refatora��o SOLID - Fase 1)
 import 'package:flutter_gerador/data/services/gemini/detection/detection_modules.dart';
 // ignore: unused_import
 import 'package:flutter_gerador/data/services/gemini/infra/infra_modules.dart'; // Para uso futuro
 
-/// 📝 Helper padronizado para logs (mantém emojis em debug, limpa em produção)
+// ??? v7.6.66: M�DULOS EXTRA�DOS (Refatora��o SOLID - Fase 2)
+import 'package:flutter_gerador/data/services/gemini/tools/tools_modules.dart';
+
+/// ?? Helper padronizado para logs (mant�m emojis em debug, limpa em produ��o)
 void _log(String message, {String level = 'info'}) {
   if (kDebugMode) {
-    // Debug: mantém emojis e formatação original
+    // Debug: mant�m emojis e formata��o original
     debugPrint(message);
   } else if (level == 'error' || level == 'critical') {
-    // Produção: apenas erros críticos, sem emojis
+    // Produ��o: apenas erros cr�ticos, sem emojis
     final cleaned = message
-        .replaceAll(RegExp(r'[🚨🔥✅❌⚠️💡📊🎯📝🔗📚]'), '')
+        .replaceAll(RegExp(r'[????????????????????]'), '')
         .trim();
     debugPrint('[${level.toUpperCase()}] $cleaned');
   }
-  // Produção: info/warning não logam (evita spam)
+  // Produ��o: info/warning n�o logam (evita spam)
 }
 
-/// 🏗️ v7.6.65: FUNÇÕES TOP-LEVEL DELEGANDO PARA MÓDULOS (Refatoração SOLID)
-/// 🚀 FUNÇÃO TOP-LEVEL para filtrar parágrafos duplicados em Isolate
+/// ??? v7.6.65: FUN��ES TOP-LEVEL DELEGANDO PARA M�DULOS (Refatora��o SOLID)
+/// ?? FUN��O TOP-LEVEL para filtrar par�grafos duplicados em Isolate
 String _filterDuplicateParagraphsStatic(Map<String, dynamic> params) {
   return filterDuplicateParagraphsIsolate(params);
 }
 
-/// 🚀 FUNÇÃO TOP-LEVEL para execução em Isolate separado
-/// Evita travar UI thread durante verificação de repetição
+/// ?? FUN��O TOP-LEVEL para execu��o em Isolate separado
+/// Evita travar UI thread durante verifica��o de repeti��o
 Map<String, dynamic> _isTooSimilarInIsolate(Map<String, dynamic> params) {
   return isTooSimilarIsolate(params);
 }
 
-/// Implementação consolidada limpa do GeminiService
+/// Implementa��o consolidada limpa do GeminiService
 class GeminiService {
   final Dio _dio;
   final String _instanceId;
   bool _isCancelled = false;
 
-  // 🏗️ v7.6.64: MÓDULOS REFATORADOS (Arquitetura SOLID)
+  // ??? v7.6.64: M�DULOS REFATORADOS (Arquitetura SOLID)
   late final LlmClient _llmClient;
   late final WorldStateManager _worldStateManager;
   late final ScriptValidator _scriptValidator;
 
-  // 🏗️ v7.6.65: MÓDULOS EXTRAÍDOS (Refatoração SOLID - Fase 1)
-  // Nota: DuplicationDetector e TextCleaner são classes estáticas
-  // NameTracker e RateLimiter disponíveis para uso futuro via imports
+  // ??? v7.6.65: M�DULOS EXTRA�DOS (Refatora��o SOLID - Fase 1)
+  // Nota: DuplicationDetector e TextCleaner s�o classes est�ticas
+  // NameTracker e RateLimiter dispon�veis para uso futuro via imports
 
-  // 🚀 v7.6.20: Adaptive Delay Manager (economia de 40-50% do tempo)
+  // ?? v7.6.20: Adaptive Delay Manager (economia de 40-50% do tempo)
   DateTime? _lastSuccessfulCall;
   int _consecutive503Errors = 0;
   int _consecutiveSuccesses = 0;
@@ -70,8 +73,8 @@ class GeminiService {
   // Debug Logger
   final _debugLogger = DebugLogManager();
 
-  // 🆕 SISTEMA DE RASTREAMENTO DE NOMES - v4 (SOLUÇÃO TÉCNICA)
-  // Armazena todos os nomes usados na história atual para prevenir duplicações
+  // ?? SISTEMA DE RASTREAMENTO DE NOMES - v4 (SOLU��O T�CNICA)
+  // Armazena todos os nomes usados na hist�ria atual para prevenir duplica��es
   final Set<String> _namesUsedInCurrentStory = {};
 
   // Circuit breaker
@@ -84,14 +87,14 @@ class GeminiService {
   ); // Reduzido de 2 min para 30s
 
   // ===== RATE LIMITING GLOBAL OTIMIZADO PARA GEMINI BILLING =====
-  // OTIMIZADO: Configuração mais agressiva baseada nos limites reais do Gemini
+  // OTIMIZADO: Configura��o mais agressiva baseada nos limites reais do Gemini
   static int _globalRequestCount = 0;
   static DateTime _globalLastRequestTime = DateTime.now();
   static const Duration _rateLimitWindow = Duration(
     seconds: 60,
   ); // AUMENTADO: Era 10s, agora 60s
   static const int _maxRequestsPerWindow =
-      50; // AUMENTADO: Era 8, agora 50 (mais prÃ³ximo dos limites reais)
+      50; // AUMENTADO: Era 8, agora 50 (mais próximo dos limites reais)
   static bool _rateLimitBusy = false;
 
   // Watchdog
@@ -101,15 +104,15 @@ class GeminiService {
     minutes: 60,
   ); // AUMENTADO: 60 min para roteiros longos (13k+ palavras = 35+ blocos)
 
-  // 🎯 v7.6.51: HELPER PARA MODELO ÚNICO - Arquitetura Pipeline Modelo Único
-  // O modelo selecionado pelo usuário deve ser usado em TODAS as etapas
-  // para garantir consistência de estilo e respeitar a configuração do cliente
+  // ?? v7.6.51: HELPER PARA MODELO �NICO - Arquitetura Pipeline Modelo �nico
+  // O modelo selecionado pelo usu�rio deve ser usado em TODAS as etapas
+  // para garantir consist�ncia de estilo e respeitar a configura��o do cliente
   static String _getSelectedModel(String qualityMode) {
     return qualityMode == 'flash'
-        ? 'gemini-2.5-flash' // STABLE - Rápido e eficiente
+        ? 'gemini-2.5-flash' // STABLE - R�pido e eficiente
         : qualityMode == 'ultra'
-        ? 'gemini-3-pro-preview' // PREVIEW - Modelo mais avançado (Jan 2025)
-        : 'gemini-2.5-pro'; // STABLE - Máxima qualidade (default)
+        ? 'gemini-3-pro-preview' // PREVIEW - Modelo mais avan�ado (Jan 2025)
+        : 'gemini-2.5-pro'; // STABLE - M�xima qualidade (default)
   }
 
   GeminiService({String? instanceId})
@@ -127,13 +130,13 @@ class GeminiService {
           ), // AUMENTADO: Era 30s, agora 45s
         ),
       ) {
-    // 🏗️ v7.6.64: Inicializar módulos refatorados
+    // ??? v7.6.64: Inicializar m�dulos refatorados
     _llmClient = LlmClient(instanceId: _instanceId);
     _worldStateManager = WorldStateManager(llmClient: _llmClient);
     _scriptValidator = ScriptValidator(llmClient: _llmClient);
 
-    // 🏗️ v7.6.65: Módulos DuplicationDetector e TextCleaner são estáticos
-    // NameTracker e RateLimiter disponíveis via imports para uso futuro
+    // ??? v7.6.65: M�dulos DuplicationDetector e TextCleaner s�o est�ticos
+    // NameTracker e RateLimiter dispon�veis via imports para uso futuro
 
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -155,59 +158,59 @@ class GeminiService {
     );
   }
 
-  // ===================== API PÃšBLICA =====================
+  // ===================== API PÚBLICA =====================
   Future<ScriptResult> generateScript(
     ScriptConfig config,
     void Function(GenerationProgress) onProgress,
   ) async {
-    // 🤖 v7.6.19: RESPEITAR SELEÇÃO DO USUÁRIO - Não usar fallback automático
-    // Se selecionou Gemini → usar APENAS Gemini
-    // Se selecionou OpenAI → usar APENAS OpenAI (implementar no futuro)
-    // _useOpenAIFallback = false; // ❌ REMOVIDO - OpenAI descontinuado
+    // ?? v7.6.19: RESPEITAR SELE��O DO USU�RIO - N�o usar fallback autom�tico
+    // Se selecionou Gemini ? usar APENAS Gemini
+    // Se selecionou OpenAI ? usar APENAS OpenAI (implementar no futuro)
+    // _useOpenAIFallback = false; // ? REMOVIDO - OpenAI descontinuado
 
     if (kDebugMode) {
       debugPrint(
-        '[$_instanceId] 🎯 Provider selecionado: ${config.selectedProvider}',
+        '[$_instanceId] ?? Provider selecionado: ${config.selectedProvider}',
       );
       debugPrint(
-        '[$_instanceId] 🚫 Fallback automático: DESABILITADO (usar apenas API selecionada)',
+        '[$_instanceId] ?? Fallback autom�tico: DESABILITADO (usar apenas API selecionada)',
       );
     }
 
-    // 🔥 CORREÇÃO CRÍTICA: Resetar variáveis globais ANTES de verificar rate limit
-    // Isso garante que cada nova geração comece do zero
+    // ?? CORRE��O CR�TICA: Resetar vari�veis globais ANTES de verificar rate limit
+    // Isso garante que cada nova gera��o comece do zero
     _resetGlobalRateLimit();
 
-    // 🆕 v4: Resetar rastreador de nomes para nova história
+    // ?? v4: Resetar rastreador de nomes para nova hist�ria
     _resetNameTracker();
 
-    // 🆕 v7.6.37: Resetar personagens introduzidos para detecção de duplicatas
+    // ?? v7.6.37: Resetar personagens introduzidos para detec��o de duplicatas
     PostGenerationFixer.resetIntroducedCharacters();
 
     if (!_canMakeRequest()) {
       return ScriptResult.error(
         errorMessage:
-            'ServiÃ§o temporariamente indisponÃ­vel. Tente mais tarde.',
+            'Serviço temporariamente indisponível. Tente mais tarde.',
       );
     }
 
-    // CORREÃ‡ÃƒO: Reset completo do estado para nova geraÃ§Ã£o
+    // CORREÇÃO: Reset completo do estado para nova geração
     resetState();
 
-    // Tracker global alimentado com os nomes definidos pelo usuÃ¡rio/contexto
+    // Tracker global alimentado com os nomes definidos pelo usuário/contexto
     final persistentTracker = _CharacterTracker();
     _bootstrapCharacterTracker(persistentTracker, config);
 
-    // 🏗️ v7.6.64: WORLD STATE - Agora usa WorldState do módulo (SOLID)
-    // Rastreia personagens, inventário, fatos e resumo da história
-    // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
+    // ??? v7.6.64: WORLD STATE - Agora usa WorldState do m�dulo (SOLID)
+    // Rastreia personagens, invent�rio, fatos e resumo da hist�ria
+    // Usa o MESMO modelo selecionado pelo usu�rio (Pipeline Modelo �nico)
     final worldState = WorldState();
 
-    // 🏗️ v7.6.64: Reset e inicialização do WorldStateManager (SOLID)
+    // ??? v7.6.64: Reset e inicializa��o do WorldStateManager (SOLID)
     _worldStateManager.reset();
     _worldStateManager.initializeProtagonist(config.protagonistName);
 
-    // Inicializar protagonista no World State usando classe do módulo
+    // Inicializar protagonista no World State usando classe do m�dulo
     if (config.protagonistName.trim().isNotEmpty) {
       worldState.upsertCharacter(
         'protagonista',
@@ -219,9 +222,9 @@ class GeminiService {
       );
     }
 
-    // 🆕 v7.6.53: CAMADA 1 - Gerar Sinopse Comprimida UMA VEZ no início
-    // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
-    // 🏗️ v7.6.64: Migrado para usar WorldStateManager (SOLID)
+    // ?? v7.6.53: CAMADA 1 - Gerar Sinopse Comprimida UMA VEZ no in�cio
+    // Usa o MESMO modelo selecionado pelo usu�rio (Pipeline Modelo �nico)
+    // ??? v7.6.64: Migrado para usar WorldStateManager (SOLID)
     try {
       worldState.sinopseComprimida = await _worldStateManager
           .generateCompressedSynopsis(
@@ -234,31 +237,31 @@ class GeminiService {
           );
       if (kDebugMode) {
         debugPrint(
-          '🔵 Camada 1 (Sinopse) gerada: ${worldState.sinopseComprimida.length} chars',
+          '?? Camada 1 (Sinopse) gerada: ${worldState.sinopseComprimida.length} chars',
         );
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ Erro ao gerar sinopse (não-crítico): $e');
+        debugPrint('?? Erro ao gerar sinopse (n�o-cr�tico): $e');
       }
       // Fallback: usar tema truncado
       final fallbackSynopsis = config.tema.length > 500
           ? '${config.tema.substring(0, 500)}...'
           : config.tema;
       worldState.sinopseComprimida = fallbackSynopsis;
-      // 🏗️ v7.6.64: Sincronizar fallback para WorldStateManager
+      // ??? v7.6.64: Sincronizar fallback para WorldStateManager
       _worldStateManager.setSynopsis(fallbackSynopsis);
     }
 
     // -----------------------------------------------------------------------
-    // 🎣 HOOK VIRAL (Feature Nova)
-    // Gera uma frase de impacto antes de começar a escrever a história
-    // CONDIÇÃO: Só gera se startWithTitlePhrase = false (usuário não quer começar com título)
+    // ?? HOOK VIRAL (Feature Nova)
+    // Gera uma frase de impacto antes de come�ar a escrever a hist�ria
+    // CONDI��O: S� gera se startWithTitlePhrase = false (usu�rio n�o quer come�ar com t�tulo)
     // -----------------------------------------------------------------------
     String viralHook = "";
     if (!config.startWithTitlePhrase && config.title.trim().isNotEmpty) {
       try {
-        if (kDebugMode) debugPrint('🎣 Gerando Hook Viral...');
+        if (kDebugMode) debugPrint('?? Gerando Hook Viral...');
 
         // 1. Monta o prompt usando o Builder novo
         final hookPrompt = ScriptPromptBuilder.buildViralHookPrompt(
@@ -271,25 +274,25 @@ class GeminiService {
         viralHook = await _llmClient.generateText(
           prompt: hookPrompt,
           apiKey: config.apiKey,
-          model: LlmClient.modelFlash, // Usa modelo rápido e barato
+          model: LlmClient.modelFlash, // Usa modelo r�pido e barato
           maxTokens: 150,
         );
 
-        // Limpeza básica
+        // Limpeza b�sica
         viralHook = viralHook.replaceAll('"', '').trim();
 
         if (kDebugMode && viralHook.isNotEmpty) {
-          debugPrint('🔥 Hook Gerado: "$viralHook"');
+          debugPrint('?? Hook Gerado: "$viralHook"');
         }
       } catch (e) {
-        // Se o hook falhar, não trava o roteiro. Apenas segue sem hook.
+        // Se o hook falhar, n�o trava o roteiro. Apenas segue sem hook.
         if (kDebugMode) {
-          debugPrint('⚠️ Erro não-crítico no Hook (ignorando): $e');
+          debugPrint('?? Erro n�o-cr�tico no Hook (ignorando): $e');
         }
       }
     } else if (kDebugMode) {
       debugPrint(
-        '⏭️ Hook Viral DESABILITADO (startWithTitlePhrase = ${config.startWithTitlePhrase})',
+        '?? Hook Viral DESABILITADO (startWithTitlePhrase = ${config.startWithTitlePhrase})',
       );
     }
 
@@ -300,14 +303,14 @@ class GeminiService {
       var acc = '';
 
       for (var block = 1; block <= totalBlocks && !_isCancelled; block++) {
-        // 🎯 YIELD CRÍTICO: Liberar UI thread completamente antes de cada bloco
-        // Aumentado de 5ms → 100ms para garantir animações suaves
+        // ?? YIELD CR�TICO: Liberar UI thread completamente antes de cada bloco
+        // Aumentado de 5ms ? 100ms para garantir anima��es suaves
         await Future.delayed(const Duration(milliseconds: 100));
 
-        // 🐛 DEBUG: Log início de bloco
+        // ?? DEBUG: Log in�cio de bloco
         _debugLogger.block(
           block,
-          "Iniciando geração",
+          "Iniciando gera��o",
           metadata: {
             'totalBlocos': totalBlocks,
             'contextoAtual': acc.length,
@@ -327,7 +330,7 @@ class GeminiService {
         final remaining = estTotal - elapsed;
         final logs = _generateBlockLogs(phase, block, totalBlocks, config);
 
-        // 🚀 OTIMIZAÇÃO CRÍTICA: Reduzir frequência de onProgress após 50%
+        // ?? OTIMIZA��O CR�TICA: Reduzir frequ�ncia de onProgress ap�s 50%
         // Isso evita sobrecarga da UI quando contexto fica grande
         final shouldUpdateProgress = progress <= 0.5 || block % 2 == 0;
 
@@ -346,23 +349,23 @@ class GeminiService {
             ),
           );
 
-          // 🎯 YIELD OTIMIZADO: 50ms para UI respirar sem bloquear geração
+          // ?? YIELD OTIMIZADO: 50ms para UI respirar sem bloquear gera��o
           await Future.delayed(Duration(milliseconds: 50));
         }
 
-        // 🔥 DELAY INTELIGENTE ENTRE BLOCOS: Sistema Adaptativo v7.6.20
+        // ?? DELAY INTELIGENTE ENTRE BLOCOS: Sistema Adaptativo v7.6.20
         // Aprende com o comportamento da API e ajusta delays automaticamente
         if (block > 1) {
           final adaptiveDelay = _getAdaptiveDelay(blockNumber: block);
 
           if (kDebugMode) {
             debugPrint(
-              '⏱️ Delay adaptativo de ${adaptiveDelay.inSeconds}s antes do bloco $block',
+              '?? Delay adaptativo de ${adaptiveDelay.inSeconds}s antes do bloco $block',
             );
             if (_consecutiveSuccesses >= 3) {
-              debugPrint('   ✅ API rápida detectada - usando delay mínimo');
+              debugPrint('   ? API r�pida detectada - usando delay m�nimo');
             } else if (_consecutive503Errors > 0) {
-              debugPrint('   ⚠️ API lenta detectada - usando delay maior');
+              debugPrint('   ?? API lenta detectada - usando delay maior');
             }
           }
           await Future.delayed(adaptiveDelay);
@@ -382,17 +385,17 @@ class GeminiService {
             persistentTracker,
             block,
             totalBlocks,
-            worldState: worldState, // 🆕 v7.6.52: World State
+            worldState: worldState, // ?? v7.6.52: World State
           ),
         );
 
-        // 🆕 v7.6.35: CORREÇÃO PÓS-GERAÇÃO - Corrigir nomes trocados automaticamente
-        // Executa ANTES de qualquer validação para garantir consistência
+        // ?? v7.6.35: CORRE��O P�S-GERA��O - Corrigir nomes trocados automaticamente
+        // Executa ANTES de qualquer valida��o para garantir consist�ncia
         if (added.trim().isNotEmpty && block > 1) {
-          // 🔍 DEBUG v7.6.36: Verificar mapa antes de chamar fixer
+          // ?? DEBUG v7.6.36: Verificar mapa antes de chamar fixer
           if (kDebugMode) {
             final roleMap = persistentTracker.roleToNameMap;
-            debugPrint('🔧 [Bloco $block] Chamando PostGenerationFixer');
+            debugPrint('?? [Bloco $block] Chamando PostGenerationFixer');
             debugPrint(
               '   roleToNameMap: ${roleMap.isEmpty ? "VAZIO!" : roleMap.toString()}',
             );
@@ -404,34 +407,34 @@ class GeminiService {
           );
         }
 
-        // 🎯 YIELD PÓS-API: Mínimo delay para UI
+        // ?? YIELD P�S-API: M�nimo delay para UI
         await Future.delayed(const Duration(milliseconds: 10));
 
-        // 🔥 RETRY PARA BLOCOS VAZIOS: Se bloco retornou vazio, tentar novamente até 6 vezes
+        // ?? RETRY PARA BLOCOS VAZIOS: Se bloco retornou vazio, tentar novamente at� 6 vezes
         if (added.trim().isEmpty && acc.isNotEmpty) {
           if (kDebugMode) {
             debugPrint(
-              '⚠️ BLOCO $block VAZIO! Iniciando tentativas de retry...',
+              '?? BLOCO $block VAZIO! Iniciando tentativas de retry...',
             );
           }
 
           for (int retry = 1; retry <= 6; retry++) {
             if (kDebugMode) {
-              debugPrint('🔄 Retry $retry/6 para bloco $block...');
+              debugPrint('?? Retry $retry/6 para bloco $block...');
             }
 
-            // 🚀 v7.6.47: DELAY PROGRESSIVO INTELIGENTE
-            // Primeiros 3 retries: rápido (5s, 10s, 15s)
-            // Últimos 3 retries: moderado (20s, 30s, 40s) para dar tempo ao servidor
+            // ?? v7.6.47: DELAY PROGRESSIVO INTELIGENTE
+            // Primeiros 3 retries: r�pido (5s, 10s, 15s)
+            // �ltimos 3 retries: moderado (20s, 30s, 40s) para dar tempo ao servidor
             final retryDelay = retry <= 3 ? 5 * retry : 15 + (retry - 3) * 10;
             if (kDebugMode) {
               debugPrint(
-                '⏱️ Aguardando ${retryDelay}s antes do retry (${retry <= 3 ? "rápido" : "moderado"})...',
+                '?? Aguardando ${retryDelay}s antes do retry (${retry <= 3 ? "r�pido" : "moderado"})...',
               );
             }
             await Future.delayed(Duration(seconds: retryDelay));
 
-            // 🔥 AUMENTADO: Contexto de 3000 para 8000 chars para manter nomes em memória
+            // ?? AUMENTADO: Contexto de 3000 para 8000 chars para manter nomes em mem�ria
             final contextForRetry = retry > 1 && acc.length > 8000
                 ? acc.substring(acc.length - 8000)
                 : acc;
@@ -445,65 +448,65 @@ class GeminiService {
                 persistentTracker,
                 block,
                 totalBlocks,
-                worldState: worldState, // 🆕 v7.6.52
+                worldState: worldState, // ?? v7.6.52
               ),
             );
 
             if (added.trim().isNotEmpty) {
               if (kDebugMode) {
-                debugPrint('✅ Retry $retry bem-sucedido! Bloco $block gerado.');
+                debugPrint('? Retry $retry bem-sucedido! Bloco $block gerado.');
               }
               break;
             }
           }
 
-          // 🔥 CORREÇÃO CRÍTICA: Se após 6 tentativas ainda estiver vazio, ABORTAR geração
+          // ?? CORRE��O CR�TICA: Se ap�s 6 tentativas ainda estiver vazio, ABORTAR gera��o
           if (added.trim().isEmpty) {
             _log(
-              '❌ ERRO CRÍTICO: Bloco $block permaneceu vazio após 6 retries!',
+              '? ERRO CR�TICO: Bloco $block permaneceu vazio ap�s 6 retries!',
               level: 'critical',
             );
             _log(
-              '🔴 ABORTANDO GERAÇÃO: Servidor Gemini pode estar sobrecarregado.',
+              '?? ABORTANDO GERA��O: Servidor Gemini pode estar sobrecarregado.',
               level: 'critical',
             );
             _log(
-              '💡 SOLUÇÃO: Aguarde 10-15 minutos e tente novamente, ou use OpenAI GPT-4o.',
+              '?? SOLU��O: Aguarde 10-15 minutos e tente novamente, ou use OpenAI GPT-4o.',
               level: 'critical',
             );
 
-            // 🔥 RETORNAR ERRO em vez de continuar
+            // ?? RETORNAR ERRO em vez de continuar
             return ScriptResult.error(
               errorMessage:
-                  '🔴 ERRO: Bloco $block falhou após 6 tentativas (total ~2min de espera).\n\n'
-                  'O servidor Gemini está temporariamente sobrecarregado.\n'
+                  '?? ERRO: Bloco $block falhou ap�s 6 tentativas (total ~2min de espera).\n\n'
+                  'O servidor Gemini est� temporariamente sobrecarregado.\n'
                   'Aguarde 10-15 minutos e tente novamente, ou:\n'
-                  '• Troque para OpenAI GPT-4o nas configurações\n'
-                  '• Tente em horário de menor tráfego\n\n'
+                  '� Troque para OpenAI GPT-4o nas configura��es\n'
+                  '� Tente em hor�rio de menor tr�fego\n\n'
                   'Progresso salvo: ${_countWords(acc)} palavras (bloco $block de $totalBlocks).',
             );
           }
         }
 
-        // 🎯 YIELD: Liberar UI thread antes de validação pesada
+        // ?? YIELD: Liberar UI thread antes de valida��o pesada
         await Future.delayed(const Duration(milliseconds: 10));
 
-        // � VALIDAÇÃO ANTI-REPETIÇÃO EM ISOLATE: Verificar sem travar UI
+        // ? VALIDA��O ANTI-REPETI��O EM ISOLATE: Verificar sem travar UI
         if (added.trim().isNotEmpty && acc.length > 500) {
-          // Executar em isolate separado para não bloquear UI thread
+          // Executar em isolate separado para n�o bloquear UI thread
           final result = await compute(_isTooSimilarInIsolate, {
             'newBlock': added,
             'previousContent': acc,
             'threshold':
-                0.80, // 🔥 AJUSTADO: Era 0.85, agora 0.80 para maior sensibilidade
+                0.80, // ?? AJUSTADO: Era 0.85, agora 0.80 para maior sensibilidade
           });
 
           final isSimilar = result['isSimilar'] as bool;
 
           if (isSimilar) {
-            // 🐛 DEBUG: Log repetição detectada
+            // ?? DEBUG: Log repeti��o detectada
             _debugLogger.warning(
-              "Repetição detectada no bloco $block",
+              "Repeti��o detectada no bloco $block",
               details: result['reason'] as String,
               metadata: {
                 'bloco': block,
@@ -514,18 +517,18 @@ class GeminiService {
 
             if (kDebugMode) {
               debugPrint(
-                '❌ BLOCO $block REJEITADO: Muito similar ao conteúdo anterior!',
+                '? BLOCO $block REJEITADO: Muito similar ao conte�do anterior!',
               );
               debugPrint(
-                '   📊 Tamanho do bloco: ${_countWords(added)} palavras',
+                '   ?? Tamanho do bloco: ${_countWords(added)} palavras',
               );
-              debugPrint('   🔍 Motivo: ${result['reason']}');
+              debugPrint('   ?? Motivo: ${result['reason']}');
               debugPrint(
-                '   🔄 Regenerando com aviso explícito contra repetição...',
+                '   ?? Regenerando com aviso expl�cito contra repeti��o...',
               );
             }
 
-            // 🔥 TENTATIVA 1: Regenerar com prompt específico contra repetição
+            // ?? TENTATIVA 1: Regenerar com prompt espec�fico contra repeti��o
             final regenerated = await _retryOnRateLimit(
               () => _generateBlockContent(
                 acc,
@@ -536,7 +539,7 @@ class GeminiService {
                 block,
                 totalBlocks,
                 avoidRepetition: true, // Flag especial
-                worldState: worldState, // 🆕 v7.6.52
+                worldState: worldState, // ?? v7.6.52
               ),
             );
 
@@ -544,7 +547,7 @@ class GeminiService {
             final retryResult = await compute(_isTooSimilarInIsolate, {
               'newBlock': regenerated,
               'previousContent': acc,
-              'threshold': 0.85, // 🔥 AJUSTADO: Era 0.90, agora 0.85
+              'threshold': 0.85, // ?? AJUSTADO: Era 0.90, agora 0.85
             });
 
             final stillSimilar = retryResult['isSimilar'] as bool;
@@ -552,14 +555,14 @@ class GeminiService {
             if (stillSimilar) {
               if (kDebugMode) {
                 debugPrint(
-                  '⚠️ TENTATIVA 1 FALHOU: Ainda há similaridade alta!',
+                  '?? TENTATIVA 1 FALHOU: Ainda h� similaridade alta!',
                 );
                 debugPrint(
-                  '   🔄 TENTATIVA 2: Regenerando novamente com contexto reduzido...',
+                  '   ?? TENTATIVA 2: Regenerando novamente com contexto reduzido...',
                 );
               }
 
-              // 🔥 AUMENTADO: Contexto de 3000 para 8000 chars para manter nomes em memória
+              // ?? AUMENTADO: Contexto de 3000 para 8000 chars para manter nomes em mem�ria
               final contextoPrevioReduzido = acc.length > 8000
                   ? acc.substring(acc.length - 8000)
                   : acc;
@@ -574,7 +577,7 @@ class GeminiService {
                   block,
                   totalBlocks,
                   avoidRepetition: true,
-                  worldState: worldState, // 🆕 v7.6.52
+                  worldState: worldState, // ?? v7.6.52
                 ),
               );
 
@@ -586,52 +589,52 @@ class GeminiService {
 
               if (stillSimilar2) {
                 if (kDebugMode) {
-                  debugPrint('⚠️ TENTATIVA 2 FALHOU: Similaridade persiste!');
+                  debugPrint('?? TENTATIVA 2 FALHOU: Similaridade persiste!');
                   debugPrint(
-                    '   ⚠️ DECISÃO: Usando versão menos similar (tentativa 1)',
+                    '   ?? DECIS�O: Usando vers�o menos similar (tentativa 1)',
                   );
                 }
                 acc +=
                     regenerated; // Usar primeira tentativa (menos similar que original)
               } else {
                 if (kDebugMode) {
-                  debugPrint('✅ TENTATIVA 2 BEM-SUCEDIDA: Bloco único gerado!');
+                  debugPrint('? TENTATIVA 2 BEM-SUCEDIDA: Bloco �nico gerado!');
                 }
                 acc += regenerated2;
               }
             } else {
               if (kDebugMode) {
-                debugPrint('✅ REGENERAÇÃO BEM-SUCEDIDA: Bloco agora é único!');
+                debugPrint('? REGENERA��O BEM-SUCEDIDA: Bloco agora � �nico!');
               }
               acc += regenerated;
             }
           } else {
-            // ✅ Bloco passou na validação anti-repetição
-            acc += added; // Usar versão original
+            // ? Bloco passou na valida��o anti-repeti��o
+            acc += added; // Usar vers�o original
           }
         } else {
-          // ✅ Primeiro bloco ou contexto pequeno - adicionar direto
+          // ? Primeiro bloco ou contexto pequeno - adicionar direto
           acc += added;
         }
 
-        // 🎣 INSERIR HOOK VIRAL no início do Bloco 1 (se disponível)
+        // ?? INSERIR HOOK VIRAL no in�cio do Bloco 1 (se dispon�vel)
         if (block == 1 && viralHook.isNotEmpty && added.trim().isNotEmpty) {
           // Remove o added que acabou de ser adicionado
           acc = acc.substring(0, acc.length - added.length);
           // Adiciona com o hook no topo
-          acc += '🔥 GANCHO VIRAL:\n$viralHook\n\n$added';
+          acc += '?? GANCHO VIRAL:\n$viralHook\n\n$added';
           if (kDebugMode) {
-            debugPrint('🎣 Hook Viral inserido no início do roteiro!');
+            debugPrint('?? Hook Viral inserido no in�cio do roteiro!');
           }
         }
 
         if (added.trim().isNotEmpty) {
-          // 🚨 VALIDAÇÃO CRÍTICA 1: Detectar e registrar protagonista no Bloco 1
+          // ?? VALIDA��O CR�TICA 1: Detectar e registrar protagonista no Bloco 1
           if (block == 1) {
             _detectAndRegisterProtagonist(added, config, persistentTracker);
           }
 
-          // 🚨 VALIDAÇÃO CRÍTICA 2: Verificar se protagonista mudou de nome
+          // ?? VALIDA��O CR�TICA 2: Verificar se protagonista mudou de nome
           final protagonistChanged = _detectProtagonistNameChange(
             added,
             config,
@@ -639,10 +642,10 @@ class GeminiService {
             block,
           );
 
-          // 🚨 VALIDAÇÃO CRÍTICA 3: Verificar se algum nome foi reutilizado
+          // ?? VALIDA��O CR�TICA 3: Verificar se algum nome foi reutilizado
           _validateNameReuse(added, persistentTracker, block);
 
-          // 🔥 VALIDAÇÃO CRÍTICA 4: REJEITAR BLOCO se protagonista mudou ou personagens trocaram de nome
+          // ?? VALIDA��O CR�TICA 4: REJEITAR BLOCO se protagonista mudou ou personagens trocaram de nome
           final characterNameChanges = _detectCharacterNameChanges(
             added,
             persistentTracker,
@@ -651,24 +654,24 @@ class GeminiService {
           if (protagonistChanged || characterNameChanges.isNotEmpty) {
             if (kDebugMode) {
               debugPrint(
-                '🚨🚨🚨 BLOCO $block REJEITADO - MUDANÇA DE NOME DETECTADA! 🚨🚨🚨',
+                '?????? BLOCO $block REJEITADO - MUDAN�A DE NOME DETECTADA! ??????',
               );
               if (protagonistChanged) {
                 final detected = persistentTracker.getProtagonistName();
                 debugPrint(
-                  '   ❌ PROTAGONISTA: "$detected" mudou para outro nome!',
+                  '   ? PROTAGONISTA: "$detected" mudou para outro nome!',
                 );
               }
               for (final change in characterNameChanges) {
                 final role = change['role'] ?? 'personagem';
                 final oldName = change['oldName'] ?? '';
                 final newName = change['newName'] ?? '';
-                debugPrint('   ❌ $role: "$oldName" → "$newName"');
+                debugPrint('   ? $role: "$oldName" ? "$newName"');
               }
-              debugPrint('   🔄 Regenerando bloco (tentativa 1/3)...');
+              debugPrint('   ?? Regenerando bloco (tentativa 1/3)...');
             }
 
-            // 🆕 v7.6.17: LIMITE DE REGENERAÇÕES para evitar loop infinito
+            // ?? v7.6.17: LIMITE DE REGENERA��ES para evitar loop infinito
             const maxRegenerations = 3;
             String? regenerated;
 
@@ -679,7 +682,7 @@ class GeminiService {
             ) {
               if (kDebugMode && regenAttempt > 1) {
                 debugPrint(
-                  '   🔄 Tentativa $regenAttempt/$maxRegenerations...',
+                  '   ?? Tentativa $regenAttempt/$maxRegenerations...',
                 );
               }
 
@@ -692,17 +695,17 @@ class GeminiService {
                 block,
                 totalBlocks,
                 avoidRepetition: true,
-                worldState: worldState, // 🆕 v7.6.52
+                worldState: worldState, // ?? v7.6.52
               );
 
               if (regenerated.trim().isEmpty) {
                 if (kDebugMode) {
-                  debugPrint('   ❌ Regeneração $regenAttempt retornou vazia!');
+                  debugPrint('   ? Regenera��o $regenAttempt retornou vazia!');
                 }
                 continue; // Tentar novamente
               }
 
-              // Validar se regeneração corrigiu o problema
+              // Validar se regenera��o corrigiu o problema
               final stillChanged = _detectProtagonistNameChange(
                 regenerated,
                 config,
@@ -712,19 +715,19 @@ class GeminiService {
 
               if (!stillChanged) {
                 if (kDebugMode) {
-                  debugPrint('   ✅ Regeneração $regenAttempt bem-sucedida!');
+                  debugPrint('   ? Regenera��o $regenAttempt bem-sucedida!');
                 }
                 break; // Sucesso! Sair do loop
               } else {
                 if (kDebugMode) {
                   debugPrint(
-                    '   ⚠️ Regeneração $regenAttempt ainda tem erro de nome!',
+                    '   ?? Regenera��o $regenAttempt ainda tem erro de nome!',
                   );
                 }
                 if (regenAttempt == maxRegenerations) {
                   if (kDebugMode) {
                     debugPrint(
-                      '   ❌ Limite de regenerações atingido! Aceitando bloco...',
+                      '   ? Limite de regenera��es atingido! Aceitando bloco...',
                     );
                   }
                 }
@@ -735,24 +738,24 @@ class GeminiService {
             if (regenerated != null && regenerated.trim().isNotEmpty) {
               added = regenerated;
               if (kDebugMode) {
-                debugPrint('✅ Bloco $block regenerado com nomes corretos!');
+                debugPrint('? Bloco $block regenerado com nomes corretos!');
               }
             } else {
               if (kDebugMode) {
                 debugPrint(
-                  '❌ ERRO: Todas as $maxRegenerations tentativas falharam! Usando bloco original...',
+                  '? ERRO: Todas as $maxRegenerations tentativas falharam! Usando bloco original...',
                 );
               }
-              // Manter bloco original se todas regenerações falharam
+              // Manter bloco original se todas regenera��es falharam
             }
           }
 
-          // 🆕 v7.6.17: VALIDAÇÃO UNIVERSAL DE TODOS OS NOMES (primários + secundários)
+          // ?? v7.6.17: VALIDA��O UNIVERSAL DE TODOS OS NOMES (prim�rios + secund�rios)
           final allNamesInBlock = _extractNamesFromText(
             added,
           ).where((n) => _looksLikePersonName(n)).toList();
 
-          // Detectar nomes novos não registrados no tracker
+          // Detectar nomes novos n�o registrados no tracker
           final unregisteredNames = allNamesInBlock
               .where((name) => !persistentTracker.hasName(name))
               .toList();
@@ -760,7 +763,7 @@ class GeminiService {
           if (unregisteredNames.isNotEmpty && block > 1) {
             if (kDebugMode) {
               debugPrint(
-                '🆕 Bloco $block: Nomes novos detectados: ${unregisteredNames.join(", ")}',
+                '?? Bloco $block: Nomes novos detectados: ${unregisteredNames.join(", ")}',
               );
             }
             // Registrar novos nomes no tracker
@@ -769,7 +772,7 @@ class GeminiService {
             }
           }
 
-          // 🆕 v4: EXTRAÇÃO E RASTREAMENTO DE NOMES
+          // ?? v4: EXTRA��O E RASTREAMENTO DE NOMES
           final duplicatedNames = _validateNamesInText(
             added,
             _namesUsedInCurrentStory,
@@ -777,29 +780,29 @@ class GeminiService {
           if (duplicatedNames.isNotEmpty) {
             if (kDebugMode) {
               debugPrint(
-                '🚨 ALERTA: Nomes duplicados detectados no Bloco $block!',
+                '?? ALERTA: Nomes duplicados detectados no Bloco $block!',
               );
               debugPrint('   Nomes: ${duplicatedNames.join(", ")}');
               debugPrint(
-                '   ⚠️ Isso pode indicar personagens com mesmo nome em papéis diferentes!',
+                '   ?? Isso pode indicar personagens com mesmo nome em pap�is diferentes!',
               );
             }
             _debugLogger.warning(
-              "Possível duplicação de nomes no bloco $block",
+              "Poss�vel duplica��o de nomes no bloco $block",
               details: "Nomes: ${duplicatedNames.join(", ")}",
               metadata: {'bloco': block, 'nomes': duplicatedNames},
             );
           }
           _addNamesToTracker(added);
 
-          // 🆕 VALIDAÇÃO CRÍTICA 4: Verificar inconsistências em relações familiares
+          // ?? VALIDA��O CR�TICA 4: Verificar inconsist�ncias em rela��es familiares
           _validateFamilyRelations(added, block);
 
-          // 🔄 v7.6.41: Resetar watchdog a cada bloco bem-sucedido
+          // ?? v7.6.41: Resetar watchdog a cada bloco bem-sucedido
           // Evita timeout em roteiros longos (35+ blocos)
           _resetWatchdog();
 
-          // 🐛 DEBUG: Log bloco completado com sucesso
+          // ?? DEBUG: Log bloco completado com sucesso
           _debugLogger.success(
             "Bloco $block completado",
             details: "Tamanho: ${_countWords(added)} palavras",
@@ -810,8 +813,8 @@ class GeminiService {
             },
           );
 
-          // 🚨 v7.6.28: VALIDAÇÃO DE NOMES DUPLICADOS (antes da v7.6.25)
-          // OBJETIVO: Detectar quando MESMO NOME aparece em PAPÉIS DIFERENTES
+          // ?? v7.6.28: VALIDA��O DE NOMES DUPLICADOS (antes da v7.6.25)
+          // OBJETIVO: Detectar quando MESMO NOME aparece em PAP�IS DIFERENTES
           // EXEMPLO: "Mark" como boyfriend + "Mark" como attorney
           final duplicateNameConflict = _validateUniqueNames(
             added,
@@ -820,15 +823,15 @@ class GeminiService {
           );
 
           if (duplicateNameConflict) {
-            // ❌ BLOCO REJEITADO: Nome duplicado em papéis diferentes
+            // ? BLOCO REJEITADO: Nome duplicado em pap�is diferentes
             if (kDebugMode) {
               debugPrint(
-                '❌ v7.6.28: BLOCO $block REJEITADO por NOME DUPLICADO!',
+                '? v7.6.28: BLOCO $block REJEITADO por NOME DUPLICADO!',
               );
               debugPrint(
-                '   💡 EXEMPLO: "Mark" aparece como boyfriend E attorney (nomes devem ser únicos)',
+                '   ?? EXEMPLO: "Mark" aparece como boyfriend E attorney (nomes devem ser �nicos)',
               );
-              debugPrint('   🔄 Forçando regeneração do bloco...');
+              debugPrint('   ?? For�ando regenera��o do bloco...');
             }
 
             _debugLogger.warning(
@@ -837,12 +840,12 @@ class GeminiService {
               metadata: {'bloco': block},
             );
 
-            // 🔄 Forçar regeneração: bloco vazio = retry automático
+            // ?? For�ar regenera��o: bloco vazio = retry autom�tico
             added = '';
           } else {
-            // ✅ v7.6.28: Nomes únicos, prosseguir para validação de papéis
+            // ? v7.6.28: Nomes �nicos, prosseguir para valida��o de pap�is
 
-            // 🚨 v7.6.25: VALIDAÇÃO DE CONFLITOS DE PAPEL
+            // ?? v7.6.25: VALIDA��O DE CONFLITOS DE PAPEL
             final trackerValid = _updateTrackerFromContextSnippet(
               persistentTracker,
               config,
@@ -850,15 +853,15 @@ class GeminiService {
             );
 
             if (!trackerValid) {
-              // ❌ BLOCO REJEITADO: Conflito de papel detectado (ex: advogado Martin → Richard)
+              // ? BLOCO REJEITADO: Conflito de papel detectado (ex: advogado Martin ? Richard)
               if (kDebugMode) {
                 debugPrint(
-                  '❌ v7.6.25: BLOCO $block REJEITADO por CONFLITO DE PAPEL!',
+                  '? v7.6.25: BLOCO $block REJEITADO por CONFLITO DE PAPEL!',
                 );
                 debugPrint(
-                  '   💡 EXEMPLO: Mesmo papel (advogado) com nomes diferentes (Martin vs Richard)',
+                  '   ?? EXEMPLO: Mesmo papel (advogado) com nomes diferentes (Martin vs Richard)',
                 );
-                debugPrint('   🔄 Forçando regeneração do bloco...');
+                debugPrint('   ?? For�ando regenera��o do bloco...');
               }
 
               _debugLogger.warning(
@@ -867,20 +870,20 @@ class GeminiService {
                 metadata: {'bloco': block},
               );
 
-              // 🔄 Forçar regeneração: bloco vazio = retry automático
+              // ?? For�ar regenera��o: bloco vazio = retry autom�tico
               added = '';
             } else {
-              // ✅ v7.6.25: Tracker válido, atualizar mapeamento já foi feito
+              // ? v7.6.25: Tracker v�lido, atualizar mapeamento j� foi feito
               if (kDebugMode) {
                 debugPrint(
-                  '✅ v7.6.28 + v7.6.25: Bloco $block ACEITO (nomes únicos + sem conflitos de papel)',
+                  '? v7.6.28 + v7.6.25: Bloco $block ACEITO (nomes �nicos + sem conflitos de papel)',
                 );
               }
 
-              // 🆕 v7.6.52: ATUALIZAR WORLD STATE - Pipeline Modelo Único
-              // O MESMO modelo selecionado pelo usuário atualiza o JSON de estado
-              // Isso garante consistência e respeita a config do cliente
-              // 🏗️ v7.6.64: Migrado para usar WorldStateManager (SOLID)
+              // ?? v7.6.52: ATUALIZAR WORLD STATE - Pipeline Modelo �nico
+              // O MESMO modelo selecionado pelo usu�rio atualiza o JSON de estado
+              // Isso garante consist�ncia e respeita a config do cliente
+              // ??? v7.6.64: Migrado para usar WorldStateManager (SOLID)
               if (added.trim().isNotEmpty) {
                 await _worldStateManager.updateFromGeneratedBlock(
                   generatedBlock: added,
@@ -897,7 +900,7 @@ class GeminiService {
           }
         }
 
-        // OTIMIZADO: Checkpoint de estabilidade ultra-rápido
+        // OTIMIZADO: Checkpoint de estabilidade ultra-r�pido
         await Future.delayed(
           const Duration(milliseconds: 50),
         ); // ULTRA-OTIMIZADO: Era 150ms, agora 50ms
@@ -910,7 +913,7 @@ class GeminiService {
             );
           }
 
-          // 🔥 RETRY AUTOMÁTICO: Tentar novamente até 3x quando bloco vazio
+          // ?? RETRY AUTOM�TICO: Tentar novamente at� 3x quando bloco vazio
           // AUMENTADO: Era 2, agora 3 retries para dar mais chance de sucesso
           int retryCount = 0;
           const maxRetries = 3;
@@ -919,7 +922,7 @@ class GeminiService {
             retryCount++;
             if (kDebugMode) {
               debugPrint(
-                '[$_instanceId] 🔄 Retry automático $retryCount/$maxRetries para bloco $block',
+                '[$_instanceId] ?? Retry autom�tico $retryCount/$maxRetries para bloco $block',
               );
             }
 
@@ -939,12 +942,12 @@ class GeminiService {
                   persistentTracker,
                   block,
                   totalBlocks,
-                  worldState: worldState, // 🆕 v7.6.52
+                  worldState: worldState, // ?? v7.6.52
                 ),
               );
 
               if (added.trim().isNotEmpty) {
-                // 🚨 v7.6.28: VALIDAR nomes duplicados PRIMEIRO
+                // ?? v7.6.28: VALIDAR nomes duplicados PRIMEIRO
                 final retryHasDuplicateNames = _validateUniqueNames(
                   added,
                   persistentTracker,
@@ -952,17 +955,17 @@ class GeminiService {
                 );
 
                 if (retryHasDuplicateNames) {
-                  // ❌ Bloco regenerado tem nomes duplicados
+                  // ? Bloco regenerado tem nomes duplicados
                   if (kDebugMode) {
                     debugPrint(
-                      '[$_instanceId] ❌ v7.6.28: Retry $retryCount REJEITADO (nomes duplicados)',
+                      '[$_instanceId] ? v7.6.28: Retry $retryCount REJEITADO (nomes duplicados)',
                     );
                   }
-                  added = ''; // Forçar nova tentativa
-                  continue; // Tentar próximo retry
+                  added = ''; // For�ar nova tentativa
+                  continue; // Tentar pr�ximo retry
                 }
 
-                // 🚨 v7.6.25: VALIDAR conflitos de papel DEPOIS
+                // ?? v7.6.25: VALIDAR conflitos de papel DEPOIS
                 final retryTrackerValid = _updateTrackerFromContextSnippet(
                   persistentTracker,
                   config,
@@ -970,19 +973,19 @@ class GeminiService {
                 );
 
                 if (!retryTrackerValid) {
-                  // ❌ Bloco regenerado também tem conflito de papel
+                  // ? Bloco regenerado tamb�m tem conflito de papel
                   if (kDebugMode) {
                     debugPrint(
-                      '[$_instanceId] ❌ v7.6.25: Retry $retryCount REJEITADO (conflito de papel)',
+                      '[$_instanceId] ? v7.6.25: Retry $retryCount REJEITADO (conflito de papel)',
                     );
                   }
-                  added = ''; // Forçar nova tentativa
-                  continue; // Tentar próximo retry
+                  added = ''; // For�ar nova tentativa
+                  continue; // Tentar pr�ximo retry
                 }
 
                 if (kDebugMode) {
                   debugPrint(
-                    '[$_instanceId] ✅ v7.6.28 + v7.6.25: Retry válido! Bloco $block aceito.',
+                    '[$_instanceId] ? v7.6.28 + v7.6.25: Retry v�lido! Bloco $block aceito.',
                   );
                 }
                 break; // Sucesso, sair do loop de retry
@@ -990,34 +993,34 @@ class GeminiService {
             } catch (e) {
               if (kDebugMode) {
                 debugPrint(
-                  '[$_instanceId] ❌ Retry automático $retryCount falhou: $e',
+                  '[$_instanceId] ? Retry autom�tico $retryCount falhou: $e',
                 );
               }
             }
           }
 
-          // 🔥 CORREÇÃO CRÍTICA: Se ainda vazio após retries, ABORTAR em vez de continuar
+          // ?? CORRE��O CR�TICA: Se ainda vazio ap�s retries, ABORTAR em vez de continuar
           if (added.trim().isEmpty) {
             if (kDebugMode) {
               debugPrint(
-                '[$_instanceId] ❌ ERRO CRÍTICO: Bloco $block falhou após $maxRetries retries - ABORTANDO',
+                '[$_instanceId] ? ERRO CR�TICO: Bloco $block falhou ap�s $maxRetries retries - ABORTANDO',
               );
             }
 
             return ScriptResult.error(
               errorMessage:
-                  '🔴 ERRO CRÍTICO: Bloco $block permaneceu vazio após 6 tentativas.\n\n'
-                  'O servidor Gemini está temporariamente sobrecarregado.\n'
+                  '?? ERRO CR�TICO: Bloco $block permaneceu vazio ap�s 6 tentativas.\n\n'
+                  'O servidor Gemini est� temporariamente sobrecarregado.\n'
                   'Aguarde 10-15 minutos e tente novamente, ou troque para OpenAI.\n\n'
                   'Progresso salvo: ${_countWords(acc)} palavras de ${config.quantity} (bloco $block de $totalBlocks).',
             );
           }
         }
 
-        // Limpeza de memÃ³ria otimizada
+        // Limpeza de memória otimizada
         if (kDebugMode) {
           debugPrint(
-            '[$_instanceId] Checkpoint bloco $block - Limpeza memÃ³ria',
+            '[$_instanceId] Checkpoint bloco $block - Limpeza memória',
           );
         }
         await Future.delayed(
@@ -1030,10 +1033,10 @@ class GeminiService {
         );
       }
 
-      // ðŸš« EXPANSÃƒO FORÃ‡ADA DESATIVADA
-      // Sistema de expansÃ£o removido para evitar mÃºltiplos finais empilhados.
-      // A meta de caracteres deve ser atingida atravÃ©s do ajuste dos blocos iniciais,
-      // nÃ£o forÃ§ando continuaÃ§Ãµes apÃ³s a histÃ³ria jÃ¡ ter concluÃ­do naturalmente.
+      // 🚫 EXPANSÃO FORÇADA DESATIVADA
+      // Sistema de expansão removido para evitar múltiplos finais empilhados.
+      // A meta de caracteres deve ser atingida através do ajuste dos blocos iniciais,
+      // não forçando continuações após a história já ter concluído naturalmente.
       // Isso preserva a qualidade narrativa e evita finais duplicados.
 
       if (!_isCancelled && !_checkTargetMet(acc, config)) {
@@ -1043,45 +1046,45 @@ class GeminiService {
 
         if (kDebugMode) {
           debugPrint(
-            '[$_instanceId] âš ï¸ Meta nÃ£o atingida - Faltam $needed ${config.measureType}',
+            '[$_instanceId] ⚠️ Meta não atingida - Faltam $needed ${config.measureType}',
           );
           debugPrint(
-            '[$_instanceId] ï¿½ DICA: Aumente o tamanho dos blocos iniciais para atingir a meta',
+            '[$_instanceId] � DICA: Aumente o tamanho dos blocos iniciais para atingir a meta',
           );
         }
       }
 
       if (_isCancelled) {
-        return ScriptResult.error(errorMessage: 'Geração cancelada');
+        return ScriptResult.error(errorMessage: 'Gera��o cancelada');
       }
 
       _stopWatchdog();
 
-      // 📊 LOG FINAL: Resumo de personagens rastreados
+      // ?? LOG FINAL: Resumo de personagens rastreados
       if (kDebugMode && persistentTracker.confirmedNames.isNotEmpty) {
-        debugPrint('📊 RESUMO FINAL DE PERSONAGENS:');
+        debugPrint('?? RESUMO FINAL DE PERSONAGENS:');
         debugPrint(
           '   Total rastreado: ${persistentTracker.confirmedNames.length} personagem(ns)',
         );
         debugPrint('   Nomes: ${persistentTracker.confirmedNames.join(", ")}');
       }
 
-      // 🧹 LIMPAR MARCADORES DE DEBUG DO TEXTO FINAL
+      // ?? LIMPAR MARCADORES DE DEBUG DO TEXTO FINAL
       final cleanedAcc = acc.replaceAll(
         RegExp(r'PERSONAGEM MENCIONADO:\s*'),
         '',
       );
 
-      // 🆕 v7.6.43: REMOVER PARÁGRAFOS DUPLICADOS DO ROTEIRO FINAL
+      // ?? v7.6.43: REMOVER PAR�GRAFOS DUPLICADOS DO ROTEIRO FINAL
       var deduplicatedScript = _removeAllDuplicateParagraphs(cleanedAcc);
 
-      // 🔍 DETECÇÃO FINAL: Verificar se há parágrafos duplicados restantes (apenas LOG)
+      // ?? DETEC��O FINAL: Verificar se h� par�grafos duplicados restantes (apenas LOG)
       if (kDebugMode) {
         _detectDuplicateParagraphsInFinalScript(deduplicatedScript);
       }
 
-      // 🎯 v7.6.45: VALIDAÇÃO RIGOROSA DE COERÊNCIA COM TÍTULO
-      // 🏗️ v7.6.64: Migrado para usar ScriptValidator (SOLID)
+      // ?? v7.6.45: VALIDA��O RIGOROSA DE COER�NCIA COM T�TULO
+      // ??? v7.6.64: Migrado para usar ScriptValidator (SOLID)
       if (config.title.trim().isNotEmpty) {
         final validationResult = await _scriptValidator
             .validateTitleCoherenceRigorous(
@@ -1100,17 +1103,17 @@ class GeminiService {
             (validationResult['foundElements'] as List?)?.cast<String>() ?? [];
 
         _debugLogger.info(
-          '🎯 Validação de coerência título-história',
+          '?? Valida��o de coer�ncia t�tulo-hist�ria',
           details:
               '''
-Título: "${config.title}"
-Resultado: ${isCoherent ? '✅ COERENTE' : '❌ INCOERENTE'}
-Confiança: $confidence%
+T�tulo: "${config.title}"
+Resultado: ${isCoherent ? '? COERENTE' : '? INCOERENTE'}
+Confian�a: $confidence%
 
-📋 Elementos encontrados:
-${foundElements.isEmpty ? '  (nenhum)' : foundElements.map((e) => '  ✓ $e').join('\n')}
+?? Elementos encontrados:
+${foundElements.isEmpty ? '  (nenhum)' : foundElements.map((e) => '  ? $e').join('\n')}
 
-${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.map((e) => '  ✗ $e').join('\n')}'}
+${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map((e) => '  ? $e').join('\n')}'}
 ''',
           metadata: {
             'isCoherent': isCoherent,
@@ -1120,23 +1123,23 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
           },
         );
 
-        // 🔄 FALLBACK: Se incoerente E confiança baixa, tentar regenerar ÚLTIMO bloco
+        // ?? FALLBACK: Se incoerente E confian�a baixa, tentar regenerar �LTIMO bloco
         if (!isCoherent && confidence < 50 && missingElements.isNotEmpty) {
           _debugLogger.warning(
-            '🔄 Tentando regeneração com ênfase nos elementos faltantes',
+            '?? Tentando regenera��o com �nfase nos elementos faltantes',
             details:
-                'Elementos críticos ausentes: ${missingElements.take(3).join(", ")}',
+                'Elementos cr�ticos ausentes: ${missingElements.take(3).join(", ")}',
           );
 
           try {
-            // Extrair últimos 2 blocos para contexto
+            // Extrair �ltimos 2 blocos para contexto
             final blocks = deduplicatedScript.split('\n\n');
             final contextBlocks = blocks.length > 2
                 ? blocks.sublist(blocks.length - 2)
                 : blocks;
             final context = contextBlocks.join('\n\n');
 
-            // 🏗️ v7.6.64: Usar ScriptPromptBuilder para criar prompt de recuperação (SOLID)
+            // ??? v7.6.64: Usar ScriptPromptBuilder para criar prompt de recupera��o (SOLID)
             final recoveryPrompt = ScriptPromptBuilder.buildRecoveryPrompt(
               config.title,
               missingElements,
@@ -1144,36 +1147,36 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
               config.language,
             );
 
-            // 🏗️ v7.6.64: Usar LlmClient para gerar bloco de recuperação (SOLID)
-            // 🎯 v7.6.51: Arquitetura Modelo Único - usar config.qualityMode
+            // ??? v7.6.64: Usar LlmClient para gerar bloco de recupera��o (SOLID)
+            // ?? v7.6.51: Arquitetura Modelo �nico - usar config.qualityMode
             final recoveryResponse = await _llmClient.generateText(
               apiKey: config.apiKey,
               model: _getSelectedModel(config.qualityMode),
               prompt: recoveryPrompt,
-              maxTokens: 500, // Bloco pequeno de recuperação
+              maxTokens: 500, // Bloco pequeno de recupera��o
             );
 
             if (recoveryResponse.isNotEmpty) {
-              // Adicionar bloco de recuperação ao final
+              // Adicionar bloco de recupera��o ao final
               deduplicatedScript = '$deduplicatedScript\n\n$recoveryResponse';
               _debugLogger.success(
-                '✅ Bloco de recuperação adicionado',
-                details: 'Novos elementos incorporados à história',
+                '? Bloco de recupera��o adicionado',
+                details: 'Novos elementos incorporados � hist�ria',
               );
             }
           } catch (e) {
             _debugLogger.warning(
-              '⚠️ Falha na regeneração',
-              details: 'Mantendo história original: $e',
+              '?? Falha na regenera��o',
+              details: 'Mantendo hist�ria original: $e',
             );
           }
         }
       }
 
-      // 🐛 DEBUG: Log estatísticas finais
+      // ?? DEBUG: Log estat�sticas finais
       final stats = _debugLogger.getStatistics();
       _debugLogger.success(
-        "Geração completa!",
+        "Gera��o completa!",
         details:
             "Roteiro finalizado com sucesso\n"
             "- Palavras: ${_countWords(deduplicatedScript)}\n"
@@ -1200,33 +1203,33 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     } catch (e) {
       _stopWatchdog();
       if (_isCancelled) {
-        return ScriptResult.error(errorMessage: 'Geração cancelada');
+        return ScriptResult.error(errorMessage: 'Gera��o cancelada');
       }
       return ScriptResult.error(errorMessage: 'Erro: $e');
     }
   }
 
   void cancelGeneration() {
-    if (kDebugMode) debugPrint('[$_instanceId] Cancelando geraÃ§Ã£o...');
+    if (kDebugMode) debugPrint('[$_instanceId] Cancelando geração...');
     _isCancelled = true;
     _stopWatchdog();
 
-    // CORREÇÃO: Não fechar o Dio aqui, pois pode ser reutilizado
-    // Apenas marcar como cancelado e limpar estado se necessário
+    // CORRE��O: N�o fechar o Dio aqui, pois pode ser reutilizado
+    // Apenas marcar como cancelado e limpar estado se necess�rio
     if (kDebugMode) {
-      debugPrint('[$_instanceId] Geração cancelada pelo usuário');
+      debugPrint('[$_instanceId] Gera��o cancelada pelo usu�rio');
     }
   }
 
-  /// 🤖 Configura OpenAI como fallback para erro 503 (DESCONTINUADO)
+  /// ?? Configura OpenAI como fallback para erro 503 (DESCONTINUADO)
   void setOpenAIKey(String? apiKey) {
-    // REMOVIDO - OpenAI não é mais usado
+    // REMOVIDO - OpenAI n�o � mais usado
     if (kDebugMode) {
       debugPrint('[$_instanceId] OpenAI fallback descontinuado');
     }
   }
 
-  // Método para limpar recursos quando o service não for mais usado
+  // M�todo para limpar recursos quando o service n�o for mais usado
   void dispose() {
     if (kDebugMode) debugPrint('[$_instanceId] Fazendo dispose do service...');
     _isCancelled = true;
@@ -1238,7 +1241,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     }
   }
 
-  // CORREÃ‡ÃƒO: MÃ©todo para resetar completamente o estado interno
+  // CORREÇÃO: Método para resetar completamente o estado interno
   void resetState() {
     if (kDebugMode) debugPrint('[$_instanceId] Resetando estado interno...');
     _isCancelled = false;
@@ -1248,17 +1251,17 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     _lastFailureTime = null;
     _stopWatchdog();
 
-    // 🔧 NOVO: Resetar variáveis static também (rate limiting global)
+    // ?? NOVO: Resetar vari�veis static tamb�m (rate limiting global)
     _resetGlobalRateLimit();
 
     if (kDebugMode) {
       debugPrint(
-        '[$_instanceId] ✅ Estado completamente resetado (incluindo rate limit global)',
+        '[$_instanceId] ? Estado completamente resetado (incluindo rate limit global)',
       );
     }
   }
 
-  // 🔧 NOVO: Método para resetar rate limiting global entre gerações
+  // ?? NOVO: M�todo para resetar rate limiting global entre gera��es
   static void _resetGlobalRateLimit() {
     _globalRequestCount = 0;
     _globalLastRequestTime = DateTime.now();
@@ -1291,7 +1294,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
               .data['candidates']?[0]?['content']?['parts']?[0]?['text'] ??
           '';
     } catch (e) {
-      if (kDebugMode) debugPrint('Erro na geraÃ§Ã£o de texto: $e');
+      if (kDebugMode) debugPrint('Erro na geração de texto: $e');
       return '';
     }
   }
@@ -1341,7 +1344,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
       if (_isOperationRunning && !_isCancelled) {
         if (kDebugMode) {
           debugPrint(
-            '[$_instanceId] Watchdog timeout - cancelando operaÃ§Ã£o apÃ³s ${_maxOperationTime.inMinutes} min',
+            '[$_instanceId] Watchdog timeout - cancelando operação após ${_maxOperationTime.inMinutes} min',
           );
         }
         _isCancelled = true;
@@ -1349,13 +1352,13 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     });
   }
 
-  /// 🔄 v7.6.41: Resetar watchdog a cada bloco bem-sucedido
-  /// Evita timeout em roteiros longos quando a geração está funcionando
+  /// ?? v7.6.41: Resetar watchdog a cada bloco bem-sucedido
+  /// Evita timeout em roteiros longos quando a gera��o est� funcionando
   void _resetWatchdog() {
     if (_isOperationRunning && !_isCancelled) {
       _startWatchdog(); // Reinicia o timer
       if (kDebugMode) {
-        debugPrint('[$_instanceId] Watchdog resetado - operação ativa');
+        debugPrint('[$_instanceId] Watchdog resetado - opera��o ativa');
       }
     }
   }
@@ -1371,10 +1374,10 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
   }
 
   Future<void> _ensureRateLimit() async {
-    // CRÃTICO: Rate limiting global para mÃºltiplas instÃ¢ncias/workspaces
+    // CRÍTICO: Rate limiting global para múltiplas instâncias/workspaces
     // Tentativa com timeout para evitar deadlocks
     int attempts = 0;
-    const maxAttempts = 100; // 5 segundos mÃ¡ximo de espera
+    const maxAttempts = 100; // 5 segundos máximo de espera
 
     while (_rateLimitBusy && attempts < maxAttempts) {
       await Future.delayed(const Duration(milliseconds: 50));
@@ -1406,11 +1409,11 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
         if (kDebugMode) debugPrint('[$_instanceId] Rate limit window reset');
       }
 
-      // Se atingiu limite, aguarda atÃ© o fim da janela
+      // Se atingiu limite, aguarda até o fim da janela
       if (_globalRequestCount >= _maxRequestsPerWindow) {
         final wait = _rateLimitWindow - diff;
         if (wait > Duration.zero && wait < Duration(seconds: 30)) {
-          // MÃ¡ximo 30s de espera
+          // Máximo 30s de espera
           if (kDebugMode) {
             debugPrint(
               '[$_instanceId] Rate limit hit, waiting ${wait.inSeconds}s',
@@ -1453,20 +1456,20 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     }
   }
 
-  /// 🚀 v7.6.20: Sistema de Delay Adaptativo
+  /// ?? v7.6.20: Sistema de Delay Adaptativo
   /// Aprende com comportamento da API e ajusta delays automaticamente
-  /// Reduz tempo de geração em 40-50% quando API está rápida
+  /// Reduz tempo de gera��o em 40-50% quando API est� r�pida
   Duration _getAdaptiveDelay({required int blockNumber}) {
-    // 🚀 v7.6.46: DELAYS ULTRA-OTIMIZADOS para velocidade máxima
-    // Se última chamada foi sucesso RÁPIDO (< 3s atrás), delay mínimo
+    // ?? v7.6.46: DELAYS ULTRA-OTIMIZADOS para velocidade m�xima
+    // Se �ltima chamada foi sucesso R�PIDO (< 3s atr�s), delay m�nimo
     if (_lastSuccessfulCall != null &&
         DateTime.now().difference(_lastSuccessfulCall!) <
             Duration(seconds: 3)) {
       _consecutiveSuccesses++;
 
-      // Após 2 sucessos rápidos consecutivos, usar delays mínimos
+      // Ap�s 2 sucessos r�pidos consecutivos, usar delays m�nimos
       if (_consecutiveSuccesses >= 2) {
-        // API está rápida - usar delays mínimos (0.3-0.8s)
+        // API est� r�pida - usar delays m�nimos (0.3-0.8s)
         if (blockNumber <= 10) return Duration(milliseconds: 300);
         return Duration(
           milliseconds: 800,
@@ -1484,14 +1487,14 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
       return Duration(seconds: delaySeconds);
     }
 
-    // Padrão: delays MÍNIMOS (0.5s-2s em vez de 3s-6s)
+    // Padr�o: delays M�NIMOS (0.5s-2s em vez de 3s-6s)
     _consecutiveSuccesses = 0;
     _consecutive503Errors = max(0, _consecutive503Errors - 1); // Decay gradual
 
     if (blockNumber <= 5) return Duration(milliseconds: 500); // 0.5s
     if (blockNumber <= 15) return Duration(milliseconds: 1000); // 1s
     if (blockNumber <= 25) return Duration(milliseconds: 1500); // 1.5s
-    return Duration(seconds: 2); // 2s máximo
+    return Duration(seconds: 2); // 2s m�ximo
   }
 
   /// Registra sucesso de chamada da API
@@ -1510,42 +1513,42 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     Future<T> Function() op, {
     int maxRetries = 6,
   }) async {
-    // 🔥 AUMENTADO: Era 4, agora 6 para erro 503 (servidor indisponível)
-    // RATIONALE: Erro 503 é transitório, servidor pode voltar em 30-60s
+    // ?? AUMENTADO: Era 4, agora 6 para erro 503 (servidor indispon�vel)
+    // RATIONALE: Erro 503 � transit�rio, servidor pode voltar em 30-60s
     for (var attempt = 0; attempt < maxRetries; attempt++) {
       try {
         if (_isCancelled) {
-          throw Exception('OperaÃ§Ã£o cancelada');
+          throw Exception('Operação cancelada');
         }
 
         await _ensureRateLimit();
 
         if (_isCancelled) {
-          throw Exception('OperaÃ§Ã£o cancelada');
+          throw Exception('Operação cancelada');
         }
 
         return await op();
       } catch (e) {
         if (_isCancelled) {
-          throw Exception('OperaÃ§Ã£o cancelada');
+          throw Exception('Operação cancelada');
         }
 
         final errorStr = e.toString().toLowerCase();
 
-        // 🔥 CORREÇÃO CRÍTICA: Tratar erro 503 (servidor indisponível) especificamente
-        // Erro 503 = "Service Unavailable" (transitório, não é rate limit)
+        // ?? CORRE��O CR�TICA: Tratar erro 503 (servidor indispon�vel) especificamente
+        // Erro 503 = "Service Unavailable" (transit�rio, n�o � rate limit)
         if (errorStr.contains('503') ||
             errorStr.contains('server error') ||
             errorStr.contains('service unavailable')) {
-          // 🚀 v7.6.20: Registrar erro 503 para Adaptive Delay Manager
+          // ?? v7.6.20: Registrar erro 503 para Adaptive Delay Manager
           _recordApi503Error();
 
-          // 🚫 v7.6.19: Fallback OpenAI REMOVIDO - respeitar seleção do usuário
-          // Se usuário escolheu Gemini, usar APENAS Gemini (mesmo com erros 503)
-          // Se usuário escolheu OpenAI, implementar chamada direta do OpenAI (futuro)
+          // ?? v7.6.19: Fallback OpenAI REMOVIDO - respeitar sele��o do usu�rio
+          // Se usu�rio escolheu Gemini, usar APENAS Gemini (mesmo com erros 503)
+          // Se usu�rio escolheu OpenAI, implementar chamada direta do OpenAI (futuro)
 
           if (attempt < maxRetries - 1) {
-            // 🚀 v7.6.46: BACKOFF OTIMIZADO para 503:
+            // ?? v7.6.46: BACKOFF OTIMIZADO para 503:
             // Tentativa 1: 10s
             // Tentativa 2: 20s
             // Tentativa 3: 40s
@@ -1559,53 +1562,53 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
 
             if (kDebugMode) {
               debugPrint(
-                '[$_instanceId] 🔴 ERRO 503 (Servidor Indisponível) - Aguardando ${delay.inSeconds}s antes de retry ${attempt + 2}/$maxRetries',
+                '[$_instanceId] ?? ERRO 503 (Servidor Indispon�vel) - Aguardando ${delay.inSeconds}s antes de retry ${attempt + 2}/$maxRetries',
               );
               debugPrint(
-                '[$_instanceId] 📊 Backoff otimizado: 10s → 20s → 40s → 60s → 90s',
+                '[$_instanceId] ?? Backoff otimizado: 10s ? 20s ? 40s ? 60s ? 90s',
               );
             }
             await Future.delayed(delay);
             continue;
           } else {
-            // 🔥 APÓS 6 TENTATIVAS, desistir com mensagem clara
+            // ?? AP�S 6 TENTATIVAS, desistir com mensagem clara
             final totalWaitTime = (10 + 20 + 40 + 60 + 90); // Total: ~3.7 min
             throw Exception(
-              '🔴 ERRO CRÍTICO: Servidor do Gemini permanece indisponível após $maxRetries tentativas (~${(totalWaitTime / 60).toStringAsFixed(1)} min de espera total).\n'
+              '?? ERRO CR�TICO: Servidor do Gemini permanece indispon�vel ap�s $maxRetries tentativas (~${(totalWaitTime / 60).toStringAsFixed(1)} min de espera total).\n'
               '\n'
-              '💡 SOLUÇÕES POSSÍVEIS:\n'
-              '  1️⃣ Aguarde 5-10 minutos e tente novamente\n'
-              '  2️⃣ Troque para OpenAI GPT-4o nas configurações\n'
-              '  3️⃣ Tente novamente em horário de menor tráfego\n'
+              '?? SOLU��ES POSS�VEIS:\n'
+              '  1?? Aguarde 5-10 minutos e tente novamente\n'
+              '  2?? Troque para OpenAI GPT-4o nas configura��es\n'
+              '  3?? Tente novamente em hor�rio de menor tr�fego\n'
               '\n'
-              '📊 Seu progresso foi salvo e pode ser continuado.',
+              '?? Seu progresso foi salvo e pode ser continuado.',
             );
           }
         }
 
-        // 🔥 CORREÇÃO: Diferentes delays para diferentes tipos de erro
+        // ?? CORRE��O: Diferentes delays para diferentes tipos de erro
         if (errorStr.contains('429') && attempt < maxRetries - 1) {
-          // 🔴 ERRO 429 (Rate Limit) = Delay otimizado progressivo
+          // ?? ERRO 429 (Rate Limit) = Delay otimizado progressivo
           // Tentativas: 5s, 10s, 15s, 20s, 25s, 30s
           final delay = Duration(
             seconds: (attempt + 1) * 5,
           ); // OTIMIZADO: era * 15
           if (kDebugMode) {
             debugPrint(
-              '[$_instanceId] 🔴 ERRO 429 (Rate Limit) - Aguardando ${delay.inSeconds}s (tentativa ${attempt + 1}/$maxRetries)',
+              '[$_instanceId] ?? ERRO 429 (Rate Limit) - Aguardando ${delay.inSeconds}s (tentativa ${attempt + 1}/$maxRetries)',
             );
           }
           await Future.delayed(delay);
           continue;
         }
 
-        // ⚡ Timeout/Connection = Retry muito rápido (1s por tentativa)
+        // ? Timeout/Connection = Retry muito r�pido (1s por tentativa)
         if ((errorStr.contains('timeout') || errorStr.contains('connection')) &&
             attempt < maxRetries - 1) {
           final delay = Duration(seconds: attempt + 1); // OTIMIZADO: era * 2
           if (kDebugMode) {
             debugPrint(
-              '[$_instanceId] ⚡ Retry rápido (timeout/connection) - ${delay.inSeconds}s (tentativa ${attempt + 1}/$maxRetries)',
+              '[$_instanceId] ? Retry r�pido (timeout/connection) - ${delay.inSeconds}s (tentativa ${attempt + 1}/$maxRetries)',
             );
           }
           await Future.delayed(delay);
@@ -1614,25 +1617,25 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
 
         if (kDebugMode) {
           debugPrint(
-            '[$_instanceId] Erro final apÃ³s $maxRetries tentativas: $e',
+            '[$_instanceId] Erro final após $maxRetries tentativas: $e',
           );
         }
         rethrow;
       }
     }
     throw Exception(
-      'Limite de tentativas excedido apÃ³s $maxRetries tentativas',
+      'Limite de tentativas excedido após $maxRetries tentativas',
     );
   }
 
   // ===================== Narrativa =====================
   final List<String> _phases = const [
-    'Preparação',
-    'Introdução',
+    'Prepara��o',
+    'Introdu��o',
     'Desenvolvimento',
-    'Clímax',
-    'Resolução',
-    'Finalização',
+    'Cl�max',
+    'Resolu��o',
+    'Finaliza��o',
   ];
 
   int _getPhaseIndexFromProgress(double p) {
@@ -1659,7 +1662,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
 
   int _getBlockDelay(int block, int total) {
     final p = block / total;
-    // OTIMIZADO: Delays mínimos para maximizar velocidade (sem afetar qualidade)
+    // OTIMIZADO: Delays m�nimos para maximizar velocidade (sem afetar qualidade)
     if (p <= 0.15) return 50; // Reduzido de 100ms para 50ms
     if (p <= 0.30) return 75; // Reduzido de 150ms para 75ms
     if (p <= 0.65) return 100; // Reduzido de 200ms para 100ms
@@ -1670,213 +1673,213 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
 
   bool _checkTargetMet(String text, ScriptConfig c) {
     if (c.measureType == 'caracteres') {
-      // TOLERÃ‚NCIA ZERO: SÃ³ aceita se atingir pelo menos 99.5% da meta
+      // TOLERÂNCIA ZERO: Só aceita se atingir pelo menos 99.5% da meta
       final tol = max(
         50,
         (c.quantity * 0.005).round(),
-      ); // MÃ¡ximo 0.5% ou 50 chars, o que for maior
+      ); // Máximo 0.5% ou 50 chars, o que for maior
       return text.length >= (c.quantity - tol);
     }
     final wc = _countWords(text);
-    // TOLERÃ‚NCIA ZERO: SÃ³ aceita se atingir pelo menos 99% da meta
+    // TOLERÂNCIA ZERO: Só aceita se atingir pelo menos 99% da meta
     final tol = max(
       10,
       (c.quantity * 0.01).round(),
-    ); // MÃ¡ximo 1% ou 10 palavras, o que for maior
+    ); // Máximo 1% ou 10 palavras, o que for maior
     return wc >= (c.quantity - tol);
   }
 
   int _calculateTotalBlocks(ScriptConfig c) {
-    // 🎯 NORMALIZAÇÃO: Converter tudo para palavras equivalentes
-    // Isso garante que quantidades equivalentes de conteúdo recebam blocos similares
-    // ⚠️ IMPORTANTE: NÃO aplicar multiplicador de idioma aqui!
-    //    O multiplicador é aplicado por bloco, não no total de blocos.
-    //    Caso contrário, inglês (1.05x) geraria blocos extras desnecessários.
+    // ?? NORMALIZA��O: Converter tudo para palavras equivalentes
+    // Isso garante que quantidades equivalentes de conte�do recebam blocos similares
+    // ?? IMPORTANTE: N�O aplicar multiplicador de idioma aqui!
+    //    O multiplicador � aplicado por bloco, n�o no total de blocos.
+    //    Caso contr�rio, ingl�s (1.05x) geraria blocos extras desnecess�rios.
 
-    // 🇰🇷 AJUSTE ESPECIAL PARA COREANO: Densidade de caracteres menor
-    // Hangul: 1 caractere = 1 sílaba completa → menos chars por palavra
-    // Fórmula coreano: 4.2 chars/palavra (vs inglês/PT: 5.5)
+    // ???? AJUSTE ESPECIAL PARA COREANO: Densidade de caracteres menor
+    // Hangul: 1 caractere = 1 s�laba completa ? menos chars por palavra
+    // F�rmula coreano: 4.2 chars/palavra (vs ingl�s/PT: 5.5)
     final isKoreanMeasure =
-        c.language.contains('한국어') ||
+        c.language.contains('???') ||
         c.language.toLowerCase().contains('coreano') ||
         c.language.toLowerCase().contains('korean');
 
     final charToWordRatio = (c.measureType == 'caracteres' && isKoreanMeasure)
-        ? 4.2 // Coreano: alta densidade silábica
-        : 5.5; // Outros idiomas: padrão
+        ? 4.2 // Coreano: alta densidade sil�bica
+        : 5.5; // Outros idiomas: padr�o
 
     int wordsEquivalent = c.measureType == 'caracteres'
         ? (c.quantity / charToWordRatio)
-              .round() // Conversão: chars → palavras
+              .round() // Convers�o: chars ? palavras
         : c.quantity;
 
     if (kDebugMode) {
-      debugPrint('🧮 CÁLCULO DE BLOCOS (DEBUG):');
+      debugPrint('?? C�LCULO DE BLOCOS (DEBUG):');
       debugPrint('   Idioma: "${c.language}"');
       debugPrint('   IsKoreanMeasure? $isKoreanMeasure');
       debugPrint('   Ratio: $charToWordRatio');
       debugPrint('   WordsEquivalent: $wordsEquivalent');
     }
 
-    // 🌍 AJUSTE AUTOMÁTICO PARA IDIOMAS COM ALFABETOS PESADOS
-    // IMPORTANTE: Este ajuste só deve ser aplicado para medida em CARACTERES!
-    // Para medida em PALAVRAS, não aplicar redução (o multiplicador 1.20 já compensa)
+    // ?? AJUSTE AUTOM�TICO PARA IDIOMAS COM ALFABETOS PESADOS
+    // IMPORTANTE: Este ajuste s� deve ser aplicado para medida em CARACTERES!
+    // Para medida em PALAVRAS, n�o aplicar redu��o (o multiplicador 1.20 j� compensa)
     // Diferentes alfabetos ocupam diferentes quantidades de bytes em UTF-8
     // Ajustamos palavras equivalentes para evitar timeout de contexto em roteiros longos
 
-    // 🔴 NÍVEL 2: Cirílico e Alfabetos Pesados - 2-3 bytes/char → Redução de 12%
+    // ?? N�VEL 2: Cir�lico e Alfabetos Pesados - 2-3 bytes/char ? Redu��o de 12%
     final cyrillicLanguages = [
-      'Russo', 'Búlgaro', 'Sérvio', // Cirílico
+      'Russo', 'B�lgaro', 'S�rvio', // Cir�lico
     ];
 
-    // 🔴 NÍVEL 2B: Outros Não-Latinos - 2-3 bytes/char → Redução de 15%
-    // ATENÇÃO: Coreano FOI REMOVIDO desta lista (usa estratégia de blocos múltiplos)
+    // ?? N�VEL 2B: Outros N�o-Latinos - 2-3 bytes/char ? Redu��o de 15%
+    // ATEN��O: Coreano FOI REMOVIDO desta lista (usa estrat�gia de blocos m�ltiplos)
     final otherNonLatinLanguages = [
-      'Hebraico', 'Grego', 'Tailandês', // Semíticos e outros
+      'Hebraico', 'Grego', 'Tailand�s', // Sem�ticos e outros
     ];
 
-    // 🟡 NÍVEL 1: Latinos com Diacríticos Pesados - 1.2-1.5 bytes/char → Redução de 8%
+    // ?? N�VEL 1: Latinos com Diacr�ticos Pesados - 1.2-1.5 bytes/char ? Redu��o de 8%
     final heavyDiacriticLanguages = [
       'Turco',
-      'Polonês',
+      'Polon�s',
       'Tcheco',
       'Vietnamita',
-      'Húngaro',
+      'H�ngaro',
     ];
 
-    // 🔧 CORREÇÃO: Aplicar ajuste SOMENTE para 'caracteres', nunca para 'palavras'
-    // Motivo: O problema de timeout só ocorre com caracteres (tokens UTF-8)
-    // Para palavras, o multiplicador 1.20 já é suficiente para compensar variação
+    // ?? CORRE��O: Aplicar ajuste SOMENTE para 'caracteres', nunca para 'palavras'
+    // Motivo: O problema de timeout s� ocorre com caracteres (tokens UTF-8)
+    // Para palavras, o multiplicador 1.20 j� � suficiente para compensar varia��o
     if (c.measureType == 'caracteres' && wordsEquivalent > 6000) {
       double adjustmentFactor = 1.0;
       String adjustmentLevel = '';
 
       if (cyrillicLanguages.contains(c.language)) {
         adjustmentFactor = 0.88; // -12% (AJUSTADO: era -20%)
-        adjustmentLevel = 'CIRÍLICO';
+        adjustmentLevel = 'CIR�LICO';
       } else if (otherNonLatinLanguages.contains(c.language)) {
         adjustmentFactor = 0.85; // -15%
-        adjustmentLevel = 'NÃO-LATINO';
+        adjustmentLevel = 'N�O-LATINO';
       } else if (heavyDiacriticLanguages.contains(c.language)) {
         adjustmentFactor = 0.92; // -8% (AJUSTADO: era -10%)
-        adjustmentLevel = 'DIACRÍTICOS';
+        adjustmentLevel = 'DIACR�TICOS';
       }
 
       if (adjustmentFactor < 1.0) {
         final originalWords = wordsEquivalent;
         wordsEquivalent = (wordsEquivalent * adjustmentFactor).round();
         if (kDebugMode) {
-          debugPrint('🌍 AJUSTE $adjustmentLevel (CARACTERES): ${c.language}');
+          debugPrint('?? AJUSTE $adjustmentLevel (CARACTERES): ${c.language}');
           debugPrint(
-            '   $originalWords → $wordsEquivalent palavras equiv. (${(adjustmentFactor * 100).toInt()}%)',
+            '   $originalWords ? $wordsEquivalent palavras equiv. (${(adjustmentFactor * 100).toInt()}%)',
           );
         }
       }
     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // 🎯 v7.6.53: CHUNKING OTIMIZADO POR IDIOMA - Pipeline de Modelo Único
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ?????????????????????????????????????????????????????????????????????????????
+    // ?? v7.6.53: CHUNKING OTIMIZADO POR IDIOMA - Pipeline de Modelo �nico
+    // ?????????????????????????????????????????????????????????????????????????????
     //
-    // ESPECIFICAÇÃO DE PALAVRAS POR BLOCO (pal/bloco):
-    //   🇧🇷 PORTUGUÊS:     1.200 - 1.500 pal/bloco (verboso, latino)
-    //   🇰🇷 COREANO:       600 - 800 pal/bloco (Hangul, alta densidade)
-    //   🇷🇺🇧🇬 CIRÍLICOS:  900 - 1.100 pal/bloco (tokens pesados)
-    //   🇹🇷 TURCO:         1.000 - 1.200 pal/bloco (aglutinante)
-    //   🇵🇱 POLONÊS:       1.000 - 1.200 pal/bloco (diacríticos)
-    //   🇩🇪 ALEMÃO:        1.000 - 1.200 pal/bloco (palavras compostas)
-    //   🌍 LATINOS:        1.200 - 1.500 pal/bloco (EN, ES, FR, IT, RO)
+    // ESPECIFICA��O DE PALAVRAS POR BLOCO (pal/bloco):
+    //   ???? PORTUGU�S:     1.200 - 1.500 pal/bloco (verboso, latino)
+    //   ???? COREANO:       600 - 800 pal/bloco (Hangul, alta densidade)
+    //   ???????? CIR�LICOS:  900 - 1.100 pal/bloco (tokens pesados)
+    //   ???? TURCO:         1.000 - 1.200 pal/bloco (aglutinante)
+    //   ???? POLON�S:       1.000 - 1.200 pal/bloco (diacr�ticos)
+    //   ???? ALEM�O:        1.000 - 1.200 pal/bloco (palavras compostas)
+    //   ?? LATINOS:        1.200 - 1.500 pal/bloco (EN, ES, FR, IT, RO)
     //
-    // FÓRMULA: blocos = wordsEquivalent / target_pal_bloco
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // F�RMULA: blocos = wordsEquivalent / target_pal_bloco
+    // ?????????????????????????????????????????????????????????????????????????????
 
     final langLower = c.language.toLowerCase();
 
-    // 🔍 DETECÇÃO DE IDIOMA
+    // ?? DETEC��O DE IDIOMA
     final isPortuguese = langLower.contains('portugu') || langLower == 'pt';
     final isKorean =
-        c.language.contains('한국어') ||
+        c.language.contains('???') ||
         langLower.contains('coreano') ||
         langLower.contains('korean') ||
         langLower == 'ko';
     final isRussian = langLower.contains('russo') || langLower == 'ru';
     final isBulgarian =
-        langLower.contains('búlgar') ||
+        langLower.contains('b�lgar') ||
         langLower.contains('bulgar') ||
         langLower == 'bg';
     final isCyrillic = isRussian || isBulgarian;
     final isTurkish = langLower.contains('turco') || langLower == 'tr';
     final isPolish = langLower.contains('polon') || langLower == 'pl';
     final isGerman = langLower.contains('alem') || langLower == 'de';
-    // Latinos: en, es-mx, fr, it, ro (usam valores similares ao português)
+    // Latinos: en, es-mx, fr, it, ro (usam valores similares ao portugu�s)
     final isLatin =
-        langLower.contains('inglês') ||
+        langLower.contains('ingl�s') ||
         langLower.contains('english') ||
         langLower == 'en' ||
         langLower.contains('espanhol') ||
-        langLower.contains('español') ||
+        langLower.contains('espa�ol') ||
         langLower.contains('es') ||
-        langLower.contains('francês') ||
-        langLower.contains('français') ||
+        langLower.contains('franc�s') ||
+        langLower.contains('fran�ais') ||
         langLower == 'fr' ||
         langLower.contains('italiano') ||
         langLower == 'it' ||
         langLower.contains('romeno') ||
-        langLower.contains('român') ||
+        langLower.contains('rom�n') ||
         langLower == 'ro';
 
-    // 🎯 TARGET DE PALAVRAS POR BLOCO (centro do range)
+    // ?? TARGET DE PALAVRAS POR BLOCO (centro do range)
     int targetPalBloco;
     String langCategory;
 
     if (isKorean) {
       targetPalBloco = 700; // 600-800 pal/bloco
-      langCategory = '🇰🇷 COREANO';
+      langCategory = '???? COREANO';
     } else if (isCyrillic) {
       targetPalBloco = 1000; // 900-1100 pal/bloco
-      langCategory = '🔤 CIRÍLICO';
+      langCategory = '?? CIR�LICO';
     } else if (isTurkish) {
       targetPalBloco = 1100; // 1000-1200 pal/bloco
-      langCategory = '🇹🇷 TURCO';
+      langCategory = '???? TURCO';
     } else if (isPolish) {
       targetPalBloco = 1100; // 1000-1200 pal/bloco
-      langCategory = '🇵🇱 POLONÊS';
+      langCategory = '???? POLON�S';
     } else if (isGerman) {
       targetPalBloco = 1100; // 1000-1200 pal/bloco
-      langCategory = '🇩🇪 ALEMÃO';
+      langCategory = '???? ALEM�O';
     } else if (isPortuguese) {
       targetPalBloco = 1350; // 1200-1500 pal/bloco
-      langCategory = '🇧🇷 PORTUGUÊS';
+      langCategory = '???? PORTUGU�S';
     } else if (isLatin) {
       targetPalBloco = 1350; // 1200-1500 pal/bloco
-      langCategory = '🌍 LATINO';
+      langCategory = '?? LATINO';
     } else {
-      // Fallback para idiomas não especificados
+      // Fallback para idiomas n�o especificados
       targetPalBloco = 1200;
-      langCategory = '🌐 OUTROS';
+      langCategory = '?? OUTROS';
     }
 
-    // 📊 CÁLCULO DE BLOCOS: words / target
+    // ?? C�LCULO DE BLOCOS: words / target
     int calculatedBlocks = (wordsEquivalent / targetPalBloco).ceil();
 
-    // 🔒 LIMITES DE SEGURANÇA
-    // Mínimo: 2 blocos (intro + conclusão)
-    // Máximo: varia por idioma para evitar erro 503
+    // ?? LIMITES DE SEGURAN�A
+    // M�nimo: 2 blocos (intro + conclus�o)
+    // M�ximo: varia por idioma para evitar erro 503
     int minBlocks = 2;
     int maxBlocks;
 
     if (isKorean) {
       maxBlocks = 50; // Coreano precisa de mais blocos menores
     } else if (isCyrillic) {
-      maxBlocks = 30; // Cirílicos são mais pesados
+      maxBlocks = 30; // Cir�licos s�o mais pesados
     } else {
-      maxBlocks = 25; // Latinos e outros são eficientes
+      maxBlocks = 25; // Latinos e outros s�o eficientes
     }
 
     // Aplicar limites
     int finalBlocks = calculatedBlocks.clamp(minBlocks, maxBlocks);
 
-    // 🇰🇷 COMPENSAÇÃO COREANO: +18% blocos para compensar sub-geração natural
+    // ???? COMPENSA��O COREANO: +18% blocos para compensar sub-gera��o natural
     if (isKorean) {
       finalBlocks = (finalBlocks * 1.18).ceil().clamp(minBlocks, maxBlocks);
     }
@@ -1884,7 +1887,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     if (kDebugMode) {
       final actualPalBloco = (wordsEquivalent / finalBlocks).round();
       debugPrint(
-        '   $langCategory: $wordsEquivalent palavras ÷ $targetPalBloco target = $calculatedBlocks → $finalBlocks blocos (~$actualPalBloco pal/bloco)',
+        '   $langCategory: $wordsEquivalent palavras � $targetPalBloco target = $calculatedBlocks ? $finalBlocks blocos (~$actualPalBloco pal/bloco)',
       );
     }
 
@@ -1892,44 +1895,44 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
   }
 
   int _calculateTargetForBlock(int current, int total, ScriptConfig c) {
-    // 🔧 CALIBRAÇÃO AJUSTADA: Multiplicador reduzido de 1.20 para 0.95 (95%)
-    // PROBLEMA DETECTADO: Roteiros saindo 30% maiores (Wanessa +28%, Quitéria +30%)
-    // ANÁLISE: Gemini está gerando MAIS do que o pedido, não menos
-    // SOLUÇÃO: Reduzir multiplicador para evitar sobre-geração
-    // Target: Ficar entre -5% e +10% do alvo (±10% aceitável)
+    // ?? CALIBRA��O AJUSTADA: Multiplicador reduzido de 1.20 para 0.95 (95%)
+    // PROBLEMA DETECTADO: Roteiros saindo 30% maiores (Wanessa +28%, Quit�ria +30%)
+    // AN�LISE: Gemini est� gerando MAIS do que o pedido, n�o menos
+    // SOLU��O: Reduzir multiplicador para evitar sobre-gera��o
+    // Target: Ficar entre -5% e +10% do alvo (�10% aceit�vel)
 
-    // 🔧 CORREÇÃO: Usar a mesma lógica de normalização que _calculateTotalBlocks
-    // 🇰🇷 AJUSTE ESPECIAL PARA COREANO: Densidade de caracteres menor
+    // ?? CORRE��O: Usar a mesma l�gica de normaliza��o que _calculateTotalBlocks
+    // ???? AJUSTE ESPECIAL PARA COREANO: Densidade de caracteres menor
     final isKoreanTarget =
-        c.language.contains('한국어') ||
+        c.language.contains('???') ||
         c.language.toLowerCase().contains('coreano') ||
         c.language.toLowerCase().contains('korean');
 
     final charToWordRatio = (c.measureType == 'caracteres' && isKoreanTarget)
-        ? 4.2 // Coreano: alta densidade silábica
-        : 5.5; // Outros idiomas: padrão
+        ? 4.2 // Coreano: alta densidade sil�bica
+        : 5.5; // Outros idiomas: padr�o
 
     int targetQuantity = c.measureType == 'caracteres'
         ? (c.quantity / charToWordRatio)
-              .round() // Conversão: chars → palavras
+              .round() // Convers�o: chars ? palavras
         : c.quantity;
 
-    // 🚫 v10: REMOVIDO boost artificial
-    // Lição: Gemini ignora multiplicadores - gera naturalmente
-    // Solução: Usar mesma tabela de blocos do português (comprovada)
+    // ?? v10: REMOVIDO boost artificial
+    // Li��o: Gemini ignora multiplicadores - gera naturalmente
+    // Solu��o: Usar mesma tabela de blocos do portugu�s (comprovada)
 
-    // 🌍 Aplicar os mesmos ajustes de idioma que em _calculateTotalBlocks
-    // IMPORTANTE: Só aplicar para 'caracteres', nunca para 'palavras'
-    // ATENÇÃO: Coreano usa estratégia de blocos múltiplos, não redução percentual
+    // ?? Aplicar os mesmos ajustes de idioma que em _calculateTotalBlocks
+    // IMPORTANTE: S� aplicar para 'caracteres', nunca para 'palavras'
+    // ATEN��O: Coreano usa estrat�gia de blocos m�ltiplos, n�o redu��o percentual
     if (c.measureType == 'caracteres' && targetQuantity > 6000) {
-      final cyrillicLanguages = ['Russo', 'Búlgaro', 'Sérvio'];
-      final otherNonLatinLanguages = ['Hebraico', 'Grego', 'Tailandês'];
+      final cyrillicLanguages = ['Russo', 'B�lgaro', 'S�rvio'];
+      final otherNonLatinLanguages = ['Hebraico', 'Grego', 'Tailand�s'];
       final heavyDiacriticLanguages = [
         'Turco',
-        'Polonês',
+        'Polon�s',
         'Tcheco',
         'Vietnamita',
-        'Húngaro',
+        'H�ngaro',
       ];
 
       if (cyrillicLanguages.contains(c.language)) {
@@ -1941,34 +1944,34 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
       }
     }
 
-    // 🔥 AJUSTE CRÍTICO: Multiplicador calibrado por idioma
-    // HISTÓRICO:
-    //   v1: 1.05 → Gerou 86.7% (déficit de -13.3%) ❌
-    //   v2: 1.15 → Gerou 116% (excesso de +16%) ❌
-    //   v3: 1.08 → Gerou 112% (excesso de +12%) ⚠️
-    //   v4.1: 0.98 → Esperado: 98-105% (ideal) ✅
-    //   v5.0: 1.08 → Gerava bem (100%+) MAS erro 503 (10 blocos grandes) ❌
-    //   v6.0: 0.85 → Não dá 503 MAS gera só 82% (8700/10600) ❌
-    //   v6.1: 0.95 → Ainda baixo, gera só 87% (9200/10600) ❌
-    //   v6.2: 1.00 → Melhorou mas ainda 91% (9600/10600) ❌
-    //   v6.3: 1.05 → Melhor, mas ainda 100% (10600) ou 77% (8500) variável ⚠️
-    //   v6.4: 1.08 → Volta ao valor do v5.0 MAS ainda dá 503 com 12 blocos ❌
-    //   v6.5: 1.05 → Reduz para 1.05 + AUMENTA blocos (12→14) = blocos 25% menores 🎯
-    //   v7.6.42: 1.18 → Coreano específico para compensar sub-geração de ~15%
+    // ?? AJUSTE CR�TICO: Multiplicador calibrado por idioma
+    // HIST�RICO:
+    //   v1: 1.05 ? Gerou 86.7% (d�ficit de -13.3%) ?
+    //   v2: 1.15 ? Gerou 116% (excesso de +16%) ?
+    //   v3: 1.08 ? Gerou 112% (excesso de +12%) ??
+    //   v4.1: 0.98 ? Esperado: 98-105% (ideal) ?
+    //   v5.0: 1.08 ? Gerava bem (100%+) MAS erro 503 (10 blocos grandes) ?
+    //   v6.0: 0.85 ? N�o d� 503 MAS gera s� 82% (8700/10600) ?
+    //   v6.1: 0.95 ? Ainda baixo, gera s� 87% (9200/10600) ?
+    //   v6.2: 1.00 ? Melhorou mas ainda 91% (9600/10600) ?
+    //   v6.3: 1.05 ? Melhor, mas ainda 100% (10600) ou 77% (8500) vari�vel ??
+    //   v6.4: 1.08 ? Volta ao valor do v5.0 MAS ainda d� 503 com 12 blocos ?
+    //   v6.5: 1.05 ? Reduz para 1.05 + AUMENTA blocos (12?14) = blocos 25% menores ??
+    //   v7.6.42: 1.18 ? Coreano espec�fico para compensar sub-gera��o de ~15%
     //
-    // 🇰🇷 COREANO v12: Multiplicador 1.18 para compensar sub-geração natural
-    // ANÁLISE: Coreano gera apenas ~84.6% do pedido (11k de 13k)
-    // SOLUÇÃO: Pedir 18% a mais para compensar
+    // ???? COREANO v12: Multiplicador 1.18 para compensar sub-gera��o natural
+    // AN�LISE: Coreano gera apenas ~84.6% do pedido (11k de 13k)
+    // SOLU��O: Pedir 18% a mais para compensar
     double multiplier;
     if (isKoreanTarget) {
-      multiplier = 1.18; // 🇰🇷 v12: Compensar sub-geração de ~15%
+      multiplier = 1.18; // ???? v12: Compensar sub-gera��o de ~15%
     } else if (c.language.toLowerCase().contains('portugu')) {
-      multiplier = 1.05; // v6.5: Português
+      multiplier = 1.05; // v6.5: Portugu�s
     } else {
       multiplier = 1.05; // Outros idiomas
     }
 
-    // Calcular target acumulado até este bloco (com margem ajustada)
+    // Calcular target acumulado at� este bloco (com margem ajustada)
     final cumulativeTarget = (targetQuantity * (current / total) * multiplier)
         .round();
 
@@ -1977,15 +1980,15 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
         ? (targetQuantity * ((current - 1) / total) * multiplier).round()
         : 0;
 
-    // DELTA = palavras necessárias NESTE bloco específico
+    // DELTA = palavras necess�rias NESTE bloco espec�fico
     final baseTarget = cumulativeTarget - previousCumulativeTarget;
 
     // LIMITES por bloco individual (aumentado para evitar cortes)
     final maxBlockSize = c.measureType == 'caracteres' ? 15000 : 5000;
 
-    // Para o último bloco, usar o multiplicador ajustado por idioma
-    // Português: 1.05 para compensar leve sub-geração (~105% do target)
-    // Outros: 0.95 para evitar sobre-geração
+    // Para o �ltimo bloco, usar o multiplicador ajustado por idioma
+    // Portugu�s: 1.05 para compensar leve sub-gera��o (~105% do target)
+    // Outros: 0.95 para evitar sobre-gera��o
     if (current == total) {
       final wordsPerBlock = (targetQuantity / total).ceil();
       return min((wordsPerBlock * multiplier).round(), maxBlockSize);
@@ -1994,14 +1997,14 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     return baseTarget > maxBlockSize ? maxBlockSize : baseTarget;
   }
 
-  // ===================== Geração de Blocos =====================
+  // ===================== Gera��o de Blocos =====================
 
-  /// 🔄 WRAPPER: Chama o novo módulo BaseRules
+  /// ?? WRAPPER: Chama o novo m�dulo BaseRules
   String _getLanguageInstruction(String l) {
     return BaseRules.getLanguageInstruction(l);
   }
 
-  /// 🔄 WRAPPER: Chama o novo módulo BaseRules
+  /// ?? WRAPPER: Chama o novo m�dulo BaseRules
   String _getStartInstruction(
     String language, {
     required bool withTitle,
@@ -2014,18 +2017,18 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     );
   }
 
-  /// 🔄 WRAPPER: Chama o novo módulo BaseRules
+  /// ?? WRAPPER: Chama o novo m�dulo BaseRules
   String _getContinueInstruction(String language) {
     return BaseRules.getContinueInstruction(language);
   }
 
-  /// 🌍 Traduz labels de metadados (TEMA, SUBTEMA, etc) para o idioma selecionado
-  /// 🔄 WRAPPER: Chama o novo módulo BaseRules
+  /// ?? Traduz labels de metadados (TEMA, SUBTEMA, etc) para o idioma selecionado
+  /// ?? WRAPPER: Chama o novo m�dulo BaseRules
   Map<String, String> _getMetadataLabels(String language) {
     return BaseRules.getMetadataLabels(language);
   }
 
-  /// 🔄 WRAPPER: Chama o novo módulo BaseRules
+  /// ?? WRAPPER: Chama o novo m�dulo BaseRules
   String _buildLocalizationGuidance(ScriptConfig config) {
     return BaseRules.buildLocalizationGuidance(config);
   }
@@ -2051,53 +2054,53 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
       fromSecondary.add(name);
     }
 
-    // Context removido - não há mais nomes para extrair do contexto manual
+    // Context removido - n�o h� mais nomes para extrair do contexto manual
 
-    // 🎯 NOVO: Extrair gênero e relações de personagens do título
+    // ?? NOVO: Extrair g�nero e rela��es de personagens do t�tulo
     final titleNames = _extractCharacterHintsFromTitle(config.title, '');
     names.addAll(titleNames);
     fromTitle.addAll(titleNames);
 
-    // 🆕 CORREÇÃO BUG ALBERTO: Adicionar nomes COM papéis ao tracker
+    // ?? CORRE��O BUG ALBERTO: Adicionar nomes COM pap�is ao tracker
     for (final name in names) {
-      // Context removido - papel não pode mais ser extraído do contexto manual
+      // Context removido - papel n�o pode mais ser extra�do do contexto manual
 
-      // Para protagonista e secundário, usar papéis explícitos
+      // Para protagonista e secund�rio, usar pap�is expl�citos
       if (fromProtagonist.contains(name)) {
         tracker.addName(name, role: 'protagonista');
       } else if (fromSecondary.contains(name)) {
-        tracker.addName(name, role: 'secundário');
+        tracker.addName(name, role: 'secund�rio');
       } else {
         tracker.addName(name, role: 'indefinido');
       }
     }
 
-    // 📊 LOG DETALHADO: Mostrar origem de cada nome carregado
+    // ?? LOG DETALHADO: Mostrar origem de cada nome carregado
     if (kDebugMode && tracker.confirmedNames.isNotEmpty) {
       debugPrint(
-        '🔐 TRACKER BOOTSTRAP - ${tracker.confirmedNames.length} nome(s) carregado(s):',
+        '?? TRACKER BOOTSTRAP - ${tracker.confirmedNames.length} nome(s) carregado(s):',
       );
       if (fromProtagonist.isNotEmpty) {
-        debugPrint('   📌 Protagonista: ${fromProtagonist.join(", ")}');
+        debugPrint('   ?? Protagonista: ${fromProtagonist.join(", ")}');
       }
       if (fromSecondary.isNotEmpty) {
-        debugPrint('   📌 Secundário: ${fromSecondary.join(", ")}');
+        debugPrint('   ?? Secund�rio: ${fromSecondary.join(", ")}');
       }
       if (fromContext.isNotEmpty) {
-        debugPrint('   📌 Do contexto: ${fromContext.join(", ")}');
+        debugPrint('   ?? Do contexto: ${fromContext.join(", ")}');
       }
       if (fromTitle.isNotEmpty) {
-        debugPrint('   📌 Do título: ${fromTitle.join(", ")}');
+        debugPrint('   ?? Do t�tulo: ${fromTitle.join(", ")}');
       }
-      debugPrint('   ✅ Total: ${tracker.confirmedNames.join(", ")}');
+      debugPrint('   ? Total: ${tracker.confirmedNames.join(", ")}');
     } else if (kDebugMode) {
       debugPrint(
-        '⚠️ TRACKER BOOTSTRAP: Nenhum nome inicial fornecido (será detectado no bloco 1)',
+        '?? TRACKER BOOTSTRAP: Nenhum nome inicial fornecido (ser� detectado no bloco 1)',
       );
     }
   }
 
-  /// 🔄 v7.6.25: Atualiza tracker, RETORNA FALSE se houve conflito de papel
+  /// ?? v7.6.25: Atualiza tracker, RETORNA FALSE se houve conflito de papel
   bool _updateTrackerFromContextSnippet(
     _CharacterTracker tracker,
     ScriptConfig config,
@@ -2105,7 +2108,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
   ) {
     if (snippet.trim().isEmpty) return true; // Snippet vazio = sem erro
 
-    bool hasRoleConflict = false; // 🚨 v7.6.25: Flag de erro
+    bool hasRoleConflict = false; // ?? v7.6.25: Flag de erro
 
     final existingLower = tracker.confirmedNames
         .map((n) => n.toLowerCase())
@@ -2117,17 +2120,17 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
       final normalized = name.toLowerCase();
       if (existingLower.contains(normalized)) return;
 
-      // 🔥 v7.6.31: REMOVER filtro "count < 2" - BUG CRÍTICO!
-      // PROBLEMA: "Janice" com 1 menção no Bloco 2 não entrava no tracker
-      // RESULTADO: "Janice" no Bloco 9 passava na validação (tracker vazio)
-      // SOLUÇÃO: Adicionar TODOS os nomes válidos, independente de contagem
-      // A validação isValidName() já garante que são nomes reais
-      // if (count < 2) return; // ❌ REMOVIDO - causava duplicações
+      // ?? v7.6.31: REMOVER filtro "count < 2" - BUG CR�TICO!
+      // PROBLEMA: "Janice" com 1 men��o no Bloco 2 n�o entrava no tracker
+      // RESULTADO: "Janice" no Bloco 9 passava na valida��o (tracker vazio)
+      // SOLU��O: Adicionar TODOS os nomes v�lidos, independente de contagem
+      // A valida��o isValidName() j� garante que s�o nomes reais
+      // if (count < 2) return; // ? REMOVIDO - causava duplica��es
 
       if (locationLower.isNotEmpty && normalized == locationLower) return;
       if (_nameStopwords.contains(normalized)) return;
 
-      // v7.6.63: Validação estrutural (aceita nomes do LLM)
+      // v7.6.63: Valida��o estrutural (aceita nomes do LLM)
       if (!_isLikelyName(name)) {
         if (kDebugMode) {
           debugPrint('Tracker ignorou texto invalido: "$name"');
@@ -2135,43 +2138,43 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
         return;
       }
 
-      // 🆕 CORREÇÃO BUG ALBERTO: Extrair papel antes de adicionar
+      // ?? CORRE��O BUG ALBERTO: Extrair papel antes de adicionar
       final role = _extractRoleForName(name, snippet);
 
       if (role != null) {
-        final success = tracker.addName(name, role: role); // 🚨 v7.6.25
+        final success = tracker.addName(name, role: role); // ?? v7.6.25
         if (kDebugMode) {
           if (success) {
             debugPrint(
-              '🔍 v7.6.31: Tracker adicionou personagem COM PAPEL: "$name" = "$role" (ocorrências: $count)',
+              '?? v7.6.31: Tracker adicionou personagem COM PAPEL: "$name" = "$role" (ocorr�ncias: $count)',
             );
           } else {
-            debugPrint('❌ v7.6.25: CONFLITO DE PAPEL detectado!');
+            debugPrint('? v7.6.25: CONFLITO DE PAPEL detectado!');
             debugPrint('   Nome: "$name"');
             debugPrint('   Papel tentado: "$role"');
-            hasRoleConflict = true; // 🚨 Marca erro
+            hasRoleConflict = true; // ?? Marca erro
           }
         }
       } else {
         tracker.addName(name, role: 'indefinido');
         if (kDebugMode) {
           debugPrint(
-            '🔍 v7.6.31: Tracker adicionou personagem SEM PAPEL: "$name" (indefinido - ocorrências: $count)',
+            '?? v7.6.31: Tracker adicionou personagem SEM PAPEL: "$name" (indefinido - ocorr�ncias: $count)',
           );
         }
       }
       if (kDebugMode) {
         debugPrint(
-          '🔍 v7.6.31: Tracker adicionou personagem detectado: $name (ocorrências: $count)',
+          '?? v7.6.31: Tracker adicionou personagem detectado: $name (ocorr�ncias: $count)',
         );
       }
     });
 
-    return !hasRoleConflict; // ✅ true = OK, ❌ false = ERRO
+    return !hasRoleConflict; // ? true = OK, ? false = ERRO
   }
 
-  /// 🌍 Traduz termos de parentesco do português para o idioma do roteiro
-  /// 🔄 WRAPPER: Chama o novo módulo BaseRules
+  /// ?? Traduz termos de parentesco do portugu�s para o idioma do roteiro
+  /// ?? WRAPPER: Chama o novo m�dulo BaseRules
   String _translateFamilyTerms(String text, String language) {
     return BaseRules.translateFamilyTerms(language, text);
   }
@@ -2190,7 +2193,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
         config.language,
       );
       lines.add(
-        '- Protagonista: "$translatedProtagonist" — mantenha exatamente este nome e sua função.',
+        '- Protagonista: "$translatedProtagonist" � mantenha exatamente este nome e sua fun��o.',
       );
       baseNames.add(protagonist.toLowerCase());
     }
@@ -2202,7 +2205,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
         config.language,
       );
       lines.add(
-        '- Personagem secundário: "$translatedSecondary" — preserve o mesmo nome em todos os blocos.',
+        '- Personagem secund�rio: "$translatedSecondary" � preserve o mesmo nome em todos os blocos.',
       );
       baseNames.add(secondary.toLowerCase());
     }
@@ -2214,7 +2217,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
           ..sort((a, b) => a.compareTo(b));
 
     for (final name in additional) {
-      // 🎯 CORRIGIDO: Adicionar personagens mencionados (não são hints de narrador)
+      // ?? CORRIGIDO: Adicionar personagens mencionados (n�o s�o hints de narrador)
       if (name.startsWith('PERSONAGEM MENCIONADO')) {
         // Remover marcador e traduzir termo familiar antes de adicionar ao prompt
         final cleanName = name.replaceFirst('PERSONAGEM MENCIONADO: ', '');
@@ -2223,24 +2226,24 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
           config.language,
         );
         lines.add(
-          '- Personagem mencionado: $translatedName (manter como referência familiar)',
+          '- Personagem mencionado: $translatedName (manter como refer�ncia familiar)',
         );
       } else {
         final translatedName = _translateFamilyTerms(name, config.language);
         lines.add(
-          '- Personagem estabelecido: "$translatedName" — não altere este nome nem invente apelidos.',
+          '- Personagem estabelecido: "$translatedName" � n�o altere este nome nem invente apelidos.',
         );
       }
     }
 
     if (lines.isEmpty) return '';
 
-    return 'PERSONAGENS ESTABELECIDOS:\n${lines.join('\n')}\nNunca substitua esses nomes por variações ou apelidos.\n';
+    return 'PERSONAGENS ESTABELECIDOS:\n${lines.join('\n')}\nNunca substitua esses nomes por varia��es ou apelidos.\n';
   }
 
-  // 🎯 CORRIGIDO: Extrair hints de gênero/relações APENAS como contexto, NÃO como narrador
-  // O título é apenas o GANCHO da história, não define quem narra!
-  // Quem narra é definido por: Perspectiva + Campo Protagonista + Contexto do usuário
+  // ?? CORRIGIDO: Extrair hints de g�nero/rela��es APENAS como contexto, N�O como narrador
+  // O t�tulo � apenas o GANCHO da hist�ria, n�o define quem narra!
+  // Quem narra � definido por: Perspectiva + Campo Protagonista + Contexto do usu�rio
   Set<String> _extractCharacterHintsFromTitle(String title, String context) {
     final hints = <String>{};
     if (title.trim().isEmpty) return hints;
@@ -2248,20 +2251,20 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     final titleLower = title.toLowerCase();
     final contextLower = context.toLowerCase();
 
-    // 🎯 DETECTAR: 1) Relações familiares e 2) Nomes próprios mencionados no título
+    // ?? DETECTAR: 1) Rela��es familiares e 2) Nomes pr�prios mencionados no t�tulo
 
-    // 1️⃣ RELAÇÕES FAMILIARES
+    // 1?? RELA��ES FAMILIARES
     final charactersInTitle = {
-      'mãe': 'PERSONAGEM MENCIONADO: Mãe',
+      'm�e': 'PERSONAGEM MENCIONADO: M�e',
       'pai': 'PERSONAGEM MENCIONADO: Pai',
       'filho': 'PERSONAGEM MENCIONADO: Filho',
       'filha': 'PERSONAGEM MENCIONADO: Filha',
       'esposa': 'PERSONAGEM MENCIONADO: Esposa',
       'marido': 'PERSONAGEM MENCIONADO: Marido',
-      'irmã': 'PERSONAGEM MENCIONADO: Irmã',
-      'irmão': 'PERSONAGEM MENCIONADO: Irmão',
-      'avó': 'PERSONAGEM MENCIONADO: Avó',
-      'avô': 'PERSONAGEM MENCIONADO: Avô',
+      'irm�': 'PERSONAGEM MENCIONADO: Irm�',
+      'irm�o': 'PERSONAGEM MENCIONADO: Irm�o',
+      'av�': 'PERSONAGEM MENCIONADO: Av�',
+      'av�': 'PERSONAGEM MENCIONADO: Av�',
       'tia': 'PERSONAGEM MENCIONADO: Tia',
       'tio': 'PERSONAGEM MENCIONADO: Tio',
     };
@@ -2271,22 +2274,22 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
         hints.add(entry.value);
         if (kDebugMode) {
           debugPrint(
-            '🎯 Personagem detectado no título: ${entry.key} → ${entry.value}',
+            '?? Personagem detectado no t�tulo: ${entry.key} ? ${entry.value}',
           );
         }
       }
     }
 
-    // 2️⃣ NOMES PRÓPRIOS MENCIONADOS NO TÍTULO
-    // Detectar padrões como: "Você é Michael?" ou "chamado João" ou "nome: Maria"
+    // 2?? NOMES PR�PRIOS MENCIONADOS NO T�TULO
+    // Detectar padr�es como: "Voc� � Michael?" ou "chamado Jo�o" ou "nome: Maria"
     final namePatterns = [
       RegExp(
-        r'(?:é|chamad[oa]|nome:|sou)\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+(?:\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)?)',
+        r'(?:�|chamad[oa]|nome:|sou)\s+([A-Z������������][a-z������������]+(?:\s+[A-Z������������][a-z������������]+)?)',
         caseSensitive: false,
       ),
-      RegExp(r'"([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)"'), // Nomes entre aspas
+      RegExp(r'"([A-Z������������][a-z������������]+)"'), // Nomes entre aspas
       RegExp(
-        r'protagonista\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+        r'protagonista\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
     ];
@@ -2295,9 +2298,9 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
       for (final match in pattern.allMatches(title)) {
         final name = match.group(1)?.trim() ?? '';
         if (_looksLikePersonName(name) && name.length >= 3) {
-          hints.add('NOME MENCIONADO NO TÍTULO: $name');
+          hints.add('NOME MENCIONADO NO T�TULO: $name');
           if (kDebugMode) {
-            debugPrint('🎯 Nome próprio detectado no título: $name');
+            debugPrint('?? Nome pr�prio detectado no t�tulo: $name');
           }
         }
       }
@@ -2306,15 +2309,15 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     return hints;
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 🎭 SISTEMA DE ESTILOS NARRATIVOS
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ??????????????????????????????????????????????????????????????????
+  // ?? SISTEMA DE ESTILOS NARRATIVOS
+  // ??????????????????????????????????????????????????????????????????
 
   /// Extrai ano de strings como "Ano 1890, Velho Oeste" ou "1920, Nova York"
   String _extractYear(String localizacao) {
     if (localizacao.trim().isEmpty) return '';
 
-    // Padrões: "Ano 1890", "ano 1920", "Year 1850", "1776"
+    // Padr�es: "Ano 1890", "ano 1920", "Year 1850", "1776"
     final yearRegex = RegExp(r'(?:Ano|ano|Year|year)?\s*(\d{4})');
     final match = yearRegex.firstMatch(localizacao);
 
@@ -2322,7 +2325,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
       final year = match.group(1)!;
       final yearInt = int.tryParse(year);
 
-      // Validar se é um ano razoável (1000-2100)
+      // Validar se � um ano razo�vel (1000-2100)
       if (yearInt != null && yearInt >= 1000 && yearInt <= 2100) {
         return year;
       }
@@ -2340,23 +2343,23 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
 
     final anachronisms = <String>[];
 
-    // Tecnologias por período (data da invenção/popularização)
+    // Tecnologias por per�odo (data da inven��o/populariza��o)
     if (yearInt < 1876) anachronisms.add('Telefone (inventado em 1876)');
     if (yearInt < 1879) {
-      anachronisms.add('Lâmpada elétrica (inventada em 1879)');
+      anachronisms.add('L�mpada el�trica (inventada em 1879)');
     }
     if (yearInt < 1886) {
-      anachronisms.add('Automóvel a gasolina (inventado em 1886)');
+      anachronisms.add('Autom�vel a gasolina (inventado em 1886)');
     }
     if (yearInt < 1895) anachronisms.add('Cinema (inventado em 1895)');
-    if (yearInt < 1903) anachronisms.add('Avião (inventado em 1903)');
+    if (yearInt < 1903) anachronisms.add('Avi�o (inventado em 1903)');
     if (yearInt < 1920) {
-      anachronisms.add('Rádio comercial (popularizado em 1920)');
+      anachronisms.add('R�dio comercial (popularizado em 1920)');
     }
     if (yearInt < 1927) anachronisms.add('Cinema sonoro (1927)');
-    if (yearInt < 1936) anachronisms.add('Televisão comercial (1936)');
-    if (yearInt < 1946) anachronisms.add('Computador eletrônico (ENIAC 1946)');
-    if (yearInt < 1950) anachronisms.add('Cartão de crédito (1950)');
+    if (yearInt < 1936) anachronisms.add('Televis�o comercial (1936)');
+    if (yearInt < 1946) anachronisms.add('Computador eletr�nico (ENIAC 1946)');
+    if (yearInt < 1950) anachronisms.add('Cart�o de cr�dito (1950)');
     if (yearInt < 1969) anachronisms.add('Internet/ARPANET (1969)');
     if (yearInt < 1973) anachronisms.add('Telefone celular (1973)');
     if (yearInt < 1981) anachronisms.add('Computador pessoal (IBM PC 1981)');
@@ -2370,7 +2373,7 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     return anachronisms;
   }
 
-  /// Retorna elementos de época que DEVEM ser incluídos
+  /// Retorna elementos de �poca que DEVEM ser inclu�dos
   List<String> _getPeriodElements(String year, String? genre) {
     if (year.isEmpty) return [];
 
@@ -2379,85 +2382,85 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
 
     final elements = <String>[];
 
-    // ⚔️ WESTERN (1850-1900)
+    // ?? WESTERN (1850-1900)
     if (genre == 'western' && yearInt >= 1850 && yearInt <= 1900) {
       elements.addAll([
-        'Revólver (Colt Peacemaker comum após 1873)',
+        'Rev�lver (Colt Peacemaker comum ap�s 1873)',
         'Saloon com portas batentes',
         'Cavalo como transporte principal',
-        'Diligência (stagecoach)',
+        'Dilig�ncia (stagecoach)',
         'Xerife e delegados',
-        'Lei do mais rápido',
+        'Lei do mais r�pido',
       ]);
 
       if (yearInt >= 1869) {
         elements.add('Ferrovia transcontinental (completada em 1869)');
       }
       if (yearInt >= 1844) {
-        elements.add('Telégrafo para comunicação à distância');
+        elements.add('Tel�grafo para comunica��o � dist�ncia');
       }
     }
 
-    // 📜 ELEMENTOS GERAIS POR PERÍODO
+    // ?? ELEMENTOS GERAIS POR PER�ODO
     if (yearInt < 1850) {
-      // Era pré-industrial
+      // Era pr�-industrial
       elements.addAll([
-        'Iluminação a vela ou lampião a óleo',
-        'Transporte por carroça ou cavalo',
+        'Ilumina��o a vela ou lampi�o a �leo',
+        'Transporte por carro�a ou cavalo',
         'Cartas entregues por mensageiro',
         'Vestimentas formais e conservadoras',
-        'Sociedade rigidamente hierárquica',
+        'Sociedade rigidamente hier�rquica',
       ]);
     } else if (yearInt >= 1850 && yearInt < 1900) {
       // Era vitoriana/industrial
       elements.addAll([
-        'Iluminação a gás nas cidades',
-        'Trem a vapor (ferrovias em expansão)',
-        'Telégrafo para comunicação',
-        'Fotografia (daguerreótipo)',
+        'Ilumina��o a g�s nas cidades',
+        'Trem a vapor (ferrovias em expans�o)',
+        'Tel�grafo para comunica��o',
+        'Fotografia (daguerre�tipo)',
         'Jornais impressos',
       ]);
     } else if (yearInt >= 1900 && yearInt < 1920) {
-      // Belle Époque / Era Eduardiana
+      // Belle �poque / Era Eduardiana
       elements.addAll([
-        'Primeiros automóveis (ainda raros)',
+        'Primeiros autom�veis (ainda raros)',
         'Telefone fixo (casas ricas)',
         'Cinema mudo',
-        'Iluminação elétrica nas cidades',
-        'Fonógrafo (música gravada)',
+        'Ilumina��o el�trica nas cidades',
+        'Fon�grafo (m�sica gravada)',
       ]);
     } else if (yearInt >= 1920 && yearInt < 1945) {
       // Entre-guerras
       elements.addAll([
-        'Rádio como principal entretenimento',
-        'Cinema sonoro (após 1927)',
-        'Automóveis mais comuns',
+        'R�dio como principal entretenimento',
+        'Cinema sonoro (ap�s 1927)',
+        'Autom�veis mais comuns',
         'Telefone residencial',
-        'Aviões comerciais (raros)',
+        'Avi�es comerciais (raros)',
       ]);
     } else if (yearInt >= 1945 && yearInt < 1970) {
-      // Pós-guerra / Era de ouro
+      // P�s-guerra / Era de ouro
       elements.addAll([
-        'Televisão em preto e branco',
-        'Automóvel como padrão',
-        'Eletrodomésticos modernos',
+        'Televis�o em preto e branco',
+        'Autom�vel como padr�o',
+        'Eletrodom�sticos modernos',
         'Cinema em cores',
         'Discos de vinil',
       ]);
     } else if (yearInt >= 1970 && yearInt < 1990) {
       // Era moderna
       elements.addAll([
-        'Televisão em cores',
+        'Televis�o em cores',
         'Telefone residencial fixo',
         'Fitas cassete e VHS',
-        'Primeiros computadores pessoais (após 1981)',
-        'Walkman (música portátil)',
+        'Primeiros computadores pessoais (ap�s 1981)',
+        'Walkman (m�sica port�til)',
       ]);
     } else if (yearInt >= 1990 && yearInt < 2007) {
       // Era digital inicial
       elements.addAll([
         'Internet discada/banda larga',
-        'Celular básico (sem smartphone)',
+        'Celular b�sico (sem smartphone)',
         'E-mail',
         'CDs e DVDs',
         'Computadores pessoais comuns',
@@ -2467,8 +2470,8 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
       elements.addAll([
         'Smartphone touchscreen',
         'Redes sociais (Facebook, Twitter, Instagram)',
-        'Wi-Fi ubíquo',
-        'Streaming de vídeo/música',
+        'Wi-Fi ub�quo',
+        'Streaming de v�deo/m�sica',
         'Apps para tudo',
       ]);
     }
@@ -2476,52 +2479,52 @@ ${missingElements.isEmpty ? '' : '⚠️ Elementos ausentes:\n${missingElements.
     return elements;
   }
 
-  /// Gera orientação de estilo narrativo baseado na configuração
+  /// Gera orienta��o de estilo narrativo baseado na configura��o
   String _getNarrativeStyleGuidance(ScriptConfig config) {
     final style = config.narrativeStyle;
 
     switch (style) {
       case 'reflexivo_memorias':
         return '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎭 ESTILO NARRATIVO: REFLEXIVO (MEMÓRIAS)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+??????????????????????????????????????????????????????????????????
+?? ESTILO NARRATIVO: REFLEXIVO (MEM�RIAS)
+??????????????????????????????????????????????????????????????????
 
-**Tom:** Nostálgico, pausado, introspectivo, suave
+**Tom:** Nost�lgico, pausado, introspectivo, suave
 **Ritmo:** Lento e contemplativo, com pausas naturais
 **Perspectiva emocional:** Olhar do presente para o passado com sabedoria
 
 **ESTRUTURA NARRATIVA:**
-1. Começar com gatilhos de memória: "Eu me lembro...", "Naquele tempo...", "Era uma época em que..."
+1. Come�ar com gatilhos de mem�ria: "Eu me lembro...", "Naquele tempo...", "Era uma �poca em que..."
 2. Intercalar presente e passado sutilmente
-3. Usar pausas reflexivas (reticências, silêncios)
+3. Usar pausas reflexivas (retic�ncias, sil�ncios)
 4. Incluir detalhes sensoriais: cheiro, textura, luz, sons
-5. Mencionar pequenas coisas que marcam época (objetos, costumes)
+5. Mencionar pequenas coisas que marcam �poca (objetos, costumes)
 
-**VOCABULÁRIO:**
+**VOCABUL�RIO:**
 - Palavras suaves: "gentil", "singelo", "sutil", "delicado"
-- Expressões temporais: "naqueles dias", "antigamente", "costumava"
+- Express�es temporais: "naqueles dias", "antigamente", "costumava"
 - Verbos no imperfeito: "era", "tinha", "fazia", "lembrava"
 
-**TÉCNICAS:**
-- Digressões naturais (como alguém contando história oral)
-- Comparações passado × presente
-- Admitir falhas de memória: "Se não me engano...", "Creio que..."
+**T�CNICAS:**
+- Digress�es naturais (como algu�m contando hist�ria oral)
+- Compara��es passado � presente
+- Admitir falhas de mem�ria: "Se n�o me engano...", "Creio que..."
 - Tom de sabedoria adquirida com o tempo
 
-**EXEMPLO DE NARRAÇÃO:**
-"Eu me lembro... O cheiro do café coado na manhã, ainda quente na caneca de porcelana.
-As mãos da minha avó, calejadas mas gentis, preparando o pão caseiro.
-Naquela época, as coisas eram mais simples. Não tínhamos pressa.
+**EXEMPLO DE NARRA��O:**
+"Eu me lembro... O cheiro do caf� coado na manh�, ainda quente na caneca de porcelana.
+As m�os da minha av�, calejadas mas gentis, preparando o p�o caseiro.
+Naquela �poca, as coisas eram mais simples. N�o t�nhamos pressa.
 O tempo... ah, o tempo parecia se mover de outra forma.
-Hoje, quando sinto o aroma de café, sou transportada de volta àqueles dias..."
+Hoje, quando sinto o aroma de caf�, sou transportada de volta �queles dias..."
 
 **EVITE:**
-❌ Ação frenética ou tensão extrema
-❌ Vocabulário técnico ou moderno demais
-❌ Narrativa onisciente (manter ponto de vista pessoal)
-❌ Tom jovial ou energia excessiva
-❌ Certezas absolutas (memórias são fluidas)
+? A��o fren�tica ou tens�o extrema
+? Vocabul�rio t�cnico ou moderno demais
+? Narrativa onisciente (manter ponto de vista pessoal)
+? Tom jovial ou energia excessiva
+? Certezas absolutas (mem�rias s�o fluidas)
 ''';
 
       case 'epico_periodo':
@@ -2534,8 +2537,8 @@ Hoje, quando sinto o aroma de café, sou transportada de volta àqueles dias..."
           anachronismSection =
               '''
 
-**🚨 ANACRONISMOS A EVITAR (Não existiam em $year):**
-${anachronisms.map((a) => '  ❌ $a').join('\n')}
+**?? ANACRONISMOS A EVITAR (N�o existiam em $year):**
+${anachronisms.map((a) => '  ? $a').join('\n')}
 ''';
         }
 
@@ -2544,283 +2547,283 @@ ${anachronisms.map((a) => '  ❌ $a').join('\n')}
           periodSection =
               '''
 
-**✅ ELEMENTOS DO PERÍODO A INCLUIR (Existiam em $year):**
-${periodElements.map((e) => '  ✓ $e').join('\n')}
+**? ELEMENTOS DO PER�ODO A INCLUIR (Existiam em $year):**
+${periodElements.map((e) => '  ? $e').join('\n')}
 ''';
         }
 
         return '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚔️ ESTILO NARRATIVO: ÉPICO DE PERÍODO${year.isNotEmpty ? ' (Ano: $year)' : ''}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+??????????????????????????????????????????????????????????????????
+?? ESTILO NARRATIVO: �PICO DE PER�ODO${year.isNotEmpty ? ' (Ano: $year)' : ''}
+??????????????????????????????????????????????????????????????????
 
 **Tom:** Grandioso, formal, heroico, majestoso
-**Ritmo:** Cadenciado e majestoso, com construção dramática
-**Perspectiva:** Narrador que conhece a importância histórica dos eventos
+**Ritmo:** Cadenciado e majestoso, com constru��o dram�tica
+**Perspectiva:** Narrador que conhece a import�ncia hist�rica dos eventos
 
 **ESTRUTURA NARRATIVA:**
-1. Descrições detalhadas e vívidas do período histórico
-2. Diálogos formais e apropriados à época (sem gírias modernas)
-3. Enfatizar valores, honra e códigos morais da época
-4. Usar linguagem elevada mas compreensível
-5. Construir tensão com descrições atmosféricas
+1. Descri��es detalhadas e v�vidas do per�odo hist�rico
+2. Di�logos formais e apropriados � �poca (sem g�rias modernas)
+3. Enfatizar valores, honra e c�digos morais da �poca
+4. Usar linguagem elevada mas compreens�vel
+5. Construir tens�o com descri��es atmosf�ricas
 
-**VOCABULÁRIO:**
-- Palavras de peso: "honra", "destino", "coragem", "sacrifício"
-- Descrições grandiosas: "sob o sol escaldante", "nas sombras da história"
-- Evitar contrações: "não havia" em vez de "não tinha"
+**VOCABUL�RIO:**
+- Palavras de peso: "honra", "destino", "coragem", "sacrif�cio"
+- Descri��es grandiosas: "sob o sol escaldante", "nas sombras da hist�ria"
+- Evitar contra��es: "n�o havia" em vez de "n�o tinha"
 
-**TÉCNICAS:**
-- Começar com estabelecimento de época e lugar
-- Usar marcos históricos reais quando possível
-- Descrever vestimentas, armas, tecnologia da época
-- Criar senso de inevitabilidade histórica
-- Pausas dramáticas antes de momentos cruciais$anachronismSection$periodSection
+**T�CNICAS:**
+- Come�ar com estabelecimento de �poca e lugar
+- Usar marcos hist�ricos reais quando poss�vel
+- Descrever vestimentas, armas, tecnologia da �poca
+- Criar senso de inevitabilidade hist�rica
+- Pausas dram�ticas antes de momentos cruciais$anachronismSection$periodSection
 
-**EXEMPLO DE NARRAÇÃO:**
+**EXEMPLO DE NARRA��O:**
 "${year.isNotEmpty ? 'No ano de $year' : 'Naquele tempo'}, sob o sol escaldante do Velho Oeste,
-Jake ajustou o revólver no coldre de couro gasto. O duelo seria ao meio-dia.
-A cidade inteira observava em silêncio das janelas empoeiradas,
-sabendo que a justiça seria feita pela lei do mais rápido.
+Jake ajustou o rev�lver no coldre de couro gasto. O duelo seria ao meio-dia.
+A cidade inteira observava em sil�ncio das janelas empoeiradas,
+sabendo que a justi�a seria feita pela lei do mais r�pido.
 O vento quente soprava pela rua deserta, levantando nuvens de poeira vermelha.
-Dois homens. Um código. Um destino."
+Dois homens. Um c�digo. Um destino."
 
 **EVITE:**
-❌ Anacronismos (tecnologias que não existiam na época)
-❌ Gírias modernas ou linguagem informal
-❌ Referências contemporâneas
-❌ Tom humorístico ou irreverente
-❌ Ritmo apressado (épico requer peso)
+? Anacronismos (tecnologias que n�o existiam na �poca)
+? G�rias modernas ou linguagem informal
+? Refer�ncias contempor�neas
+? Tom humor�stico ou irreverente
+? Ritmo apressado (�pico requer peso)
 ''';
 
       case 'educativo_curioso':
         return '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 ESTILO NARRATIVO: EDUCATIVO (CURIOSIDADES)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+??????????????????????????????????????????????????????????????????
+?? ESTILO NARRATIVO: EDUCATIVO (CURIOSIDADES)
+??????????????????????????????????????????????????????????????????
 
-**Tom:** Entusiasta, acessível, didático, fascinante
-**Ritmo:** Moderado, com pausas para absorção de conceitos
-**Perspectiva:** Guia amigável que revela conhecimento surpreendente
+**Tom:** Entusiasta, acess�vel, did�tico, fascinante
+**Ritmo:** Moderado, com pausas para absor��o de conceitos
+**Perspectiva:** Guia amig�vel que revela conhecimento surpreendente
 
 **ESTRUTURA NARRATIVA (Framework de 4 Passos):**
 1. **PERGUNTA INTRIGANTE:** Despertar curiosidade
 2. **FATO SURPREENDENTE:** Resposta que causa "Uau!"
-3. **EXPLICAÇÃO COM CONTEXTO:** Como/Por que funciona
-4. **IMPACTO/APLICAÇÃO:** Por que isso importa
+3. **EXPLICA��O COM CONTEXTO:** Como/Por que funciona
+4. **IMPACTO/APLICA��O:** Por que isso importa
 
 **FRASES-GATILHO (Use frequentemente):**
-- "Você sabia que...?"
-- "Mas aqui está o fascinante..."
-- "E é por isso que..."
+- "Voc� sabia que...?"
+- "Mas aqui est� o fascinante..."
+- "E � por isso que..."
 - "Isso explica por que..."
 - "Surpreendentemente..."
-- "O interessante é que..."
-- "Aqui está a parte incrível..."
+- "O interessante � que..."
+- "Aqui est� a parte incr�vel..."
 
-**TÉCNICAS DE ENGAJAMENTO:**
-- Fazer perguntas retóricas para o espectador
+**T�CNICAS DE ENGAJAMENTO:**
+- Fazer perguntas ret�ricas para o espectador
 - Usar analogias com coisas do cotidiano
-- Comparações de escala (tamanho, tempo, distância)
-- Fatos numéricos impressionantes
-- Conexões inesperadas entre conceitos
+- Compara��es de escala (tamanho, tempo, dist�ncia)
+- Fatos num�ricos impressionantes
+- Conex�es inesperadas entre conceitos
 
-**VOCABULÁRIO:**
+**VOCABUL�RIO:**
 - Palavras de descoberta: "revelador", "surpreendente", "fascinante"
 - Verbos ativos: "descobrir", "revelar", "transformar", "conectar"
-- Evitar jargão técnico SEM explicação simples
+- Evitar jarg�o t�cnico SEM explica��o simples
 
-**EXEMPLO DE NARRAÇÃO:**
-"Você sabia que o céu é azul por causa de um fenômeno chamado espalhamento de Rayleigh?
+**EXEMPLO DE NARRA��O:**
+"Voc� sabia que o c�u � azul por causa de um fen�meno chamado espalhamento de Rayleigh?
 
-Mas aqui está o fascinante: quando a luz solar entra na atmosfera,
-ela colide com moléculas minúsculas de ar. A luz é composta de diferentes cores,
-cada uma com seu próprio comprimento de onda.
+Mas aqui est� o fascinante: quando a luz solar entra na atmosfera,
+ela colide com mol�culas min�sculas de ar. A luz � composta de diferentes cores,
+cada uma com seu pr�prio comprimento de onda.
 
-A luz azul tem ondas menores e mais curtas, então ela se espalha mais facilmente
-ao colidir com as moléculas. É como jogar bolinhas de diferentes tamanhos
-através de uma peneira - as menores ricocheteiam mais!
+A luz azul tem ondas menores e mais curtas, ent�o ela se espalha mais facilmente
+ao colidir com as mol�culas. � como jogar bolinhas de diferentes tamanhos
+atrav�s de uma peneira - as menores ricocheteiam mais!
 
-E é por isso que vemos azul durante o dia, mas laranja e vermelho no pôr do sol.
+E � por isso que vemos azul durante o dia, mas laranja e vermelho no p�r do sol.
 No final do dia, a luz precisa atravessar MUITO mais atmosfera,
-então até as ondas maiores (vermelhas e laranjas) começam a se espalhar."
+ent�o at� as ondas maiores (vermelhas e laranjas) come�am a se espalhar."
 
 **EVITE:**
-❌ Jargão técnico sem explicação
-❌ Tom professoral ou autoritário ("vocês DEVEM saber...")
-❌ Exemplos muito abstratos ou acadêmicos
-❌ Informação sem contexto prático
-❌ Monotonia (variar ritmo e entusiasmo)
+? Jarg�o t�cnico sem explica��o
+? Tom professoral ou autorit�rio ("voc�s DEVEM saber...")
+? Exemplos muito abstratos ou acad�micos
+? Informa��o sem contexto pr�tico
+? Monotonia (variar ritmo e entusiasmo)
 ''';
 
       case 'acao_rapida':
         return '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ ESTILO NARRATIVO: AÇÃO RÁPIDA
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+??????????????????????????????????????????????????????????????????
+? ESTILO NARRATIVO: A��O R�PIDA
+??????????????????????????????????????????????????????????????????
 
 **Tom:** Urgente, intenso, visceral, adrenalina pura
-**Ritmo:** FRENÉTICO - frases curtas e impactantes
-**Perspectiva:** Imersão total no momento presente
+**Ritmo:** FREN�TICO - frases curtas e impactantes
+**Perspectiva:** Imers�o total no momento presente
 
 **ESTRUTURA NARRATIVA:**
-1. Frases CURTAS (5-10 palavras máximo)
-2. Verbos de ação fortes e diretos
+1. Frases CURTAS (5-10 palavras m�ximo)
+2. Verbos de a��o fortes e diretos
 3. Tempo presente para imediatismo
-4. Eliminação de adjetivos desnecessários
+4. Elimina��o de adjetivos desnecess�rios
 5. Foco em MOVIMENTO e IMPACTO
 
-**TÉCNICA DE ESCRITA:**
-- Cortar conjunções: "Jake corre. Pula. Rola." (não "Jake corre, pula e rola")
+**T�CNICA DE ESCRITA:**
+- Cortar conjun��es: "Jake corre. Pula. Rola." (n�o "Jake corre, pula e rola")
 - Um verbo forte por frase
-- Frases fragmentadas para urgência
-- Pontuação agressiva: ponto final, não vírgula
+- Frases fragmentadas para urg�ncia
+- Pontua��o agressiva: ponto final, n�o v�rgula
 - Onomatopeias quando apropriado: BAM! CRASH! BANG!
 
 **VERBOS PREFERIDOS:**
 - Movimento: corre, salta, mergulha, voa, derrapa
-- Impacto: explode, estilhaça, rompe, perfura, esmaga
+- Impacto: explode, estilha�a, rompe, perfura, esmaga
 - Combate: ataca, esquiva, bloqueia, contra-ataca, elimina
 
-**EXEMPLO DE NARRAÇÃO:**
+**EXEMPLO DE NARRA��O:**
 "O tiro ecoa. Jake rola. Esquiva.
-Vidro explode atrás dele. CRASH!
-Levanta. Corre. Três passos.
+Vidro explode atr�s dele. CRASH!
+Levanta. Corre. Tr�s passos.
 Mira. Dispara. BAM!
 O oponente cambaleia. Cai.
-Silêncio.
-Vitória."
+Sil�ncio.
+Vit�ria."
 
-**TÉCNICAS AVANÇADAS:**
+**T�CNICAS AVAN�ADAS:**
 - Frases de uma palavra para picos: "Agora." "Fogo!" "Corre!"
-- Eliminar artigos: "Bala rasga ar" (não "A bala rasga o ar")
-- Usar presente simples: "Ele ataca" (não "Ele está atacando")
+- Eliminar artigos: "Bala rasga ar" (n�o "A bala rasga o ar")
+- Usar presente simples: "Ele ataca" (n�o "Ele est� atacando")
 - Staccato verbal: ritmo de metralhadora
 
-**ESTRUTURA DE CENA DE AÇÃO:**
+**ESTRUTURA DE CENA DE A��O:**
 1. Estabelecer perigo (2 frases)
-2. Reação instintiva (3-4 frases ultra-curtas)
+2. Rea��o instintiva (3-4 frases ultra-curtas)
 3. Escalada (mais movimento, mais perigo)
-4. Clímax (1-2 frases de impacto)
-5. Resolução (1 frase de alívio)
+4. Cl�max (1-2 frases de impacto)
+5. Resolu��o (1 frase de al�vio)
 
 **EVITE:**
-❌ Descrições longas de cenário
-❌ Reflexões filosóficas ou emocionais
-❌ Diálogos extensos (máximo 3-4 palavras)
-❌ Adjetivos múltiplos ("a bela e majestosa espada" → "a espada")
-❌ Subordinadas complexas
-❌ Explicações de motivação (ação pura)
+? Descri��es longas de cen�rio
+? Reflex�es filos�ficas ou emocionais
+? Di�logos extensos (m�ximo 3-4 palavras)
+? Adjetivos m�ltiplos ("a bela e majestosa espada" ? "a espada")
+? Subordinadas complexas
+? Explica��es de motiva��o (a��o pura)
 ''';
 
       case 'lirico_poetico':
         return '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🌸 ESTILO NARRATIVO: LÍRICO POÉTICO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+??????????????????????????????????????????????????????????????????
+?? ESTILO NARRATIVO: L�RICO PO�TICO
+??????????????????????????????????????????????????????????????????
 
-**Tom:** Melancólico, suave, contemplativo, etéreo
+**Tom:** Melanc�lico, suave, contemplativo, et�reo
 **Ritmo:** Cadenciado e musical, quase como versos livres
-**Perspectiva:** Olhar artístico que transforma realidade em poesia
+**Perspectiva:** Olhar art�stico que transforma realidade em poesia
 
 **ESTRUTURA NARRATIVA:**
-1. Imagens sensoriais ricas e sinestésicas
-2. Metáforas da natureza e elementos
-3. Ritmo quase musical (atenção à sonoridade)
-4. Simbolismo em vez de descrição direta
-5. Repetições para ênfase emocional
+1. Imagens sensoriais ricas e sinest�sicas
+2. Met�foras da natureza e elementos
+3. Ritmo quase musical (aten��o � sonoridade)
+4. Simbolismo em vez de descri��o direta
+5. Repeti��es para �nfase emocional
 
-**RECURSOS POÉTICOS:**
+**RECURSOS PO�TICOS:**
 
-**Metáforas:**
-- Comparar emoções com natureza: "dor como tempestade", "alegria como aurora"
-- Personificar elementos: "o vento sussurra", "a noite abraça"
+**Met�foras:**
+- Comparar emo��es com natureza: "dor como tempestade", "alegria como aurora"
+- Personificar elementos: "o vento sussurra", "a noite abra�a"
 - Transformar concreto em abstrato: "olhos eram janelas de alma"
 
 **Sinestesia (Misturar Sentidos):**
 - "Som aveludado da voz"
-- "Silêncio pesado"
+- "Sil�ncio pesado"
 - "Luz quente das palavras"
 - "Sabor amargo da saudade"
 
-**Aliteração e Assonância:**
-- "Suave som do silêncio sussurra"
-- "Lua lânguida lamenta"
-- Atenção ao ritmo das palavras
+**Alitera��o e Asson�ncia:**
+- "Suave som do sil�ncio sussurra"
+- "Lua l�nguida lamenta"
+- Aten��o ao ritmo das palavras
 
-**VOCABULÁRIO:**
-- Palavras suaves: "etéreo", "efêmero", "sublime", "tênue"
-- Natureza: "aurora", "crepúsculo", "orvalho", "brisa"
-- Emoção profunda: "melancolia", "nostalgia", "anseio", "enlevo"
+**VOCABUL�RIO:**
+- Palavras suaves: "et�reo", "ef�mero", "sublime", "t�nue"
+- Natureza: "aurora", "crep�sculo", "orvalho", "brisa"
+- Emo��o profunda: "melancolia", "nostalgia", "anseio", "enlevo"
 
-**EXEMPLO DE NARRAÇÃO:**
-"A lua, pálida testemunha da noite eterna,
+**EXEMPLO DE NARRA��O:**
+"A lua, p�lida testemunha da noite eterna,
 derramava sua luz prateada sobre os campos adormecidos.
 O vento, esse mensageiro de segredos antigos,
-sussurrava entre as folhas trementes das árvores.
+sussurrava entre as folhas trementes das �rvores.
 
 E o tempo, esse eterno viajante sem repouso,
-seguia seu curso inexorável,
-levando consigo os momentos como pétalas ao vento,
+seguia seu curso inexor�vel,
+levando consigo os momentos como p�talas ao vento,
 enquanto as estrelas bordavam seus poemas silenciosos
 no vasto manto azul do infinito."
 
-**TÉCNICAS AVANÇADAS:**
-- Repetição para ênfase: "Esperava. Sempre esperava. Como se esperar fosse seu destino."
-- Frases longas e fluidas (contrário da ação rápida)
-- Usar vírgulas para criar ritmo de respiração
+**T�CNICAS AVAN�ADAS:**
+- Repeti��o para �nfase: "Esperava. Sempre esperava. Como se esperar fosse seu destino."
+- Frases longas e fluidas (contr�rio da a��o r�pida)
+- Usar v�rgulas para criar ritmo de respira��o
 - Imagens visuais como pinturas
-- Deixar espaço para interpretação (não explicar tudo)
+- Deixar espa�o para interpreta��o (n�o explicar tudo)
 
 **ESTRUTURA EMOCIONAL:**
-- Começar com imagem sensorial
+- Come�ar com imagem sensorial
 - Construir camadas de significado
-- Clímax emocional (não de ação)
-- Resolução contemplativa ou em aberto
+- Cl�max emocional (n�o de a��o)
+- Resolu��o contemplativa ou em aberto
 
 **EVITE:**
-❌ Linguagem técnica ou prosaica
-❌ Ação frenética ou violência explícita
-❌ Diálogos diretos e funcionais
-❌ Explicações literais
-❌ Ritmo apressado ou urgente
-❌ Jargão ou coloquialismo
+? Linguagem t�cnica ou prosaica
+? A��o fren�tica ou viol�ncia expl�cita
+? Di�logos diretos e funcionais
+? Explica��es literais
+? Ritmo apressado ou urgente
+? Jarg�o ou coloquialismo
 ''';
 
       default: // ficcional_livre
         return '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📖 ESTILO NARRATIVO: FICÇÃO LIVRE (SEM RESTRIÇÕES)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+??????????????????????????????????????????????????????????????????
+?? ESTILO NARRATIVO: FIC��O LIVRE (SEM RESTRI��ES)
+??????????????????????????????????????????????????????????????????
 
-**Tom:** Flexível - adapta-se ao tema e gênero
+**Tom:** Flex�vel - adapta-se ao tema e g�nero
 **Ritmo:** Balanceado - varia conforme necessidade
 **Perspectiva:** Liberdade criativa total
 
-**ORIENTAÇÕES GERAIS:**
-✓ Misturar estilos conforme necessário (ação + reflexão + descrição)
-✓ Adaptar tom ao tema escolhido (drama, comédia, suspense, etc.)
-✓ Usar técnicas narrativas variadas
-✓ Focar em contar uma boa história sem restrições formais
-✓ Priorizar engajamento e fluidez
+**ORIENTA��ES GERAIS:**
+? Misturar estilos conforme necess�rio (a��o + reflex�o + descri��o)
+? Adaptar tom ao tema escolhido (drama, com�dia, suspense, etc.)
+? Usar t�cnicas narrativas variadas
+? Focar em contar uma boa hist�ria sem restri��es formais
+? Priorizar engajamento e fluidez
 
 **ESTRUTURA SUGERIDA:**
 1. Estabelecimento (contexto e personagens)
-2. Desenvolvimento (conflito e progressão)
-3. Clímax (momento de maior tensão)
-4. Resolução (desfecho satisfatório)
+2. Desenvolvimento (conflito e progress�o)
+3. Cl�max (momento de maior tens�o)
+4. Resolu��o (desfecho satisfat�rio)
 
 **FLEXIBILIDADE:**
-- Pode usar diálogos extensos ou ausentes
-- Pode alternar entre ação e contemplação
-- Pode misturar tempos verbais se necessário
+- Pode usar di�logos extensos ou ausentes
+- Pode alternar entre a��o e contempla��o
+- Pode misturar tempos verbais se necess�rio
 - Pode variar entre formal e coloquial
 
 **DICA:** Use os elementos dos outros estilos conforme a cena:
-- Momentos intensos? Técnicas de "Ação Rápida"
-- Momentos emotivos? Toques de "Lírico Poético"
-- Flashbacks? Elementos de "Reflexivo Memórias"
-- Período histórico? Cuidado com anacronismos do "Épico"
+- Momentos intensos? T�cnicas de "A��o R�pida"
+- Momentos emotivos? Toques de "L�rico Po�tico"
+- Flashbacks? Elementos de "Reflexivo Mem�rias"
+- Per�odo hist�rico? Cuidado com anacronismos do "�pico"
 - Explicar algo? Clareza do "Educativo"
 ''';
     }
@@ -2829,7 +2832,7 @@ no vasto manto azul do infinito."
   Map<String, int> _extractNamesFromSnippet(String snippet) {
     final counts = <String, int>{};
     final regex = RegExp(
-      r'\b([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+(?:\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)*)\b',
+      r'\b([A-Z������������][a-z������������]+(?:\s+[A-Z������������][a-z������������]+)*)\b',
     );
 
     for (final match in regex.allMatches(snippet)) {
@@ -2842,14 +2845,14 @@ no vasto manto azul do infinito."
     return counts;
   }
 
-  // 🔥 EXECUTAR EM ISOLATE para não travar UI
+  // ?? EXECUTAR EM ISOLATE para n�o travar UI
   Future<String> _filterDuplicateParagraphs(
     String existing,
     String addition,
   ) async {
     if (addition.trim().isEmpty) return '';
 
-    // Para textos pequenos, executar direto (mais rápido que spawn isolate)
+    // Para textos pequenos, executar direto (mais r�pido que spawn isolate)
     if (existing.length < 3000 && addition.length < 1000) {
       return _filterDuplicateParagraphsSync(existing, addition);
     }
@@ -2861,11 +2864,11 @@ no vasto manto azul do infinito."
     });
   }
 
-  // Versão síncrona para casos rápidos
+  // Vers�o s�ncrona para casos r�pidos
   String _filterDuplicateParagraphsSync(String existing, String addition) {
     if (addition.trim().isEmpty) return '';
 
-    // 🚀 OTIMIZAÇÃO CRÍTICA: Comparar apenas últimos ~5000 caracteres
+    // ?? OTIMIZA��O CR�TICA: Comparar apenas �ltimos ~5000 caracteres
     final recentText = existing.length > 5000
         ? existing.substring(existing.length - 5000)
         : existing;
@@ -2899,8 +2902,8 @@ no vasto manto azul do infinito."
     return buffer.join('\n\n');
   }
 
-  /// 🔍 Detecta parágrafos duplicados no roteiro final (apenas para LOG)
-  /// NÃO remove nada, apenas alerta no console para debugging
+  /// ?? Detecta par�grafos duplicados no roteiro final (apenas para LOG)
+  /// N�O remove nada, apenas alerta no console para debugging
   void _detectDuplicateParagraphsInFinalScript(String fullScript) {
     final paragraphs = fullScript
         .split(RegExp(r'\n{2,}'))
@@ -2921,11 +2924,11 @@ no vasto manto azul do infinito."
             ? '${paragraph.substring(0, 80)}...'
             : paragraph;
 
-        debugPrint('⚠️ DUPLICAÇÃO DETECTADA:');
+        debugPrint('?? DUPLICA��O DETECTADA:');
         debugPrint(
-          '   📍 Parágrafo #${firstIndex + 1} repetido no parágrafo #${i + 1}',
+          '   ?? Par�grafo #${firstIndex + 1} repetido no par�grafo #${i + 1}',
         );
-        debugPrint('   📝 Prévia: "$preview"');
+        debugPrint('   ?? Pr�via: "$preview"');
       } else {
         seen[paragraph] = i;
       }
@@ -2933,22 +2936,22 @@ no vasto manto azul do infinito."
 
     if (duplicateCount > 0) {
       debugPrint(
-        '🚨 TOTAL: $duplicateCount parágrafo(s) duplicado(s) encontrado(s) no roteiro final!',
+        '?? TOTAL: $duplicateCount par�grafo(s) duplicado(s) encontrado(s) no roteiro final!',
       );
       debugPrint(
-        '   💡 DICA: Fortaleça as instruções anti-repetição no prompt',
+        '   ?? DICA: Fortale�a as instru��es anti-repeti��o no prompt',
       );
     } else {
       debugPrint(
-        '✅ VERIFICAÇÃO: Nenhuma duplicação de parágrafo detectada no roteiro final',
+        '? VERIFICA��O: Nenhuma duplica��o de par�grafo detectada no roteiro final',
       );
     }
   }
 
-  // 🏗️ v7.6.64: _removeDuplicateConsecutiveParagraphs removido (não era usado)
+  // ??? v7.6.64: _removeDuplicateConsecutiveParagraphs removido (n�o era usado)
 
-  /// 🆕 v7.6.43: Remove TODAS as duplicatas de parágrafos (não apenas consecutivas)
-  /// Mantém a primeira ocorrência e remove todas as repetições posteriores
+  /// ?? v7.6.43: Remove TODAS as duplicatas de par�grafos (n�o apenas consecutivas)
+  /// Mant�m a primeira ocorr�ncia e remove todas as repeti��es posteriores
   String _removeAllDuplicateParagraphs(String fullScript) {
     final paragraphs = fullScript.split(RegExp(r'\n{2,}'));
 
@@ -2964,7 +2967,7 @@ no vasto manto azul do infinito."
 
       if (paragraph.isEmpty) continue;
 
-      // Normalizar para comparação (ignorar espaços extras)
+      // Normalizar para compara��o (ignorar espa�os extras)
       final normalized = paragraph
           .replaceAll(RegExp(r'\s+'), ' ')
           .toLowerCase();
@@ -2976,16 +2979,16 @@ no vasto manto azul do infinito."
           final preview = paragraph.length > 50
               ? '${paragraph.substring(0, 50)}...'
               : paragraph;
-          debugPrint('🧹 REMOVIDO duplicata exata: "$preview"');
+          debugPrint('?? REMOVIDO duplicata exata: "$preview"');
         }
         continue;
       }
 
-      // Verificar duplicata normalizada (ignora case e espaços)
+      // Verificar duplicata normalizada (ignora case e espa�os)
       if (seenNormalized.contains(normalized)) {
         removedCount++;
         if (kDebugMode) {
-          debugPrint('🧹 REMOVIDO duplicata similar (case/espaços diferentes)');
+          debugPrint('?? REMOVIDO duplicata similar (case/espa�os diferentes)');
         }
         continue;
       }
@@ -2997,17 +3000,17 @@ no vasto manto azul do infinito."
 
     if (removedCount > 0) {
       debugPrint(
-        '✅ v7.6.43: Total de $removedCount parágrafo(s) duplicado(s) removido(s) do roteiro final',
+        '? v7.6.43: Total de $removedCount par�grafo(s) duplicado(s) removido(s) do roteiro final',
       );
     }
 
     return result.join('\n\n');
   }
 
-  // 🏗️ v7.6.64: _buildRecoveryPrompt migrado para ScriptPromptBuilder.buildRecoveryPrompt()
+  // ??? v7.6.64: _buildRecoveryPrompt migrado para ScriptPromptBuilder.buildRecoveryPrompt()
 
-  /// 🆕 v7.6.17: Detecta e registra o nome da protagonista no Bloco 1
-  /// Extrai o primeiro nome próprio encontrado e registra no tracker
+  /// ?? v7.6.17: Detecta e registra o nome da protagonista no Bloco 1
+  /// Extrai o primeiro nome pr�prio encontrado e registra no tracker
   void _detectAndRegisterProtagonist(
     String generatedText,
     ScriptConfig config,
@@ -3023,17 +3026,17 @@ no vasto manto azul do infinito."
     if (names.contains(configName)) {
       tracker.setProtagonistName(configName);
       if (kDebugMode) {
-        debugPrint('✅ Bloco 1: Protagonista "$configName" confirmada');
+        debugPrint('? Bloco 1: Protagonista "$configName" confirmada');
       }
     } else {
-      // Se nome configurado não apareceu, pegar primeiro nome válido
+      // Se nome configurado n�o apareceu, pegar primeiro nome v�lido
       final validNames = names.where((n) => _looksLikePersonName(n)).toList();
       if (validNames.isNotEmpty) {
         final detectedName = validNames.first;
         tracker.setProtagonistName(detectedName);
         if (kDebugMode) {
           debugPrint(
-            '⚠️ Bloco 1: Nome configurado "$configName" não usado, '
+            '?? Bloco 1: Nome configurado "$configName" n�o usado, '
             'detectado "$detectedName" como protagonista',
           );
         }
@@ -3041,15 +3044,15 @@ no vasto manto azul do infinito."
     }
   }
 
-  /// 🆕 v7.6.17: Valida se protagonista manteve o mesmo nome
-  /// Retorna true se mudança detectada (bloco deve ser rejeitado)
+  /// ?? v7.6.17: Valida se protagonista manteve o mesmo nome
+  /// Retorna true se mudan�a detectada (bloco deve ser rejeitado)
   bool _detectProtagonistNameChange(
     String generatedText,
     ScriptConfig config,
     _CharacterTracker tracker,
     int blockNumber,
   ) {
-    if (blockNumber == 1) return false; // Bloco 1 sempre válido
+    if (blockNumber == 1) return false; // Bloco 1 sempre v�lido
 
     final registeredName = tracker.getProtagonistName();
     if (registeredName == null) return false; // Sem protagonista registrada
@@ -3060,23 +3063,23 @@ no vasto manto azul do infinito."
     // Verificar se protagonista registrada aparece
     final protagonistPresent = currentNames.contains(registeredName);
 
-    // Verificar se há outros nomes válidos (possível troca)
+    // Verificar se h� outros nomes v�lidos (poss�vel troca)
     final otherValidNames = currentNames
         .where((n) => n != registeredName && _looksLikePersonName(n))
         .toList();
 
-    // 🚨 DETECÇÃO: Se protagonista não apareceu MAS há outros nomes válidos
+    // ?? DETEC��O: Se protagonista n�o apareceu MAS h� outros nomes v�lidos
     if (!protagonistPresent && otherValidNames.isNotEmpty) {
       if (kDebugMode) {
         debugPrint(
-          '🚨 Bloco $blockNumber: Protagonista "$registeredName" ausente!',
+          '?? Bloco $blockNumber: Protagonista "$registeredName" ausente!',
         );
         debugPrint('   Nomes encontrados: ${otherValidNames.join(", ")}');
-        debugPrint('   ⚠️ Possível mudança de nome!');
+        debugPrint('   ?? Poss�vel mudan�a de nome!');
       }
 
       _debugLogger.error(
-        'Mudança de protagonista detectada',
+        'Mudan�a de protagonista detectada',
         blockNumber: blockNumber,
         details:
             'Esperado "$registeredName", encontrado ${otherValidNames.join(", ")}',
@@ -3092,9 +3095,9 @@ no vasto manto azul do infinito."
     return false; // Nome consistente
   }
 
-  /// 🚨 VALIDAÇÃO CRÍTICA: Detecta reutilização de nomes de personagens
-  /// Cada personagem deve ter apenas 1 nome único
-  /// Retorna true se validação passou, false se detectou erro crítico
+  /// ?? VALIDA��O CR�TICA: Detecta reutiliza��o de nomes de personagens
+  /// Cada personagem deve ter apenas 1 nome �nico
+  /// Retorna true se valida��o passou, false se detectou erro cr�tico
   bool _validateProtagonistName(
     String generatedText,
     ScriptConfig config,
@@ -3105,8 +3108,8 @@ no vasto manto azul do infinito."
       return true; // Sem protagonista configurada = ok
     }
 
-    // 🚨 NOVA VALIDAÇÃO: Detectar auto-apresentações com nomes errados
-    // Padrões: "my name is X", "i'm X", "call me X"
+    // ?? NOVA VALIDA��O: Detectar auto-apresenta��es com nomes errados
+    // Padr�es: "my name is X", "i'm X", "call me X"
     final nameIntroPatterns = [
       RegExp(r'my name is ([A-Z][a-z]+)', caseSensitive: false),
       RegExp(r"i'm ([A-Z][a-z]+)", caseSensitive: false),
@@ -3121,26 +3124,26 @@ no vasto manto azul do infinito."
         if (introducedName != null &&
             introducedName.toLowerCase() != protagonistName.toLowerCase()) {
           _log(
-            '🚨 ERRO CRÍTICO: AUTO-APRESENTAÇÃO COM NOME ERRADO!',
+            '?? ERRO CR�TICO: AUTO-APRESENTA��O COM NOME ERRADO!',
             level: 'critical',
           );
           _log(
-            '   ❌ Protagonista configurada: "$protagonistName"',
+            '   ? Protagonista configurada: "$protagonistName"',
             level: 'critical',
           );
           _log(
-            '   ❌ Nome na auto-apresentação: "$introducedName"',
+            '   ? Nome na auto-apresenta��o: "$introducedName"',
             level: 'critical',
           );
-          _log('   📝 Trecho: "${match.group(0)}"', level: 'critical');
-          _log('   🔄 BLOCO SERÁ REJEITADO E REGENERADO', level: 'critical');
+          _log('   ?? Trecho: "${match.group(0)}"', level: 'critical');
+          _log('   ?? BLOCO SER� REJEITADO E REGENERADO', level: 'critical');
 
-          return false; // 🚨 REJEITAR BLOCO
+          return false; // ?? REJEITAR BLOCO
         }
       }
     }
 
-    // 🔥 PARTE 1: Validar protagonista específica
+    // ?? PARTE 1: Validar protagonista espec�fica
     final suspiciousNames = [
       'Wanessa',
       'Carla',
@@ -3148,7 +3151,7 @@ no vasto manto azul do infinito."
       'Fernanda',
       'Juliana',
       'Mariana',
-      'Patrícia',
+      'Patr�cia',
       'Roberta',
       'Silvia',
       'Tatiana',
@@ -3162,7 +3165,7 @@ no vasto manto azul do infinito."
       'Rafael',
       'Rodrigo',
       'Thiago',
-      // Nomes comuns em inglês (caso do roteiro gerado)
+      // Nomes comuns em ingl�s (caso do roteiro gerado)
       'Hannah',
       'Laura',
       'Jessica',
@@ -3182,11 +3185,11 @@ no vasto manto azul do infinito."
 
     for (final suspiciousName in suspiciousNames) {
       if (suspiciousName.toLowerCase() == protagonistName.toLowerCase()) {
-        continue; // Nome suspeito é o próprio protagonista configurado
+        continue; // Nome suspeito � o pr�prio protagonista configurado
       }
 
       if (generatedText.contains(suspiciousName)) {
-        // 🐛 DEBUG: Log erro crítico de nome
+        // ?? DEBUG: Log erro cr�tico de nome
         _debugLogger.error(
           "Troca de nome detectada: '$suspiciousName'",
           blockNumber: blockNumber,
@@ -3199,40 +3202,40 @@ no vasto manto azul do infinito."
         );
 
         _log(
-          '🚨 ERRO CRÍTICO DETECTADO NO BLOCO $blockNumber:',
+          '?? ERRO CR�TICO DETECTADO NO BLOCO $blockNumber:',
           level: 'critical',
         );
         _log(
-          '   ❌ Protagonista deveria ser: "$protagonistName"',
+          '   ? Protagonista deveria ser: "$protagonistName"',
           level: 'critical',
         );
         _log(
-          '   ❌ Mas encontrei nome suspeito: "$suspiciousName"',
+          '   ? Mas encontrei nome suspeito: "$suspiciousName"',
           level: 'critical',
         );
         _log(
-          '   ⚠️ POSSÍVEL TROCA DE NOME DA PROTAGONISTA!',
+          '   ?? POSS�VEL TROCA DE NOME DA PROTAGONISTA!',
           level: 'critical',
         );
-        _log('   🔄 BLOCO SERÁ REJEITADO E REGENERADO', level: 'critical');
+        _log('   ?? BLOCO SER� REJEITADO E REGENERADO', level: 'critical');
 
-        return false; // 🚨 REJEITAR BLOCO
+        return false; // ?? REJEITAR BLOCO
       }
     }
 
     if (!hasProtagonist && blockNumber <= 2) {
-      // 🐛 DEBUG: Log aviso de protagonista ausente
+      // ?? DEBUG: Log aviso de protagonista ausente
       _debugLogger.warning(
         "Protagonista ausente",
-        details: "'$protagonistName' não apareceu no bloco $blockNumber",
+        details: "'$protagonistName' n�o apareceu no bloco $blockNumber",
         metadata: {'bloco': blockNumber, 'protagonista': protagonistName},
       );
 
       debugPrint(
-        '⚠️ AVISO: Protagonista "$protagonistName" não apareceu no bloco $blockNumber',
+        '?? AVISO: Protagonista "$protagonistName" n�o apareceu no bloco $blockNumber',
       );
     } else if (hasProtagonist) {
-      // 🐛 DEBUG: Log validação bem-sucedida
+      // ?? DEBUG: Log valida��o bem-sucedida
       _debugLogger.validation(
         "Protagonista validada",
         blockNumber: blockNumber,
@@ -3241,21 +3244,21 @@ no vasto manto azul do infinito."
       );
     }
 
-    return true; // Validação passou
+    return true; // Valida��o passou
   }
 
-  /// 🆕 v7.6.22: VALIDAÇÃO DE RELACIONAMENTOS FAMILIARES
-  /// Detecta contradições lógicas em árvores genealógicas
-  /// Retorna true se relacionamentos são consistentes, false se há erros
+  /// ?? v7.6.22: VALIDA��O DE RELACIONAMENTOS FAMILIARES
+  /// Detecta contradi��es l�gicas em �rvores geneal�gicas
+  /// Retorna true se relacionamentos s�o consistentes, false se h� erros
   bool _validateFamilyRelationships(String text, int blockNumber) {
     if (text.isEmpty) return true;
 
-    // Mapa de relacionamentos encontrados: pessoa → relação → pessoa relacionada
+    // Mapa de relacionamentos encontrados: pessoa ? rela��o ? pessoa relacionada
     final Map<String, Map<String, Set<String>>> relationships = {};
 
-    // Padrões de relacionamentos em múltiplos idiomas
+    // Padr�es de relacionamentos em m�ltiplos idiomas
     final patterns = {
-      // Português
+      // Portugu�s
       'marido': RegExp(
         r'meu marido(?:,)?\s+([A-Z][a-z]+)',
         caseSensitive: false,
@@ -3265,9 +3268,9 @@ no vasto manto azul do infinito."
         caseSensitive: false,
       ),
       'pai': RegExp(r'meu pai(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'mãe': RegExp(r'minha mãe(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'irmão': RegExp(r'meu irmão(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'irmã': RegExp(r'minha irmã(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+      'm�e': RegExp(r'minha m�e(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+      'irm�o': RegExp(r'meu irm�o(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+      'irm�': RegExp(r'minha irm�(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'sogro': RegExp(r'meu sogro(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'sogra': RegExp(
         r'minha sogra(?:,)?\s+([A-Z][a-z]+)',
@@ -3285,10 +3288,10 @@ no vasto manto azul do infinito."
       'nora': RegExp(r'minha nora(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'neto': RegExp(r'meu neto(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
       'neta': RegExp(r'minha neta(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'avô': RegExp(r'meu avô(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'avó': RegExp(r'minha avó(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+      'av�': RegExp(r'meu av�(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+      'av�': RegExp(r'minha av�(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
 
-      // Inglês
+      // Ingl�s
       'husband_en': RegExp(
         r'my husband(?:,)?\s+([A-Z][a-z]+)',
         caseSensitive: false,
@@ -3351,7 +3354,7 @@ no vasto manto azul do infinito."
         caseSensitive: false,
       ),
 
-      // Padrões de casamento (detectar quem casa com quem)
+      // Padr�es de casamento (detectar quem casa com quem)
       'married_to': RegExp(
         r'([A-Z][a-z]+)\s+(?:casou com|married|se casou com)\s+([A-Z][a-z]+)',
         caseSensitive: false,
@@ -3373,37 +3376,37 @@ no vasto manto azul do infinito."
       }
     }
 
-    // Validar relacionamentos lógicos
+    // Validar relacionamentos l�gicos
     bool hasError = false;
 
-    // REGRA 1: Se X é meu cunhado/cunhada, então:
-    //   - X deve ser irmão/irmã do meu cônjuge OU
-    //   - X deve ser cônjuge do meu irmão/irmã
+    // REGRA 1: Se X � meu cunhado/cunhada, ent�o:
+    //   - X deve ser irm�o/irm� do meu c�njuge OU
+    //   - X deve ser c�njuge do meu irm�o/irm�
     final brotherInLaw = relationships['protagonist']?['cunhado'] ?? {};
     final sisterInLaw = relationships['protagonist']?['cunhada'] ?? {};
     final husband = relationships['protagonist']?['marido'] ?? {};
     final wife = relationships['protagonist']?['esposa'] ?? {};
-    final brother = relationships['protagonist']?['irmão'] ?? {};
-    final sister = relationships['protagonist']?['irmã'] ?? {};
+    final brother = relationships['protagonist']?['irm�o'] ?? {};
+    final sister = relationships['protagonist']?['irm�'] ?? {};
 
     for (final inLaw in [...brotherInLaw, ...sisterInLaw]) {
-      // Se X é cunhado mas nunca mencionamos cônjuge nem irmãos = ERRO
+      // Se X � cunhado mas nunca mencionamos c�njuge nem irm�os = ERRO
       if (husband.isEmpty &&
           wife.isEmpty &&
           brother.isEmpty &&
           sister.isEmpty) {
         if (kDebugMode) {
           debugPrint(
-            '🚨 ERRO: $inLaw é cunhado/cunhada mas não há cônjuge nem irmãos mencionados!',
+            '?? ERRO: $inLaw � cunhado/cunhada mas n�o h� c�njuge nem irm�os mencionados!',
           );
         }
         hasError = true;
       }
     }
 
-    // REGRA 2: Se X é meu sogro/sogra, então:
-    //   - Eu DEVO ter cônjuge (marido/esposa)
-    //   - X deve ser pai/mãe do meu cônjuge
+    // REGRA 2: Se X � meu sogro/sogra, ent�o:
+    //   - Eu DEVO ter c�njuge (marido/esposa)
+    //   - X deve ser pai/m�e do meu c�njuge
     final fatherInLaw = relationships['protagonist']?['sogro'] ?? {};
     final motherInLaw = relationships['protagonist']?['sogra'] ?? {};
 
@@ -3411,22 +3414,22 @@ no vasto manto azul do infinito."
       if (husband.isEmpty && wife.isEmpty) {
         if (kDebugMode) {
           debugPrint(
-            '🚨 ERRO: Tem sogro/sogra mas protagonista não tem cônjuge!',
+            '?? ERRO: Tem sogro/sogra mas protagonista n�o tem c�njuge!',
           );
-          debugPrint('   ❌ Se X é sogro, protagonista DEVE ter esposa/marido');
+          debugPrint('   ? Se X � sogro, protagonista DEVE ter esposa/marido');
         }
         hasError = true;
       }
     }
 
-    // REGRA 3: Se X é meu genro/nora, então:
+    // REGRA 3: Se X � meu genro/nora, ent�o:
     //   - Eu DEVO ter filho/filha
-    //   - X deve ser cônjuge do meu filho/filha
+    //   - X deve ser c�njuge do meu filho/filha
     final sonInLaw = relationships['protagonist']?['genro'] ?? {};
     final daughterInLaw = relationships['protagonist']?['nora'] ?? {};
 
     if (sonInLaw.isNotEmpty || daughterInLaw.isNotEmpty) {
-      // Verificar se menciona filhos (procurar padrão mais amplo)
+      // Verificar se menciona filhos (procurar padr�o mais amplo)
       final hasChildren = text.contains(
         RegExp(
           r'meu filho|minha filha|my son|my daughter',
@@ -3436,16 +3439,16 @@ no vasto manto azul do infinito."
 
       if (!hasChildren) {
         if (kDebugMode) {
-          debugPrint('🚨 ERRO: Tem genro/nora mas não menciona filhos!');
+          debugPrint('?? ERRO: Tem genro/nora mas n�o menciona filhos!');
           debugPrint(
-            '   ❌ Se X é genro/nora, protagonista DEVE ter filho/filha',
+            '   ? Se X � genro/nora, protagonista DEVE ter filho/filha',
           );
         }
         hasError = true;
       }
     }
 
-    // REGRA 4: Se X é meu neto/neta, então:
+    // REGRA 4: Se X � meu neto/neta, ent�o:
     //   - Eu DEVO ter filhos
     //   - X deve ser filho/filha dos meus filhos
     final grandson = relationships['protagonist']?['neto'] ?? {};
@@ -3461,26 +3464,26 @@ no vasto manto azul do infinito."
 
       if (!hasChildren) {
         if (kDebugMode) {
-          debugPrint('🚨 ERRO: Tem neto/neta mas não menciona filhos!');
+          debugPrint('?? ERRO: Tem neto/neta mas n�o menciona filhos!');
           debugPrint(
-            '   ❌ Se X é neto/neta, protagonista DEVE ter filho/filha',
+            '   ? Se X � neto/neta, protagonista DEVE ter filho/filha',
           );
         }
         hasError = true;
       }
     }
 
-    // REGRA 5: Detectar contradições com sufixos -in-law
+    // REGRA 5: Detectar contradi��es com sufixos -in-law
     // Exemplo: "my brother Paul married Megan" + "my father-in-law Alan"
-    // Se Megan é filha de Alan, então Alan é sogro de Paul (não do protagonista)
+    // Se Megan � filha de Alan, ent�o Alan � sogro de Paul (n�o do protagonista)
     final marriedPattern = RegExp(
       r'my (brother|sister)(?:,)?\s+([A-Z][a-z]+)\s+(?:married|casou com)\s+([A-Z][a-z]+)',
       caseSensitive: false,
     );
 
     for (final match in marriedPattern.allMatches(text)) {
-      final sibling = match.group(2); // Nome do irmão/irmã
-      final spouse = match.group(3); // Nome do cônjuge do irmão/irmã
+      final sibling = match.group(2); // Nome do irm�o/irm�
+      final spouse = match.group(3); // Nome do c�njuge do irm�o/irm�
 
       if (sibling != null && spouse != null) {
         // Se texto diz "X's father Alan" ou "father of X"
@@ -3501,15 +3504,15 @@ no vasto manto azul do infinito."
           // Se esse pai foi chamado de "my father-in-law" = ERRO
           if (parentName != null && fatherInLaw.contains(parentName)) {
             if (kDebugMode) {
-              debugPrint('🚨 ERRO DE RELACIONAMENTO GENEALÓGICO!');
+              debugPrint('?? ERRO DE RELACIONAMENTO GENEAL�GICO!');
               debugPrint(
-                '   ❌ $parentName é pai de $spouse (cônjuge de $sibling)',
+                '   ? $parentName � pai de $spouse (c�njuge de $sibling)',
               );
               debugPrint(
-                '   ❌ Mas texto chama $parentName de "my father-in-law"',
+                '   ? Mas texto chama $parentName de "my father-in-law"',
               );
               debugPrint(
-                '   ✅ CORRETO seria: "$parentName é sogro do meu irmão $sibling"',
+                '   ? CORRETO seria: "$parentName � sogro do meu irm�o $sibling"',
               );
             }
             hasError = true;
@@ -3521,39 +3524,39 @@ no vasto manto azul do infinito."
     if (hasError) {
       if (kDebugMode) {
         debugPrint(
-          '❌ BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!',
+          '? BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!',
         );
         debugPrint(
-          '   🔄 Forçando regeneração com lógica genealógica correta...',
+          '   ?? For�ando regenera��o com l�gica geneal�gica correta...',
         );
       }
     }
 
-    return !hasError; // Retorna true se não há erros
+    return !hasError; // Retorna true se n�o h� erros
   }
 
-  /// 🆕 EXTRAÇÃO DE PAPEL: Identifica o papel/relação de um nome em um texto
-  /// Retorna o primeiro papel encontrado ou null se não detectar nenhum
-  /// 🆕 v7.6.28: Valida se há nomes duplicados em papéis diferentes
-  /// 🔥 v7.6.32: NOVA VALIDAÇÃO - Detecta quando MESMO PAPEL tem NOMES DIFERENTES
-  /// 🆕 v7.6.33: PAPÉIS POSSESSIVOS SINGULARES - Detecta "my lawyer" como papel único
-  /// 🔥 v7.6.34: FIX MULTI-WORD ROLES - Corrige detecção de "executive assistant", "financial advisor"
+  /// ?? EXTRA��O DE PAPEL: Identifica o papel/rela��o de um nome em um texto
+  /// Retorna o primeiro papel encontrado ou null se n�o detectar nenhum
+  /// ?? v7.6.28: Valida se h� nomes duplicados em pap�is diferentes
+  /// ?? v7.6.32: NOVA VALIDA��O - Detecta quando MESMO PAPEL tem NOMES DIFERENTES
+  /// ?? v7.6.33: PAP�IS POSSESSIVOS SINGULARES - Detecta "my lawyer" como papel �nico
+  /// ?? v7.6.34: FIX MULTI-WORD ROLES - Corrige detec��o de "executive assistant", "financial advisor"
   ///
   /// OBJETIVO 1 (v7.6.28): Detectar quando MESMO NOME aparece para PERSONAGENS DIFERENTES
   /// EXEMPLO RUIM: "Mark" como boyfriend + "Mark" como attorney
   ///
-  /// OBJETIVO 2 (v7.6.32): Detectar quando MESMO PAPEL é atribuído a NOMES DIFERENTES
+  /// OBJETIVO 2 (v7.6.32): Detectar quando MESMO PAPEL � atribu�do a NOMES DIFERENTES
   /// EXEMPLO RUIM: "Ashley" como protagonista + "Emily" como protagonista
   ///
   /// OBJETIVO 3 (v7.6.33/34): Detectar quando PAPEL POSSESSIVO tem NOMES DIFERENTES
   /// EXEMPLOS RUINS:
-  ///   - "my lawyer, Richard" (Bloco 5) → "my lawyer, Mark" (Bloco 10)
-  ///   - "my executive assistant, Lauren" (Bloco 7) → "my executive assistant, Danielle" (Bloco 12)
-  /// LÓGICA: "my X" = possessivo singular = papel único (não pode ter múltiplos)
-  /// 🔥 v7.6.34: Agora captura corretamente multi-word roles (executive assistant, financial advisor, etc.)
+  ///   - "my lawyer, Richard" (Bloco 5) ? "my lawyer, Mark" (Bloco 10)
+  ///   - "my executive assistant, Lauren" (Bloco 7) ? "my executive assistant, Danielle" (Bloco 12)
+  /// L�GICA: "my X" = possessivo singular = papel �nico (n�o pode ter m�ltiplos)
+  /// ?? v7.6.34: Agora captura corretamente multi-word roles (executive assistant, financial advisor, etc.)
   ///
   /// Retorna TRUE se houver conflito (bloco deve ser rejeitado)
-  /// Retorna FALSE se nomes são únicos (bloco pode ser aceito)
+  /// Retorna FALSE se nomes s�o �nicos (bloco pode ser aceito)
   bool _validateUniqueNames(
     String blockText,
     _CharacterTracker tracker,
@@ -3564,13 +3567,13 @@ no vasto manto azul do infinito."
     // Extrair nomes do bloco atual
     final namesInBlock = _extractNamesFromText(blockText);
 
-    // Verificar cada nome extraído
+    // Verificar cada nome extra�do
     for (final name in namesInBlock) {
-      // ═══════════════════════════════════════════════════════════════
-      // VALIDAÇÃO 1 (v7.6.28): MESMO NOME em PAPÉIS DIFERENTES
-      // ═══════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------
+      // VALIDA��O 1 (v7.6.28): MESMO NOME em PAP�IS DIFERENTES
+      // ---------------------------------------------------------------
       if (tracker.hasName(name)) {
-        // Nome já existe - verificar se é o MESMO personagem ou REUSO indevido
+        // Nome j� existe - verificar se � o MESMO personagem ou REUSO indevido
 
         // Extrair papel atual deste nome no bloco
         final currentRole = _extractRoleForName(name, blockText);
@@ -3579,34 +3582,34 @@ no vasto manto azul do infinito."
         final previousRole = tracker.getRole(name);
 
         if (currentRole != null && previousRole != null) {
-          // Normalizar papéis para comparação
+          // Normalizar pap�is para compara��o
           final normalizedCurrent = _normalizeRole(currentRole);
           final normalizedPrevious = _normalizeRole(previousRole);
 
-          // Se papéis são DIFERENTES = NOME DUPLICADO (ERRO!)
+          // Se pap�is s�o DIFERENTES = NOME DUPLICADO (ERRO!)
           if (normalizedCurrent != normalizedPrevious &&
               normalizedCurrent != 'indefinido' &&
               normalizedPrevious != 'indefinido') {
             if (kDebugMode) {
-              debugPrint('🚨🚨🚨 v7.6.28: NOME DUPLICADO DETECTADO! 🚨🚨🚨');
-              debugPrint('   ❌ Nome: "$name"');
+              debugPrint('?????? v7.6.28: NOME DUPLICADO DETECTADO! ??????');
+              debugPrint('   ? Nome: "$name"');
               debugPrint(
-                '   ❌ Papel anterior: "$previousRole" → "$normalizedPrevious"',
+                '   ? Papel anterior: "$previousRole" ? "$normalizedPrevious"',
               );
               debugPrint(
-                '   ❌ Papel atual: "$currentRole" → "$normalizedCurrent"',
+                '   ? Papel atual: "$currentRole" ? "$normalizedCurrent"',
               );
               debugPrint(
-                '   💡 EXEMPLO DO BUG: "Mark" sendo boyfriend E attorney!',
+                '   ?? EXEMPLO DO BUG: "Mark" sendo boyfriend E attorney!',
               );
               debugPrint(
-                '   🔄 Bloco $blockNumber será REJEITADO e REGENERADO',
+                '   ?? Bloco $blockNumber ser� REJEITADO e REGENERADO',
               );
-              debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
+              debugPrint('?????? FIM DO ALERTA ??????');
             }
 
             _debugLogger.error(
-              "Nome duplicado em papéis diferentes - Bloco $blockNumber",
+              "Nome duplicado em pap�is diferentes - Bloco $blockNumber",
               blockNumber: blockNumber,
               details:
                   "Nome '$name': papel anterior '$previousRole', papel atual '$currentRole'",
@@ -3617,23 +3620,23 @@ no vasto manto azul do infinito."
               },
             );
 
-            return true; // ❌ CONFLITO DETECTADO
+            return true; // ? CONFLITO DETECTADO
           }
         }
       }
 
-      // ═══════════════════════════════════════════════════════════════
-      // 🔥 VALIDAÇÃO 2 (v7.6.32): MESMO PAPEL em NOMES DIFERENTES
-      // ═══════════════════════════════════════════════════════════════
+      // ---------------------------------------------------------------
+      // ?? VALIDA��O 2 (v7.6.32): MESMO PAPEL em NOMES DIFERENTES
+      // ---------------------------------------------------------------
       final currentRole = _extractRoleForName(name, blockText);
 
       if (currentRole != null && currentRole != 'indefinido') {
         final normalizedCurrent = _normalizeRole(currentRole);
 
-        // Verificar se este PAPEL já existe com um NOME DIFERENTE
+        // Verificar se este PAPEL j� existe com um NOME DIFERENTE
         for (final existingName in tracker.confirmedNames) {
           if (existingName.toLowerCase() == name.toLowerCase()) {
-            continue; // Mesmo nome = OK (já validado acima)
+            continue; // Mesmo nome = OK (j� validado acima)
           }
 
           final existingRole = tracker.getRole(existingName);
@@ -3641,7 +3644,7 @@ no vasto manto azul do infinito."
 
           final normalizedExisting = _normalizeRole(existingRole);
 
-          // 🎯 PAPÉIS CRÍTICOS que DEVEM ser únicos (1 nome por papel)
+          // ?? PAP�IS CR�TICOS que DEVEM ser �nicos (1 nome por papel)
           final uniqueRoles = {
             'protagonista',
             'protagonist',
@@ -3651,13 +3654,13 @@ no vasto manto azul do infinito."
             'narrator',
             'hero',
             'heroine',
-            'herói',
-            'heroína',
+            'her�i',
+            'hero�na',
           };
 
-          // Se MESMO PAPEL com NOMES DIFERENTES = ERRO CRÍTICO!
+          // Se MESMO PAPEL com NOMES DIFERENTES = ERRO CR�TICO!
           if (normalizedCurrent == normalizedExisting) {
-            // Verificar se é papel crítico que deve ser único
+            // Verificar se � papel cr�tico que deve ser �nico
             bool isCriticalRole = false;
             for (final uniqueRole in uniqueRoles) {
               if (normalizedCurrent.contains(uniqueRole) ||
@@ -3669,17 +3672,17 @@ no vasto manto azul do infinito."
 
             if (isCriticalRole) {
               if (kDebugMode) {
-                debugPrint('🚨🚨🚨 v7.6.32: PAPEL DUPLICADO DETECTADO! 🚨🚨🚨');
-                debugPrint('   ❌ Papel: "$currentRole" → "$normalizedCurrent"');
-                debugPrint('   ❌ Nome anterior: "$existingName"');
-                debugPrint('   ❌ Nome atual: "$name"');
+                debugPrint('?????? v7.6.32: PAPEL DUPLICADO DETECTADO! ??????');
+                debugPrint('   ? Papel: "$currentRole" ? "$normalizedCurrent"');
+                debugPrint('   ? Nome anterior: "$existingName"');
+                debugPrint('   ? Nome atual: "$name"');
                 debugPrint(
-                  '   💡 EXEMPLO DO BUG: "Ashley" sendo protagonista E "Emily" sendo protagonista!',
+                  '   ?? EXEMPLO DO BUG: "Ashley" sendo protagonista E "Emily" sendo protagonista!',
                 );
                 debugPrint(
-                  '   🔄 Bloco $blockNumber será REJEITADO e REGENERADO',
+                  '   ?? Bloco $blockNumber ser� REJEITADO e REGENERADO',
                 );
-                debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
+                debugPrint('?????? FIM DO ALERTA ??????');
               }
 
               _debugLogger.error(
@@ -3694,32 +3697,32 @@ no vasto manto azul do infinito."
                 },
               );
 
-              return true; // ❌ CONFLITO CRÍTICO DETECTADO
+              return true; // ? CONFLITO CR�TICO DETECTADO
             }
           }
         }
       }
 
-      // ═══════════════════════════════════════════════════════════════
-      // 🆕 VALIDAÇÃO 3 (v7.6.33): PAPÉIS POSSESSIVOS SINGULARES
-      // ═══════════════════════════════════════════════════════════════
-      // OBJETIVO: Detectar papéis únicos indicados por possessivos singulares
-      // EXEMPLO RUIM: "my lawyer, Richard" (Bloco 5) → "my lawyer, Mark" (Bloco 10)
+      // ---------------------------------------------------------------
+      // ?? VALIDA��O 3 (v7.6.33): PAP�IS POSSESSIVOS SINGULARES
+      // ---------------------------------------------------------------
+      // OBJETIVO: Detectar pap�is �nicos indicados por possessivos singulares
+      // EXEMPLO RUIM: "my lawyer, Richard" (Bloco 5) ? "my lawyer, Mark" (Bloco 10)
       //
-      // Quando texto usa "my X" (possessive singular), indica papel único
-      // Não pode haver múltiplas instâncias: "my lawyer" = apenas 1 advogado
+      // Quando texto usa "my X" (possessive singular), indica papel �nico
+      // N�o pode haver m�ltiplas inst�ncias: "my lawyer" = apenas 1 advogado
       //
-      // 🔍 Detecta padrões:
+      // ?? Detecta padr�es:
       // - "my lawyer", "my attorney", "my doctor"
       // - "my therapist", "my accountant", "my agent"
       // - "my boss", "my mentor", "my partner"
       //
-      // ⚠️ IMPORTANTE: "my lawyers" (plural) NÃO é considerado único
-      // ═══════════════════════════════════════════════════════════════
+      // ?? IMPORTANTE: "my lawyers" (plural) N�O � considerado �nico
+      // ---------------------------------------------------------------
 
-      // Padrão para detectar possessivos singulares
-      // Captura: "my [role]" mas NÃO "my [role]s" (plural)
-      // 🔥 v7.6.34: EXPANDIDO para capturar multi-word roles (executive assistant, financial advisor, etc.)
+      // Padr�o para detectar possessivos singulares
+      // Captura: "my [role]" mas N�O "my [role]s" (plural)
+      // ?? v7.6.34: EXPANDIDO para capturar multi-word roles (executive assistant, financial advisor, etc.)
       final possessiveSingularPattern = RegExp(
         r'\b(?:my|nossa)\s+(?:executive\s+assistant|personal\s+assistant|financial\s+advisor|real\s+estate\s+agent|estate\s+planner|tax\s+advisor|makeup\s+artist|physical\s+therapist|occupational\s+therapist|speech\s+therapist|au\s+pair|dalai\s+lama|vice[-\s]president|lawyer|attorney|doctor|therapist|accountant|agent|boss|mentor|partner|adviser|advisor|consultant|coach|teacher|tutor|counselor|psychologist|psychiatrist|dentist|surgeon|specialist|physician|nurse|caregiver|assistant|secretary|manager|supervisor|director|ceo|cfo|cto|president|chairman|investor|banker|auditor|notary|mediator|arbitrator|investigator|detective|officer|sergeant|captain|lieutenant|judge|magistrate|prosecutor|defender|guardian|curator|executor|trustee|beneficiary|architect|engineer|contractor|builder|designer|decorator|landscaper|gardener|housekeeper|maid|butler|chef|cook|driver|chauffeur|pilot|navigator|guide|translator|interpreter|editor|publisher|producer|publicist|stylist|hairdresser|barber|beautician|esthetician|masseuse|trainer|nutritionist|dietitian|pharmacist|optometrist|veterinarian|groomer|walker|sitter|nanny|governess|babysitter|midwife|doula|chiropractor|acupuncturist|hypnotist|healer|shaman|priest|pastor|minister|rabbi|imam|monk|nun|chaplain|deacon|elder|bishop|archbishop|cardinal|pope|guru|sensei|sifu|master|grandmaster)(?![a-z])',
         caseSensitive: false,
@@ -3728,7 +3731,7 @@ no vasto manto azul do infinito."
       final possessiveMatches = possessiveSingularPattern.allMatches(blockText);
 
       for (final match in possessiveMatches) {
-        // 🔥 v7.6.34: Captura o grupo completo (incluindo multi-word roles)
+        // ?? v7.6.34: Captura o grupo completo (incluindo multi-word roles)
         final possessiveRole = match
             .group(0)
             ?.replaceFirst(
@@ -3740,7 +3743,7 @@ no vasto manto azul do infinito."
 
         if (possessiveRole == null || possessiveRole.isEmpty) continue;
 
-        // Verificar se JÁ existe este papel possessivo com NOME DIFERENTE
+        // Verificar se J� existe este papel possessivo com NOME DIFERENTE
         for (final existingName in tracker.confirmedNames) {
           if (existingName.toLowerCase() == name.toLowerCase()) {
             continue; // Mesmo nome = OK
@@ -3751,38 +3754,38 @@ no vasto manto azul do infinito."
 
           final normalizedExisting = _normalizeRole(existingRole).toLowerCase();
 
-          // 🔥 v7.6.34: Match exato ou contém o papel completo (executive assistant, etc.)
+          // ?? v7.6.34: Match exato ou cont�m o papel completo (executive assistant, etc.)
           final possessiveRoleNormalized = possessiveRole.replaceAll(
             RegExp(r'\s+'),
             ' ',
           );
 
-          // Verificar se papel possessivo já existe
+          // Verificar se papel possessivo j� existe
           if (normalizedExisting.contains(possessiveRoleNormalized) ||
               possessiveRoleNormalized.contains(
                 normalizedExisting.split(' ').last,
               )) {
             if (kDebugMode) {
               debugPrint(
-                '🚨🚨🚨 v7.6.34: PAPEL POSSESSIVO SINGULAR DUPLICADO! 🚨🚨🚨',
+                '?????? v7.6.34: PAPEL POSSESSIVO SINGULAR DUPLICADO! ??????',
               );
-              debugPrint('   ❌ Papel possessivo: "my $possessiveRole"');
+              debugPrint('   ? Papel possessivo: "my $possessiveRole"');
               debugPrint(
-                '   ❌ Nome anterior: "$existingName" (papel: "$existingRole")',
+                '   ? Nome anterior: "$existingName" (papel: "$existingRole")',
               );
-              debugPrint('   ❌ Nome atual: "$name"');
-              debugPrint('   💡 EXEMPLOS DO BUG:');
-              debugPrint('      - "my lawyer, Richard" → "my lawyer, Mark"');
+              debugPrint('   ? Nome atual: "$name"');
+              debugPrint('   ?? EXEMPLOS DO BUG:');
+              debugPrint('      - "my lawyer, Richard" ? "my lawyer, Mark"');
               debugPrint(
-                '      - "my executive assistant, Lauren" → "my executive assistant, Danielle"',
-              );
-              debugPrint(
-                '   💡 "my X" indica papel ÚNICO - não pode haver múltiplos!',
+                '      - "my executive assistant, Lauren" ? "my executive assistant, Danielle"',
               );
               debugPrint(
-                '   🔄 Bloco $blockNumber será REJEITADO e REGENERADO',
+                '   ?? "my X" indica papel �NICO - n�o pode haver m�ltiplos!',
               );
-              debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
+              debugPrint(
+                '   ?? Bloco $blockNumber ser� REJEITADO e REGENERADO',
+              );
+              debugPrint('?????? FIM DO ALERTA ??????');
             }
 
             _debugLogger.error(
@@ -3797,39 +3800,39 @@ no vasto manto azul do infinito."
               },
             );
 
-            return true; // ❌ CONFLITO POSSESSIVO DETECTADO
+            return true; // ? CONFLITO POSSESSIVO DETECTADO
           }
         }
       }
     }
 
-    return false; // ✅ Nenhum conflito de nomes ou papéis
+    return false; // ? Nenhum conflito de nomes ou pap�is
   }
 
-  /// 🔧 v7.6.26: Normaliza papel SELETIVAMENTE (evita falsos positivos)
+  /// ?? v7.6.26: Normaliza papel SELETIVAMENTE (evita falsos positivos)
   ///
-  /// PAPÉIS FAMILIARES: Mantém completo "mãe de Emily" ≠ "mãe de Michael"
-  /// PAPÉIS GENÉRICOS: Normaliza "advogado de Sarah" → "advogado"
+  /// PAP�IS FAMILIARES: Mant�m completo "m�e de Emily" ? "m�e de Michael"
+  /// PAP�IS GEN�RICOS: Normaliza "advogado de Sarah" ? "advogado"
   ///
   /// Exemplo:
-  /// - "mãe de Emily" → "mãe de emily" (mantém relação)
-  /// - "irmão de João" → "irmão de joão" (mantém relação)
-  /// - "advogado de Sarah" → "advogado" (remove relação)
-  /// - "médico de Michael" → "médico" (remove relação)
+  /// - "m�e de Emily" ? "m�e de emily" (mant�m rela��o)
+  /// - "irm�o de Jo�o" ? "irm�o de jo�o" (mant�m rela��o)
+  /// - "advogado de Sarah" ? "advogado" (remove rela��o)
+  /// - "m�dico de Michael" ? "m�dico" (remove rela��o)
   String _normalizeRole(String role) {
     final roleLower = role.toLowerCase().trim();
 
-    // 🔥 v7.6.26: PAPÉIS FAMILIARES - NÃO normalizar (manter contexto familiar)
-    // Permite múltiplas famílias na mesma história sem falsos positivos
+    // ?? v7.6.26: PAP�IS FAMILIARES - N�O normalizar (manter contexto familiar)
+    // Permite m�ltiplas fam�lias na mesma hist�ria sem falsos positivos
     final familyRoles = [
-      'mãe',
+      'm�e',
       'pai',
       'filho',
       'filha',
-      'irmão',
-      'irmã',
-      'avô',
-      'avó',
+      'irm�o',
+      'irm�',
+      'av�',
+      'av�',
       'tio',
       'tia',
       'primo',
@@ -3853,44 +3856,44 @@ no vasto manto azul do infinito."
       'mother-in-law',
       'brother-in-law',
       'sister-in-law',
-      'mère',
-      'père',
+      'm�re',
+      'p�re',
       'fils',
       'fille',
-      'frère',
-      'sœur',
-      'grand-père',
-      'grand-mère',
+      'fr�re',
+      's�ur',
+      'grand-p�re',
+      'grand-m�re',
       'oncle',
       'tante',
       'cousin',
       'cousine',
     ];
 
-    // Verificar se é papel familiar
+    // Verificar se � papel familiar
     for (final familyRole in familyRoles) {
       if (roleLower.contains(familyRole)) {
-        // ✅ MANTER COMPLETO: "mãe de Emily" permanece "mãe de emily"
-        // Isso permite Sarah ser "mãe de Emily" e Jennifer ser "mãe de Michael"
+        // ? MANTER COMPLETO: "m�e de Emily" permanece "m�e de emily"
+        // Isso permite Sarah ser "m�e de Emily" e Jennifer ser "m�e de Michael"
         if (kDebugMode) {
           debugPrint(
-            '👨‍👩‍👧‍👦 v7.6.26: Papel familiar detectado, mantendo completo: "$roleLower"',
+            '??????????? v7.6.26: Papel familiar detectado, mantendo completo: "$roleLower"',
           );
         }
         return roleLower;
       }
     }
 
-    // 🔧 PAPÉIS GENÉRICOS: Normalizar (remover sufixo "de [Nome]")
-    // "advogado de Sarah" → "advogado"
-    // "médico de João" → "médico"
+    // ?? PAP�IS GEN�RICOS: Normalizar (remover sufixo "de [Nome]")
+    // "advogado de Sarah" ? "advogado"
+    // "m�dico de Jo�o" ? "m�dico"
     final normalized = roleLower
-        .replaceAll(RegExp(r'\s+de\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇa-záàâãéêíóôõúç]+.*$'), '')
+        .replaceAll(RegExp(r'\s+de\s+[A-Z������������a-z������������]+.*$'), '')
         .trim();
 
     if (kDebugMode && normalized != roleLower) {
       debugPrint(
-        '🔧 v7.6.26: Papel genérico normalizado: "$roleLower" → "$normalized"',
+        '?? v7.6.26: Papel gen�rico normalizado: "$roleLower" ? "$normalized"',
       );
     }
 
@@ -3898,7 +3901,7 @@ no vasto manto azul do infinito."
   }
 
   String? _extractRoleForName(String name, String text) {
-    // Padrões para detectar relações familiares e sociais
+    // Padr�es para detectar rela��es familiares e sociais
     final rolePatterns = {
       'marido': RegExp(
         r'(?:meu|seu|nosso|o)\s+(?:marido|esposo)(?:[^.]{0,30}\b' +
@@ -3924,8 +3927,8 @@ no vasto manto azul do infinito."
             r')',
         caseSensitive: false,
       ),
-      'mãe': RegExp(
-        r'(?:minha|sua|nossa|a)\s+[Mm]ãe(?:[^.]{0,30}\b' +
+      'm�e': RegExp(
+        r'(?:minha|sua|nossa|a)\s+[Mm]�e(?:[^.]{0,30}\b' +
             name +
             r'\b|(?:,)?\s+' +
             name +
@@ -3948,16 +3951,16 @@ no vasto manto azul do infinito."
             r')',
         caseSensitive: false,
       ),
-      'irmão': RegExp(
-        r'(?:meu|seu|nosso|o)\s+(?:irmão|irmao)(?:[^.]{0,30}\b' +
+      'irm�o': RegExp(
+        r'(?:meu|seu|nosso|o)\s+(?:irm�o|irmao)(?:[^.]{0,30}\b' +
             name +
             r'\b|(?:,)?\s+' +
             name +
             r')',
         caseSensitive: false,
       ),
-      'irmã': RegExp(
-        r'(?:minha|sua|nossa|a)\s+(?:irmã|irma)(?:[^.]{0,30}\b' +
+      'irm�': RegExp(
+        r'(?:minha|sua|nossa|a)\s+(?:irm�|irma)(?:[^.]{0,30}\b' +
             name +
             r'\b|(?:,)?\s+' +
             name +
@@ -4060,16 +4063,16 @@ no vasto manto azul do infinito."
             r')',
         caseSensitive: false,
       ),
-      'avô': RegExp(
-        r'(?:meu|seu|o)\s+avô(?:[^.]{0,30}\b' +
+      'av�': RegExp(
+        r'(?:meu|seu|o)\s+av�(?:[^.]{0,30}\b' +
             name +
             r'\b|(?:,)?\s+' +
             name +
             r')',
         caseSensitive: false,
       ),
-      'avó': RegExp(
-        r'(?:minha|sua|a)\s+avó(?:[^.]{0,30}\b' +
+      'av�': RegExp(
+        r'(?:minha|sua|a)\s+av�(?:[^.]{0,30}\b' +
             name +
             r'\b|(?:,)?\s+' +
             name +
@@ -4110,14 +4113,14 @@ no vasto manto azul do infinito."
       ),
     };
 
-    // Retornar primeiro papel encontrado (português)
+    // Retornar primeiro papel encontrado (portugu�s)
     for (final entry in rolePatterns.entries) {
       if (entry.value.hasMatch(text)) {
         return entry.key;
       }
     }
 
-    // 🆕 v7.6.36: Padrões em INGLÊS para detectar papéis
+    // ?? v7.6.36: Padr�es em INGL�S para detectar pap�is
     final englishPatterns = {
       'father': RegExp(
         r'(?:my|his|her|our|the)\s+(?:father|dad)(?:[^.]{0,30}\b' +
@@ -4168,7 +4171,7 @@ no vasto manto azul do infinito."
         caseSensitive: false,
       ),
       'boyfriend': RegExp(
-        r'(?:my|her|the)\s+(?:boyfriend|fianc[eé])(?:[^.]{0,30}\b' +
+        r'(?:my|her|the)\s+(?:boyfriend|fianc[e�])(?:[^.]{0,30}\b' +
             name +
             r'\b|(?:,)?\s+' +
             name +
@@ -4176,7 +4179,7 @@ no vasto manto azul do infinito."
         caseSensitive: false,
       ),
       'girlfriend': RegExp(
-        r'(?:my|his|the)\s+(?:girlfriend|fianc[eé]e)(?:[^.]{0,30}\b' +
+        r'(?:my|his|the)\s+(?:girlfriend|fianc[e�]e)(?:[^.]{0,30}\b' +
             name +
             r'\b|(?:,)?\s+' +
             name +
@@ -4265,7 +4268,7 @@ no vasto manto azul do infinito."
       ),
     };
 
-    // Retornar primeiro papel encontrado (inglês)
+    // Retornar primeiro papel encontrado (ingl�s)
     for (final entry in englishPatterns.entries) {
       if (entry.value.hasMatch(text)) {
         return entry.key;
@@ -4275,15 +4278,15 @@ no vasto manto azul do infinito."
     return null; // Nenhum papel detectado
   }
 
-  /// 🆕 VALIDAÇÃO FORTALECIDA: Detecta quando um nome é reutilizado para outro personagem
-  /// Exemplo: "Regina" sendo usada para sogra E amiga, "Marta" para irmã de A e irmã de B
+  /// ?? VALIDA��O FORTALECIDA: Detecta quando um nome � reutilizado para outro personagem
+  /// Exemplo: "Regina" sendo usada para sogra E amiga, "Marta" para irm� de A e irm� de B
   void _validateNameReuse(
     String generatedText,
     _CharacterTracker tracker,
     int blockNumber,
   ) {
     // Extrair todos os nomes do texto gerado
-    final namePattern = RegExp(r'\b([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]{2,})\b');
+    final namePattern = RegExp(r'\b([A-Z������������][a-z������������]{2,})\b');
     final foundNames = <String>{};
 
     for (final match in namePattern.allMatches(generatedText)) {
@@ -4293,15 +4296,15 @@ no vasto manto azul do infinito."
       }
     }
 
-    // Verificar se algum nome encontrado JÁ existe no tracker com papel diferente
+    // Verificar se algum nome encontrado J� existe no tracker com papel diferente
     for (final name in foundNames) {
       if (tracker.hasName(name)) {
         final existingRole = tracker.getRole(name);
 
-        // 🔥 NOVO: Detectar papéis/relações no texto atual (padrões expandidos)
+        // ?? NOVO: Detectar pap�is/rela��es no texto atual (padr�es expandidos)
         final currentRoles = <String>[];
 
-        // PADRÃO 1: "meu/minha [relação] Nome" ou "Nome, [relação]" ou "a/o [relação], Nome"
+        // PADR�O 1: "meu/minha [rela��o] Nome" ou "Nome, [rela��o]" ou "a/o [rela��o], Nome"
         final relationPatterns = {
           'pai': RegExp(
             r'(?:meu|seu|nosso|o)\s+[Pp]ai(?:,)?\s+' +
@@ -4312,12 +4315,12 @@ no vasto manto azul do infinito."
                 name,
             caseSensitive: false,
           ),
-          'mãe': RegExp(
-            r'(?:minha|sua|nossa|a)\s+[Mm]ãe(?:,)?\s+' +
+          'm�e': RegExp(
+            r'(?:minha|sua|nossa|a)\s+[Mm]�e(?:,)?\s+' +
                 name +
                 r'|' +
                 name +
-                r'(?:,)?\s+(?:a\s+)?m[ãa]e|(?:a|uma)\s+m[ãa]e(?:,)?\s+' +
+                r'(?:,)?\s+(?:a\s+)?m[�a]e|(?:a|uma)\s+m[�a]e(?:,)?\s+' +
                 name,
             caseSensitive: false,
           ),
@@ -4357,21 +4360,21 @@ no vasto manto azul do infinito."
                 name,
             caseSensitive: false,
           ),
-          'irmão': RegExp(
-            r'(?:meu|seu|nosso|o)\s+(?:irmão|irmao)(?:,)?\s+' +
+          'irm�o': RegExp(
+            r'(?:meu|seu|nosso|o)\s+(?:irm�o|irmao)(?:,)?\s+' +
                 name +
                 r'|' +
                 name +
-                r'(?:,)?\s+(?:o\s+)?(?:irmão|irmao)|(?:o|um)\s+(?:irmão|irmao)(?:,)?\s+' +
+                r'(?:,)?\s+(?:o\s+)?(?:irm�o|irmao)|(?:o|um)\s+(?:irm�o|irmao)(?:,)?\s+' +
                 name,
             caseSensitive: false,
           ),
-          'irmã': RegExp(
-            r'(?:minha|sua|nossa|a)\s+(?:irmã|irma)(?:,)?\s+' +
+          'irm�': RegExp(
+            r'(?:minha|sua|nossa|a)\s+(?:irm�|irma)(?:,)?\s+' +
                 name +
                 r'|' +
                 name +
-                r'(?:,)?\s+(?:a\s+)?(?:irmã|irma)|(?:a|uma)\s+(?:irmã|irma)(?:,)?\s+' +
+                r'(?:,)?\s+(?:a\s+)?(?:irm�|irma)|(?:a|uma)\s+(?:irm�|irma)(?:,)?\s+' +
                 name,
             caseSensitive: false,
           ),
@@ -4451,14 +4454,14 @@ no vasto manto azul do infinito."
           }
         }
 
-        // PADRÃO 2: "Nome, [relação] de [outra pessoa]"
+        // PADR�O 2: "Nome, [rela��o] de [outra pessoa]"
         final contexts = [
-          'irmã de',
-          'irmão de',
+          'irm� de',
+          'irm�o de',
           'filho de',
           'filha de',
           'pai de',
-          'mãe de',
+          'm�e de',
           'esposa de',
           'esposo de',
           'marido de',
@@ -4468,8 +4471,8 @@ no vasto manto azul do infinito."
           'tia de',
           'primo de',
           'prima de',
-          'avô de',
-          'avó de',
+          'av� de',
+          'av� de',
           'amiga de',
           'amigo de',
           'vizinha de',
@@ -4481,7 +4484,7 @@ no vasto manto azul do infinito."
             name +
                 r',?\s+' +
                 context +
-                r'\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+                r'\s+([A-Z������������][a-z������������]+)',
             caseSensitive: false,
           );
           final match = pattern.firstMatch(generatedText);
@@ -4492,51 +4495,51 @@ no vasto manto azul do infinito."
           }
         }
 
-        // 🚨 DETECÇÃO: Se encontrou papéis no texto atual
+        // ?? DETEC��O: Se encontrou pap�is no texto atual
         if (currentRoles.isNotEmpty) {
           final currentRolesStr = currentRoles.join(', ');
 
-          // 🔥 CORREÇÃO BUG ALBERTO: Validar mesmo se existingRole é null
+          // ?? CORRE��O BUG ALBERTO: Validar mesmo se existingRole � null
           if (existingRole == null || existingRole == 'indefinido') {
-            // ⚠️ Nome existia SEM papel definido, agora tem papel
+            // ?? Nome existia SEM papel definido, agora tem papel
             debugPrint(
-              '⚠️⚠️⚠️ ALERTA: NOME SEM PAPEL ANTERIOR - BLOCO $blockNumber ⚠️⚠️⚠️',
+              '?????? ALERTA: NOME SEM PAPEL ANTERIOR - BLOCO $blockNumber ??????',
             );
             debugPrint(
-              '   📝 Nome "$name" estava no tracker SEM papel definido',
+              '   ?? Nome "$name" estava no tracker SEM papel definido',
             );
-            debugPrint('   🔍 Papéis detectados AGORA: $currentRolesStr');
+            debugPrint('   ?? Pap�is detectados AGORA: $currentRolesStr');
 
-            // 🚨 CRÍTICO: Verificar se há múltiplos papéis CONFLITANTES no texto atual
+            // ?? CR�TICO: Verificar se h� m�ltiplos pap�is CONFLITANTES no texto atual
             if (currentRoles.length > 1) {
               _debugLogger.error(
-                "Múltiplos papéis para '$name' no mesmo bloco",
+                "M�ltiplos pap�is para '$name' no mesmo bloco",
                 blockNumber: blockNumber,
                 details:
-                    "Nome '$name' aparece com papéis conflitantes no mesmo bloco:\n"
-                    "- Papéis detectados: $currentRolesStr",
+                    "Nome '$name' aparece com pap�is conflitantes no mesmo bloco:\n"
+                    "- Pap�is detectados: $currentRolesStr",
                 metadata: {'nome': name, 'papeis': currentRoles},
               );
 
               debugPrint(
-                '🚨🚨🚨 ERRO CRÍTICO: MÚLTIPLOS PAPÉIS NO MESMO BLOCO 🚨🚨🚨',
+                '?????? ERRO CR�TICO: M�LTIPLOS PAP�IS NO MESMO BLOCO ??????',
               );
-              debugPrint('   ❌ Nome "$name" com MÚLTIPLOS papéis diferentes:');
+              debugPrint('   ? Nome "$name" com M�LTIPLOS pap�is diferentes:');
               for (final role in currentRoles) {
                 debugPrint('      - $role');
               }
               debugPrint(
-                '   💡 SOLUÇÃO: Verificar se são realmente a mesma pessoa!',
+                '   ?? SOLU��O: Verificar se s�o realmente a mesma pessoa!',
               );
               debugPrint(
-                '   💡 Exemplo: "Alberto" como marido E como cunhado = ERRO!',
+                '   ?? Exemplo: "Alberto" como marido E como cunhado = ERRO!',
               );
-              debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
+              debugPrint('?????? FIM DO ALERTA ??????');
             } else {
-              debugPrint('   ℹ️ Único papel detectado: ${currentRoles.first}');
-              debugPrint('   ✅ Atualizando papel no tracker...');
+              debugPrint('   ?? �nico papel detectado: ${currentRoles.first}');
+              debugPrint('   ? Atualizando papel no tracker...');
             }
-            debugPrint('⚠️⚠️⚠️ FIM DO ALERTA ⚠️⚠️⚠️');
+            debugPrint('?????? FIM DO ALERTA ??????');
           } else {
             // Papel anterior existe - verificar CONFLITO
             var hasConflict = false;
@@ -4549,14 +4552,14 @@ no vasto manto azul do infinito."
             }
 
             if (hasConflict) {
-              // 🐛 DEBUG: Log erro crítico de reutilização
+              // ?? DEBUG: Log erro cr�tico de reutiliza��o
               _debugLogger.error(
-                "Reutilização de nome: '$name'",
+                "Reutiliza��o de nome: '$name'",
                 blockNumber: blockNumber,
                 details:
-                    "Nome '$name' usado em múltiplos papéis diferentes:\n"
+                    "Nome '$name' usado em m�ltiplos pap�is diferentes:\n"
                     "- Papel anterior: $existingRole\n"
-                    "- Papéis novos: $currentRolesStr",
+                    "- Pap�is novos: $currentRolesStr",
                 metadata: {
                   'nome': name,
                   'papelAnterior': existingRole,
@@ -4565,43 +4568,43 @@ no vasto manto azul do infinito."
               );
 
               debugPrint(
-                '🚨🚨🚨 ERRO CRÍTICO DE REUTILIZAÇÃO DE NOME - BLOCO $blockNumber 🚨🚨🚨',
+                '?????? ERRO CR�TICO DE REUTILIZA��O DE NOME - BLOCO $blockNumber ??????',
               );
               debugPrint(
-                '   ❌ Nome "$name" está sendo REUTILIZADO EM PAPÉIS DIFERENTES!',
+                '   ? Nome "$name" est� sendo REUTILIZADO EM PAP�IS DIFERENTES!',
               );
-              debugPrint('   📋 Papel anterior: "$name" como $existingRole');
-              debugPrint('   ⚠️ Papéis novos detectados: $currentRolesStr');
+              debugPrint('   ?? Papel anterior: "$name" como $existingRole');
+              debugPrint('   ?? Pap�is novos detectados: $currentRolesStr');
               debugPrint(
-                '   💡 SOLUÇÃO: Cada personagem precisa de nome ÚNICO!',
-              );
-              debugPrint(
-                '   💡 Exemplo: "Regina" não pode ser sogra E amiga ao mesmo tempo',
+                '   ?? SOLU��O: Cada personagem precisa de nome �NICO!',
               );
               debugPrint(
-                '   💡 Sugestão: Trocar segundo "$name" por outro nome diferente',
+                '   ?? Exemplo: "Regina" n�o pode ser sogra E amiga ao mesmo tempo',
               );
-              debugPrint('🚨🚨🚨 FIM DO ALERTA DE REUTILIZAÇÃO 🚨🚨🚨');
+              debugPrint(
+                '   ?? Sugest�o: Trocar segundo "$name" por outro nome diferente',
+              );
+              debugPrint('?????? FIM DO ALERTA DE REUTILIZA��O ??????');
             }
           }
         }
       }
     }
 
-    // 🐛 DEBUG: Log validação de nomes completa
+    // ?? DEBUG: Log valida��o de nomes completa
     _debugLogger.validation(
-      "Validação de reutilização completa",
+      "Valida��o de reutiliza��o completa",
       blockNumber: blockNumber,
       details: "${foundNames.length} nomes verificados",
       metadata: {'nomesVerificados': foundNames.length},
     );
   }
 
-  /// 🆕 NOVA VALIDAÇÃO: Detecta inconsistências em relações familiares
-  /// Exemplo: "meu Pai Francisco" vs "meu marido Francisco" = CONFUSÃO
+  /// ?? NOVA VALIDA��O: Detecta inconsist�ncias em rela��es familiares
+  /// Exemplo: "meu Pai Francisco" vs "meu marido Francisco" = CONFUS�O
   void _validateFamilyRelations(String generatedText, int blockNumber) {
     // Extrair nomes mencionados no texto
-    final namePattern = RegExp(r'\b([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]{2,})\b');
+    final namePattern = RegExp(r'\b([A-Z������������][a-z������������]{2,})\b');
     final names = <String>{};
 
     for (final match in namePattern.allMatches(generatedText)) {
@@ -4611,18 +4614,18 @@ no vasto manto azul do infinito."
       }
     }
 
-    // Para cada nome, verificar se aparece com múltiplas relações conflitantes
+    // Para cada nome, verificar se aparece com m�ltiplas rela��es conflitantes
     for (final name in names) {
       final relations = <String>[];
 
-      // Padrões de relações familiares
+      // Padr�es de rela��es familiares
       final relationPatterns = {
         'pai': RegExp(
           '(?:meu|seu|nosso|o)\\s+[Pp]ai(?:,)?\\s+$name',
           caseSensitive: false,
         ),
-        'mãe': RegExp(
-          '(?:minha|sua|nossa|a)\\s+[Mm]ãe(?:,)?\\s+$name',
+        'm�e': RegExp(
+          '(?:minha|sua|nossa|a)\\s+[Mm]�e(?:,)?\\s+$name',
           caseSensitive: false,
         ),
         'marido': RegExp(
@@ -4641,29 +4644,29 @@ no vasto manto azul do infinito."
           '(?:minha|sua|nossa|a)\\s+[Ff]ilha(?:,)?\\s+$name',
           caseSensitive: false,
         ),
-        'irmão': RegExp(
-          '(?:meu|seu|nosso|o)\\s+(?:irmão|irmao)(?:,)?\\s+$name',
+        'irm�o': RegExp(
+          '(?:meu|seu|nosso|o)\\s+(?:irm�o|irmao)(?:,)?\\s+$name',
           caseSensitive: false,
         ),
-        'irmã': RegExp(
-          '(?:minha|sua|nossa|a)\\s+(?:irmã|irma)(?:,)?\\s+$name',
+        'irm�': RegExp(
+          '(?:minha|sua|nossa|a)\\s+(?:irm�|irma)(?:,)?\\s+$name',
           caseSensitive: false,
         ),
       };
 
-      // Verificar quais relações aparecem para este nome
+      // Verificar quais rela��es aparecem para este nome
       for (final entry in relationPatterns.entries) {
         if (entry.value.hasMatch(generatedText)) {
           relations.add(entry.key);
         }
       }
 
-      // 🚨 DETECTAR CONFLITOS: Mesmo nome com relações incompatíveis
+      // ?? DETECTAR CONFLITOS: Mesmo nome com rela��es incompat�veis
       final conflicts = _detectRelationConflicts(relations);
 
       if (conflicts.isNotEmpty) {
         _debugLogger.error(
-          "Confusão em relação familiar: '$name'",
+          "Confus�o em rela��o familiar: '$name'",
           blockNumber: blockNumber,
           details:
               "Nome '$name' aparece como: ${relations.join(', ')}\n"
@@ -4676,22 +4679,22 @@ no vasto manto azul do infinito."
         );
 
         debugPrint(
-          '🚨🚨🚨 ERRO CRÍTICO DE RELAÇÃO FAMILIAR - BLOCO $blockNumber 🚨🚨🚨',
+          '?????? ERRO CR�TICO DE RELA��O FAMILIAR - BLOCO $blockNumber ??????',
         );
-        debugPrint('   ❌ Nome "$name" tem relações conflitantes!');
-        debugPrint('   📋 Relações encontradas: ${relations.join(", ")}');
-        debugPrint('   ⚠️ Conflitos: ${conflicts.join(", ")}');
+        debugPrint('   ? Nome "$name" tem rela��es conflitantes!');
+        debugPrint('   ?? Rela��es encontradas: ${relations.join(", ")}');
+        debugPrint('   ?? Conflitos: ${conflicts.join(", ")}');
         debugPrint(
-          '   💡 SOLUÇÃO: Definir claramente se é pai, marido, filho, etc.',
+          '   ?? SOLU��O: Definir claramente se � pai, marido, filho, etc.',
         );
-        debugPrint('🚨🚨🚨 FIM DO ALERTA DE RELAÇÃO FAMILIAR 🚨🚨🚨');
+        debugPrint('?????? FIM DO ALERTA DE RELA��O FAMILIAR ??????');
       }
     }
   }
 
-  /// 🔥 NOVA VALIDAÇÃO CRÍTICA v7.6.16: Detecta mudanças de nome de personagens
-  /// Compara papéis conhecidos (tracker) com novos nomes mencionados no texto
-  /// Retorna lista de mudanças detectadas para rejeição do bloco
+  /// ?? NOVA VALIDA��O CR�TICA v7.6.16: Detecta mudan�as de nome de personagens
+  /// Compara pap�is conhecidos (tracker) com novos nomes mencionados no texto
+  /// Retorna lista de mudan�as detectadas para rejei��o do bloco
   List<Map<String, String>> _detectCharacterNameChanges(
     String generatedText,
     _CharacterTracker tracker,
@@ -4699,46 +4702,46 @@ no vasto manto azul do infinito."
   ) {
     final changes = <Map<String, String>>[];
 
-    // Padrões de relações familiares para detectar personagens
+    // Padr�es de rela��es familiares para detectar personagens
     final relationPatterns = {
       'pai': RegExp(
-        r'(?:meu|seu|nosso|o)\s+[Pp]ai(?:,)?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+        r'(?:meu|seu|nosso|o)\s+[Pp]ai(?:,)?\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
-      'mãe': RegExp(
-        r'(?:minha|sua|nossa|a)\s+[Mm]ãe(?:,)?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+      'm�e': RegExp(
+        r'(?:minha|sua|nossa|a)\s+[Mm]�e(?:,)?\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
       'marido': RegExp(
-        r'(?:meu|seu|nosso|o)\s+(?:marido|esposo)(?:,)?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+        r'(?:meu|seu|nosso|o)\s+(?:marido|esposo)(?:,)?\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
       'esposa': RegExp(
-        r'(?:minha|sua|nossa|a)\s+(?:esposa|mulher)(?:,)?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+        r'(?:minha|sua|nossa|a)\s+(?:esposa|mulher)(?:,)?\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
       'filho': RegExp(
-        r'(?:meu|seu|nosso|o)\s+[Ff]ilho(?:,)?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+        r'(?:meu|seu|nosso|o)\s+[Ff]ilho(?:,)?\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
       'filha': RegExp(
-        r'(?:minha|sua|nossa|a)\s+[Ff]ilha(?:,)?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+        r'(?:minha|sua|nossa|a)\s+[Ff]ilha(?:,)?\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
-      'irmão': RegExp(
-        r'(?:meu|seu|nosso|o)\s+(?:irmão|irmao)(?:,)?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+      'irm�o': RegExp(
+        r'(?:meu|seu|nosso|o)\s+(?:irm�o|irmao)(?:,)?\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
-      'irmã': RegExp(
-        r'(?:minha|sua|nossa|a)\s+(?:irmã|irma)(?:,)?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+      'irm�': RegExp(
+        r'(?:minha|sua|nossa|a)\s+(?:irm�|irma)(?:,)?\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
       'advogado': RegExp(
-        r'(?:meu|seu|nosso|o)\s+[Aa]dvogad[oa](?:,)?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+        r'(?:meu|seu|nosso|o)\s+[Aa]dvogad[oa](?:,)?\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
       'investigador': RegExp(
-        r'(?:o|um)\s+[Ii]nvestigador(?:,)?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+        r'(?:o|um)\s+[Ii]nvestigador(?:,)?\s+([A-Z������������][a-z������������]+)',
         caseSensitive: false,
       ),
     };
@@ -4753,11 +4756,11 @@ no vasto manto azul do infinito."
         final newName = match.group(1)?.trim();
         if (newName == null || !_looksLikePersonName(newName)) continue;
 
-        // Verificar se este papel já tem um nome no tracker
+        // Verificar se este papel j� tem um nome no tracker
         final existingName = tracker.getNameForRole(role);
 
         if (existingName != null && existingName != newName) {
-          // 🚨 MUDANÇA DETECTADA!
+          // ?? MUDAN�A DETECTADA!
           changes.add({
             'role': role,
             'oldName': existingName,
@@ -4766,7 +4769,7 @@ no vasto manto azul do infinito."
 
           if (kDebugMode) {
             debugPrint(
-              '🚨 MUDANÇA DE NOME: "$role" era "$existingName" → agora "$newName"!',
+              '?? MUDAN�A DE NOME: "$role" era "$existingName" ? agora "$newName"!',
             );
           }
         }
@@ -4776,29 +4779,29 @@ no vasto manto azul do infinito."
     return changes;
   }
 
-  /// Detecta conflitos entre relações familiares
-  /// Retorna lista de descrições de conflitos encontrados
+  /// Detecta conflitos entre rela��es familiares
+  /// Retorna lista de descri��es de conflitos encontrados
   List<String> _detectRelationConflicts(List<String> relations) {
     final conflicts = <String>[];
 
     if (relations.length < 2) {
-      return conflicts; // Sem conflito se há apenas 1 relação
+      return conflicts; // Sem conflito se h� apenas 1 rela��o
     }
 
-    // Grupos de relações mutuamente exclusivas
+    // Grupos de rela��es mutuamente exclusivas
     final exclusiveGroups = [
-      {'pai', 'marido', 'filho', 'irmão'}, // Relações masculinas diferentes
-      {'mãe', 'esposa', 'filha', 'irmã'}, // Relações femininas diferentes
-      {'pai', 'mãe'}, // Pais não podem ser a mesma pessoa
-      {'marido', 'esposa'}, // Cônjuges não podem ser a mesma pessoa
-      {'filho', 'pai'}, // Filho não pode ser pai do narrador
-      {'filha', 'mãe'}, // Filha não pode ser mãe do narrador
+      {'pai', 'marido', 'filho', 'irm�o'}, // Rela��es masculinas diferentes
+      {'m�e', 'esposa', 'filha', 'irm�'}, // Rela��es femininas diferentes
+      {'pai', 'm�e'}, // Pais n�o podem ser a mesma pessoa
+      {'marido', 'esposa'}, // C�njuges n�o podem ser a mesma pessoa
+      {'filho', 'pai'}, // Filho n�o pode ser pai do narrador
+      {'filha', 'm�e'}, // Filha n�o pode ser m�e do narrador
     ];
 
     for (final group in exclusiveGroups) {
       final found = relations.where((r) => group.contains(r)).toList();
       if (found.length > 1) {
-        conflicts.add('${found.join(" + ")} são incompatíveis');
+        conflicts.add('${found.join(" + ")} s�o incompat�veis');
       }
     }
 
@@ -4809,13 +4812,13 @@ no vasto manto azul do infinito."
     final cleaned = value.trim();
     if (cleaned.isEmpty) return false;
 
-    // v7.6.63: Validação estrutural simples (Gemini é o Casting Director)
-    // Aceitar se parece nome próprio e não é palavra comum
+    // v7.6.63: Valida��o estrutural simples (Gemini � o Casting Director)
+    // Aceitar se parece nome pr�prio e n�o � palavra comum
     if (_isLikelyName(cleaned) && !_isCommonWord(cleaned)) {
       return true;
     }
 
-    // Fallback: estrutura válida
+    // Fallback: estrutura v�lida
     if (_hasValidNameStructure(cleaned) && !_isCommonWord(cleaned)) {
       return true;
     }
@@ -4823,7 +4826,7 @@ no vasto manto azul do infinito."
     return false;
   }
 
-  /// v7.6.63: Validação simples de nome (aceita criatividade do LLM)
+  /// v7.6.63: Valida��o simples de nome (aceita criatividade do LLM)
   /// Resolve bug de rejeitar nomes coreanos, compostos, etc.
   bool _isLikelyName(String text) {
     if (text.isEmpty) return false;
@@ -4835,35 +4838,35 @@ no vasto manto azul do infinito."
     return nameRegex.hasMatch(text.trim());
   }
 
-  /// 🆕 v7.6.17: Verifica estrutura válida de nome próprio
+  /// ?? v7.6.17: Verifica estrutura v�lida de nome pr�prio
   bool _hasValidNameStructure(String name) {
-    // Mínimo 2 caracteres, máximo 15
+    // M�nimo 2 caracteres, m�ximo 15
     if (name.length < 2 || name.length > 15) return false;
 
-    // Primeira letra maiúscula
+    // Primeira letra mai�scula
     if (name[0] != name[0].toUpperCase()) return false;
 
-    // Resto em minúsculas (permite acentos)
+    // Resto em min�sculas (permite acentos)
     final rest = name.substring(1);
     if (rest != rest.toLowerCase()) return false;
 
-    // Apenas letras (permite acentuação)
-    final validPattern = RegExp(r'^[A-ZÀ-Ü][a-zà-ÿ]+$');
+    // Apenas letras (permite acentua��o)
+    final validPattern = RegExp(r'^[A-Z�-�][a-z�-�]+$');
     return validPattern.hasMatch(name);
   }
 
-  /// 🆕 v7.6.17: Verifica se é palavra comum (não-nome)
+  /// ?? v7.6.17: Verifica se � palavra comum (n�o-nome)
   bool _isCommonWord(String word) {
     final lower = word.toLowerCase();
 
-    // Palavras comuns em múltiplos idiomas (sem duplicações)
+    // Palavras comuns em m�ltiplos idiomas (sem duplica��es)
     final commonWords = {
-      // Português
-      'então', 'quando', 'depois', 'antes', 'agora', 'hoje',
+      // Portugu�s
+      'ent�o', 'quando', 'depois', 'antes', 'agora', 'hoje',
       'ontem', 'sempre', 'nunca', 'muito', 'pouco', 'nada',
-      'tudo', 'algo', 'alguém', 'ninguém', 'mesmo', 'outra',
+      'tudo', 'algo', 'algu�m', 'ningu�m', 'mesmo', 'outra',
       'outro', 'cada', 'toda', 'todo', 'todos', 'onde', 'como',
-      'porque', 'porém', 'mas', 'para', 'com', 'sem', 'por',
+      'porque', 'por�m', 'mas', 'para', 'com', 'sem', 'por',
       'sobre', 'entre', 'durante', 'embora', 'enquanto',
       // English
       'then', 'when', 'after', 'before', 'now', 'today',
@@ -4871,8 +4874,8 @@ no vasto manto azul do infinito."
       'everything', 'something', 'someone', 'nobody', 'same', 'other',
       'each', 'every', 'where', 'because', 'however', 'though',
       'while', 'about', 'between',
-      // Español (apenas palavras exclusivas, sem sobreposição com PT/EN)
-      'entonces', 'después', 'ahora', 'hoy', 'ayer', 'siempre',
+      // Espa�ol (apenas palavras exclusivas, sem sobreposi��o com PT/EN)
+      'entonces', 'despu�s', 'ahora', 'hoy', 'ayer', 'siempre',
       'mucho', 'alguien', 'nadie', 'mismo', 'pero', 'sin', 'aunque',
       'mientras',
     };
@@ -4891,10 +4894,10 @@ no vasto manto azul do infinito."
     'google',
     'cta',
 
-    // Países/lugares
+    // Pa�ses/lugares
     'brasil', 'portugal', 'portugues',
 
-    // Pronomes e palavras comuns capitalizadas no início de frases
+    // Pronomes e palavras comuns capitalizadas no in�cio de frases
     'ele',
     'ela',
     'eles',
@@ -4961,7 +4964,7 @@ no vasto manto azul do infinito."
     'gente',
     'familia', 'casa', 'mundo', 'vida', 'tempo', 'dia', 'noite', 'momento',
 
-    // Advérbios/conjunções/preposições comuns no início de frase
+    // Adv�rbios/conjun��es/preposi��es comuns no in�cio de frase
     'entao',
     'depois',
     'antes',
@@ -4999,20 +5002,20 @@ no vasto manto azul do infinito."
     'ja',
     'nem',
 
-    // Preposições e artigos (raramente, mas podem aparecer)
+    // Preposi��es e artigos (raramente, mas podem aparecer)
     'com', 'sem', 'sobre', 'para', 'pela', 'pelo', 'uma', 'umas', 'uns', 'por',
 
-    // 🔥 FIX CRÍTICO: Palavras que a AI usou como NOMES FANTASMA (do roteiro analisado)
+    // ?? FIX CR�TICO: Palavras que a AI usou como NOMES FANTASMA (do roteiro analisado)
     'lagrimas',
-    'lágrimas',
+    'l�grimas',
     'justica',
-    'justiça',
+    'justi�a',
     'ponto',
     'semanas',
     'aconteceu',
-    'todas', 'ajuda', 'consolo', 'vamos', 'conheço', 'conheco', 'lembra',
+    'todas', 'ajuda', 'consolo', 'vamos', 'conhe�o', 'conheco', 'lembra',
 
-    // 🆕 v7.6.39: Palavras em inglês que NÃO são nomes (evitar "Grand" etc.)
+    // ?? v7.6.39: Palavras em ingl�s que N�O s�o nomes (evitar "Grand" etc.)
     'grand', 'grandfather', 'grandmother', 'grandpa', 'grandma',
     'father', 'mother', 'brother', 'sister', 'uncle', 'aunt',
     'cousin', 'nephew', 'niece', 'husband', 'wife', 'spouse',
@@ -5028,10 +5031,10 @@ no vasto manto azul do infinito."
     'the', 'and', 'but', 'for', 'with', 'from', 'about', 'into',
     'just', 'only', 'even', 'still', 'already', 'always', 'never',
 
-    // Verbos comuns no início de frase (EXPANDIDO)
+    // Verbos comuns no in�cio de frase (EXPANDIDO)
     'era', 'foi', 'seria', 'pode', 'podia', 'deve', 'devia',
     'senti', 'sentiu', 'pensei', 'pensou', 'vi', 'viu', 'ouvi', 'ouviu',
-    'fiz', 'fez', 'disse', 'falou', 'quis', 'pude', 'pôde',
+    'fiz', 'fez', 'disse', 'falou', 'quis', 'pude', 'p�de',
     'tive',
     'teve',
     'sabia',
@@ -5058,7 +5061,7 @@ no vasto manto azul do infinito."
     'segui',
     'seguiu',
     'comecei',
-    'começou',
+    'come�ou',
     'terminei',
     'terminou',
   };
@@ -5066,7 +5069,7 @@ no vasto manto azul do infinito."
   static String perspectiveLabel(String perspective) {
     final perspectiveLower = perspective.toLowerCase();
 
-    // 🔥 FIX: Detectar primeira pessoa em qualquer formato
+    // ?? FIX: Detectar primeira pessoa em qualquer formato
     if (perspectiveLower.contains('primeira_pessoa') ||
         perspectiveLower == 'first') {
       if (perspectiveLower.contains('mulher_idosa')) {
@@ -5090,242 +5093,242 @@ no vasto manto azul do infinito."
       return 'Primeira pessoa';
     }
 
-    // Terceira pessoa (padrão)
+    // Terceira pessoa (padr�o)
     return 'Terceira pessoa';
   }
 
-  // 🎯 CORRIGIDO: Instrução CLARA de perspectiva com contexto do protagonista
+  // ?? CORRIGIDO: Instru��o CLARA de perspectiva com contexto do protagonista
   String _getPerspectiveInstruction(String perspective, ScriptConfig config) {
     final protagonistInfo = config.protagonistName.trim().isNotEmpty
-        ? ' O protagonista é "${config.protagonistName}".'
+        ? ' O protagonista � "${config.protagonistName}".'
         : '';
 
-    // 🔥 FIX: Aceitar valores reais da interface (primeira_pessoa_*, terceira_pessoa)
+    // ?? FIX: Aceitar valores reais da interface (primeira_pessoa_*, terceira_pessoa)
     final perspectiveLower = perspective.toLowerCase();
 
-    // 🚨 DETECTAR GÊNERO DO NARRADOR BASEADO NA PERSPECTIVA
+    // ?? DETECTAR G�NERO DO NARRADOR BASEADO NA PERSPECTIVA
     if (perspectiveLower.contains('mulher')) {
       // FEMININO (ela)
     } else if (perspectiveLower.contains('homem')) {
       // MASCULINO (ele)
     }
 
-    // Detectar primeira pessoa (qualquer variação)
+    // Detectar primeira pessoa (qualquer varia��o)
     if (perspectiveLower.contains('primeira_pessoa') ||
         perspectiveLower == 'first') {
       // Definir pronomes baseado no tipo de primeira pessoa
       String pronomes = 'EU, MEU, MINHA, COMIGO';
       String exemplos =
-          '"EU vendi a casa...", "MEU coração batia forte...", "COMIGO ela nunca foi honesta..."';
+          '"EU vendi a casa...", "MEU cora��o batia forte...", "COMIGO ela nunca foi honesta..."';
       String nomeInstrucao = '';
 
       if (perspectiveLower.contains('mulher')) {
         exemplos =
             '"EU vendi a casa...", "MINHA nora me traiu...", "COMIGO ela nunca foi honesta..."';
 
-        // 🎯 DETECTAR FAIXA ETÁRIA E ADICIONAR INSTRUÇÕES ESPECÍFICAS
+        // ?? DETECTAR FAIXA ET�RIA E ADICIONAR INSTRU��ES ESPEC�FICAS
         String idadeInstrucao = '';
         if (perspectiveLower.contains('jovem')) {
           idadeInstrucao = '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📅 FAIXA ETÁRIA OBRIGATÓRIA: MULHER JOVEM (20-35 ANOS)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+????????????????????????????????????????????????????????????????????????
+?? FAIXA ET�RIA OBRIGAT�RIA: MULHER JOVEM (20-35 ANOS)
+????????????????????????????????????????????????????????????????????????
 
-✅ IDADE CORRETA: Entre 20 e 35 anos
-✅ PERFIL: Mulher adulta jovem, início/meio da carreira, possivelmente casada/solteira, energética
-✅ CONTEXTO: Pode ter filhos pequenos, focada em crescimento profissional/pessoal
-✅ VOCABULÁRIO: Moderno, atual, referências contemporâneas
+? IDADE CORRETA: Entre 20 e 35 anos
+? PERFIL: Mulher adulta jovem, in�cio/meio da carreira, possivelmente casada/solteira, energ�tica
+? CONTEXTO: Pode ter filhos pequenos, focada em crescimento profissional/pessoal
+? VOCABUL�RIO: Moderno, atual, refer�ncias contempor�neas
 
-❌ PROIBIDO: Mencionar aposentadoria, netos, memórias de décadas atrás
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+? PROIBIDO: Mencionar aposentadoria, netos, mem�rias de d�cadas atr�s
+????????????????????????????????????????????????????????????????????????
 ''';
         } else if (perspectiveLower.contains('madura')) {
           idadeInstrucao = '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📅 FAIXA ETÁRIA OBRIGATÓRIA: MULHER MADURA (35-50 ANOS)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+????????????????????????????????????????????????????????????????????????
+?? FAIXA ET�RIA OBRIGAT�RIA: MULHER MADURA (35-50 ANOS)
+????????????????????????????????????????????????????????????????????????
 
-✅ IDADE CORRETA: Entre 35 e 50 anos
-✅ PERFIL: Mulher experiente, consolidada profissionalmente, possivelmente com filhos adolescentes
-✅ CONTEXTO: Pode ter divórcio, segundo casamento, filhos crescidos, auge da carreira
-✅ VOCABULÁRIO: Equilibrado, maduro, experiente mas ainda contemporâneo
+? IDADE CORRETA: Entre 35 e 50 anos
+? PERFIL: Mulher experiente, consolidada profissionalmente, possivelmente com filhos adolescentes
+? CONTEXTO: Pode ter div�rcio, segundo casamento, filhos crescidos, auge da carreira
+? VOCABUL�RIO: Equilibrado, maduro, experiente mas ainda contempor�neo
 
-❌ PROIBIDO: Mencionar aposentadoria, netos adultos, velhice
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+? PROIBIDO: Mencionar aposentadoria, netos adultos, velhice
+????????????????????????????????????????????????????????????????????????
 ''';
         } else if (perspectiveLower.contains('idosa')) {
           idadeInstrucao = '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📅 FAIXA ETÁRIA OBRIGATÓRIA: MULHER IDOSA (50+ ANOS)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+????????????????????????????????????????????????????????????????????????
+?? FAIXA ET�RIA OBRIGAT�RIA: MULHER IDOSA (50+ ANOS)
+????????????????????????????????????????????????????????????????????????
 
-✅ IDADE CORRETA: Acima de 50 anos
-✅ PERFIL: Mulher com muita experiência de vida, possivelmente aposentada ou perto
-✅ CONTEXTO: Pode ter netos, viuvez, legado familiar, reflexões sobre a vida
-✅ VOCABULÁRIO: Sábio, reflexivo, com histórias de décadas atrás
+? IDADE CORRETA: Acima de 50 anos
+? PERFIL: Mulher com muita experi�ncia de vida, possivelmente aposentada ou perto
+? CONTEXTO: Pode ter netos, viuvez, legado familiar, reflex�es sobre a vida
+? VOCABUL�RIO: S�bio, reflexivo, com hist�rias de d�cadas atr�s
 
-❌ PROIBIDO: Agir como jovem, usar gírias recentes inadequadas à idade
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+? PROIBIDO: Agir como jovem, usar g�rias recentes inadequadas � idade
+????????????????????????????????????????????????????????????????????????
 ''';
         }
 
         nomeInstrucao =
             '''
-╔══════════════════════════════════════════════════════════════════════════════╗
-║ 🚨🚨🚨 GÊNERO OBRIGATÓRIO: FEMININO (MULHER) - CONFIGURAÇÃO DO USUÁRIO 🚨🚨🚨 ║
-╚══════════════════════════════════════════════════════════════════════════════╝
++------------------------------------------------------------------------------+
+� ?????? G�NERO OBRIGAT�RIO: FEMININO (MULHER) - CONFIGURA��O DO USU�RIO ?????? �
++------------------------------------------------------------------------------+
 
-⚠️⚠️⚠️ REGRA ABSOLUTA - NÃO NEGOCIÁVEL ⚠️⚠️⚠️
+?????? REGRA ABSOLUTA - N�O NEGOCI�VEL ??????
 
-O USUÁRIO CONFIGUROU EXPLICITAMENTE: "Primeira Pessoa MULHER"
-VOCÊ DEVE, OBRIGATORIAMENTE, GERAR UM PROTAGONISTA FEMININO!
+O USU�RIO CONFIGUROU EXPLICITAMENTE: "Primeira Pessoa MULHER"
+VOC� DEVE, OBRIGATORIAMENTE, GERAR UM PROTAGONISTA FEMININO!
 
-🚨 VALIDAÇÃO ANTES DE ESCREVER A PRIMEIRA FRASE:
-❓ "O protagonista que vou criar é MULHER?" 
-   → Se SIM = Prossiga
-   → Se NÃO = PARE! Você está DESOBEDECENDO a configuração do usuário!
+?? VALIDA��O ANTES DE ESCREVER A PRIMEIRA FRASE:
+? "O protagonista que vou criar � MULHER?" 
+   ? Se SIM = Prossiga
+   ? Se N�O = PARE! Voc� est� DESOBEDECENDO a configura��o do usu�rio!
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+????????????????????????????????????????????????????????????????????????
 
-📝 REGRAS DE NOMES:
+?? REGRAS DE NOMES:
 
-1️⃣ SE O TÍTULO MENCIONAR UM NOME ESPECÍFICO (ex: "Você é Maria?"):
-   ✅ USE ESTE NOME para a protagonista
-   ✅ Exemplo: Se título diz "Maria", protagonista é "Maria"
+1?? SE O T�TULO MENCIONAR UM NOME ESPEC�FICO (ex: "Voc� � Maria?"):
+   ? USE ESTE NOME para a protagonista
+   ? Exemplo: Se t�tulo diz "Maria", protagonista � "Maria"
 
-2️⃣ SE O TÍTULO NÃO MENCIONAR NENHUM NOME (ex: "Un milliardaire m'a donné..."):
-   ✅ VOCÊ DEVE CRIAR um nome FEMININO apropriado para o idioma
+2?? SE O T�TULO N�O MENCIONAR NENHUM NOME (ex: "Un milliardaire m'a donn�..."):
+   ? VOC� DEVE CRIAR um nome FEMININO apropriado para o idioma
    
-   📋 Nomes femininos por idioma:
-   • Français: Sophie, Marie, Amélie, Claire, Camille, Emma, Louise, Chloé
-   • Português: Maria, Ana, Sofia, Helena, Clara, Beatriz, Julia, Laura
-   • English: Emma, Sarah, Jennifer, Emily, Jessica, Ashley, Michelle, Amanda
-   • Español: María, Carmen, Laura, Ana, Isabel, Rosa, Elena, Sofia
-   • 한국어 (Korean): Kim Ji-young, Park Soo-yeon, Lee Min-ji, Choi Hye-jin, Jung Yoo-na
-     ⚠️ COREANO: SEMPRE use SOBRENOME + NOME (ex: "Kim Ji-young", NÃO "Ji-young")
+   ?? Nomes femininos por idioma:
+   � Fran�ais: Sophie, Marie, Am�lie, Claire, Camille, Emma, Louise, Chlo�
+   � Portugu�s: Maria, Ana, Sofia, Helena, Clara, Beatriz, Julia, Laura
+   � English: Emma, Sarah, Jennifer, Emily, Jessica, Ashley, Michelle, Amanda
+   � Espa�ol: Mar�a, Carmen, Laura, Ana, Isabel, Rosa, Elena, Sofia
+   � ??? (Korean): Kim Ji-young, Park Soo-yeon, Lee Min-ji, Choi Hye-jin, Jung Yoo-na
+     ?? COREANO: SEMPRE use SOBRENOME + NOME (ex: "Kim Ji-young", N�O "Ji-young")
    
-   ❌ PROIBIDO: João, Pedro, Carlos, Michael, Roberto, Pierre, Jean, Marc
-   ❌ JAMAIS use nomes MASCULINOS quando o narrador é MULHER!
+   ? PROIBIDO: Jo�o, Pedro, Carlos, Michael, Roberto, Pierre, Jean, Marc
+   ? JAMAIS use nomes MASCULINOS quando o narrador � MULHER!
 
 $idadeInstrucao
 
-🔴 SE VOCÊ CRIAR UM PROTAGONISTA MASCULINO, O ROTEIRO SERÁ REJEITADO!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+?? SE VOC� CRIAR UM PROTAGONISTA MASCULINO, O ROTEIRO SER� REJEITADO!
+????????????????????????????????????????????????????????????????????????
 
 ''';
       } else if (perspectiveLower.contains('homem')) {
         exemplos =
-            '"EU construí esse negócio...", "MEU filho me abandonou...", "COMIGO ele sempre foi desleal..."';
+            '"EU constru� esse neg�cio...", "MEU filho me abandonou...", "COMIGO ele sempre foi desleal..."';
 
-        // 🎯 DETECTAR FAIXA ETÁRIA E ADICIONAR INSTRUÇÕES ESPECÍFICAS
+        // ?? DETECTAR FAIXA ET�RIA E ADICIONAR INSTRU��ES ESPEC�FICAS
         String idadeInstrucao = '';
         if (perspectiveLower.contains('jovem')) {
           idadeInstrucao = '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📅 FAIXA ETÁRIA OBRIGATÓRIA: HOMEM JOVEM (20-35 ANOS)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+????????????????????????????????????????????????????????????????????????
+?? FAIXA ET�RIA OBRIGAT�RIA: HOMEM JOVEM (20-35 ANOS)
+????????????????????????????????????????????????????????????????????????
 
-✅ IDADE CORRETA: Entre 20 e 35 anos
-✅ PERFIL: Homem adulto jovem, início/meio da carreira, possivelmente casado/solteiro, energético
-✅ CONTEXTO: Pode ter filhos pequenos, focado em crescimento profissional/pessoal
-✅ VOCABULÁRIO: Moderno, atual, referências contemporâneas
+? IDADE CORRETA: Entre 20 e 35 anos
+? PERFIL: Homem adulto jovem, in�cio/meio da carreira, possivelmente casado/solteiro, energ�tico
+? CONTEXTO: Pode ter filhos pequenos, focado em crescimento profissional/pessoal
+? VOCABUL�RIO: Moderno, atual, refer�ncias contempor�neas
 
-❌ PROIBIDO: Mencionar aposentadoria, netos, memórias de décadas atrás
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+? PROIBIDO: Mencionar aposentadoria, netos, mem�rias de d�cadas atr�s
+????????????????????????????????????????????????????????????????????????
 ''';
         } else if (perspectiveLower.contains('maduro')) {
           idadeInstrucao = '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📅 FAIXA ETÁRIA OBRIGATÓRIA: HOMEM MADURO (35-50 ANOS)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+????????????????????????????????????????????????????????????????????????
+?? FAIXA ET�RIA OBRIGAT�RIA: HOMEM MADURO (35-50 ANOS)
+????????????????????????????????????????????????????????????????????????
 
-✅ IDADE CORRETA: Entre 35 e 50 anos
-✅ PERFIL: Homem experiente, consolidado profissionalmente, possivelmente com filhos adolescentes
-✅ CONTEXTO: Pode ter divórcio, segundo casamento, filhos crescidos, auge da carreira
-✅ VOCABULÁRIO: Equilibrado, maduro, experiente mas ainda contemporâneo
+? IDADE CORRETA: Entre 35 e 50 anos
+? PERFIL: Homem experiente, consolidado profissionalmente, possivelmente com filhos adolescentes
+? CONTEXTO: Pode ter div�rcio, segundo casamento, filhos crescidos, auge da carreira
+? VOCABUL�RIO: Equilibrado, maduro, experiente mas ainda contempor�neo
 
-❌ PROIBIDO: Mencionar aposentadoria, netos adultos, velhice
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+? PROIBIDO: Mencionar aposentadoria, netos adultos, velhice
+????????????????????????????????????????????????????????????????????????
 ''';
         } else if (perspectiveLower.contains('idoso')) {
           idadeInstrucao = '''
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📅 FAIXA ETÁRIA OBRIGATÓRIA: HOMEM IDOSO (50+ ANOS)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+????????????????????????????????????????????????????????????????????????
+?? FAIXA ET�RIA OBRIGAT�RIA: HOMEM IDOSO (50+ ANOS)
+????????????????????????????????????????????????????????????????????????
 
-✅ IDADE CORRETA: Acima de 50 anos
-✅ PERFIL: Homem com muita experiência de vida, possivelmente aposentado ou perto
-✅ CONTEXTO: Pode ter netos, viuvez, legado familiar, reflexões sobre a vida
-✅ VOCABULÁRIO: Sábio, reflexivo, com histórias de décadas atrás
+? IDADE CORRETA: Acima de 50 anos
+? PERFIL: Homem com muita experi�ncia de vida, possivelmente aposentado ou perto
+? CONTEXTO: Pode ter netos, viuvez, legado familiar, reflex�es sobre a vida
+? VOCABUL�RIO: S�bio, reflexivo, com hist�rias de d�cadas atr�s
 
-❌ PROIBIDO: Agir como jovem, usar gírias recentes inadequadas à idade
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+? PROIBIDO: Agir como jovem, usar g�rias recentes inadequadas � idade
+????????????????????????????????????????????????????????????????????????
 ''';
         }
 
         nomeInstrucao =
             '''
-╔══════════════════════════════════════════════════════════════════════════════╗
-║ 🚨🚨🚨 GÊNERO OBRIGATÓRIO: MASCULINO (HOMEM) - CONFIGURAÇÃO DO USUÁRIO 🚨🚨🚨 ║
-╚══════════════════════════════════════════════════════════════════════════════╝
++------------------------------------------------------------------------------+
+� ?????? G�NERO OBRIGAT�RIO: MASCULINO (HOMEM) - CONFIGURA��O DO USU�RIO ?????? �
++------------------------------------------------------------------------------+
 
-⚠️⚠️⚠️ REGRA ABSOLUTA - NÃO NEGOCIÁVEL ⚠️⚠️⚠️
+?????? REGRA ABSOLUTA - N�O NEGOCI�VEL ??????
 
-O USUÁRIO CONFIGUROU EXPLICITAMENTE: "Primeira Pessoa HOMEM"
-VOCÊ DEVE, OBRIGATORIAMENTE, GERAR UM PROTAGONISTA MASCULINO!
+O USU�RIO CONFIGUROU EXPLICITAMENTE: "Primeira Pessoa HOMEM"
+VOC� DEVE, OBRIGATORIAMENTE, GERAR UM PROTAGONISTA MASCULINO!
 
-🚨 VALIDAÇÃO ANTES DE ESCREVER A PRIMEIRA FRASE:
-❓ "O protagonista que vou criar é HOMEM?" 
-   → Se SIM = Prossiga
-   → Se NÃO = PARE! Você está DESOBEDECENDO a configuração do usuário!
+?? VALIDA��O ANTES DE ESCREVER A PRIMEIRA FRASE:
+? "O protagonista que vou criar � HOMEM?" 
+   ? Se SIM = Prossiga
+   ? Se N�O = PARE! Voc� est� DESOBEDECENDO a configura��o do usu�rio!
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+????????????????????????????????????????????????????????????????????????
 
-📝 REGRAS DE NOMES:
+?? REGRAS DE NOMES:
 
-1️⃣ SE O TÍTULO MENCIONAR UM NOME ESPECÍFICO (ex: "Você é Michael?"):
-   ✅ USE ESTE NOME para o protagonista
-   ✅ Exemplo: Se título diz "Michael", protagonista é "Michael"
+1?? SE O T�TULO MENCIONAR UM NOME ESPEC�FICO (ex: "Voc� � Michael?"):
+   ? USE ESTE NOME para o protagonista
+   ? Exemplo: Se t�tulo diz "Michael", protagonista � "Michael"
 
-2️⃣ SE O TÍTULO NÃO MENCIONAR NENHUM NOME (ex: "Un milliardaire m'a donné..."):
-   ✅ VOCÊ DEVE CRIAR um nome MASCULINO apropriado para o idioma
+2?? SE O T�TULO N�O MENCIONAR NENHUM NOME (ex: "Un milliardaire m'a donn�..."):
+   ? VOC� DEVE CRIAR um nome MASCULINO apropriado para o idioma
    
-   📋 Nomes masculinos por idioma:
-   • Français: Pierre, Jean, Marc, Luc, Antoine, Thomas, Nicolas, Julien
-   • Português: João, Pedro, Carlos, Roberto, Alberto, Paulo, Fernando, Ricardo
-   • English: John, Michael, David, James, Robert, William, Richard, Thomas
-   • Español: Juan, Pedro, Carlos, José, Luis, Miguel, Antonio, Francisco
-   • 한국어 (Korean): Kim Seon-woo, Park Jae-hyun, Lee Min-ho, Choi Dong-wook, Jung Tae-hyun
-     ⚠️ COREANO: SEMPRE use SOBRENOME + NOME (ex: "Kim Seon-woo", NÃO "Seon-woo")
+   ?? Nomes masculinos por idioma:
+   � Fran�ais: Pierre, Jean, Marc, Luc, Antoine, Thomas, Nicolas, Julien
+   � Portugu�s: Jo�o, Pedro, Carlos, Roberto, Alberto, Paulo, Fernando, Ricardo
+   � English: John, Michael, David, James, Robert, William, Richard, Thomas
+   � Espa�ol: Juan, Pedro, Carlos, Jos�, Luis, Miguel, Antonio, Francisco
+   � ??? (Korean): Kim Seon-woo, Park Jae-hyun, Lee Min-ho, Choi Dong-wook, Jung Tae-hyun
+     ?? COREANO: SEMPRE use SOBRENOME + NOME (ex: "Kim Seon-woo", N�O "Seon-woo")
    
-   ❌ PROIBIDO: Maria, Ana, Sofia, Sophie, Mônica, Clara, Helena, Emma
-   ❌ JAMAIS use nomes FEMININOS quando o narrador é HOMEM!
+   ? PROIBIDO: Maria, Ana, Sofia, Sophie, M�nica, Clara, Helena, Emma
+   ? JAMAIS use nomes FEMININOS quando o narrador � HOMEM!
 
 $idadeInstrucao
 
-🔴 SE VOCÊ CRIAR UM PROTAGONISTA FEMININO, O ROTEIRO SERÁ REJEITADO!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+?? SE VOC� CRIAR UM PROTAGONISTA FEMININO, O ROTEIRO SER� REJEITADO!
+????????????????????????????????????????????????????????????????????????
 
 ''';
       }
 
       return '''PERSPECTIVA NARRATIVA: PRIMEIRA PESSOA$protagonistInfo
 $nomeInstrucao
-⚠️ CRÍTICO: O PROTAGONISTA conta SUA PRÓPRIA HISTÓRIA usando "$pronomes".
-🚫 PROIBIDO usar "ELE", "ELA", "DELE", "DELA" para o protagonista!
-✅ CORRETO: $exemplos
-O protagonista É o narrador. Ele/Ela está contando os eventos da SUA perspectiva em primeira pessoa.''';
+?? CR�TICO: O PROTAGONISTA conta SUA PR�PRIA HIST�RIA usando "$pronomes".
+?? PROIBIDO usar "ELE", "ELA", "DELE", "DELA" para o protagonista!
+? CORRETO: $exemplos
+O protagonista � o narrador. Ele/Ela est� contando os eventos da SUA perspectiva em primeira pessoa.''';
     }
 
-    // Terceira pessoa (padrão)
+    // Terceira pessoa (padr�o)
     return '''PERSPECTIVA NARRATIVA: TERCEIRA PESSOA$protagonistInfo
-⚠️ IMPORTANTE: Um NARRADOR EXTERNO conta a história do protagonista usando "ELE", "ELA", "DELE", "DELA".
-Exemplo: "ELA vendeu a casa...", "O coração DELE batia forte...", "COM ELA, ninguém foi honesto...".
-O narrador observa e conta, mas NÃO é o protagonista.''';
+?? IMPORTANTE: Um NARRADOR EXTERNO conta a hist�ria do protagonista usando "ELE", "ELA", "DELE", "DELA".
+Exemplo: "ELA vendeu a casa...", "O cora��o DELE batia forte...", "COM ELA, ningu�m foi honesto...".
+O narrador observa e conta, mas N�O � o protagonista.''';
   }
 
-  /// 🚀 OTIMIZAÇÃO: Limita contexto aos últimos blocos para evitar timeouts
-  /// Mantém apenas os últimos N blocos + resumo inicial para continuidade
+  /// ?? OTIMIZA��O: Limita contexto aos �ltimos blocos para evitar timeouts
+  /// Mant�m apenas os �ltimos N blocos + resumo inicial para continuidade
   String _buildLimitedContext(
     String fullContext,
     int currentBlock,
@@ -5335,35 +5338,35 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       return fullContext; // Blocos iniciais usam tudo
     }
 
-    // 🔥 LIMITE ABSOLUTO OTIMIZADO: Reduzido para evitar timeout em idiomas pesados
-    // 🚨 CRÍTICO: 5.6k palavras causava timeout API 503 nos blocos 7-8
-    // 3.5k palavras = ~21k caracteres cirílico (mais seguro para Gemini)
+    // ?? LIMITE ABSOLUTO OTIMIZADO: Reduzido para evitar timeout em idiomas pesados
+    // ?? CR�TICO: 5.6k palavras causava timeout API 503 nos blocos 7-8
+    // 3.5k palavras = ~21k caracteres cir�lico (mais seguro para Gemini)
     const maxContextWords = 3500; // REDUZIDO de 4500 para 3500
     final currentWords = _countWords(fullContext);
 
     if (currentWords <= maxContextWords) {
-      return fullContext; // Contexto ainda está em tamanho seguro
+      return fullContext; // Contexto ainda est� em tamanho seguro
     }
 
-    // Separar em blocos (parágrafos duplos ou mais)
+    // Separar em blocos (par�grafos duplos ou mais)
     final blocks = fullContext.split(RegExp(r'\n{2,}'));
     if (blocks.length <= maxRecentBlocks + 5) {
-      return fullContext; // Ainda não tem muitos blocos
+      return fullContext; // Ainda n�o tem muitos blocos
     }
 
-    // Pegar resumo inicial (primeiros 3 parágrafos - REDUZIDO de 5 para 3)
+    // Pegar resumo inicial (primeiros 3 par�grafos - REDUZIDO de 5 para 3)
     final initialSummary = blocks.take(3).join('\n\n');
 
-    // Pegar últimos N blocos completos (REDUZIDO multiplicador de 5 para 3)
+    // Pegar �ltimos N blocos completos (REDUZIDO multiplicador de 5 para 3)
     final recentBlocks = blocks
         .skip(max(0, blocks.length - maxRecentBlocks * 3))
         .join('\n\n');
 
     final result = '$initialSummary\n\n[...]\n\n$recentBlocks';
 
-    // Verificar se ainda está muito grande
+    // Verificar se ainda est� muito grande
     if (_countWords(result) > maxContextWords) {
-      // Reduzir ainda mais - só últimos blocos (REDUZIDO multiplicador de 3 para 2)
+      // Reduzir ainda mais - s� �ltimos blocos (REDUZIDO multiplicador de 3 para 2)
       return blocks
           .skip(max(0, blocks.length - maxRecentBlocks * 2))
           .join('\n\n');
@@ -5372,108 +5375,108 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     return result;
   }
 
-  // 🌍 MULTIPLICADORES DE VERBOSIDADE POR IDIOMA
-  // Baseado em análise de quantas palavras cada idioma precisa para expressar a mesma ideia
-  // Português = 1.0 (baseline) funciona perfeitamente
+  // ?? MULTIPLICADORES DE VERBOSIDADE POR IDIOMA
+  // Baseado em an�lise de quantas palavras cada idioma precisa para expressar a mesma ideia
+  // Portugu�s = 1.0 (baseline) funciona perfeitamente
   double _getLanguageVerbosityMultiplier(String language) {
     final normalized = language.toLowerCase().trim();
 
-    // 🇲🇽 ESPANHOL: Tende a ser ~15-20% mais verboso que português
+    // ???? ESPANHOL: Tende a ser ~15-20% mais verboso que portugu�s
     if (normalized.contains('espanhol') ||
         normalized.contains('spanish') ||
-        normalized.contains('español') ||
+        normalized.contains('espa�ol') ||
         normalized == 'es' ||
         normalized == 'es-mx') {
       return 0.85; // Pedir 15% menos para compensar
     }
 
-    // 🇬🇧 INGLÊS: Tende a ser ~15-20% mais CONCISO que português
-    // RAZÃO: Inglês usa menos palavras para expressar mesma ideia
-    // EXEMPLO: "Eu estava pensando nisso" = 4 palavras → "I was thinking" = 3 palavras
-    // SOLUÇÃO: Pedir um pouco MAIS palavras para compensar a concisão
-    // 🔧 AJUSTE: Reduzido de 1.18x → 1.05x (estava gerando +21% a mais)
-    if (normalized.contains('inglês') ||
+    // ???? INGL�S: Tende a ser ~15-20% mais CONCISO que portugu�s
+    // RAZ�O: Ingl�s usa menos palavras para expressar mesma ideia
+    // EXEMPLO: "Eu estava pensando nisso" = 4 palavras ? "I was thinking" = 3 palavras
+    // SOLU��O: Pedir um pouco MAIS palavras para compensar a concis�o
+    // ?? AJUSTE: Reduzido de 1.18x ? 1.05x (estava gerando +21% a mais)
+    if (normalized.contains('ingl�s') ||
         normalized.contains('ingles') ||
         normalized.contains('english') ||
         normalized == 'en' ||
         normalized == 'en-us') {
-      return 1.05; // Pedir 5% MAIS para compensar concisão
+      return 1.05; // Pedir 5% MAIS para compensar concis�o
     }
 
-    // 🇫🇷 FRANCÊS: Tende a ser ~10-15% mais verboso que português
+    // ???? FRANC�S: Tende a ser ~10-15% mais verboso que portugu�s
     if (normalized.contains('franc') ||
         normalized.contains('french') ||
         normalized == 'fr') {
       return 0.90; // Pedir 10% menos para compensar
     }
 
-    // 🇮🇹 ITALIANO: Tende a ser ~10% mais verboso que português
+    // ???? ITALIANO: Tende a ser ~10% mais verboso que portugu�s
     if (normalized.contains('italia') ||
         normalized.contains('italian') ||
         normalized == 'it') {
       return 0.92; // Pedir 8% menos para compensar
     }
 
-    // 🇩🇪 ALEMÃO: Similar ao português (palavras compostas compensam artigos)
+    // ???? ALEM�O: Similar ao portugu�s (palavras compostas compensam artigos)
     if (normalized.contains('alem') ||
         normalized.contains('german') ||
         normalized == 'de') {
       return 1.0; // Sem ajuste
     }
 
-    // 🇷🇺 RUSSO: Muito conciso (sem artigos, casos gramaticais)
+    // ???? RUSSO: Muito conciso (sem artigos, casos gramaticais)
     if (normalized.contains('russo') ||
         normalized.contains('russian') ||
         normalized == 'ru') {
       return 1.15; // Pedir 15% mais para compensar
     }
 
-    // 🇵🇱 POLONÊS: Ligeiramente mais conciso que português
+    // ???? POLON�S: Ligeiramente mais conciso que portugu�s
     if (normalized.contains('polon') ||
         normalized.contains('polish') ||
         normalized == 'pl') {
       return 1.05; // Pedir 5% mais para compensar
     }
 
-    // 🇹🇷 TURCO: Muito conciso (aglutinação de palavras)
+    // ???? TURCO: Muito conciso (aglutina��o de palavras)
     if (normalized.contains('turco') ||
         normalized.contains('turk') ||
         normalized == 'tr') {
       return 1.20; // Pedir 20% mais para compensar
     }
 
-    // 🇧🇬 BÚLGARO: Similar ao russo, conciso
-    if (normalized.contains('búlgar') ||
+    // ???? B�LGARO: Similar ao russo, conciso
+    if (normalized.contains('b�lgar') ||
         normalized.contains('bulgar') ||
         normalized == 'bg') {
       return 1.12; // Pedir 12% mais para compensar
     }
 
-    // 🇭🇷 CROATA: Ligeiramente mais conciso
+    // ???? CROATA: Ligeiramente mais conciso
     if (normalized.contains('croat') ||
         normalized.contains('hrvat') ||
         normalized == 'hr') {
       return 1.08; // Pedir 8% mais para compensar
     }
 
-    // 🇷🇴 ROMENO: Similar ao português (língua latina)
+    // ???? ROMENO: Similar ao portugu�s (l�ngua latina)
     if (normalized.contains('romen') ||
         normalized.contains('roman') ||
         normalized == 'ro') {
       return 1.0; // Sem ajuste
     }
 
-    // 🇰🇷 COREANO: Muito conciso (aglutinação) + Modelo tende a ser preguiçoso
-    // ANÁLISE: Pedindo 1.0x, ele entrega ~70% da meta.
-    // SOLUÇÃO: Pedir 1.55x (55% a mais) para forçar expansão ou atingir o teto natural.
+    // ???? COREANO: Muito conciso (aglutina��o) + Modelo tende a ser pregui�oso
+    // AN�LISE: Pedindo 1.0x, ele entrega ~70% da meta.
+    // SOLU��O: Pedir 1.55x (55% a mais) para for�ar expans�o ou atingir o teto natural.
     if (normalized.contains('coreano') ||
         normalized.contains('korean') ||
-        normalized.contains('한국어') ||
+        normalized.contains('???') ||
         normalized == 'ko') {
       return 1.55;
     }
 
-    // 🇧🇷 PORTUGUÊS ou OUTROS: Baseline perfeito
+    // ???? PORTUGU�S ou OUTROS: Baseline perfeito
     return 1.0;
   }
 
@@ -5486,27 +5489,27 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     int blockNumber,
     int totalBlocks, {
     bool avoidRepetition =
-        false, // 🔥 NOVO: Flag para regeneração anti-repetição
-    WorldState? worldState, // 🏗️ v7.6.64: Usa WorldState do módulo (SOLID)
+        false, // ?? NOVO: Flag para regenera��o anti-repeti��o
+    WorldState? worldState, // ??? v7.6.64: Usa WorldState do m�dulo (SOLID)
   }) async {
-    // 🔧 IMPORTANTE: target vem SEMPRE em PALAVRAS de _calculateTargetForBlock()
-    // Mesmo quando measureType='caracteres', _calculateTargetForBlock já converteu caracteres→palavras
-    // O Gemini trabalha melhor com contagem de PALAVRAS, então sempre pedimos palavras no prompt
-    // Depois contamos caracteres no resultado final para validar se atingiu a meta do usuário
+    // ?? IMPORTANTE: target vem SEMPRE em PALAVRAS de _calculateTargetForBlock()
+    // Mesmo quando measureType='caracteres', _calculateTargetForBlock j� converteu caracteres?palavras
+    // O Gemini trabalha melhor com contagem de PALAVRAS, ent�o sempre pedimos palavras no prompt
+    // Depois contamos caracteres no resultado final para validar se atingiu a meta do usu�rio
     final needed = target;
     if (needed <= 0) return '';
 
-    // 🔥 OTIMIZAÇÃO CRÍTICA: Limitar contexto aos últimos N blocos
-    // v6.0: Português usa MENOS contexto (3 blocos) para evitar erro 503
-    // Outros idiomas: 4 blocos (padrão)
-    // RATIONALE: Português = mais tokens → precisa contexto menor
+    // ?? OTIMIZA��O CR�TICA: Limitar contexto aos �ltimos N blocos
+    // v6.0: Portugu�s usa MENOS contexto (3 blocos) para evitar erro 503
+    // Outros idiomas: 4 blocos (padr�o)
+    // RATIONALE: Portugu�s = mais tokens ? precisa contexto menor
     final isPortuguese = c.language.toLowerCase().contains('portugu');
     final maxContextBlocks = isPortuguese
         ? 3
-        : 4; // PORTUGUÊS: 3 blocos (era 4)
+        : 4; // PORTUGU�S: 3 blocos (era 4)
 
     // Blocos iniciais (1-4): contexto completo
-    // Blocos médios/finais (5+): últimos N blocos apenas
+    // Blocos m�dios/finais (5+): �ltimos N blocos apenas
     String contextoPrevio = previous.isEmpty
         ? ''
         : _buildLimitedContext(previous, blockNumber, maxContextBlocks);
@@ -5515,174 +5518,174 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       final contextUsed = contextoPrevio.length;
       final contextType = blockNumber <= maxContextBlocks
           ? 'COMPLETO'
-          : 'LIMITADO (últimos $maxContextBlocks blocos)';
+          : 'LIMITADO (�ltimos $maxContextBlocks blocos)';
       debugPrint(
-        '📚 CONTEXTO $contextType: $contextUsed chars (${_countWords(contextoPrevio)} palavras)',
+        '?? CONTEXTO $contextType: $contextUsed chars (${_countWords(contextoPrevio)} palavras)',
       );
       if (blockNumber > maxContextBlocks) {
         debugPrint(
-          '   Original: ${previous.length} chars → Reduzido: $contextUsed chars (${((1 - contextUsed / previous.length) * 100).toStringAsFixed(0)}% menor)',
+          '   Original: ${previous.length} chars ? Reduzido: $contextUsed chars (${((1 - contextUsed / previous.length) * 100).toStringAsFixed(0)}% menor)',
         );
       }
     }
 
-    // 🔥 SOLUÇÃO 3: Reforçar os nomes confirmados no prompt para manter consistência
+    // ?? SOLU��O 3: Refor�ar os nomes confirmados no prompt para manter consist�ncia
     String trackerInfo = '';
 
-    // 🆕 v7.6.36: LEMBRETE CRÍTICO DE NOMES - Muito mais agressivo!
-    // Aparece no INÍCIO de cada bloco para evitar que Gemini "esqueça" nomes
+    // ?? v7.6.36: LEMBRETE CR�TICO DE NOMES - Muito mais agressivo!
+    // Aparece no IN�CIO de cada bloco para evitar que Gemini "esque�a" nomes
     if (tracker.confirmedNames.isNotEmpty && blockNumber > 1) {
       final nameReminder = StringBuffer();
       nameReminder.writeln('');
       nameReminder.writeln(
-        '🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨',
+        '????????????????????????????????????????????????????????????',
       );
       nameReminder.writeln(
-        '⚠️ LEMBRETE OBRIGATÓRIO DE NOMES - LEIA ANTES DE CONTINUAR! ⚠️',
+        '?? LEMBRETE OBRIGAT�RIO DE NOMES - LEIA ANTES DE CONTINUAR! ??',
       );
       nameReminder.writeln(
-        '🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨',
+        '????????????????????????????????????????????????????????????',
       );
       nameReminder.writeln('');
       nameReminder.writeln(
-        '📋 PERSONAGENS DESTA HISTÓRIA (USE SEMPRE ESTES NOMES):',
+        '?? PERSONAGENS DESTA HIST�RIA (USE SEMPRE ESTES NOMES):',
       );
       nameReminder.writeln('');
 
       // Listar cada personagem com seu papel de forma MUITO clara
       for (final name in tracker.confirmedNames) {
         final role = tracker.getRole(name) ?? 'personagem';
-        nameReminder.writeln('   ✅ $name = $role');
+        nameReminder.writeln('   ? $name = $role');
       }
 
       nameReminder.writeln('');
-      nameReminder.writeln('❌ PROIBIDO MUDAR ESTES NOMES! ❌');
+      nameReminder.writeln('? PROIBIDO MUDAR ESTES NOMES! ?');
       nameReminder.writeln('');
 
-      // Adicionar protagonista de forma EXTRA enfática
+      // Adicionar protagonista de forma EXTRA enf�tica
       final protagonistName = c.protagonistName.trim();
       if (protagonistName.isNotEmpty) {
         nameReminder.writeln(
-          '🔴 A PROTAGONISTA/NARRADORA SE CHAMA: $protagonistName',
+          '?? A PROTAGONISTA/NARRADORA SE CHAMA: $protagonistName',
         );
-        nameReminder.writeln('   → Quando ela fala de si mesma: "i" ou "me"');
+        nameReminder.writeln('   ? Quando ela fala de si mesma: "i" ou "me"');
         nameReminder.writeln(
-          '   → Quando outros falam dela: "$protagonistName"',
+          '   ? Quando outros falam dela: "$protagonistName"',
         );
         nameReminder.writeln(
-          '   → NUNCA mude para Emma, Jessica, Lauren, Sarah, etc!',
+          '   ? NUNCA mude para Emma, Jessica, Lauren, Sarah, etc!',
         );
         nameReminder.writeln('');
       }
 
-      // Listar mapeamento reverso (papel → nome) para reforçar
+      // Listar mapeamento reverso (papel ? nome) para refor�ar
       final roleMap = tracker.roleToNameMap;
       if (roleMap.isNotEmpty) {
-        nameReminder.writeln('📌 MAPEAMENTO PAPEL → NOME (CONSULTE SEMPRE):');
+        nameReminder.writeln('?? MAPEAMENTO PAPEL ? NOME (CONSULTE SEMPRE):');
         for (final entry in roleMap.entries) {
-          nameReminder.writeln('   • ${entry.key} → ${entry.value}');
+          nameReminder.writeln('   � ${entry.key} ? ${entry.value}');
         }
         nameReminder.writeln('');
       }
 
       nameReminder.writeln(
-        '⚠️ SE VOCÊ TROCAR UM NOME, O ROTEIRO SERÁ REJEITADO! ⚠️',
+        '?? SE VOC� TROCAR UM NOME, O ROTEIRO SER� REJEITADO! ??',
       );
       nameReminder.writeln(
-        '🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨',
+        '????????????????????????????????????????????????????????????',
       );
       nameReminder.writeln('');
 
       trackerInfo = nameReminder.toString();
 
       if (kDebugMode) {
-        debugPrint('🔥 Bloco $blockNumber - LEMBRETE DE NOMES INJETADO:');
+        debugPrint('?? Bloco $blockNumber - LEMBRETE DE NOMES INJETADO:');
         debugPrint('   Personagens: ${tracker.confirmedNames.join(", ")}');
         debugPrint('   Protagonista: $protagonistName');
       }
     } else if (tracker.confirmedNames.isNotEmpty) {
       // Bloco 1: lista mais simples
       trackerInfo =
-          '\n🚫 NOMES JÁ USADOS - NUNCA REUTILIZE: ${tracker.confirmedNames.join(", ")}\n';
+          '\n?? NOMES J� USADOS - NUNCA REUTILIZE: ${tracker.confirmedNames.join(", ")}\n';
       trackerInfo +=
-          '⚠️ Se precisa de novo personagem, use NOME TOTALMENTE DIFERENTE!\n';
+          '?? Se precisa de novo personagem, use NOME TOTALMENTE DIFERENTE!\n';
 
       final mapping = tracker.getCharacterMapping();
       if (mapping.isNotEmpty) {
         trackerInfo += mapping;
         trackerInfo +=
-            '\n⚠️ REGRA CRÍTICA: NUNCA use o mesmo nome para personagens diferentes!\n';
+            '\n?? REGRA CR�TICA: NUNCA use o mesmo nome para personagens diferentes!\n';
       }
     }
 
-    // 🚨 CORREÇÃO CRÍTICA: SEMPRE injetar nome da protagonista, mesmo que não esteja no tracker
+    // ?? CORRE��O CR�TICA: SEMPRE injetar nome da protagonista, mesmo que n�o esteja no tracker
     final protagonistName = c.protagonistName.trim();
     if (protagonistName.isNotEmpty && !trackerInfo.contains(protagonistName)) {
       trackerInfo +=
-          '\n🔥 ATENÇÃO ABSOLUTA: O NOME DA PROTAGONISTA É "$protagonistName"!\n';
-      trackerInfo += '   ❌ NUNCA mude para outro nome (Wanessa, Carla, etc)\n';
+          '\n?? ATEN��O ABSOLUTA: O NOME DA PROTAGONISTA � "$protagonistName"!\n';
+      trackerInfo += '   ? NUNCA mude para outro nome (Wanessa, Carla, etc)\n';
       trackerInfo +=
-          '   ✅ SEMPRE use "$protagonistName" quando se referir à protagonista!\n';
+          '   ? SEMPRE use "$protagonistName" quando se referir � protagonista!\n';
     }
     final characterGuidance = _buildCharacterGuidance(c, tracker);
 
-    // 🆕 v7.6.52: WORLD STATE CONTEXT - Memória Infinita
-    // Adiciona contexto estruturado de personagens, inventário e fatos
+    // ?? v7.6.52: WORLD STATE CONTEXT - Mem�ria Infinita
+    // Adiciona contexto estruturado de personagens, invent�rio e fatos
     String worldStateContext = '';
     if (worldState != null && blockNumber > 1) {
       worldStateContext = worldState.getContextForPrompt();
       if (kDebugMode && worldStateContext.isNotEmpty) {
         debugPrint(
-          '🌍 World State injetado no prompt (${worldStateContext.length} chars)',
+          '?? World State injetado no prompt (${worldStateContext.length} chars)',
         );
       }
     }
 
-    // 🔧 IMPORTANTE: Limitar palavras por bloco para estabilidade
-    // O Gemini funciona melhor com targets de PALAVRAS, não caracteres
-    // Limite máximo: 3500 palavras/bloco (≈ 19.250 caracteres)
+    // ?? IMPORTANTE: Limitar palavras por bloco para estabilidade
+    // O Gemini funciona melhor com targets de PALAVRAS, n�o caracteres
+    // Limite m�ximo: 3500 palavras/bloco (� 19.250 caracteres)
     final limitedNeeded = min(needed, 3500); // Sempre limitar em palavras
 
-    // 📊 SEMPRE pedir palavras no prompt (Gemini trabalha melhor assim)
-    // O sistema converterá caracteres→palavras antes de chegar aqui (_calculateTargetForBlock)
-    // E validará caracteres no resultado final
+    // ?? SEMPRE pedir palavras no prompt (Gemini trabalha melhor assim)
+    // O sistema converter� caracteres?palavras antes de chegar aqui (_calculateTargetForBlock)
+    // E validar� caracteres no resultado final
 
-    // 🔥 AJUSTE POR IDIOMA: Compensar verbosidade natural de cada idioma
-    // Português (baseline 1.0) funciona perfeitamente, outros ajustam proporcionalmente
+    // ?? AJUSTE POR IDIOMA: Compensar verbosidade natural de cada idioma
+    // Portugu�s (baseline 1.0) funciona perfeitamente, outros ajustam proporcionalmente
     final languageMultiplier = _getLanguageVerbosityMultiplier(c.language);
     final adjustedTarget = (limitedNeeded * languageMultiplier).round();
 
-    // Detectar se é espanhol para mensagem específica
+    // Detectar se � espanhol para mensagem espec�fica
     final isSpanish =
         c.language.toLowerCase().contains('espanhol') ||
         c.language.toLowerCase().contains('spanish') ||
-        c.language.toLowerCase().contains('español');
+        c.language.toLowerCase().contains('espa�ol');
 
-    // 🎯 CONTROLE RIGOROSO DE CONTAGEM: ±8% aceitável (ajustado de ±10%)
-    // RAZÃO: Multiplicador 1.08 deve manter resultado entre 92-108% da meta
+    // ?? CONTROLE RIGOROSO DE CONTAGEM: �8% aceit�vel (ajustado de �10%)
+    // RAZ�O: Multiplicador 1.08 deve manter resultado entre 92-108% da meta
     final minAcceptable = (adjustedTarget * 0.92).round();
     final maxAcceptable = (adjustedTarget * 1.08).round();
 
     final measure = isSpanish
-        ? 'GERE EXATAMENTE $adjustedTarget palabras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable). É MELHOR ficar perto de $adjustedTarget do que muito abaixo!'
-        : 'GERE EXATAMENTE $adjustedTarget palavras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable). É MELHOR ficar perto de $adjustedTarget do que muito abaixo!';
+        ? 'GERE EXATAMENTE $adjustedTarget palabras (M�NIMO $minAcceptable, M�XIMO $maxAcceptable). � MELHOR ficar perto de $adjustedTarget do que muito abaixo!'
+        : 'GERE EXATAMENTE $adjustedTarget palavras (M�NIMO $minAcceptable, M�XIMO $maxAcceptable). � MELHOR ficar perto de $adjustedTarget do que muito abaixo!';
     final localizationGuidance = _buildLocalizationGuidance(c);
     final narrativeStyleGuidance = _getNarrativeStyleGuidance(c);
 
-    // 🔍 DEBUG: Verificar se modo GLOBAL está sendo passado corretamente
+    // ?? DEBUG: Verificar se modo GLOBAL est� sendo passado corretamente
     if (kDebugMode) {
-      debugPrint('🌍 MODO DE LOCALIZAÇÃO: ${c.localizationLevel.displayName}');
+      debugPrint('?? MODO DE LOCALIZA��O: ${c.localizationLevel.displayName}');
       if (c.localizationLevel == LocalizationLevel.global) {
         debugPrint(
-          '✅ MODO GLOBAL ATIVO - Prompt deve evitar nomes/comidas brasileiras',
+          '? MODO GLOBAL ATIVO - Prompt deve evitar nomes/comidas brasileiras',
         );
         debugPrint(
-          '📝 Preview do prompt GLOBAL: ${localizationGuidance.substring(0, min(200, localizationGuidance.length))}...',
+          '?? Preview do prompt GLOBAL: ${localizationGuidance.substring(0, min(200, localizationGuidance.length))}...',
         );
       }
     }
 
-    // 🎯 INTEGRAR TÍTULO COMO HOOK IMPACTANTE NO INÍCIO
+    // ?? INTEGRAR T�TULO COMO HOOK IMPACTANTE NO IN�CIO
     String instruction;
     if (previous.isEmpty) {
       if (c.startWithTitlePhrase && c.title.trim().isNotEmpty) {
@@ -5698,97 +5701,97 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       instruction = _getContinueInstruction(c.language);
     }
 
-    // v7.6.63: Gemini é o Casting Director - cria nomes apropriados para o idioma
-    // Removido banco de nomes estático em favor de geração dinâmica via LLM
-    final nameList = ''; // Não mais necessário - LLM gera nomes contextualmente
+    // v7.6.63: Gemini � o Casting Director - cria nomes apropriados para o idioma
+    // Removido banco de nomes est�tico em favor de gera��o din�mica via LLM
+    final nameList = ''; // N�o mais necess�rio - LLM gera nomes contextualmente
 
-    // 🌍 Obter labels traduzidos para os metadados
+    // ?? Obter labels traduzidos para os metadados
     final labels = _getMetadataLabels(c.language);
 
     //  Definir se inclui tema/subtema ou modo livre
     final temaSection = c.tema == 'Livre (Sem Tema)'
-        ? '// Modo Livre: Desenvolva o roteiro baseado APENAS no título e contexto fornecidos\n'
+        ? '// Modo Livre: Desenvolva o roteiro baseado APENAS no t�tulo e contexto fornecidos\n'
         : '${labels['theme']}: ${c.tema}\n${labels['subtheme']}: ${c.subtema}\n';
 
-    // 🆕 v7.6.44: SEMPRE incluir título como base da história
-    // O título NÃO é apenas decorativo - é a PREMISSA da história!
+    // ?? v7.6.44: SEMPRE incluir t�tulo como base da hist�ria
+    // O t�tulo N�O � apenas decorativo - � a PREMISSA da hist�ria!
     final titleSection = c.title.trim().isNotEmpty
-        ? '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
-              '🎯 TÍTULO/PREMISSA OBRIGATÓRIA DA HISTÓRIA:\n'
-              '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+        ? '\n????????????????????????????????????????????????????\n'
+              '?? T�TULO/PREMISSA OBRIGAT�RIA DA HIST�RIA:\n'
+              '????????????????????????????????????????????????????\n'
               '"${c.title}"\n'
               '\n'
-              '⚠️ REGRA ABSOLUTA:\n'
-              '   • A história DEVE desenvolver os elementos deste título\n'
-              '   • Personagens, ações e contexto do título são OBRIGATÓRIOS\n'
-              '   • NÃO invente uma história diferente da proposta no título\n'
-              '   • O título é a PROMESSA feita ao espectador - CUMPRA-A!\n'
+              '?? REGRA ABSOLUTA:\n'
+              '   � A hist�ria DEVE desenvolver os elementos deste t�tulo\n'
+              '   � Personagens, a��es e contexto do t�tulo s�o OBRIGAT�RIOS\n'
+              '   � N�O invente uma hist�ria diferente da proposta no t�tulo\n'
+              '   � O t�tulo � a PROMESSA feita ao espectador - CUMPRA-A!\n'
               '\n'
-              '📋 EXEMPLOS:\n'
-              '   ✅ Título: "굶고 있는 노인에게 도시락을 나눠준 편의점 알바생"\n'
-              '      → História DEVE ter: funcionário de conveniência + idoso faminto + marmita compartilhada\n'
+              '?? EXEMPLOS:\n'
+              '   ? T�tulo: "?? ?? ???? ???? ??? ??? ???"\n'
+              '      ? Hist�ria DEVE ter: funcion�rio de conveni�ncia + idoso faminto + marmita compartilhada\n'
               '   \n'
-              '   ✅ Título: "Bilionário me ofereceu emprego após eu ajudar um mendigo"\n'
-              '      → História DEVE ter: protagonista + mendigo ajudado + revelação (mendigo = bilionário)\n'
+              '   ? T�tulo: "Bilion�rio me ofereceu emprego ap�s eu ajudar um mendigo"\n'
+              '      ? Hist�ria DEVE ter: protagonista + mendigo ajudado + revela��o (mendigo = bilion�rio)\n'
               '   \n'
-              '   ❌ ERRO: Ignorar título e criar história sobre CEO infiltrado em empresa\n'
-              '      → Isso QUEBRA a promessa feita ao espectador!\n'
-              '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
+              '   ? ERRO: Ignorar t�tulo e criar hist�ria sobre CEO infiltrado em empresa\n'
+              '      ? Isso QUEBRA a promessa feita ao espectador!\n'
+              '????????????????????????????????????????????????????\n\n'
         : '';
 
-    // 🚫 CONSTRUIR LISTA DE NOMES PROIBIDOS (já usados nesta história)
+    // ?? CONSTRUIR LISTA DE NOMES PROIBIDOS (j� usados nesta hist�ria)
     String forbiddenNamesWarning = '';
     if (tracker.confirmedNames.isNotEmpty) {
       final forbiddenList = tracker.confirmedNames.join(', ');
       forbiddenNamesWarning =
-          '🚫🚫🚫 NOMES PROIBIDOS - NÃO USE ESTES NOMES! 🚫🚫🚫\n'
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
-          '⛔ Os seguintes nomes JÁ ESTÃO EM USO nesta história:\n'
-          '   ❌ $forbiddenList\n'
+          '?????? NOMES PROIBIDOS - N�O USE ESTES NOMES! ??????\n'
+          '????????????????????????????????????????????????????\n'
+          '? Os seguintes nomes J� EST�O EM USO nesta hist�ria:\n'
+          '   ? $forbiddenList\n'
           '\n'
-          '🚨 REGRA ABSOLUTA:\n'
-          '   • NUNCA reutilize os nomes acima!\n'
-          '   • Cada nome = 1 personagem único\n'
-          '   • Se precisar de novo personagem, escolha nome DIFERENTE\n'
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+          '?? REGRA ABSOLUTA:\n'
+          '   � NUNCA reutilize os nomes acima!\n'
+          '   � Cada nome = 1 personagem �nico\n'
+          '   � Se precisar de novo personagem, escolha nome DIFERENTE\n'
+          '????????????????????????????????????????????????????\n'
           '\n';
     }
 
-    // 🎯 Adicionar informações específicas de blocos (não estava no template)
-    // 🆕 v7.6.22: Adicionar lista de personagens sem fechamento no bloco final
+    // ?? Adicionar informa��es espec�ficas de blocos (n�o estava no template)
+    // ?? v7.6.22: Adicionar lista de personagens sem fechamento no bloco final
     String closureWarning = '';
     if (blockNumber == totalBlocks) {
       final unresolved = tracker.getUnresolvedCharacters();
       if (unresolved.isNotEmpty) {
         closureWarning =
             '\n'
-            '🚨🚨🚨 ATENÇÃO CRÍTICA - BLOCO FINAL 🚨🚨🚨\n'
+            '?????? ATEN��O CR�TICA - BLOCO FINAL ??????\n'
             '\n'
-            '⚠️ OS SEGUINTES PERSONAGENS AINDA NÃO TIVERAM FECHAMENTO:\n'
-            '   ${unresolved.map((name) => '• $name').join('\n   ')}\n'
+            '?? OS SEGUINTES PERSONAGENS AINDA N�O TIVERAM FECHAMENTO:\n'
+            '   ${unresolved.map((name) => '� $name').join('\n   ')}\n'
             '\n'
-            '✅ VOCÊ DEVE INCLUIR NESTE BLOCO FINAL:\n'
+            '? VOC� DEVE INCLUIR NESTE BLOCO FINAL:\n'
             '   Para CADA personagem acima, escreva:\n'
             '   1. O que aconteceu com ele/ela no final\n'
-            '   2. Seu estado emocional/físico final\n'
-            '   3. Resolução do seu arco narrativo\n'
+            '   2. Seu estado emocional/f�sico final\n'
+            '   3. Resolu��o do seu arco narrativo\n'
             '\n'
-            '📋 EXEMPLOS DE FECHAMENTO CORRETO:\n'
-            '   • "Blake finalmente reconciliou com Taylor"\n'
-            '   • "Nicholas viu justiça ser feita contra Arthur"\n'
-            '   • "Robert encontrou paz sabendo que a verdade veio à tona"\n'
+            '?? EXEMPLOS DE FECHAMENTO CORRETO:\n'
+            '   � "Blake finalmente reconciliou com Taylor"\n'
+            '   � "Nicholas viu justi�a ser feita contra Arthur"\n'
+            '   � "Robert encontrou paz sabendo que a verdade veio � tona"\n'
             '\n'
-            '❌ NÃO É PERMITIDO:\n'
-            '   • Terminar a história sem mencionar esses personagens\n'
-            '   • Deixar seus destinos vagos ou implícitos\n'
-            '   • Assumir que o leitor "vai entender"\n'
+            '? N�O � PERMITIDO:\n'
+            '   � Terminar a hist�ria sem mencionar esses personagens\n'
+            '   � Deixar seus destinos vagos ou impl�citos\n'
+            '   � Assumir que o leitor "vai entender"\n'
             '\n'
-            '🎯 REGRA: Personagem importante = Fechamento explícito OBRIGATÓRIO\n'
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+            '?? REGRA: Personagem importante = Fechamento expl�cito OBRIGAT�RIO\n'
+            '????????????????????????????????????????????????????\n'
             '\n';
       } else {
         if (kDebugMode) {
-          debugPrint('✅ TODOS os personagens importantes já têm fechamento!');
+          debugPrint('? TODOS os personagens importantes j� t�m fechamento!');
           debugPrint(
             '   Taxa de fechamento: ${(tracker.getClosureRate() * 100).toStringAsFixed(1)}%',
           );
@@ -5798,128 +5801,128 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
 
     final blockInfo =
         '\n'
-        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
-        '📊 INFORMAÇÃO DE BLOCOS (CRÍTICO PARA PLANEJAMENTO):\n'
-        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
-        '   • Total de blocos planejados: $totalBlocks\n'
-        '   • Bloco atual: bloco número $blockNumber de $totalBlocks\n'
-        '   ${blockNumber < totalBlocks ? '• Status: CONTINUAÇÃO - Este NÃO é o último bloco!' : '• Status: BLOCO FINAL - Conclua a história agora!'}\n'
+        '????????????????????????????????????????????????????\n'
+        '?? INFORMA��O DE BLOCOS (CR�TICO PARA PLANEJAMENTO):\n'
+        '????????????????????????????????????????????????????\n'
+        '   � Total de blocos planejados: $totalBlocks\n'
+        '   � Bloco atual: bloco n�mero $blockNumber de $totalBlocks\n'
+        '   ${blockNumber < totalBlocks ? '� Status: CONTINUA��O - Este N�O � o �ltimo bloco!' : '� Status: BLOCO FINAL - Conclua a hist�ria agora!'}\n'
         '\n'
         '$closureWarning'
-        '${blockNumber < totalBlocks ? '❌ PROIBIDO NESTE BLOCO:\n   • NÃO finalize a história ainda!\n   • NÃO escreva "THE END" ou equivalente\n   • NÃO crie uma resolução completa e definitiva\n   • NÃO conclua todos os arcos narrativos\n   \n✅ OBRIGATÓRIO NESTE BLOCO:\n   • CONTINUE desenvolvendo a trama\n   • Mantenha tensão e progressão narrativa\n   • Deixe ganchos para os próximos blocos\n   • A história DEVE ter continuação nos blocos seguintes\n   • Apenas desenvolva, NÃO conclua!\n' : '✅ OBRIGATÓRIO NESTE BLOCO FINAL:\n   • AGORA SIM finalize completamente a história\n   • Resolva TODOS os conflitos pendentes\n   • Dê fechamento a TODOS os personagens\n   • Este é o ÚLTIMO bloco - conclusão definitiva!\n'}\n'
-        '� ATENÇÃO ESPECIAL:\n'
-        '   • Histórias longas precisam de TODOS os blocos planejados\n'
-        '   • NÃO termine prematuramente só porque "parece completo"\n'
-        '   • Cada bloco é parte de um roteiro maior - respeite o planejamento\n'
-        '   • Finais prematuros PREJUDICAM a qualidade e a experiência do ouvinte\n'
-        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+        '${blockNumber < totalBlocks ? '? PROIBIDO NESTE BLOCO:\n   � N�O finalize a hist�ria ainda!\n   � N�O escreva "THE END" ou equivalente\n   � N�O crie uma resolu��o completa e definitiva\n   � N�O conclua todos os arcos narrativos\n   \n? OBRIGAT�RIO NESTE BLOCO:\n   � CONTINUE desenvolvendo a trama\n   � Mantenha tens�o e progress�o narrativa\n   � Deixe ganchos para os pr�ximos blocos\n   � A hist�ria DEVE ter continua��o nos blocos seguintes\n   � Apenas desenvolva, N�O conclua!\n' : '? OBRIGAT�RIO NESTE BLOCO FINAL:\n   � AGORA SIM finalize completamente a hist�ria\n   � Resolva TODOS os conflitos pendentes\n   � D� fechamento a TODOS os personagens\n   � Este � o �LTIMO bloco - conclus�o definitiva!\n'}\n'
+        '? ATEN��O ESPECIAL:\n'
+        '   � Hist�rias longas precisam de TODOS os blocos planejados\n'
+        '   � N�O termine prematuramente s� porque "parece completo"\n'
+        '   � Cada bloco � parte de um roteiro maior - respeite o planejamento\n'
+        '   � Finais prematuros PREJUDICAM a qualidade e a experi�ncia do ouvinte\n'
+        '????????????????????????????????????????????????????\n'
         '\n'
-        '🎯 REGRA ABSOLUTA:\n'
-        '   UMA HISTÓRIA = UM CONFLITO CENTRAL = UM ARCO COMPLETO = UMA RESOLUÇÃO\n'
-        '   PARÁGRAFOS CURTOS = PAUSAS = DRAMATICIDADE = RETENÇÃO ALTA\n'
+        '?? REGRA ABSOLUTA:\n'
+        '   UMA HIST�RIA = UM CONFLITO CENTRAL = UM ARCO COMPLETO = UMA RESOLU��O\n'
+        '   PAR�GRAFOS CURTOS = PAUSAS = DRAMATICIDADE = RETEN��O ALTA\n'
         '   UM NOME = UM PERSONAGEM = NUNCA REUTILIZAR = VERIFICAR SEMPRE\n'
-        '   DIÁLOGOS + MOTIVAÇÕES + CLOSURE = HISTÓRIA COMPLETA E SATISFATÓRIA\n'
+        '   DI�LOGOS + MOTIVA��ES + CLOSURE = HIST�RIA COMPLETA E SATISFAT�RIA\n'
         '\n'
-        '🚫 NUNCA crie duas histórias separadas dentro do mesmo roteiro!\n'
-        '🚫 NUNCA escreva parágrafos com mais de 180 palavras!\n'
-        '🚫 NUNCA reutilize nomes de personagens já mencionados!\n'
-        '🚫 NUNCA deixe personagens importantes sem destino final!\n'
-        '🚫 NUNCA faça traições/conflitos sem motivação clara!\n'
-        '🚫 NUNCA repita a mesma frase/metáfora mais de 2 vezes no roteiro!\n'
-        '🚫 NUNCA introduza personagens secundários que desaparecem sem explicação!\n'
-        '${blockNumber < totalBlocks ? '🚫 NUNCA finalize a história antes do bloco final ($totalBlocks)!\n' : ''}'
+        '?? NUNCA crie duas hist�rias separadas dentro do mesmo roteiro!\n'
+        '?? NUNCA escreva par�grafos com mais de 180 palavras!\n'
+        '?? NUNCA reutilize nomes de personagens j� mencionados!\n'
+        '?? NUNCA deixe personagens importantes sem destino final!\n'
+        '?? NUNCA fa�a trai��es/conflitos sem motiva��o clara!\n'
+        '?? NUNCA repita a mesma frase/met�fora mais de 2 vezes no roteiro!\n'
+        '?? NUNCA introduza personagens secund�rios que desaparecem sem explica��o!\n'
+        '${blockNumber < totalBlocks ? '?? NUNCA finalize a hist�ria antes do bloco final ($totalBlocks)!\n' : ''}'
         '\n'
-        '📋 REGRAS DE REPETIÇÃO E VARIAÇÃO:\n'
-        '   • Frases marcantes do protagonista: máximo 2 repetições no roteiro inteiro\n'
-        '   • Após primeira menção: use VARIAÇÕES ou referências INDIRETAS\n'
-        '   • Exemplo: "lies are like cracks" → depois: "his foundation was crumbling" ou "the truth had started to show"\n'
-        '   • Metáforas do pai/mentor: primeira vez completa, depois apenas alusões\n'
-        '   • Evite eco narrativo: não repita descrições já feitas (humilhação inicial, etc.)\n'
+        '?? REGRAS DE REPETI��O E VARIA��O:\n'
+        '   � Frases marcantes do protagonista: m�ximo 2 repeti��es no roteiro inteiro\n'
+        '   � Ap�s primeira men��o: use VARIA��ES ou refer�ncias INDIRETAS\n'
+        '   � Exemplo: "lies are like cracks" ? depois: "his foundation was crumbling" ou "the truth had started to show"\n'
+        '   � Met�foras do pai/mentor: primeira vez completa, depois apenas alus�es\n'
+        '   � Evite eco narrativo: n�o repita descri��es j� feitas (humilha��o inicial, etc.)\n'
         '\n'
-        '📋 REGRAS DE PERSONAGENS SECUNDÁRIOS:\n'
-        '   • TODO personagem introduzido DEVE ter resolução clara:\n'
-        '   • Se aparece na investigação → DEVE aparecer no clímax/desfecho\n'
-        '   • Se fornece informação crucial → DEVE testemunhar/ajudar no final\n'
-        '   • Se é vítima/testemunha do passado → DEVE ter papel na justiça/vingança\n'
-        '   • PROIBIDO: introduzir personagem importante e depois abandoná-lo\n'
-        '   • Exemplo: Se Robert Peterson revela segredo → ele DEVE aparecer no tribunal/confronto final\n'
+        '?? REGRAS DE PERSONAGENS SECUND�RIOS:\n'
+        '   � TODO personagem introduzido DEVE ter resolu��o clara:\n'
+        '   � Se aparece na investiga��o ? DEVE aparecer no cl�max/desfecho\n'
+        '   � Se fornece informa��o crucial ? DEVE testemunhar/ajudar no final\n'
+        '   � Se � v�tima/testemunha do passado ? DEVE ter papel na justi�a/vingan�a\n'
+        '   � PROIBIDO: introduzir personagem importante e depois abandon�-lo\n'
+        '   � Exemplo: Se Robert Peterson revela segredo ? ele DEVE aparecer no tribunal/confronto final\n'
         '\n'
-        '   🚨 LISTA DE VERIFICAÇÃO ANTES DO BLOCO FINAL:\n'
+        '   ?? LISTA DE VERIFICA��O ANTES DO BLOCO FINAL:\n'
         '   \n'
-        '   Personagens que NÃO PODEM desaparecer:\n'
-        '   ☐ Quem forneceu evidência crucial (documentos, testemunho)\n'
-        '   ☐ Quem foi vítima do antagonista no passado\n'
-        '   ☐ Quem ajudou o protagonista na investigação\n'
-        '   ☐ Quem tem conhecimento direto do crime/segredo\n'
-        '   ☐ Familiar/amigo importante mencionado múltiplas vezes\n'
+        '   Personagens que N�O PODEM desaparecer:\n'
+        '   ? Quem forneceu evid�ncia crucial (documentos, testemunho)\n'
+        '   ? Quem foi v�tima do antagonista no passado\n'
+        '   ? Quem ajudou o protagonista na investiga��o\n'
+        '   ? Quem tem conhecimento direto do crime/segredo\n'
+        '   ? Familiar/amigo importante mencionado m�ltiplas vezes\n'
         '   \n'
-        '   📋 EXEMPLOS DE FECHAMENTO OBRIGATÓRIO:\n'
+        '   ?? EXEMPLOS DE FECHAMENTO OBRIGAT�RIO:\n'
         '   \n'
-        '   ✅ Se "Robert revelou que seu pai Harold foi enganado":\n'
-        '      → No clímax: "Robert entrou no tribunal. Olhou Alan nos olhos..."\n'
-        '      → No desfecho: "Robert finalmente tinha paz. A verdade sobre Harold veio à tona."\n'
+        '   ? Se "Robert revelou que seu pai Harold foi enganado":\n'
+        '      ? No cl�max: "Robert entrou no tribunal. Olhou Alan nos olhos..."\n'
+        '      ? No desfecho: "Robert finalmente tinha paz. A verdade sobre Harold veio � tona."\n'
         '   \n'
-        '   ✅ Se "Kimberly, a paralegal, guardou cópias dos documentos":\n'
-        '      → No clímax: "Kimberly testemunhou. \'Alan me ordenou falsificar a assinatura\'..."\n'
-        '      → No desfecho: "Kimberly foi elogiada por sua coragem em preservar as evidências."\n'
+        '   ? Se "Kimberly, a paralegal, guardou c�pias dos documentos":\n'
+        '      ? No cl�max: "Kimberly testemunhou. \'Alan me ordenou falsificar a assinatura\'..."\n'
+        '      ? No desfecho: "Kimberly foi elogiada por sua coragem em preservar as evid�ncias."\n'
         '   \n'
-        '   ✅ Se "David, o contador, descobriu a fraude primeiro":\n'
-        '      → No clímax: "David apresentou os registros financeiros alterados..."\n'
-        '      → No desfecho: "David foi promovido a CFO após a queda de Alan."\n'
+        '   ? Se "David, o contador, descobriu a fraude primeiro":\n'
+        '      ? No cl�max: "David apresentou os registros financeiros alterados..."\n'
+        '      ? No desfecho: "David foi promovido a CFO ap�s a queda de Alan."\n'
         '   \n'
-        '   ❌ NUNCA faça isso:\n'
-        '      • "Robert me deu o documento" → [nunca mais mencionado] ← ERRO!\n'
-        '      • "Kimberly tinha as provas" → [some da história] ← ERRO!\n'
-        '      • "David descobriu tudo" → [não aparece no final] ← ERRO!\n'
+        '   ? NUNCA fa�a isso:\n'
+        '      � "Robert me deu o documento" ? [nunca mais mencionado] ? ERRO!\n'
+        '      � "Kimberly tinha as provas" ? [some da hist�ria] ? ERRO!\n'
+        '      � "David descobriu tudo" ? [n�o aparece no final] ? ERRO!\n'
         '\n'
-        '⏰ REGRAS DE MARCADORES TEMPORAIS:\n'
-        '   • Entre mudanças de cena/localização: SEMPRE incluir marcador temporal\n'
-        '   • Exemplos: "três dias depois...", "na manhã seguinte...", "uma semana se passou..."\n'
-        '   • Flashbacks: iniciar com "anos atrás..." ou "naquele dia em [ano]..."\n'
-        '   • Saltos grandes (meses/anos): ser específico: "seis meses depois" não "algum tempo depois"\n'
-        '   • Isso mantém o leitor orientado na linha temporal da história\n'
+        '? REGRAS DE MARCADORES TEMPORAIS:\n'
+        '   � Entre mudan�as de cena/localiza��o: SEMPRE incluir marcador temporal\n'
+        '   � Exemplos: "tr�s dias depois...", "na manh� seguinte...", "uma semana se passou..."\n'
+        '   � Flashbacks: iniciar com "anos atr�s..." ou "naquele dia em [ano]..."\n'
+        '   � Saltos grandes (meses/anos): ser espec�fico: "seis meses depois" n�o "algum tempo depois"\n'
+        '   � Isso mant�m o leitor orientado na linha temporal da hist�ria\n'
         '\n'
-        '👨‍👩‍👧‍👦 REGRAS DE COERÊNCIA DE RELACIONAMENTOS FAMILIARES:\n'
-        '   🚨 ERRO CRÍTICO: Relacionamentos familiares inconsistentes!\n'
+        '??????????? REGRAS DE COER�NCIA DE RELACIONAMENTOS FAMILIARES:\n'
+        '   ?? ERRO CR�TICO: Relacionamentos familiares inconsistentes!\n'
         '   \n'
-        '   ANTES de introduzir QUALQUER relação familiar, VALIDE:\n'
+        '   ANTES de introduzir QUALQUER rela��o familiar, VALIDE:\n'
         '   \n'
-        '   ✅ CORRETO - Lógica familiar coerente:\n'
-        '      • "meu irmão Paul casou com Megan" → Megan é minha CUNHADA\n'
-        '      • "Paul é meu irmão" + "Megan é esposa de Paul" = "Megan é minha cunhada"\n'
-        '      • "minha irmã Maria casou com João" → João é meu CUNHADO\n'
+        '   ? CORRETO - L�gica familiar coerente:\n'
+        '      � "meu irm�o Paul casou com Megan" ? Megan � minha CUNHADA\n'
+        '      � "Paul � meu irm�o" + "Megan � esposa de Paul" = "Megan � minha cunhada"\n'
+        '      � "minha irm� Maria casou com Jo�o" ? Jo�o � meu CUNHADO\n'
         '   \n'
-        '   ❌ ERRADO - Contradições:\n'
-        '      • Chamar de "my sister-in-law" (cunhada) E depois "my brother married her" ← CONFUSO!\n'
-        '      • "meu sogro Carlos" mas nunca mencionar cônjuge ← QUEM é casado com filho/filha dele?\n'
-        '      • "my father-in-law Alan" mas protagonista solteiro ← IMPOSSÍVEL!\n'
+        '   ? ERRADO - Contradi��es:\n'
+        '      � Chamar de "my sister-in-law" (cunhada) E depois "my brother married her" ? CONFUSO!\n'
+        '      � "meu sogro Carlos" mas nunca mencionar c�njuge ? QUEM � casado com filho/filha dele?\n'
+        '      � "my father-in-law Alan" mas protagonista solteiro ? IMPOSS�VEL!\n'
         '   \n'
-        '   📋 TABELA DE VALIDAÇÃO (USE ANTES DE ESCREVER):\n'
+        '   ?? TABELA DE VALIDA��O (USE ANTES DE ESCREVER):\n'
         '   \n'
         '   SE escrever: "my brother Paul married Megan"\n'
-        '   → Megan é: "my sister-in-law" (cunhada)\n'
-        '   → Alan (pai de Megan) é: "my brother\'s father-in-law" (sogro do meu irmão)\n'
-        '   → NUNCA chamar Alan de "my father-in-law" (seria se EU casasse com Megan)\n'
+        '   ? Megan �: "my sister-in-law" (cunhada)\n'
+        '   ? Alan (pai de Megan) �: "my brother\'s father-in-law" (sogro do meu irm�o)\n'
+        '   ? NUNCA chamar Alan de "my father-in-law" (seria se EU casasse com Megan)\n'
         '   \n'
         '   SE escrever: "my wife Sarah\'s father Robert"\n'
-        '   → Robert é: "my father-in-law" (meu sogro)\n'
-        '   → Sarah é: "my wife" (minha esposa)\n'
-        '   → Irmão de Sarah é: "my brother-in-law" (meu cunhado)\n'
+        '   ? Robert �: "my father-in-law" (meu sogro)\n'
+        '   ? Sarah �: "my wife" (minha esposa)\n'
+        '   ? Irm�o de Sarah �: "my brother-in-law" (meu cunhado)\n'
         '   \n'
-        '   🔴 REGRA DE OURO:\n'
+        '   ?? REGRA DE OURO:\n'
         '      Antes de usar "cunhado/cunhada/sogro/sogra/genro/nora":\n'
-        '      1. Pergunte: QUEM é casado com QUEM?\n'
-        '      2. Desenhe mentalmente a árvore genealógica\n'
-        '      3. Valide se a relação faz sentido matemático\n'
-        '      4. Se confuso, use nomes próprios em vez de relações\n'
+        '      1. Pergunte: QUEM � casado com QUEM?\n'
+        '      2. Desenhe mentalmente a �rvore geneal�gica\n'
+        '      3. Valide se a rela��o faz sentido matem�tico\n'
+        '      4. Se confuso, use nomes pr�prios em vez de rela��es\n'
         '   \n'
-        '   ⚠️ SE HOUVER DÚVIDA: Use "Megan" em vez de tentar definir relação familiar!\n'
-        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+        '   ?? SE HOUVER D�VIDA: Use "Megan" em vez de tentar definir rela��o familiar!\n'
+        '????????????????????????????????????????????????????\n';
 
-    // 🔥 CRITICAL: ADICIONAR INSTRUÇÃO DE PERSPECTIVA/GÊNERO NO INÍCIO DO PROMPT
+    // ?? CRITICAL: ADICIONAR INSTRU��O DE PERSPECTIVA/G�NERO NO IN�CIO DO PROMPT
     final perspectiveInstruction = _getPerspectiveInstruction(c.perspective, c);
 
-    // 🔥 NOVO: Combinar prompt do template (compacto) + informações de bloco
+    // ?? NOVO: Combinar prompt do template (compacto) + informa��es de bloco
     final compactPrompt = MainPromptTemplate.buildCompactPrompt(
       language: _getLanguageInstruction(c.language),
       instruction: instruction,
@@ -5945,7 +5948,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     );
 
     final prompt =
-        '$perspectiveInstruction\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n$worldStateContext$titleSection$compactPrompt$blockInfo';
+        '$perspectiveInstruction\n????????????????????????????????????????????????????\n\n$worldStateContext$titleSection$compactPrompt$blockInfo';
 
     if (kDebugMode) {
       debugPrint(
@@ -5960,22 +5963,22 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     }
 
     try {
-      // 🚀 GEMINI 2.5 PRO: Suporta até 65.535 tokens de saída!
-      // Aumentado para 50.000 tokens (76% da capacidade) para idiomas cirílicos
+      // ?? GEMINI 2.5 PRO: Suporta at� 65.535 tokens de sa�da!
+      // Aumentado para 50.000 tokens (76% da capacidade) para idiomas cir�licos
 
-      // 🌐 AJUSTE: Idiomas não-latinos (cirílico, etc.) consomem mais tokens
+      // ?? AJUSTE: Idiomas n�o-latinos (cir�lico, etc.) consomem mais tokens
       final languageNormalized = c.language.toLowerCase().trim();
       final isCyrillic =
           languageNormalized.contains('russo') ||
-          languageNormalized.contains('búlgar') ||
+          languageNormalized.contains('b�lgar') ||
           languageNormalized.contains('bulgar') ||
           languageNormalized == 'ru' ||
           languageNormalized == 'bg';
       final isTurkish =
           languageNormalized.contains('turco') || languageNormalized == 'tr';
 
-      // Cirílico e turco precisam de 5x mais tokens por caractere (aumentado de 4x)
-      // Idiomas latinos mantêm 2.5x (aumentado de 2x) para mais margem
+      // Cir�lico e turco precisam de 5x mais tokens por caractere (aumentado de 4x)
+      // Idiomas latinos mant�m 2.5x (aumentado de 2x) para mais margem
       final tokenMultiplier = c.measureType == 'caracteres'
           ? (isCyrillic || isTurkish ? 5.0 : 2.5)
           : 12.0; // Aumentado de 10.0 para 12.0 para palavras
@@ -5986,16 +5989,16 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
           ? maxTokensLimit
           : maxTokensCalculated;
 
-      // 🤖 SELEÇÃO DE MODELO BASEADA EM qualityMode
-      // 🎯 v7.6.51: Arquitetura Pipeline Modelo Único - usar helper centralizado
+      // ?? SELE��O DE MODELO BASEADA EM qualityMode
+      // ?? v7.6.51: Arquitetura Pipeline Modelo �nico - usar helper centralizado
       final selectedModel = _getSelectedModel(c.qualityMode);
 
       if (kDebugMode) {
-        debugPrint('[$_instanceId] 🎯 qualityMode = "${c.qualityMode}"');
-        debugPrint('[$_instanceId] 🤖 selectedModel = "$selectedModel"');
+        debugPrint('[$_instanceId] ?? qualityMode = "${c.qualityMode}"');
+        debugPrint('[$_instanceId] ?? selectedModel = "$selectedModel"');
       }
 
-      // 🏗️ v7.6.64: Usar LlmClient para geração principal (SOLID)
+      // ??? v7.6.64: Usar LlmClient para gera��o principal (SOLID)
       final data = await _llmClient.generateText(
         apiKey: c.apiKey,
         model: selectedModel,
@@ -6003,7 +6006,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         maxTokens: finalMaxTokens,
       );
 
-      // 🚀 v7.6.20: Registrar sucesso da API para Adaptive Delay Manager
+      // ?? v7.6.20: Registrar sucesso da API para Adaptive Delay Manager
       if (data.isNotEmpty) {
         _recordApiSuccess();
       }
@@ -6013,7 +6016,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
           ? await _filterDuplicateParagraphs(previous, text)
           : '';
 
-      // 🚨 v7.6.21: VALIDAÇÃO CRÍTICA - Nome da protagonista
+      // ?? v7.6.21: VALIDA��O CR�TICA - Nome da protagonista
       if (filtered.isNotEmpty) {
         final isValidProtagonist = _validateProtagonistName(
           filtered,
@@ -6023,14 +6026,14 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         if (!isValidProtagonist) {
           if (kDebugMode) {
             debugPrint(
-              '❌ BLOCO $blockNumber REJEITADO: Nome errado da protagonista!',
+              '? BLOCO $blockNumber REJEITADO: Nome errado da protagonista!',
             );
-            debugPrint('   🔄 Forçando regeneração...');
+            debugPrint('   ?? For�ando regenera��o...');
           }
-          return ''; // Forçar regeneração
+          return ''; // For�ar regenera��o
         }
 
-        // 🚨 v7.6.22: VALIDAÇÃO CRÍTICA - Relacionamentos familiares
+        // ?? v7.6.22: VALIDA��O CR�TICA - Relacionamentos familiares
         final hasValidRelationships = _validateFamilyRelationships(
           filtered,
           blockNumber,
@@ -6038,42 +6041,42 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         if (!hasValidRelationships) {
           if (kDebugMode) {
             debugPrint(
-              '❌ BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!',
+              '? BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!',
             );
-            debugPrint('   🔄 Forçando regeneração...');
+            debugPrint('   ?? For�ando regenera��o...');
           }
-          return ''; // Forçar regeneração
+          return ''; // For�ar regenera��o
         }
 
-        // 🚨 v7.6.22: RASTREAMENTO - Detectar resolução de personagens
+        // ?? v7.6.22: RASTREAMENTO - Detectar resolu��o de personagens
         tracker.detectResolutionInText(filtered, blockNumber);
 
-        // 🚨 v7.6.23: VALIDAÇÃO CRÍTICA - Taxa de fechamento no bloco final
+        // ?? v7.6.23: VALIDA��O CR�TICA - Taxa de fechamento no bloco final
         if (blockNumber == totalBlocks) {
           final closureRate = tracker.getClosureRate();
-          final minimumClosureRate = 0.90; // 90% mínimo
+          final minimumClosureRate = 0.90; // 90% m�nimo
 
           if (closureRate < minimumClosureRate) {
             final unresolved = tracker.getUnresolvedCharacters();
             if (kDebugMode) {
               debugPrint(
-                '❌ BLOCO FINAL REJEITADO: Taxa de fechamento insuficiente!',
+                '? BLOCO FINAL REJEITADO: Taxa de fechamento insuficiente!',
               );
               debugPrint(
-                '   Taxa atual: ${(closureRate * 100).toStringAsFixed(1)}% (mínimo: ${(minimumClosureRate * 100).toInt()}%)',
+                '   Taxa atual: ${(closureRate * 100).toStringAsFixed(1)}% (m�nimo: ${(minimumClosureRate * 100).toInt()}%)',
               );
               debugPrint(
                 '   Personagens sem fechamento: ${unresolved.join(", ")}',
               );
               debugPrint(
-                '   🔄 Forçando regeneração com fechamentos obrigatórios...',
+                '   ?? For�ando regenera��o com fechamentos obrigat�rios...',
               );
             }
-            return ''; // Força regeneração do bloco final
+            return ''; // For�a regenera��o do bloco final
           } else {
             if (kDebugMode) {
               debugPrint(
-                '✅ BLOCO FINAL ACEITO: Taxa de fechamento suficiente!',
+                '? BLOCO FINAL ACEITO: Taxa de fechamento suficiente!',
               );
               debugPrint('   Taxa: ${(closureRate * 100).toStringAsFixed(1)}%');
             }
@@ -6081,36 +6084,36 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         }
       }
 
-      // 🔥 VALIDAÇÃO DE TAMANHO: Rejeitar blocos que ultrapassem muito o limite
-      // Aplicável a TODOS os idiomas, não só espanhol
+      // ?? VALIDA��O DE TAMANHO: Rejeitar blocos que ultrapassem muito o limite
+      // Aplic�vel a TODOS os idiomas, n�o s� espanhol
       if (filtered.isNotEmpty && languageMultiplier != 1.0) {
         final wordCount = _countWords(filtered);
-        // 🔧 CORREÇÃO: Comparar com adjustedTarget (COM multiplicador), não limitedNeeded (SEM multiplicador)
+        // ?? CORRE��O: Comparar com adjustedTarget (COM multiplicador), n�o limitedNeeded (SEM multiplicador)
         final overage = wordCount - adjustedTarget;
         final overagePercent = (overage / adjustedTarget) * 100;
 
-        // 🔥 FIX: Aumentado de 10% → 35% porque API Gemini frequentemente excede 20-30%
+        // ?? FIX: Aumentado de 10% ? 35% porque API Gemini frequentemente excede 20-30%
         // Rejeitar se ultrapassar mais de 35% do limite AJUSTADO
         if (overagePercent > 35) {
           if (kDebugMode) {
             debugPrint(
-              '❌ BLOCO $blockNumber REJEITADO (${c.language.toUpperCase()}):',
+              '? BLOCO $blockNumber REJEITADO (${c.language.toUpperCase()}):',
             );
             debugPrint('   Multiplicador do idioma: ${languageMultiplier}x');
             debugPrint(
-              '   Pedido: $adjustedTarget palavras (limite máximo ajustado)',
+              '   Pedido: $adjustedTarget palavras (limite m�ximo ajustado)',
             );
             debugPrint(
               '   Recebido: $wordCount palavras (+${overagePercent.toStringAsFixed(1)}%)',
             );
-            debugPrint('   🔄 Retornando vazio para forçar regeneração...');
+            debugPrint('   ?? Retornando vazio para for�ar regenera��o...');
           }
-          return ''; // Forçar regeneração
+          return ''; // For�ar regenera��o
         }
 
         if (kDebugMode && overage > 0) {
           debugPrint(
-            '✅ BLOCO $blockNumber ACEITO (${c.language.toUpperCase()}):',
+            '? BLOCO $blockNumber ACEITO (${c.language.toUpperCase()}):',
           );
           debugPrint(
             '   Multiplicador: ${languageMultiplier}x | Pedido: $adjustedTarget palavras',
@@ -6121,14 +6124,14 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         }
       }
 
-      // 🔥 LOGGING: Detectar quando bloco retorna vazio
+      // ?? LOGGING: Detectar quando bloco retorna vazio
       if (filtered.isEmpty) {
         if (kDebugMode) {
-          debugPrint('⚠️ BLOCO $blockNumber VAZIO DETECTADO!');
+          debugPrint('?? BLOCO $blockNumber VAZIO DETECTADO!');
           if (text.isEmpty) {
             debugPrint('   Causa: Resposta da API estava vazia');
           } else {
-            debugPrint('   Causa: Conteúdo filtrado como duplicado');
+            debugPrint('   Causa: Conte�do filtrado como duplicado');
             debugPrint('   Texto original: ${text.length} chars');
           }
         }
@@ -6137,36 +6140,36 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       return filtered.isNotEmpty ? '\n$filtered' : '';
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('❌ ERRO no bloco $blockNumber: $e');
+        debugPrint('? ERRO no bloco $blockNumber: $e');
       }
       return '';
     }
   }
 
-  // 🏗️ v7.6.64: _makeApiRequest migrado para LlmClient._makeRequest (SOLID)
+  // ??? v7.6.64: _makeApiRequest migrado para LlmClient._makeRequest (SOLID)
   // Todas as chamadas agora usam _llmClient.generateText()
 
-  // 🏗️ v7.6.65: DELEGAÇÃO para TextCleaner (Refatoração SOLID)
-  // Limpar texto de marcações indesejadas
+  // ??? v7.6.65: DELEGA��O para TextCleaner (Refatora��o SOLID)
+  // Limpar texto de marca��es indesejadas
   String _cleanGeneratedText(String text) {
     return TextCleaner.cleanGeneratedText(text);
   }
 
-  // 🆕 SISTEMA DE RASTREAMENTO DE NOMES - v4 (SOLUÇÃO TÉCNICA)
-  /// Extrai nomes próprios capitalizados do texto gerado
-  /// Retorna Set de nomes encontrados (não duplicados)
+  // ?? SISTEMA DE RASTREAMENTO DE NOMES - v4 (SOLU��O T�CNICA)
+  /// Extrai nomes pr�prios capitalizados do texto gerado
+  /// Retorna Set de nomes encontrados (n�o duplicados)
   Set<String> _extractNamesFromText(String text) {
     final names = <String>{};
 
-    // 🎯 v7.6.30: DETECTAR NOMES COMPOSTOS PRIMEIRO (Arthur Evans, Mary Jane, etc)
+    // ?? v7.6.30: DETECTAR NOMES COMPOSTOS PRIMEIRO (Arthur Evans, Mary Jane, etc)
     // Prioridade: 2-3 palavras capitalizadas consecutivas = nome completo
     final compoundNamePattern = RegExp(
-      r'\b([A-ZÀ-Ü][a-zà-ÿ]{1,14}(?:\s+[A-ZÀ-Ü][a-zà-ÿ]{1,14}){1,2})\b',
+      r'\b([A-Z�-�][a-z�-�]{1,14}(?:\s+[A-Z�-�][a-z�-�]{1,14}){1,2})\b',
       multiLine: true,
     );
 
     final compoundMatches = compoundNamePattern.allMatches(text);
-    final processedWords = <String>{}; // Rastrear palavras já processadas
+    final processedWords = <String>{}; // Rastrear palavras j� processadas
 
     for (final match in compoundMatches) {
       final fullName = match.group(1);
@@ -6179,13 +6182,13 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       }
     }
 
-    // 🎯 REGEX v7.6.17 CORRIGIDA: Detectar nomes simples EM QUALQUER POSIÇÃO
-    // - Palavra capitalizada (primeira letra maiúscula)
+    // ?? REGEX v7.6.17 CORRIGIDA: Detectar nomes simples EM QUALQUER POSI��O
+    // - Palavra capitalizada (primeira letra mai�scula)
     // - 2-15 letras
-    // - ✅ NOVO: Detecta no início de frases, parágrafos E no meio
+    // - ? NOVO: Detecta no in�cio de frases, par�grafos E no meio
     // - Filtro: Remove palavras comuns depois
     final namePattern = RegExp(
-      r'\b([A-ZÀ-Ü][a-zà-ÿ]{1,14})\b',
+      r'\b([A-Z�-�][a-z�-�]{1,14})\b',
       multiLine: true,
     );
 
@@ -6194,26 +6197,26 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     for (final match in matches) {
       final potentialName = match.group(1);
       if (potentialName != null) {
-        // 🆕 v7.6.30: Pular se já processado como parte de nome composto
+        // ?? v7.6.30: Pular se j� processado como parte de nome composto
         if (processedWords.contains(potentialName)) {
           continue;
         }
 
-        // 🔥 FILTRO EXPANDIDO: Remover palavras comuns que não são nomes
-        // Com a nova regra de capitalização, isso não deveria mais ser necessário,
-        // mas mantemos como backup caso o Gemini ignore a instrução
+        // ?? FILTRO EXPANDIDO: Remover palavras comuns que n�o s�o nomes
+        // Com a nova regra de capitaliza��o, isso n�o deveria mais ser necess�rio,
+        // mas mantemos como backup caso o Gemini ignore a instru��o
         final commonWords = {
           // Pronomes
           'He', 'She', 'It', 'They', 'We', 'You', 'I',
           // Possessivos
           'My', 'Your', 'His', 'Her', 'Their', 'Our', 'Its',
-          // Conjunções
+          // Conjun��es
           'And', 'But', 'Or', 'Because', 'So', 'Yet', 'For',
           // Artigos
           'The', 'A', 'An',
-          // Preposições comuns
+          // Preposi��es comuns
           'In', 'On', 'At', 'To', 'From', 'With', 'By', 'Of', 'As',
-          // Advérbios temporais
+          // Adv�rbios temporais
           'Then',
           'When',
           'After',
@@ -6223,7 +6226,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
           'Tomorrow',
           'Yesterday',
           'While', 'During', 'Since', 'Until', 'Although', 'Though',
-          // Advérbios de frequência
+          // Adv�rbios de frequ�ncia
           'Always', 'Never', 'Often', 'Sometimes', 'Usually', 'Rarely',
           'Maybe', 'Perhaps', 'Almost', 'Just', 'Only', 'Even', 'Still',
           // Quantificadores
@@ -6232,11 +6235,11 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
           // Outros comuns
           'This', 'That', 'These', 'Those', 'There', 'Here', 'Where',
           'What', 'Which', 'Who', 'Whose', 'Whom', 'Why', 'How',
-          // Verbos comuns no início de frase (menos comum, mas pode acontecer)
+          // Verbos comuns no in�cio de frase (menos comum, mas pode acontecer)
           'Was', 'Were', 'Is', 'Are', 'Am', 'Has', 'Have', 'Had',
           'Do', 'Does', 'Did', 'Will', 'Would', 'Could', 'Should',
           'Can', 'May', 'Might', 'Must',
-          // Dias da semana (por via das dúvidas)
+          // Dias da semana (por via das d�vidas)
           'Monday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
           'Mondays',
           'Tuesdays',
@@ -6249,13 +6252,13 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
           'January', 'February', 'March', 'April', 'June',
           'July', 'August', 'September', 'October', 'November', 'December',
           // Palavras portuguesas comuns (backup)
-          'Então',
+          'Ent�o',
           'Quando',
           'Depois',
           'Antes',
           'Agora',
           'Hoje',
-          'Amanhã',
+          'Amanh�',
           'Ontem',
           'Naquela',
           'Aquela',
@@ -6264,10 +6267,10 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
           'Enquanto',
           'Durante',
           'Embora',
-          'Porém', 'Portanto', 'Assim', 'Nunca', 'Sempre', 'Talvez', 'Quase',
-          'Apenas', 'Mesmo', 'Também', 'Muito', 'Pouco', 'Tanto', 'Onde',
+          'Por�m', 'Portanto', 'Assim', 'Nunca', 'Sempre', 'Talvez', 'Quase',
+          'Apenas', 'Mesmo', 'Tamb�m', 'Muito', 'Pouco', 'Tanto', 'Onde',
           'Como', 'Porque', 'Mas', 'Ou', 'Para', 'Com', 'Sem', 'Por',
-          // Termos técnicos/financeiros que podem aparecer capitalizados
+          // Termos t�cnicos/financeiros que podem aparecer capitalizados
           'Tax', 'Certificate', 'Bearer', 'Shares', 'Switzerland',
           'Consider', 'Tucked',
         };
@@ -6281,11 +6284,11 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     return names;
   }
 
-  /// 🆕 v7.6.30: Verifica se frase composta é nome real ou expressão comum
+  /// ?? v7.6.30: Verifica se frase composta � nome real ou express�o comum
   bool _isCommonPhrase(String phrase) {
     final phraseLower = phrase.toLowerCase();
 
-    // Frases comuns que não são nomes de pessoas
+    // Frases comuns que n�o s�o nomes de pessoas
     final commonPhrases = {
       'new york', 'los angeles', 'san francisco', 'las vegas',
       'united states', 'north carolina', 'south carolina',
@@ -6295,17 +6298,17 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
       'right now', 'just then', 'back then',
       'even though', 'as if', 'so much',
       'too much', 'very much', 'much more',
-      // Português
-      'são paulo', 'rio de', 'belo horizonte',
+      // Portugu�s
+      's�o paulo', 'rio de', 'belo horizonte',
       'bom dia', 'boa tarde', 'boa noite',
       'meu deus', 'nossa senhora', 'por favor',
-      'de repente', 'de novo', 'tão pouco',
+      'de repente', 'de novo', 't�o pouco',
     };
 
     return commonPhrases.contains(phraseLower);
   }
 
-  /// Valida se há nomes duplicados em papéis diferentes
+  /// Valida se h� nomes duplicados em pap�is diferentes
   /// Retorna lista de nomes duplicados encontrados
   List<String> _validateNamesInText(
     String newBlock,
@@ -6316,27 +6319,27 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
 
     for (final name in newNames) {
       if (previousNames.contains(name)) {
-        // 🚨 Nome já usado anteriormente!
+        // ?? Nome j� usado anteriormente!
         if (!duplicates.contains(name)) {
           duplicates.add(name);
         }
       }
     }
 
-    // 🔥 NOVA CAMADA: Validação case-insensitive para nomes em minúsculas
+    // ?? NOVA CAMADA: Valida��o case-insensitive para nomes em min�sculas
     // Detecta casos como "my lawyer, mark" onde "mark" deveria ser "Mark"
     final previousNamesLower = previousNames
         .map((n) => n.toLowerCase())
         .toSet();
 
-    // Buscar palavras em minúsculas que correspondem a nomes confirmados
+    // Buscar palavras em min�sculas que correspondem a nomes confirmados
     final lowercasePattern = RegExp(r'\b([a-z][a-z]{1,14})\b');
     final lowercaseMatches = lowercasePattern.allMatches(newBlock);
 
     for (final match in lowercaseMatches) {
       final word = match.group(1);
       if (word != null && previousNamesLower.contains(word.toLowerCase())) {
-        // Verificar se não é palavra comum (conjunção, preposição, etc)
+        // Verificar se n�o � palavra comum (conjun��o, preposi��o, etc)
         final commonLowerWords = {
           'the',
           'and',
@@ -6422,10 +6425,10 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
             duplicates.add(originalName);
             if (kDebugMode) {
               debugPrint(
-                '🚨 DUPLICAÇÃO DETECTADA (case-insensitive): "$word" → já existe como "$originalName"',
+                '?? DUPLICA��O DETECTADA (case-insensitive): "$word" ? j� existe como "$originalName"',
               );
               debugPrint(
-                '   ⚠️ Gemini escreveu nome em minúsculas, mas já foi usado capitalizado antes!',
+                '   ?? Gemini escreveu nome em min�sculas, mas j� foi usado capitalizado antes!',
               );
             }
           }
@@ -6442,44 +6445,44 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     _namesUsedInCurrentStory.addAll(names);
 
     if (kDebugMode && names.isNotEmpty) {
-      debugPrint('📝 Nomes extraídos do bloco: ${names.join(", ")}');
+      debugPrint('?? Nomes extra�dos do bloco: ${names.join(", ")}');
       debugPrint(
-        '📊 Total de nomes únicos na história: ${_namesUsedInCurrentStory.length}',
+        '?? Total de nomes �nicos na hist�ria: ${_namesUsedInCurrentStory.length}',
       );
     }
   }
 
-  /// Reseta o rastreador de nomes (início de nova história)
+  /// Reseta o rastreador de nomes (in�cio de nova hist�ria)
   void _resetNameTracker() {
     _namesUsedInCurrentStory.clear();
     if (kDebugMode) {
-      debugPrint('🔄 Rastreador de nomes resetado para nova história');
+      debugPrint('?? Rastreador de nomes resetado para nova hist�ria');
     }
   }
 
-  // Método público para uso nos providers - OTIMIZADO PARA CONTEXTO
-  // 🎯 v7.6.51: Suporte a qualityMode para Pipeline Modelo Único
-  // 🏗️ v7.6.64: Agora delega para LlmClient (SOLID)
+  // M�todo p�blico para uso nos providers - OTIMIZADO PARA CONTEXTO
+  // ?? v7.6.51: Suporte a qualityMode para Pipeline Modelo �nico
+  // ??? v7.6.64: Agora delega para LlmClient (SOLID)
   Future<String> generateTextWithApiKey({
     required String prompt,
     required String apiKey,
     String? model, // Se null, usa qualityMode
     String qualityMode =
-        'pro', // 🎯 NOVO: Para determinar modelo automaticamente
+        'pro', // ?? NOVO: Para determinar modelo automaticamente
     int maxTokens =
         16384, // AUMENTADO: Era 8192, agora 16384 para contextos mais ricos
   }) async {
-    // Determinar modelo: usar explícito se fornecido, senão calcular via qualityMode
+    // Determinar modelo: usar expl�cito se fornecido, sen�o calcular via qualityMode
     final effectiveModel = model ?? _getSelectedModel(qualityMode);
-    // CORREÇÃO: Reset de estado para evitar conflitos com geração de scripts
+    // CORRE��O: Reset de estado para evitar conflitos com gera��o de scripts
     if (_isCancelled) _isCancelled = false;
 
     return await _retryOnRateLimit(() async {
       try {
         debugPrint(
-          'GeminiService: Iniciando requisição para modelo $effectiveModel',
+          'GeminiService: Iniciando requisi��o para modelo $effectiveModel',
         );
-        // 🏗️ v7.6.64: Usar LlmClient.generateText (SOLID)
+        // ??? v7.6.64: Usar LlmClient.generateText (SOLID)
         final result = await _llmClient.generateText(
           apiKey: apiKey,
           model: effectiveModel,
@@ -6487,7 +6490,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
           maxTokens: maxTokens,
         );
 
-        // 🚀 v7.6.20: Registrar sucesso da API para Adaptive Delay Manager
+        // ?? v7.6.20: Registrar sucesso da API para Adaptive Delay Manager
         if (result.isNotEmpty) {
           _recordApiSuccess();
         }
@@ -6497,7 +6500,7 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         );
         debugPrint('GeminiService: Length: ${result.length}');
 
-        // Aplicar limpeza adicional se necessário
+        // Aplicar limpeza adicional se necess�rio
         final cleanResult = result.isNotEmpty
             ? _cleanGeneratedText(result)
             : '';
@@ -6509,12 +6512,12 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     });
   }
 
-  // ===================== SISTEMA ANTI-REPETIÇÃO =====================
-  // 🏗️ v7.6.65: Métodos delegados para DuplicationDetector (Refatoração SOLID)
+  // ===================== SISTEMA ANTI-REPETI��O =====================
+  // ??? v7.6.65: M�todos delegados para DuplicationDetector (Refatora��o SOLID)
 
-  // 🏗️ v7.6.65: DELEGAÇÃO para DuplicationDetector (Refatoração SOLID)
-  /// Verifica se novo bloco é muito similar aos blocos anteriores
-  /// Retorna true se similaridade > threshold (padrão 85%) OU se há duplicação literal
+  // ??? v7.6.65: DELEGA��O para DuplicationDetector (Refatora��o SOLID)
+  /// Verifica se novo bloco � muito similar aos blocos anteriores
+  /// Retorna true se similaridade > threshold (padr�o 85%) OU se h� duplica��o literal
   bool _isTooSimilar(
     String newBlock,
     String previousContent, {
@@ -6533,20 +6536,20 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
   int _countWords(String text) {
     if (text.isEmpty) return 0;
 
-    // Cache baseado no hash do texto (economiza memória vs armazenar string completa)
+    // Cache baseado no hash do texto (economiza mem�ria vs armazenar string completa)
     final hash = text.hashCode;
     if (_wordCountCache.containsKey(hash)) {
       return _wordCountCache[hash]!;
     }
 
-    // Otimização: trim() uma única vez
+    // Otimiza��o: trim() uma �nica vez
     final trimmed = text.trim();
     if (trimmed.isEmpty) return 0;
 
     // Conta palavras usando split otimizado
     final count = trimmed.split(RegExp(r'\s+')).length;
 
-    // Limita cache a 100 entradas (previne vazamento de memória)
+    // Limita cache a 100 entradas (previne vazamento de mem�ria)
     if (_wordCountCache.length > 100) {
       _wordCountCache.clear();
     }
@@ -6555,41 +6558,41 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     return count;
   }
 
-  // Método estático para compatibilidade
+  // M�todo est�tico para compatibilidade
   static void setApiTier(String tier) {
-    // Implementação vazia para compatibilidade
+    // Implementa��o vazia para compatibilidade
   }
 
   // =============================================================================
-  // 🆕 v7.6.52: WORLD STATE UPDATE - Atualização de Estado via IA (Modelo Único)
+  // ?? v7.6.52: WORLD STATE UPDATE - Atualiza��o de Estado via IA (Modelo �nico)
   // =============================================================================
-  // Arquitetura Pipeline de Modelo Único: O MESMO modelo selecionado pelo usuário
-  // é usado para gerar o texto E para atualizar o JSON de estado do mundo.
-  // Isso garante consistência de estilo e respeita a configuração do cliente.
+  // Arquitetura Pipeline de Modelo �nico: O MESMO modelo selecionado pelo usu�rio
+  // � usado para gerar o texto E para atualizar o JSON de estado do mundo.
+  // Isso garante consist�ncia de estilo e respeita a configura��o do cliente.
   // =============================================================================
 
-  /// 🌍 v7.6.52: Atualiza o World State após gerar um bloco
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 🏗️ v7.6.64: Métodos _updateWorldState e _generateCompressedSynopsis
+  /// ?? v7.6.52: Atualiza o World State ap�s gerar um bloco
+  // ?????????????????????????????????????????????????????????????????????????????
+  // ??? v7.6.64: M�todos _updateWorldState e _generateCompressedSynopsis
   // movidos para WorldStateManager (lib/data/services/scripting/)
-  // ===================== MÉTODOS CTA E FERRAMENTAS AUXILIARES =====================
+  // ===================== M�TODOS CTA E FERRAMENTAS AUXILIARES =====================
 
-  // 🎯 v7.6.51: Adicionado qualityMode para Pipeline Modelo Único
+  // ?? v7.6.51: Adicionado qualityMode para Pipeline Modelo �nico
   Future<Map<String, String>> generateCtasForScript({
     required String scriptContent,
     required String apiKey,
     required List<String> ctaTypes,
     String? customTheme,
-    String language = 'Português',
+    String language = 'Portugu�s',
     String perspective =
-        'terceira_pessoa', // PERSPECTIVA CONFIGURADA PELO USUÁRIO
-    String qualityMode = 'pro', // 🎯 NOVO: Para Pipeline Modelo Único
+        'terceira_pessoa', // PERSPECTIVA CONFIGURADA PELO USU�RIO
+    String qualityMode = 'pro', // ?? NOVO: Para Pipeline Modelo �nico
   }) async {
     try {
-      // Usar idioma e perspectiva configurados pelo usuário (não detectar)
+      // Usar idioma e perspectiva configurados pelo usu�rio (n�o detectar)
       final finalLanguage = language;
 
-      // Analisar contexto da história (Flash para tarefa simples)
+      // Analisar contexto da hist�ria (Flash para tarefa simples)
       final scriptContext = await _analyzeScriptContext(
         scriptContent,
         apiKey,
@@ -6597,14 +6600,14 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         'flash', // v7.6.62: Forcar Flash para analise simples
       );
 
-      // Gerar CTAs contextualizados COM A PERSPECTIVA CONFIGURADA
-      final prompt = _buildAdvancedCtaPrompt(
+      // ??? v7.6.66: Usar CtaGenerator para construir prompt
+      final prompt = CtaGenerator.buildAdvancedCtaPrompt(
         scriptContent,
         ctaTypes,
         customTheme,
         finalLanguage,
         scriptContext,
-        perspective, // USAR PERSPECTIVA DO CONFIG
+        perspective,
       );
 
       final result = await generateTextWithApiKey(
@@ -6619,39 +6622,36 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
         throw Exception('Resposta vazia do Gemini');
       }
 
-      // 🔍 Passar scriptContent para validação de consistência
-      return _parseCtaResponseWithValidation(result, ctaTypes, scriptContent);
+      // ??? v7.6.66: Usar CtaGenerator para parse
+      return CtaGenerator.parseCtaResponseWithValidation(
+        result,
+        ctaTypes,
+        scriptContent,
+      );
     } catch (e) {
       if (kDebugMode) debugPrint('Erro generateCtasForScript: $e');
       return {};
     }
   }
 
-  // 🎯 v7.6.51: Adicionado qualityMode para Pipeline Modelo Único
+  // ?? v7.6.51: Adicionado qualityMode para Pipeline Modelo �nico
   Future<String> _analyzeScriptContext(
     String scriptContent,
     String apiKey,
     String language,
-    String qualityMode, // 🎯 NOVO: Para usar modelo selecionado
+    String qualityMode,
   ) async {
-    final prompt =
-        '''
-Analise rapidamente este roteiro em $language e identifique:
-1. Tema principal (1-2 palavras)
-2. Público-alvo (ex: jovens, adultos, famílias)
-3. Tom (ex: motivacional, informativo, dramático)
-
-Responda em formato simples: "Tema: X, Público: Y, Tom: Z"
-
-ROTEIRO:
-${scriptContent.substring(0, scriptContent.length > 1000 ? 1000 : scriptContent.length)}
-''';
+    // ??? v7.6.66: Usar CtaGenerator para construir prompt de an�lise
+    final prompt = CtaGenerator.buildContextAnalysisPrompt(
+      scriptContent,
+      language,
+    );
 
     try {
       final result = await generateTextWithApiKey(
         prompt: prompt,
         apiKey: apiKey,
-        qualityMode: qualityMode, // 🎯 Usar modelo selecionado pelo usuário
+        qualityMode: qualityMode,
         maxTokens: 100,
       );
       return result.trim();
@@ -6660,594 +6660,9 @@ ${scriptContent.substring(0, scriptContent.length > 1000 ? 1000 : scriptContent.
     }
   }
 
-  String _buildAdvancedCtaPrompt(
-    String scriptContent,
-    List<String> ctaTypes,
-    String? customTheme,
-    String language,
-    String scriptContext,
-    String perspective, // PERSPECTIVA CONFIGURADA PELO USUÁRIO
-  ) {
-    final ctaDescriptions = _getCtaTypeDescriptions(language);
-    final requestedTypes = ctaTypes
-        .map(
-          (type) =>
-              '"$type": ${ctaDescriptions[type] ?? "Call-to-action personalizado"}',
-        )
-        .join('\n');
-
-    // ⚡ USAR PERSPECTIVA CONFIGURADA PELO USUÁRIO (não detectar)
-    final isPrimeiraPessoa = perspective.contains('primeira_pessoa');
-
-    if (kDebugMode) {
-      debugPrint('🎯 Perspectiva Configurada pelo Usuário: $perspective');
-      debugPrint(
-        '   → ${isPrimeiraPessoa ? "PRIMEIRA PESSOA" : "TERCEIRA PESSOA"}',
-      );
-    }
-
-    final perspectiveInstruction = isPrimeiraPessoa
-        ? '''
-╔════════════════════════════════════════════════════════════════╗
-║ ⚠️ OBRIGATÓRIO: PRIMEIRA PESSOA - NARRADOR = PROTAGONISTA     ║
-╚════════════════════════════════════════════════════════════════╝
-
-O NARRADOR É O PROTAGONISTA CONTANDO SUA PRÓPRIA HISTÓRIA.
-
-🚨 REGRA ABSOLUTA: CTAs devem falar como se o PERSONAGEM estivesse pedindo apoio.
-
-✅ CAPITALIZAÇÃO CORRETA:
-- "eu", "meu/minha" (MINÚSCULAS no meio da frase!)
-- "Eu" (Maiúscula APENAS no início da frase)
-- ❌ ERRADO: "EU pensei", "MEU filho", "MINHA casa"
-- ✅ CERTO: "Eu pensei", "meu filho", "minha casa"
-
-✅ PALAVRAS OBRIGATÓRIAS:
-- "eu", "meu/minha", "minha história", "meu relato", "comigo", "me"
-
-✅ EXEMPLOS CORRETOS (Primeira Pessoa):
-• CTA INÍCIO: "Eu estava sem-teto e herdei 47 milhões. Mas a fortuna veio com um diário de vingança. Inscreva-se e deixe seu like para ver onde isso me levou."
-• CTA INÍCIO: "Um estranho na rua mudou minha vida em um segundo. Quer saber o que ele me ofereceu? Inscreva-se e deixe seu like!"
-• CTA MEIO: "O que você faria no meu lugar? Descobri que meu tio foi traído pelo próprio irmão. Comente o que você acha e compartilhe."
-• CTA FINAL: "Minha jornada da rua à redenção acabou. O que você achou dessa reviravolta? Inscreva-se para mais histórias intensas como esta."
-
-❌ PROIBIDO (quebra a perspectiva):
-• Falar sobre "o protagonista", "ele/ela", "a história dele/dela"
-• Usar "esta história" → Use "minha história"
-• Usar nomes próprios em 3ª pessoa → Use "eu/meu"
-• Capitalizar tudo: "EU/MEU/MINHA" → Use "eu/meu/minha"
-• 🚨 NUNCA use "Se essa reviravolta ME atingiu" → O narrador ESTÁ vivendo a história, não assistindo!
-• 🚨 NUNCA use "Se isso TE impactou..." sem contexto específico → Muito genérico!
-'''
-        : '''
-╔════════════════════════════════════════════════════════════════╗
-║ ⚠️ OBRIGATÓRIO: TERCEIRA PESSOA - NARRADOR EXTERNO ENVOLVENTE ║
-╚════════════════════════════════════════════════════════════════╝
-
-O NARRADOR É UM OBSERVADOR EXTERNO contando a história de outras pessoas.
-
-🚨 REGRA ABSOLUTA: CTAs devem falar dos PERSONAGENS de forma externa, MAS mantendo a INTENSIDADE EMOCIONAL do roteiro!
-
-✅ CAPITALIZAÇÃO CORRETA:
-- "esta/esse/essa" (minúsculas no meio da frase!)
-- "Esta/Este/Essa" (Maiúscula APENAS no início da frase)
-- Nomes próprios sempre com inicial maiúscula: "Kátia", "William"
-
-✅ PALAVRAS OBRIGATÓRIAS:
-- Nomes dos personagens (Kátia, William, etc.)
-- "ela/dele", "esta história"
-- Tom DRAMÁTICO, não jornalístico!
-
-✅ EXEMPLOS CORRETOS (Terceira Pessoa ENVOLVENTE):
-• "Kátia descobriu que seu próprio filho transformou sua casa em uma arma. Se esta traição te chocou, inscreva-se e deixe seu like"
-• "William escondeu segredos nas paredes por anos. O que você faria no lugar de Kátia? Comente o que está achando"
-• "A história de Kátia chegou ao fim com um desfecho poderoso. O que você achou? Inscreva-se para mais histórias como esta"
-• "Esta família foi destroçada pela vingança. Compartilhe com quem entende dor de verdade"
-
-❌ EXEMPLOS RUINS (muito formais/distantes):
-• "A jornada de [personagem] revelou..." → Parece documentário chato
-• "Narrativas que exploram..." → Parece crítica literária
-• "Compartilhe esta história com quem aprecia..." → Muito genérico
-
-❌ PROIBIDO (quebra a perspectiva):
-• Usar "eu", "meu/minha", "comigo" → Isso é primeira pessoa!
-• "Se minha história te tocou" → Use "Se a história de [personagem] te tocou"
-• "O que você faria no meu lugar?" → Use "no lugar de [personagem]"
-
-🔥 REGRA DE OURO: Use DETALHES ESPECÍFICOS DO ROTEIRO nos CTAs!
-- Não diga "segredo chocante" → Diga "dispositivo de metal corrosivo nas paredes"
-- Não diga "decisão difícil" → Diga "expulsar o próprio filho de casa"
-- Não diga "jornada emocional" → Diga "descobrir que seu filho é um vingador"
-''';
-
-    // 🔥 CORREÇÃO CRÍTICA: Enviar INÍCIO + FINAL do roteiro
-    // Para que CTAs de início usem detalhes iniciais E CTAs finais reflitam o desfecho real
-    final scriptLength = scriptContent.length;
-    final initialChunk = scriptContent.substring(
-      0,
-      scriptLength > 2000 ? 2000 : scriptLength,
-    );
-
-    // Extrair últimos 1500 caracteres (para CTA final analisar o desfecho)
-    final finalChunk = scriptLength > 1500
-        ? scriptContent.substring(scriptLength - 1500)
-        : ''; // Se roteiro for muito curto, final chunk fica vazio
-
-    return '''
-🚨🚨🚨 REGRA #0: IDIOMA OBRIGATÓRIO - $language 🚨🚨🚨
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ ERRO CRÍTICO REAL DETECTADO EM GERAÇÕES ANTERIORES:
-
-❌ ROTEIRO em Français (French), mas CTAs em Português (PT-BR):
-   Roteiro: "ma femme m'a quitté pour son patron..."
-   CTA ERRADO: "De um professor humilhado a uma fortuna que apaga o passado..."
-   → IDIOMA INCONSISTENTE! CTA REJEITADO! ❌
-
-✅ REGRA ABSOLUTA DE IDIOMA:
-   • Se roteiro está em $language → TODOS os CTAs em $language
-   • ZERO palavras em outro idioma
-   • ZERO mistura de idiomas
-   • 100% pureza linguística!
-
-🚨 VALIDAÇÃO ANTES DE GERAR:
-   1. ❓ "O roteiro está em $language?"
-   2. ❓ "Vou escrever os CTAs em $language?"
-   3. ❓ "Há alguma palavra em outro idioma nos meus CTAs?"
-   → Se SIM na pergunta 3 = PARE! Reescreva em $language!
-
-⚠️ CUIDADO ESPECIAL - ERROS COMUNS POR IDIOMA:
-   • English → Não misture: português ("mas", "quando"), espanhol ("pero")
-   • Français → Não misture: português ("mas", "de", "para"), inglês ("but", "from")
-   • Español → Não misture: português ("mas", "quando"), inglês ("but", "when")
-   • Português → Não misture: inglês ("but", "when"), espanhol ("pero", "cuando")
-
-🔴 SE HOUVER UMA ÚNICA PALAVRA EM OUTRO IDIOMA, TODOS OS CTAs SERÃO REJEITADOS!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-⚠️⚠️⚠️ ATENÇÃO CRÍTICA: PERSPECTIVA NARRATIVA É A REGRA #1 ⚠️⚠️⚠️
-
-$perspectiveInstruction
-
-═══════════════════════════════════════════════════════════════
-
-Gere CTAs (calls-to-action) personalizados em $language para este roteiro.
-
-CONTEXTO DO ROTEIRO: $scriptContext
-TEMA PERSONALIZADO: ${customTheme ?? 'Não especificado'}
-
-ROTEIRO - TRECHO INICIAL (para CTAs de início/meio):
-$initialChunk
-
-${finalChunk.isNotEmpty ? '''
-═══════════════════════════════════════════════════════════════
-ROTEIRO - TRECHO FINAL (para CTA de conclusão):
-$finalChunk
-═══════════════════════════════════════════════════════════════
-''' : ''}
-═══════════════════════════════════════════════════════════════
-🎯 PROPÓSITO ESPECÍFICO DE CADA TIPO DE CTA:
-═══════════════════════════════════════════════════════════════
-
-📌 "subscription" (CTA DE INÍCIO):
-   • Objetivo: Pedir INSCRIÇÃO no canal + LIKE
-   • Momento: Logo no INÍCIO da história, após o gancho inicial
-   
-   🚨 ERRO COMUM A EVITAR:
-   ❌ "Se essa reviravolta ME atingiu..." → Narrador falando de si mesmo em 3ª pessoa (ERRADO!)
-   ❌ "Se essa reviravolta TE atingiu..." → Muito genérico, sem gancho específico
-   ❌ "No meu aniversário, meu marido levou tudo..." → NÃO REPITA A PRIMEIRA FRASE DO ROTEIRO! (ERRO FATAL!)
-   
-   🚨 REGRA CRÍTICA - EXTRAIR DETALHES DO ROTEIRO:
-   ❌ PROIBIDO copiar ou parafrasear a primeira frase do roteiro
-   ❌ PROIBIDO usar frases genéricas desconectadas do conteúdo
-   ✅ OBRIGATÓRIO ler os primeiros 3-5 parágrafos e extrair:
-      • Objetos específicos mencionados (bolo, tapete persa, envelope, carro, etc.)
-      • Ações concretas (ele saiu, ela encontrou, queimaram, esconderam)
-      • Nomes de personagens secundários que aparecem logo no início
-      • Locações específicas (sala vazia, escritório, rua X)
-   ✅ Use ESSES detalhes para criar o gancho (não invente detalhes!)
-   
-   💡 MÉTODO CORRETO - ANÁLISE DO INÍCIO DO ROTEIRO:
-   1. Leia os primeiros 3-5 parágrafos do roteiro
-   2. Liste mentalmente: Quais objetos? Quais ações? Quais nomes?
-   3. Escolha 2-3 detalhes MARCANTES (não a primeira frase)
-   4. Monte o CTA usando ESSES detalhes específicos
-   
-   • Exemplo ERRADO (genérico, desconectado):
-     ❌ "Minha vida virou do avesso. Inscreva-se para ver o que aconteceu."
-   
-   • Exemplo CERTO (detalhes reais do roteiro):
-     ✅ "Eles levaram tudo, até o tapete persa que herdei. Mas esqueceram meu celular com a gravação. Inscreva-se e deixe seu like para ver minha vingança."
-     ✅ "Um bolo de 45 velinhas intacto, uma casa vazia e um envelope pardo. Inscreva-se para descobrir como transformei essa traição em justiça."
-   
-   ✅ ESTRUTURA CORRETA:
-   [2-3 detalhes específicos DO ROTEIRO] + [Promessa de reviravolta/vingança] + "Inscreva-se e deixe seu like"
-   
-   • Exemplo (1ª pessoa): "Encontrei documentos escondidos no sótão e uma chave que não reconheci. Inscreva-se e deixe seu like para descobrir o que eles revelaram."
-   • Exemplo (3ª pessoa): "Kátia descobriu um dispositivo nos canos instalado pelo próprio filho. Inscreva-se para ver sua vingança."
-
-📌 "engagement" (CTA DE MEIO):
-   • Objetivo: Pedir COMENTÁRIOS sobre o que estão achando + COMPARTILHAMENTOS
-   • Momento: No MEIO da história, após uma reviravolta importante
-   • Estrutura: Pergunta direta sobre opinião + "comente o que está achando" + "compartilhe"
-   • Exemplo (1ª pessoa): "O que você faria no meu lugar? Comente o que está achando dessa situação e compartilhe com quem entenderia."
-   • Exemplo (3ª pessoa): "O que você acha da decisão de Kátia? Comente o que está achando e compartilhe com amigos."
-
-📌 "final" (CTA DE CONCLUSÃO):
-   • Objetivo: CTA CONCLUSIVO - história acabou, pedir FEEDBACK + INSCRIÇÃO para mais histórias
-   • Momento: No FINAL da história, após a resolução
-   
-   🚨🚨🚨 ERRO CRÍTICO QUE VOCÊ COMETE SEMPRE:
-   ❌ "Levaram tudo... O que você achou dessa frieza?" → Fala como se protagonista ainda estivesse PERDENDO!
-   ❌ "Eles me destruíram... Inscreva-se..." → Ignora que a história JÁ TEVE RESOLUÇÃO!
-   ❌ Focar na TRAGÉDIA INICIAL em vez do DESFECHO REAL!
-   
-   🚨 REGRA ABSOLUTA - CTA DEVE REFLETIR O FINAL REAL:
-   ✅ OBRIGATÓRIO usar o TRECHO FINAL DO ROTEIRO fornecido acima
-   ✅ Identificar o DESFECHO REAL no trecho final:
-      • Protagonista venceu? → CTA de VITÓRIA
-      • Protagonista perdeu? → CTA de DERROTA
-      • Final ambíguo? → CTA de REFLEXÃO
-   ✅ Mencionar COMO a história terminou (prisão do vilão, vingança concluída, fuga, morte, reconciliação)
-   
-   💡 MÉTODO CORRETO - ANÁLISE DO TRECHO FINAL:
-   1. Leia o TRECHO FINAL DO ROTEIRO fornecido acima
-   2. Pergunte: "Como a protagonista está AGORA?"
-      • Vencedora? → "Consegui fazer justiça"
-      • Destruída? → "Perdi tudo"
-      • Reconstruindo? → "Estou começando de novo"
-   3. O CTA deve COMBINAR com esse estado final!
-   
-   ❌ EXEMPLO ERRADO (final de vitória com CTA de derrota):
-   Final do roteiro: "Marcos foi preso. Recuperei meu dinheiro. Era justiça."
-   CTA ERRADO: "Levaram tudo e me deixaram sem nada. O que você achou?" ❌
-   
-   ✅ EXEMPLO CERTO (final de vitória com CTA de vitória):
-   Final do roteiro: "Marcos foi preso. Recuperei meu dinheiro. Era justiça."
-   CTA CERTO: "Da casa vazia à prisão dele. Recuperei tudo e o coloquei atrás das grades. O que você achou da minha vingança? Inscreva-se para mais histórias de justiça como esta." ✅
-   
-   ✅ ESTRUTURA CORRETA:
-   [Resumo do DESFECHO REAL] + [Mencionar resultado final] + "O que você achou?" + "Inscreva-se para mais histórias"
-   
-   • Exemplo (final de vitória - 1ª pessoa): 
-     ✅ "De vítima a vencedora. Ele está preso, eu recuperei o que era meu. O que você achou dessa virada? Inscreva-se para mais histórias de vingança como esta."
-   
-   • Exemplo (final de derrota - 1ª pessoa):
-     ✅ "Perdi tudo, mas ganhei minha liberdade. Às vezes, recomeçar é a única vitória possível. O que você achou? Inscreva-se para mais histórias intensas."
-   
-   • Exemplo (final ambíguo - 3ª pessoa):
-     ✅ "Kátia expulsou o filho, mas a casa ficou vazia. Será que valeu a pena? O que você acha? Inscreva-se para mais dilemas como este."
-   
-   🔥 CHECKLIST DO CTA FINAL:
-   □ Li o TRECHO FINAL DO ROTEIRO fornecido acima?
-   □ Identifiquei se protagonista venceu/perdeu/ficou no meio-termo?
-   □ Meu CTA reflete esse desfecho REAL?
-   □ Mencionei o resultado concreto (prisão, vitória, perda, fuga)?
-   □ Não estou falando da tragédia inicial quando a história já teve resolução?
-
-═══════════════════════════════════════════════════════════════
-
-GERE OS SEGUINTES TIPOS DE CTA:
-$requestedTypes
-
-═══════════════════════════════════════════════════════════════
-
-FORMATO DE RESPOSTA (JSON):
-{
-  "subscription": "texto do CTA aqui",
-  "engagement": "texto do CTA aqui",
-  "pre_conclusion": "texto do CTA aqui",
-  "final": "texto do CTA aqui"
-}
-
-═══════════════════════════════════════════════════════════════
-
-REQUISITOS OBRIGATÓRIOS:
-1. ⚠️ PERSPECTIVA NARRATIVA É PRIORIDADE #1 - RELEIA AS INSTRUÇÕES NO TOPO AGORA!
-2. ⚠️ CAPITALIZAÇÃO CORRETA - "eu/meu/minha" em MINÚSCULAS (não "EU/MEU/MINHA")!
-3. 🎯 CADA CTA TEM UM PROPÓSITO ESPECÍFICO - Releia a seção "PROPÓSITO ESPECÍFICO" acima!
-   • subscription = inscrição + like
-   • engagement = comentários + compartilhamento
-   • final = feedback + inscrição para mais histórias
-4. 🔥 CTA DE INÍCIO: Extraia detalhes REAIS do TRECHO INICIAL fornecido (objetos, ações, nomes)
-5. 🔥 CTA FINAL: Use o TRECHO FINAL fornecido e reflita o DESFECHO REAL (vitória/derrota/recomeço)
-6. 🚫 PROIBIDO usar palavras genéricas: "jornada", "narrativa", "explorar", "revelar"
-7. ✅ OBRIGATÓRIO mencionar ELEMENTOS CHOCANTES: nomes, objetos, ações específicas
-8. Cada CTA: 25-45 palavras (DIRETO E IMPACTANTE, com espaço para CTAs completos)
-9. Linguagem VISCERAL e DRAMÁTICA em $language (não formal/acadêmica)
-10. Tom emocional IGUAL ao do roteiro (se é intenso, CTA é intenso; se é suave, CTA é suave)
-11. Se protagonista tomou DECISÃO EXTREMA (expulsar filho, confrontar vilão), mencione isso!
-12. NÃO prometa eventos futuros que já aconteceram no roteiro
-13. Retorne JSON válido apenas
-
-⚠️⚠️⚠️ CHECKLIST FINAL - RESPONDA ANTES DE GERAR: ⚠️⚠️⚠️
-□ 🚨 TODOS os CTAs estão 100% em $language (ZERO palavras em outro idioma)?
-□ Reli as instruções de PERSPECTIVA NARRATIVA no topo?
-□ ${isPrimeiraPessoa ? "Vou usar 'eu/meu/minha' em MINÚSCULAS (não EU/MEU/MINHA)?" : "Vou usar nomes próprios/ela/ele/esta história?"}
-□ Cada CTA segue seu PROPÓSITO ESPECÍFICO?
-  • subscription = inscrição + like?
-  • engagement = comentários + compartilhamento?
-  • final = feedback + inscrição para mais histórias?
-□ No CTA DE INÍCIO: Extraí detalhes REAIS do TRECHO INICIAL fornecido (objetos, ações, nomes)?
-□ No CTA DE INÍCIO: NÃO repeti/parafraseei a primeira frase do roteiro?
-□ No CTA FINAL: Li o TRECHO FINAL DO ROTEIRO fornecido e identifiquei o DESFECHO REAL?
-□ No CTA FINAL: Meu CTA reflete se protagonista venceu/perdeu/está recomeçando?
-□ Mencionei DETALHES ESPECÍFICOS do roteiro (nomes, objetos-chave, ações concretas)?
-□ EVITEI palavras genéricas ("jornada", "narrativa", "revelar", "explorar")?
-□ O tom do CTA está TÃO INTENSO quanto o roteiro?
-□ Formato JSON está correto?
-
-🚨 ERROS FATAIS A EVITAR NO CTA DE INÍCIO:
-❌ "Se essa reviravolta ME atingiu, inscreva-se..." → Narrador falando de si em 3ª pessoa!
-❌ "Se essa história TE impactou..." → Muito genérico, sem gancho!
-❌ "No meu aniversário, meu marido levou tudo..." → NUNCA REPITA A PRIMEIRA FRASE DO ROTEIRO! (ERRO CRÍTICO!)
-❌ Copiar ou parafrasear a frase de abertura do roteiro → Use OUTROS detalhes específicos!
-❌ Frases genéricas desconectadas do texto → Leia os primeiros parágrafos e extraia objetos/ações REAIS!
-✅ CORRETO: Extrair 2-3 detalhes específicos dos primeiros parágrafos + promessa de reviravolta
-✅ Exemplo: "Eles levaram até o tapete persa. Mas esqueceram meu celular com a gravação. Inscreva-se para ver minha vingança."
-✅ Exemplo: "45 velinhas, um bolo intacto e documentos escondidos no sótão. Inscreva-se para descobrir o que eles revelaram."
-
-🚨 ERROS FATAIS A EVITAR NO CTA FINAL:
-❌ "Levaram tudo... O que você achou dessa frieza?" → Fala do início quando história já teve resolução!
-❌ Ignorar o desfecho real e focar na tragédia inicial → Use o TRECHO FINAL fornecido!
-❌ CTA de vítima quando protagonista VENCEU → Desonesto com a história!
-❌ CTA de vitória quando protagonista PERDEU → Também desonesto!
-
-🔴 ERRO REAL DETECTADO - AMBIGUIDADE FATAL:
-❌ "Da caixa de papelão aos portões da prisão" → Quem foi preso? Protagonista ou vilão?
-   • Se VILÃO foi preso: "Da caixa de papelão ao império - e ele atrás das grades"
-   • Se PROTAGONISTA foi preso: "Da caixa de papelão à prisão - minha vingança falhou"
-   
-❌ "Do fracasso à redenção" → Redenção de quem? Protagonista ou antagonista?
-   • SEMPRE especifique: "Do fracasso à MINHA redenção" ou "Do fracasso à redenção DELE"
-
-⚠️ REGRA ABSOLUTA DE CLAREZA:
-   • CTAs finais DEVEM especificar quem sofreu/venceu
-   • Use "EU" (1ª pessoa) ou NOME/ELE/ELA (3ª pessoa)
-   • Nunca deixe ambíguo quem foi preso/derrotado/venceu
-   
-✅ CORRETO: Resumir o DESFECHO REAL do TRECHO FINAL (prisão, vingança concluída, perda, recomeço)
-✅ Exemplo (vitória): "Da casa vazia à prisão DELE. Recuperei tudo e o coloquei atrás das grades. O que você achou?"
-✅ Exemplo (derrota): "Perdi tudo, mas ganhei liberdade. Recomeçar é a única vitória. O que você achou?"
-✅ Exemplo (vitória 3ª pessoa): "Robert passou de mendigo a milionário - e Marcus está na cadeia. O que você achou?"
-
-🚨 SE VOCÊ USAR LINGUAGEM GENÉRICA, CAPITALIZAÇÃO ERRADA, QUEBRAR A PERSPECTIVA OU MISTURAR IDIOMAS, O CTA SERÁ REJEITADO! 🚨
-
-🔴🔴🔴 VALIDAÇÃO FINAL DE IDIOMA ANTES DE ENVIAR: 🔴🔴🔴
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ANTES DE ENVIAR O JSON, RELEIA CADA CTA E PERGUNTE:
-❓ "Este CTA está 100% em $language?"
-❓ "Há alguma palavra em português/inglês/espanhol/francês (outro idioma)?"
-❓ "Se o roteiro é em français, meus CTAs estão em français?"
-❓ "Se o roteiro é em english, meus CTAs estão em english?"
-
-SE VOCÊ ENCONTRAR UMA PALAVRA EM IDIOMA ERRADO:
-🛑 PARE AGORA!
-🛑 REESCREVA O CTA INTEIRO EM $language!
-🛑 NÃO ENVIE COM IDIOMA MISTURADO!
-
-⚠️ EXEMPLOS DE ERROS FATAIS:
-❌ Roteiro em French, CTA: "De um professor humilhado..." ← Português! ERRO!
-❌ Roteiro em Spanish, CTA: "But when everything changed..." ← Inglês! ERRO!
-❌ Roteiro em English, CTA: "mas quando tudo mudou..." ← Português! ERRO!
-
-✅ VALIDAÇÃO PASSOU SE:
-• Cada CTA usa APENAS palavras de $language
-• ZERO palavras de outro idioma
-• Linguagem 100% coerente com o roteiro
-
-🚨 LEMBRE-SE: Um único erro de idioma invalida TODOS os CTAs! 🚨
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-EXEMPLOS DE DETALHES ESPECÍFICOS (use este nível de concretude):
-❌ RUIM: "A protagonista descobriu um segredo"
-✅ BOM: "Kátia encontrou um dispositivo corrosivo escondido nos canos por William"
-
-❌ RUIM: "Uma decisão difícil foi tomada"
-✅ BOM: "Kátia expulsou o próprio filho de casa após descobrir sua vingança"
-
-❌ RUIM: "Se esta história te impactou"
-✅ BOM: "Se a traição de William dentro das paredes te chocou"
-''';
-  }
-
-  Map<String, String> _getCtaTypeDescriptions(String language) {
-    return {
-      'subscription': 'CTA para inscrição no canal',
-      'engagement': 'CTA para interação (like, comentário)',
-      'pre_conclusion': 'CTA antes da conclusão',
-      'final': 'CTA de fechamento',
-    };
-  }
-
-  // 🏗️ v7.6.64: _parseCtaResponse removido (não era usado diretamente)
-
-  /// Parse CTA response with script content for validation
-  Map<String, String> _parseCtaResponseWithValidation(
-    String response,
-    List<String> ctaTypes,
-    String scriptContent,
-  ) {
-    try {
-      if (kDebugMode) {
-        debugPrint(
-          '🎯 CTA Response original: ${response.substring(0, response.length > 200 ? 200 : response.length)}...',
-        );
-      }
-
-      // Remover markdown code blocks (```json ... ```)
-      String cleanedResponse = response;
-      cleanedResponse = cleanedResponse.replaceAll(RegExp(r'```json\s*'), '');
-      cleanedResponse = cleanedResponse.replaceAll(RegExp(r'```\s*'), '');
-      cleanedResponse = cleanedResponse.trim();
-
-      if (kDebugMode) {
-        debugPrint(
-          '🎯 CTA Response limpa: ${cleanedResponse.substring(0, cleanedResponse.length > 200 ? 200 : cleanedResponse.length)}...',
-        );
-      }
-
-      // Tentar extrair JSON da resposta
-      final jsonStart = cleanedResponse.indexOf('{');
-      final jsonEnd = cleanedResponse.lastIndexOf('}');
-
-      if (jsonStart == -1 || jsonEnd == -1) {
-        throw Exception('Formato JSON não encontrado na resposta');
-      }
-
-      final jsonString = cleanedResponse.substring(jsonStart, jsonEnd + 1);
-      if (kDebugMode) {
-        debugPrint('🎯 JSON extraído: ${jsonString.length} chars');
-      }
-
-      final Map<String, String> ctas = {};
-      for (final type in ctaTypes) {
-        // Parse multiline: permite quebras de linha e espaços dentro do valor
-        // Captura tudo entre as aspas, incluindo quebras de linha
-        final pattern = '"$type"\\s*:\\s*"([^"]*(?:\\\\.[^"]*)*)"';
-        final regex = RegExp(pattern, multiLine: true, dotAll: true);
-        final match = regex.firstMatch(jsonString);
-        if (match != null) {
-          String ctaText = match.group(1) ?? '';
-          // Limpar quebras de linha escapadas e espaços extras
-          ctaText = ctaText.replaceAll(RegExp(r'\s+'), ' ').trim();
-
-          // 🔍 VALIDAÇÃO: Se for CTA final e temos conteúdo do roteiro, validar consistência
-          if (type == 'final' && scriptContent.isNotEmpty) {
-            final inconsistency = _validateFinalCtaConsistency(
-              ctaText,
-              scriptContent,
-            );
-            if (inconsistency != null) {
-              if (kDebugMode) {
-                debugPrint(
-                  '⚠️ CTA final inconsistente detectado: $inconsistency',
-                );
-                debugPrint('   Removendo frases problemáticas...');
-              }
-              // Remover frases específicas problemáticas automaticamente
-              ctaText = ctaText.replaceAll(
-                RegExp(
-                  'He.s behind bars[^.]*\\.|Ele está preso[^.]*\\.',
-                  caseSensitive: false,
-                ),
-                '',
-              );
-              ctaText = ctaText.replaceAll(
-                RegExp(
-                  'behind bars[^,]*,?|atrás das grades[^,]*,?',
-                  caseSensitive: false,
-                ),
-                '',
-              );
-              ctaText = ctaText.trim();
-              if (kDebugMode) {
-                debugPrint(
-                  '   CTA corrigido: ${ctaText.substring(0, ctaText.length > 100 ? 100 : ctaText.length)}',
-                );
-              }
-            }
-          }
-
-          ctas[type] = ctaText;
-          if (kDebugMode) {
-            debugPrint(
-              '✅ CTA extraído [$type]: ${ctaText.substring(0, ctaText.length > 50 ? 50 : ctaText.length)}...',
-            );
-          }
-        } else {
-          if (kDebugMode) debugPrint('⚠️ CTA não encontrado para tipo: $type');
-        }
-      }
-
-      if (kDebugMode) {
-        debugPrint(
-          '🎯 Total de CTAs extraídos: ${ctas.length}/${ctaTypes.length}',
-        );
-      }
-      return ctas;
-    } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('❌ Erro ao fazer parse dos CTAs: $e');
-        debugPrint('Stack trace: $stack');
-      }
-      return {};
-    }
-  }
-
-  /// 🔍 Valida consistência do CTA final com o roteiro
-  /// Detecta menções a eventos que não aconteceram (ex: "behind bars" sem prisão)
-  String? _validateFinalCtaConsistency(String finalCta, String scriptContent) {
-    if (kDebugMode) {
-      debugPrint('🔍 Validando consistência do CTA final...');
-    }
-
-    // Lista de padrões problemáticos e suas validações
-    final inconsistencyChecks = [
-      {
-        'pattern': RegExp(
-          r'behind bars|atrás das grades|na cadeia|preso|imprisoned|arrested|jail',
-          caseSensitive: false,
-        ),
-        'requiredInScript': RegExp(
-          r'foi preso|was arrested|prisão|prison|cadeia|jail|condenado|sentenced|behind bars|atrás das grades',
-          caseSensitive: false,
-        ),
-        'errorMessage':
-            'CTA menciona prisão, mas roteiro não indica que alguém foi preso',
-      },
-      {
-        'pattern': RegExp(
-          r"he's dead|ela? morreu|she's dead|morte del[ea]|death|dead",
-          caseSensitive: false,
-        ),
-        'requiredInScript': RegExp(
-          r'morreu|died|death|funeral|enterro|corpo|body|faleceu|passed away',
-          caseSensitive: false,
-        ),
-        'errorMessage':
-            'CTA menciona morte, mas roteiro não indica que alguém morreu',
-      },
-      {
-        'pattern': RegExp(
-          r'lost everything|perdi tudo|left with nothing|fiquei sem nada',
-          caseSensitive: false,
-        ),
-        'requiredInScript': RegExp(
-          r'perdi tudo|lost everything|nada restou|nothing left|destruíd[oa]',
-          caseSensitive: false,
-        ),
-        'errorMessage':
-            'CTA menciona perda total, mas roteiro sugere vitória ou recuperação',
-      },
-    ];
-
-    // Verificar cada inconsistência potencial
-    for (final check in inconsistencyChecks) {
-      final pattern = check['pattern'] as RegExp;
-      final required = check['requiredInScript'] as RegExp;
-      final errorMsg = check['errorMessage'] as String;
-
-      // Se CTA menciona o padrão problemático
-      if (pattern.hasMatch(finalCta)) {
-        // Mas o roteiro NÃO contém o evento correspondente
-        if (!required.hasMatch(scriptContent)) {
-          if (kDebugMode) {
-            debugPrint('⚠️ INCONSISTÊNCIA DETECTADA: $errorMsg');
-            debugPrint(
-              '   CTA: ${finalCta.substring(0, finalCta.length > 100 ? 100 : finalCta.length)}',
-            );
-          }
-          return errorMsg;
-        }
-      }
-    }
-
-    if (kDebugMode) {
-      debugPrint('✅ CTA final validado - sem inconsistências detectadas');
-    }
-    return null; // Sem inconsistências
-  }
+  // 🏗️ v7.6.66: Métodos _buildAdvancedCtaPrompt, _getCtaTypeDescriptions,
+  // _parseCtaResponseWithValidation e _validateFinalCtaConsistency
+  // movidos para CtaGenerator (lib/data/services/gemini/tools/)
 }
 
 // 🔥 SOLUÇÃO 3: Tracker GLOBAL para manter personagens entre blocos
@@ -7264,42 +6679,42 @@ class _CharacterNote {
   String toString() => '[Bloco $blockNumber] $observation';
 }
 
-/// 📚 Classe para armazenar o histórico completo de um personagem
+/// ?? Classe para armazenar o hist�rico completo de um personagem
 class _CharacterHistory {
   final String name;
   final List<_CharacterNote> timeline = [];
 
   _CharacterHistory(this.name);
 
-  /// Adiciona uma nova observação sobre o personagem
+  /// Adiciona uma nova observa��o sobre o personagem
   void addNote(int blockNumber, String observation) {
     if (observation.isEmpty) return;
     timeline.add(_CharacterNote(blockNumber, observation));
     if (kDebugMode) {
-      debugPrint('📝 Nota adicionada: "$name" → [B$blockNumber] $observation');
+      debugPrint('?? Nota adicionada: "$name" ? [B$blockNumber] $observation');
     }
   }
 
-  /// Retorna o histórico completo formatado
+  /// Retorna o hist�rico completo formatado
   String getFullHistory() {
     if (timeline.isEmpty) return '';
     return timeline.map((e) => e.toString()).join('\n   ');
   }
 
-  /// Verifica se uma nova observação contradiz o histórico
+  /// Verifica se uma nova observa��o contradiz o hist�rico
   bool contradicts(String newObservation) {
     if (timeline.isEmpty) return false;
 
-    // Extrair palavras-chave da nova observação
+    // Extrair palavras-chave da nova observa��o
     final newKeywords = _extractRelationshipKeywords(newObservation);
 
     // Verificar se contradiz alguma nota anterior
     for (final note in timeline) {
       final existingKeywords = _extractRelationshipKeywords(note.observation);
 
-      // Se ambos têm palavras de relacionamento, verificar contradição
+      // Se ambos t�m palavras de relacionamento, verificar contradi��o
       if (newKeywords.isNotEmpty && existingKeywords.isNotEmpty) {
-        // Relacionamentos diferentes para o mesmo tipo = contradição
+        // Relacionamentos diferentes para o mesmo tipo = contradi��o
         if (_areContradictoryRelationships(existingKeywords, newKeywords)) {
           return true;
         }
@@ -7309,24 +6724,24 @@ class _CharacterHistory {
     return false;
   }
 
-  /// Extrai palavras-chave de relacionamento de uma observação
+  /// Extrai palavras-chave de relacionamento de uma observa��o
   Set<String> _extractRelationshipKeywords(String text) {
     final keywords = <String>{};
     final lowerText = text.toLowerCase();
 
-    // Padrões de relacionamento
+    // Padr�es de relacionamento
     final patterns = {
-      'irmã': r'irmã\s+de\s+(\w+)',
-      'irmão': r'irmão\s+de\s+(\w+)',
+      'irm�': r'irm�\s+de\s+(\w+)',
+      'irm�o': r'irm�o\s+de\s+(\w+)',
       'filho': r'filh[oa]\s+de\s+(\w+)',
       'pai': r'pai\s+de\s+(\w+)',
-      'mãe': r'mãe\s+de\s+(\w+)',
+      'm�e': r'm�e\s+de\s+(\w+)',
       'esposa': r'esposa\s+de\s+(\w+)',
       'marido': r'marido\s+de\s+(\w+)',
       'neto': r'net[oa]\s+de\s+(\w+)',
       'tio': r'ti[oa]\s+de\s+(\w+)',
       'primo': r'prim[oa]\s+de\s+(\w+)',
-      'avô': r'av[ôó]\s+de\s+(\w+)',
+      'av�': r'av[��]\s+de\s+(\w+)',
     };
 
     for (final entry in patterns.entries) {
@@ -7340,7 +6755,7 @@ class _CharacterHistory {
     return keywords;
   }
 
-  /// Verifica se dois conjuntos de relacionamentos são contraditórios
+  /// Verifica se dois conjuntos de relacionamentos s�o contradit�rios
   bool _areContradictoryRelationships(Set<String> existing, Set<String> new_) {
     for (final existingRel in existing) {
       final existingType = existingRel.split('_')[0];
@@ -7348,10 +6763,10 @@ class _CharacterHistory {
       for (final newRel in new_) {
         final newType = newRel.split('_')[0];
 
-        // Mesmo tipo de relacionamento mas com pessoas diferentes = contradição
+        // Mesmo tipo de relacionamento mas com pessoas diferentes = contradi��o
         if (existingType == newType && existingRel != newRel) {
           if (kDebugMode) {
-            debugPrint('🚨 CONTRADIÇÃO DETECTADA:');
+            debugPrint('?? CONTRADI��O DETECTADA:');
             debugPrint('   Existente: $existingRel');
             debugPrint('   Nova: $newRel');
           }
@@ -7368,26 +6783,26 @@ class _CharacterHistory {
     return timeline.isEmpty ? null : timeline.first.observation;
   }
 
-  /// Retorna número de aparições do personagem
+  /// Retorna n�mero de apari��es do personagem
   int get appearanceCount => timeline.length;
 }
 
 class _CharacterTracker {
   final Set<String> _confirmedNames = {};
-  // 🔥 NOVO: Mapear cada nome ao seu papel para prevenir confusão e reuso
+  // ?? NOVO: Mapear cada nome ao seu papel para prevenir confus�o e reuso
   final Map<String, String> _characterRoles = {};
-  // � v1.7 NOVO: MAPEAMENTO REVERSO papel → nome (detecta nomes múltiplos por papel)
+  // ? v1.7 NOVO: MAPEAMENTO REVERSO papel ? nome (detecta nomes m�ltiplos por papel)
   final Map<String, String> _roleToName = {};
-  // �📚 SISTEMA DE NOTAS: Histórico completo de cada personagem
+  // ??? SISTEMA DE NOTAS: Hist�rico completo de cada personagem
   final Map<String, _CharacterHistory> _characterHistories = {};
-  // 🆕 v7.6.17: Nome da protagonista detectado automaticamente no Bloco 1
+  // ?? v7.6.17: Nome da protagonista detectado automaticamente no Bloco 1
   String? _detectedProtagonistName;
 
-  /// 🆕 v7.6.25: Retorna false se nome foi rejeitado (papel duplicado)
+  /// ?? v7.6.25: Retorna false se nome foi rejeitado (papel duplicado)
   bool addName(String name, {String? role, int? blockNumber}) {
-    if (name.isEmpty || name.length <= 2) return true; // Nome vazio não é erro
+    if (name.isEmpty || name.length <= 2) return true; // Nome vazio n�o � erro
 
-    // 🆕 v7.6.30: VALIDAÇÃO DE SIMILARIDADE - Detectar variações de nomes
+    // ?? v7.6.30: VALIDA��O DE SIMILARIDADE - Detectar varia��es de nomes
     // Evita: "Arthur" vs "Arthur Evans", "John" vs "John Smith"
     final nameLower = name.toLowerCase();
     final nameWords = nameLower.split(' ');
@@ -7401,23 +6816,23 @@ class _CharacterTracker {
         if (kDebugMode) {
           final existingRole = _characterRoles[existingName] ?? 'desconhecido';
           debugPrint(
-            '❌ v7.6.30 BLOQUEIO: "$name" já usado como "$existingRole"!',
+            '? v7.6.30 BLOQUEIO: "$name" j� usado como "$existingRole"!',
           );
         }
         return true; // Duplicata exata
       }
 
-      // Caso 2: Sobreposição de palavras (Arthur ⊂ Arthur Evans)
-      // "Arthur" está contido em "Arthur Evans" ou vice-versa
+      // Caso 2: Sobreposi��o de palavras (Arthur ? Arthur Evans)
+      // "Arthur" est� contido em "Arthur Evans" ou vice-versa
       bool overlap = false;
 
       if (nameWords.length == 1 && existingWords.length > 1) {
-        // Novo nome simples, já existe composto
+        // Novo nome simples, j� existe composto
         if (existingWords.contains(nameLower)) {
           overlap = true;
         }
       } else if (nameWords.length > 1 && existingWords.length == 1) {
-        // Novo nome composto, já existe simples
+        // Novo nome composto, j� existe simples
         if (nameWords.contains(existingLower)) {
           overlap = true;
         }
@@ -7434,69 +6849,69 @@ class _CharacterTracker {
       if (overlap) {
         if (kDebugMode) {
           final existingRole = _characterRoles[existingName] ?? 'desconhecido';
-          debugPrint('🚨🚨🚨 v7.6.30: CONFLITO DE NOMES DETECTADO! 🚨🚨🚨');
-          debugPrint('   ❌ Nome novo: "$name"');
+          debugPrint('?????? v7.6.30: CONFLITO DE NOMES DETECTADO! ??????');
+          debugPrint('   ? Nome novo: "$name"');
           debugPrint(
-            '   ❌ Nome existente: "$existingName" (papel: $existingRole)',
+            '   ? Nome existente: "$existingName" (papel: $existingRole)',
           );
-          debugPrint('   ⚠️ PROBLEMA: Nomes com sobreposição de palavras!');
-          debugPrint('   💡 EXEMPLO: "Arthur" conflita com "Arthur Evans"');
-          debugPrint('   💡 SOLUÇÃO: Use nomes COMPLETAMENTE diferentes');
-          debugPrint('   ❌ BLOQUEANDO adição de "$name"!');
-          debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
+          debugPrint('   ?? PROBLEMA: Nomes com sobreposi��o de palavras!');
+          debugPrint('   ?? EXEMPLO: "Arthur" conflita com "Arthur Evans"');
+          debugPrint('   ?? SOLU��O: Use nomes COMPLETAMENTE diferentes');
+          debugPrint('   ? BLOQUEANDO adi��o de "$name"!');
+          debugPrint('?????? FIM DO ALERTA ??????');
         }
-        return true; // Bloquear sobreposição
+        return true; // Bloquear sobreposi��o
       }
     }
 
-    // 🔒 VALIDAÇÃO CRÍTICA: Bloquear reuso de nomes
+    // ?? VALIDA��O CR�TICA: Bloquear reuso de nomes
     if (_confirmedNames.contains(name)) {
       if (kDebugMode) {
         final existingRole = _characterRoles[name] ?? 'desconhecido';
         debugPrint(
-          '❌ BLOQUEIO DE REUSO: "$name" já usado como "$existingRole"!',
+          '? BLOQUEIO DE REUSO: "$name" j� usado como "$existingRole"!',
         );
         if (role != null && role != existingRole) {
           debugPrint(
-            '   ⚠️ Tentativa de reusar "$name" como "$role" → REJEITADO!',
+            '   ?? Tentativa de reusar "$name" como "$role" ? REJEITADO!',
           );
         }
       }
-      return true; // Nome duplicado, mas não é erro de papel
+      return true; // Nome duplicado, mas n�o � erro de papel
     }
 
-    // 🚨 v7.6.25: VALIDAÇÃO REVERSA - Um papel pode ter apenas UM nome
+    // ?? v7.6.25: VALIDA��O REVERSA - Um papel pode ter apenas UM nome
     if (role != null && role.isNotEmpty && role != 'indefinido') {
-      // Normalizar papel (remover detalhes específicos para comparação)
+      // Normalizar papel (remover detalhes espec�ficos para compara��o)
       final normalizedRole = _normalizeRole(role);
 
       if (_roleToName.containsKey(normalizedRole)) {
         final existingName = _roleToName[normalizedRole]!;
 
         if (existingName != name) {
-          // 🚨 ERRO CRÍTICO: Mesmo papel com nomes diferentes!
+          // ?? ERRO CR�TICO: Mesmo papel com nomes diferentes!
           if (kDebugMode) {
             debugPrint(
-              '🚨🚨🚨 ERRO CRÍTICO v7.6.25: MÚLTIPLOS NOMES PARA MESMO PAPEL 🚨🚨🚨',
+              '?????? ERRO CR�TICO v7.6.25: M�LTIPLOS NOMES PARA MESMO PAPEL ??????',
             );
-            debugPrint('   ❌ Papel: "$normalizedRole"');
-            debugPrint('   ❌ Nome original: "$existingName"');
-            debugPrint('   ❌ Nome novo (CONFLITANTE): "$name"');
+            debugPrint('   ? Papel: "$normalizedRole"');
+            debugPrint('   ? Nome original: "$existingName"');
+            debugPrint('   ? Nome novo (CONFLITANTE): "$name"');
             debugPrint(
-              '   💡 EXEMPLO DO BUG: "advogado" sendo Martin no bloco 2 e Richard no bloco 7!',
+              '   ?? EXEMPLO DO BUG: "advogado" sendo Martin no bloco 2 e Richard no bloco 7!',
             );
             debugPrint(
-              '   ⚠️ BLOQUEANDO adição de "$name" - usar apenas "$existingName"!',
+              '   ?? BLOQUEANDO adi��o de "$name" - usar apenas "$existingName"!',
             );
-            debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
+            debugPrint('?????? FIM DO ALERTA ??????');
           }
-          return false; // ❌ RETORNA FALSE = ERRO DETECTADO
+          return false; // ? RETORNA FALSE = ERRO DETECTADO
         }
       } else {
         // Primeiro nome para este papel - registrar no mapeamento reverso
         _roleToName[normalizedRole] = name;
         if (kDebugMode) {
-          debugPrint('🔗 MAPEAMENTO REVERSO: "$normalizedRole" → "$name"');
+          debugPrint('?? MAPEAMENTO REVERSO: "$normalizedRole" ? "$name"');
         }
       }
     }
@@ -7505,35 +6920,35 @@ class _CharacterTracker {
     if (role != null && role.isNotEmpty) {
       _characterRoles[name] = role;
       if (kDebugMode) {
-        debugPrint('✅ MAPEAMENTO: "$name" = "$role"');
+        debugPrint('? MAPEAMENTO: "$name" = "$role"');
       }
 
-      // 📚 SISTEMA DE NOTAS: Adicionar ao histórico
+      // ?? SISTEMA DE NOTAS: Adicionar ao hist�rico
       if (blockNumber != null) {
         addNoteToCharacter(name, blockNumber, role);
       }
     }
 
-    return true; // ✅ SUCESSO
+    return true; // ? SUCESSO
   }
 
-  /// 🔧 v7.6.26: Normaliza papel SELETIVAMENTE (evita falsos positivos)
+  /// ?? v7.6.26: Normaliza papel SELETIVAMENTE (evita falsos positivos)
   ///
-  /// PAPÉIS FAMILIARES: Mantém completo "mãe de Emily" ≠ "mãe de Michael"
-  /// PAPÉIS GENÉRICOS: Normaliza "advogado de Sarah" → "advogado"
+  /// PAP�IS FAMILIARES: Mant�m completo "m�e de Emily" ? "m�e de Michael"
+  /// PAP�IS GEN�RICOS: Normaliza "advogado de Sarah" ? "advogado"
   String _normalizeRole(String role) {
     final roleLower = role.toLowerCase().trim();
 
-    // 🔥 v7.6.26: PAPÉIS FAMILIARES - NÃO normalizar (manter contexto familiar)
+    // ?? v7.6.26: PAP�IS FAMILIARES - N�O normalizar (manter contexto familiar)
     final familyRoles = [
-      'mãe',
+      'm�e',
       'pai',
       'filho',
       'filha',
-      'irmão',
-      'irmã',
-      'avô',
-      'avó',
+      'irm�o',
+      'irm�',
+      'av�',
+      'av�',
       'tio',
       'tia',
       'primo',
@@ -7557,65 +6972,65 @@ class _CharacterTracker {
       'mother-in-law',
       'brother-in-law',
       'sister-in-law',
-      'mère',
-      'père',
+      'm�re',
+      'p�re',
       'fils',
       'fille',
-      'frère',
-      'sœur',
-      'grand-père',
-      'grand-mère',
+      'fr�re',
+      's�ur',
+      'grand-p�re',
+      'grand-m�re',
       'oncle',
       'tante',
       'cousin',
       'cousine',
     ];
 
-    // Verificar se é papel familiar
+    // Verificar se � papel familiar
     for (final familyRole in familyRoles) {
       if (roleLower.contains(familyRole)) {
         return roleLower; // Manter completo
       }
     }
 
-    // 🔧 PAPÉIS GENÉRICOS: Normalizar
+    // ?? PAP�IS GEN�RICOS: Normalizar
     final normalized = roleLower
-        .replaceAll(RegExp(r'\s+de\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇa-záàâãéêíóôõúç]+.*$'), '')
+        .replaceAll(RegExp(r'\s+de\s+[A-Z������������a-z������������]+.*$'), '')
         .trim();
 
     return normalized;
   }
 
-  /// 📝 Adiciona uma nota sobre um personagem
+  /// ?? Adiciona uma nota sobre um personagem
   void addNoteToCharacter(String name, int blockNumber, String observation) {
     if (!_characterHistories.containsKey(name)) {
       _characterHistories[name] = _CharacterHistory(name);
     }
 
-    // Verificar se a nova observação contradiz o histórico
+    // Verificar se a nova observa��o contradiz o hist�rico
     final history = _characterHistories[name]!;
     if (history.contradicts(observation)) {
       if (kDebugMode) {
-        debugPrint('🚨🚨🚨 CONTRADIÇÃO NO HISTÓRICO DE "$name" 🚨🚨🚨');
-        debugPrint('   📚 Histórico existente:');
+        debugPrint('?????? CONTRADI��O NO HIST�RICO DE "$name" ??????');
+        debugPrint('   ?? Hist�rico existente:');
         debugPrint('   ${history.getFullHistory()}');
-        debugPrint('   ⚠️ Nova observação contraditória: $observation');
-        debugPrint('   💡 Esta observação NÃO será adicionada!');
-        debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
+        debugPrint('   ?? Nova observa��o contradit�ria: $observation');
+        debugPrint('   ?? Esta observa��o N�O ser� adicionada!');
+        debugPrint('?????? FIM DO ALERTA ??????');
       }
-      return; // Bloqueia adição de observação contraditória
+      return; // Bloqueia adi��o de observa��o contradit�ria
     }
 
     history.addNote(blockNumber, observation);
   }
 
-  /// 📖 Obtém o histórico completo de um personagem
+  /// ?? Obt�m o hist�rico completo de um personagem
   String? getCharacterHistory(String name) {
     final history = _characterHistories[name];
     return history?.getFullHistory();
   }
 
-  /// 📊 Obtém estatísticas de um personagem
+  /// ?? Obt�m estat�sticas de um personagem
   Map<String, dynamic> getCharacterStats(String name) {
     final history = _characterHistories[name];
     if (history == null) return {};
@@ -7640,68 +7055,68 @@ class _CharacterTracker {
 
   String? getRole(String name) => _characterRoles[name];
 
-  /// 🆕 v7.6.35: Expõe o mapa roleToName para o PostGenerationFixer
+  /// ?? v7.6.35: Exp�e o mapa roleToName para o PostGenerationFixer
   Map<String, String> get roleToNameMap => Map.unmodifiable(_roleToName);
 
-  /// 🔍 v1.7: Obtém o nome associado a um papel (mapeamento reverso)
+  /// ?? v1.7: Obt�m o nome associado a um papel (mapeamento reverso)
   String? getNameForRole(String role) {
     final normalizedRole = _normalizeRole(role);
     return _roleToName[normalizedRole];
   }
 
-  /// 🔍 v1.7: Verifica se um papel já tem nome definido
+  /// ?? v1.7: Verifica se um papel j� tem nome definido
   bool roleHasName(String role) {
     final normalizedRole = _normalizeRole(role);
     return _roleToName.containsKey(normalizedRole);
   }
 
-  // 🔥 v7.6.28: Obter mapeamento completo de personagens + LISTA DE NOMES PROIBIDOS
+  // ?? v7.6.28: Obter mapeamento completo de personagens + LISTA DE NOMES PROIBIDOS
   String getCharacterMapping() {
     if (_characterRoles.isEmpty && _characterHistories.isEmpty) return '';
 
-    final buffer = StringBuffer('\n🎭 PERSONAGENS JÁ DEFINIDOS:\n');
+    final buffer = StringBuffer('\n?? PERSONAGENS J� DEFINIDOS:\n');
 
-    // 🚨 v7.6.28: LISTA CRÍTICA DE NOMES JÁ USADOS (NUNCA REUTILIZAR!)
+    // ?? v7.6.28: LISTA CR�TICA DE NOMES J� USADOS (NUNCA REUTILIZAR!)
     if (_confirmedNames.isNotEmpty) {
-      buffer.writeln('\n🚫 NOMES JÁ USADOS - NUNCA REUTILIZE ESTES NOMES:');
+      buffer.writeln('\n?? NOMES J� USADOS - NUNCA REUTILIZE ESTES NOMES:');
       final namesList = _confirmedNames.toList()..sort();
       for (final name in namesList) {
         final role = _characterRoles[name] ?? 'indefinido';
-        buffer.writeln('   ❌ "$name" (já é: $role)');
+        buffer.writeln('   ? "$name" (j� �: $role)');
       }
-      buffer.writeln('\n⚠️ REGRA ABSOLUTA: Cada nome deve ser ÚNICO!');
-      buffer.writeln('⚠️ Se precisa de novo personagem, use NOME DIFERENTE!');
+      buffer.writeln('\n?? REGRA ABSOLUTA: Cada nome deve ser �NICO!');
+      buffer.writeln('?? Se precisa de novo personagem, use NOME DIFERENTE!');
       buffer.writeln(
-        '⚠️ NUNCA use "Mark", "Charles", etc se já estão acima!\n',
+        '?? NUNCA use "Mark", "Charles", etc se j� est�o acima!\n',
       );
     }
 
-    // v1.7: Mostrar mapeamento reverso (papel → nome) para reforçar consistência
+    // v1.7: Mostrar mapeamento reverso (papel ? nome) para refor�ar consist�ncia
     if (_roleToName.isNotEmpty) {
       buffer.writeln(
-        '\n📋 MAPEAMENTO PAPEL → NOME (use SEMPRE os mesmos nomes):',
+        '\n?? MAPEAMENTO PAPEL ? NOME (use SEMPRE os mesmos nomes):',
       );
       for (final entry in _roleToName.entries) {
         buffer.writeln(
-          '   "${entry.key}" = "${entry.value}" ⚠️ NUNCA mude este nome!',
+          '   "${entry.key}" = "${entry.value}" ?? NUNCA mude este nome!',
         );
       }
       buffer.writeln();
     }
 
-    // Para cada personagem, mostrar histórico completo se disponível
+    // Para cada personagem, mostrar hist�rico completo se dispon�vel
     for (final name in _confirmedNames) {
       final history = _characterHistories[name];
 
       if (history != null && history.timeline.isNotEmpty) {
-        // Mostrar histórico completo
-        buffer.writeln('\n👤 $name:');
+        // Mostrar hist�rico completo
+        buffer.writeln('\n?? $name:');
         buffer.writeln('   ${history.getFullHistory()}');
         buffer.writeln(
-          '   ⚠️ NUNCA mude este personagem! Use outro nome para novos personagens.',
+          '   ?? NUNCA mude este personagem! Use outro nome para novos personagens.',
         );
       } else {
-        // Mostrar apenas papel básico
+        // Mostrar apenas papel b�sico
         final role = _characterRoles[name] ?? 'personagem';
         buffer.writeln('   "$name" = $role');
       }
@@ -7710,38 +7125,38 @@ class _CharacterTracker {
     return buffer.toString();
   }
 
-  /// 🆕 v7.6.17: Registra o nome da protagonista detectado no Bloco 1
+  /// ?? v7.6.17: Registra o nome da protagonista detectado no Bloco 1
   void setProtagonistName(String name) {
     if (_detectedProtagonistName == null) {
       _detectedProtagonistName = name.trim();
       if (kDebugMode) {
-        debugPrint('✅ Protagonista detectada: "$_detectedProtagonistName"');
+        debugPrint('? Protagonista detectada: "$_detectedProtagonistName"');
       }
     }
   }
 
-  /// 🆕 v7.6.17: Retorna o nome da protagonista registrado
+  /// ?? v7.6.17: Retorna o nome da protagonista registrado
   String? getProtagonistName() => _detectedProtagonistName;
 
-  /// 🆕 v7.6.22: RASTREAMENTO DE FECHAMENTO DE PERSONAGENS
-  /// Marca um personagem como "resolvido" no final da história
+  /// ?? v7.6.22: RASTREAMENTO DE FECHAMENTO DE PERSONAGENS
+  /// Marca um personagem como "resolvido" no final da hist�ria
   final Map<String, bool> _characterResolution = {};
 
-  /// Marca um personagem como tendo recebido fechamento/resolução
+  /// Marca um personagem como tendo recebido fechamento/resolu��o
   void markCharacterAsResolved(String name) {
     if (_confirmedNames.contains(name)) {
       _characterResolution[name] = true;
       if (kDebugMode) {
-        debugPrint('✅ PERSONAGEM RESOLVIDO: $name');
+        debugPrint('? PERSONAGEM RESOLVIDO: $name');
       }
     }
   }
 
   /// Detecta automaticamente personagens que receberam fechamento no texto
   void detectResolutionInText(String text, int blockNumber) {
-    // Padrões que indicam fechamento de personagem
+    // Padr�es que indicam fechamento de personagem
     final resolutionPatterns = [
-      // Conclusão física/localização
+      // Conclus�o f�sica/localiza��o
       RegExp(
         r'([A-Z][a-z]+)\s+(?:foi embora|left|partiu|morreu|died|desapareceu|vanished)',
         caseSensitive: false,
@@ -7751,7 +7166,7 @@ class _CharacterTracker {
         caseSensitive: false,
       ),
 
-      // Justiça/vingança
+      // Justi�a/vingan�a
       RegExp(
         r'([A-Z][a-z]+)\s+(?:foi preso|was arrested|foi condenado|was convicted)',
         caseSensitive: false,
@@ -7761,7 +7176,7 @@ class _CharacterTracker {
         caseSensitive: false,
       ),
 
-      // Reconciliação/paz
+      // Reconcilia��o/paz
       RegExp(
         r'([A-Z][a-z]+)\s+(?:me perdoou|forgave me|fez as pazes|made peace)',
         caseSensitive: false,
@@ -7787,7 +7202,7 @@ class _CharacterTracker {
         final name = match.group(1);
         if (name != null && _confirmedNames.contains(name)) {
           markCharacterAsResolved(name);
-          addNoteToCharacter(name, blockNumber, 'RESOLUÇÃO: ${match.group(0)}');
+          addNoteToCharacter(name, blockNumber, 'RESOLU��O: ${match.group(0)}');
         }
       }
     }
@@ -7798,28 +7213,28 @@ class _CharacterTracker {
     final unresolved = <String>[];
 
     for (final name in _confirmedNames) {
-      // Ignorar protagonista (sempre tem fechamento implícito)
+      // Ignorar protagonista (sempre tem fechamento impl�cito)
       if (name == _detectedProtagonistName) continue;
 
       final role = _characterRoles[name]?.toLowerCase() ?? '';
 
-      // 🐛 FIX v7.6.24: Ignorar personagens SEM histórico OU muito secundários (≤1 aparição)
+      // ?? FIX v7.6.24: Ignorar personagens SEM hist�rico OU muito secund�rios (=1 apari��o)
       final history = _characterHistories[name];
       if (history == null || history.appearanceCount <= 1) continue;
 
       // Personagens importantes que precisam de fechamento:
-      // - Família próxima (pai, mãe, irmão, filho, cônjuge)
-      // - Antagonistas/vilões
-      // - Ajudantes/aliados que apareceram múltiplas vezes (3+)
+      // - Fam�lia pr�xima (pai, m�e, irm�o, filho, c�njuge)
+      // - Antagonistas/vil�es
+      // - Ajudantes/aliados que apareceram m�ltiplas vezes (3+)
       final needsClosure =
           role.contains('marido') ||
           role.contains('esposa') ||
           role.contains('pai') ||
-          role.contains('mãe') ||
+          role.contains('m�e') ||
           role.contains('filho') ||
           role.contains('filha') ||
-          role.contains('irmão') ||
-          role.contains('irmã') ||
+          role.contains('irm�o') ||
+          role.contains('irm�') ||
           role.contains('husband') ||
           role.contains('wife') ||
           role.contains('father') ||
@@ -7832,7 +7247,7 @@ class _CharacterTracker {
           role.contains('friend') ||
           role.contains('advogad') ||
           role.contains('lawyer') ||
-          role.contains('sócio') ||
+          role.contains('s�cio') ||
           role.contains('partner') ||
           history.appearanceCount >= 3; // history guaranteed non-null here
 
@@ -7849,7 +7264,7 @@ class _CharacterTracker {
     final important = _confirmedNames.where((name) {
       if (name == _detectedProtagonistName) return false;
       final history = _characterHistories[name];
-      // 🐛 FIX v7.6.24: Excluir personagens SEM histórico OU com 1 aparição
+      // ?? FIX v7.6.24: Excluir personagens SEM hist�rico OU com 1 apari��o
       if (history == null || history.appearanceCount <= 1) return false;
       return true;
     }).toList();
@@ -7868,13 +7283,13 @@ class _CharacterTracker {
     _characterRoles.clear();
     _roleToName.clear(); // v1.7: Limpar mapeamento reverso
     _characterHistories.clear();
-    _characterResolution.clear(); // v7.6.22: Limpar resoluções
+    _characterResolution.clear(); // v7.6.22: Limpar resolu��es
   }
 }
 
 // =============================================================================
-// 🏗️ v7.6.64: WORLD STATE migrado para scripting/world_state_manager.dart
+// ??? v7.6.64: WORLD STATE migrado para scripting/world_state_manager.dart
 // =============================================================================
-// As classes WorldState e WorldCharacter agora estão no módulo dedicado.
+// As classes WorldState e WorldCharacter agora est�o no m�dulo dedicado.
 // Import: package:flutter_gerador/data/services/scripting/scripting_modules.dart
 // =============================================================================
