@@ -18,42 +18,27 @@ import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart'
 class ScriptPromptBuilder {
   /// 🚫 Regras ANTI-REPETIÇÃO e ANTI-LOOP (CRÍTICO - DEVE VIR PRIMEIRO)
   static const String antiRepetitionRules = """
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚨 REGRAS ANTI-REPETIÇÃO - LEIA ANTES DE GERAR (PRIORIDADE MÁXIMA) 🚨
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚫 REGRAS DE ESTILO E CONTINUIDADE (CRÍTICO):
 
-⛔ REGRA #1: AVANCE O TEMPO (NÃO REESCREVA)
-   • Você está escrevendo a CONTINUAÇÃO, não um resumo
-   • Bloco anterior = PASSADO. Novo bloco = FUTURO
-   • Se leu "김태준 회장이 방을 나선 후..." → NÃO repita essa frase
-   • Comece IMEDIATAMENTE na PRÓXIMA ação: "복도에서..." ou "다음 날..."
+1. **VARIE O INÍCIO DAS FRASES:**
+   - É PROIBIDO começar 3 parágrafos seguidos com o Nome do Personagem ou "Ele/Ela".
+   - Use conectivos de tempo e ação: "De repente...", "No entanto...", "Com o coração na mão...", "Apesar do medo...".
+   - Dê vida ao texto! Não seja robótico.
 
-⛔ REGRA #2: PROIBIDO RECAPITULAR
-   • NUNCA inicie com "Depois de...", "Após...", "Como vimos..."
-   • EXEMPLO ERRADO: "김지훈은 박 회장과 만난 후..." (isso JÁ ACONTECEU!)
-   • EXEMPLO CORRETO: "김지훈은 사무실로 돌아왔다." (próxima cena)
+2. **AVANCE A HISTÓRIA (SEM ENROLAÇÃO):**
+   - Se o personagem está escondido, NÃO gaste 3 blocos descrevendo ele suando. Faça a ação acontecer!
+   - O vilão entra -> Procura -> Quase acha -> Sai. TUDO NO MESMO BLOCO.
+   - Ritmo ágil é prioridade.
 
-⛔ REGRA #3: AÇÃO > PENSAMENTO (Máximo 2 frases consecutivas de monólogo)
-   • ❌ RUIM: 5 parágrafos de "그의 마음속에는... 그는 생각했다..."
-   • ✅ BOM: "Ele pensou. Então agiu." (ação imediata após reflexão)
+3. **ANTI-ECO ESTRUTURAL:**
+   - Se você usou a frase "O crime paga um preço" no bloco anterior, É PROIBIDO usar de novo.
+   - Crie novas metáforas.
 
-⛔ REGRA #4: SHOW, DON'T TELL
-   • ❌ RUIM: "그는 긴장했다" (telling)
-   • ✅ BOM: "그의 손이 떨렸다" (showing)
-
-⛔ REGRA #5: NÃO REPITA FRASES/CENAS DO CONTEXTO ANTERIOR
-   • Se vê "선한 마음은 언젠가 반드시 돌아온다" 3x no contexto → NÃO use mais
-   • Se vê "회장실 문을 두드렸다" no contexto → Use sinônimo ou omita
-
-⛔ REGRA #6: RITMO CINEMATOGRÁFICO
-   • Alterne: Diálogo → Ação → Reflexão breve → Diálogo → Ação
-   • Máximo 2 parágrafos de pensamentos → VOLTE à ação concreta
-
-🎬 REGRA DE OURO: CADA BLOCO = NOVA CENA OU SALTO TEMPORAL
-   • Bloco anterior terminou em X → Novo bloco começa em X+1
-   • NUNCA reescreva X. Vá direto para X+1.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. **PROFUNDIDADE EMOCIONAL (PARA YOUTUBE):**
+   - Personagens devem ter dúvidas REALISTAS antes de grandes decisões.
+   - Exemplo: Ao receber proposta do CEO, mostre conflito: "E se for outra manipulação?"
+   - Vilões têm contradições: Educados mas cruéis, charmosos mas perigosos.
+   - Use descrições sensoriais ÚNICAS: "O ar condicionado sussurrava gelado" ao invés de "A sala era grande".
 """;
 
   /// 📏 Regras de formatação para TTS (Text-to-Speech)

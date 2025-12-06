@@ -15,6 +15,11 @@ import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart'
 // 🏗️ v7.6.64: MÓDULOS REFATORADOS (Arquitetura SOLID)
 import 'package:flutter_gerador/data/services/scripting/scripting_modules.dart';
 
+// 🏗️ v7.6.65: MÓDULOS EXTRAÍDOS (Refatoração SOLID - Fase 1)
+import 'package:flutter_gerador/data/services/gemini/detection/detection_modules.dart';
+// ignore: unused_import
+import 'package:flutter_gerador/data/services/gemini/infra/infra_modules.dart'; // Para uso futuro
+
 /// 📝 Helper padronizado para logs (mantém emojis em debug, limpa em produção)
 void _log(String message, {String level = 'info'}) {
   if (kDebugMode) {
@@ -30,225 +35,16 @@ void _log(String message, {String level = 'info'}) {
   // Produção: info/warning não logam (evita spam)
 }
 
+/// 🏗️ v7.6.65: FUNÇÕES TOP-LEVEL DELEGANDO PARA MÓDULOS (Refatoração SOLID)
 /// 🚀 FUNÇÃO TOP-LEVEL para filtrar parágrafos duplicados em Isolate
 String _filterDuplicateParagraphsStatic(Map<String, dynamic> params) {
-  final String existing = params['existing'] as String;
-  final String addition = params['addition'] as String;
-
-  if (addition.trim().isEmpty) return '';
-
-  // Comparar apenas últimos ~5000 caracteres
-  final recentText = existing.length > 5000
-      ? existing.substring(existing.length - 5000)
-      : existing;
-
-  final existingSet = recentText
-      .split(RegExp(r'\n{2,}'))
-      .map((p) => p.trim())
-      .where((p) => p.isNotEmpty)
-      .toSet();
-
-  final seen = <String>{};
-  final buffer = <String>[];
-
-  for (final rawParagraph in addition.split(RegExp(r'\n{2,}'))) {
-    final paragraph = rawParagraph.trim();
-    if (paragraph.isEmpty) continue;
-    if (existingSet.contains(paragraph)) continue;
-    if (!seen.add(paragraph)) continue;
-    buffer.add(paragraph);
-  }
-
-  return buffer.join('\n\n');
+  return filterDuplicateParagraphsIsolate(params);
 }
 
 /// 🚀 FUNÇÃO TOP-LEVEL para execução em Isolate separado
 /// Evita travar UI thread durante verificação de repetição
 Map<String, dynamic> _isTooSimilarInIsolate(Map<String, dynamic> params) {
-  final String newBlock = params['newBlock'] as String;
-  final String previousContent = params['previousContent'] as String;
-  final double threshold = params['threshold'] as double;
-
-  if (previousContent.isEmpty) {
-    return {'isSimilar': false, 'reason': 'No previous content'};
-  }
-
-  // 🔥 PRIORIDADE 1: Verificar duplicação literal de blocos grandes
-  final hasLiteral = _hasLiteralDuplicationStatic(newBlock, previousContent);
-  if (hasLiteral) {
-    return {'isSimilar': true, 'reason': 'Literal duplication detected'};
-  }
-
-  // 🚀 OTIMIZAÇÃO: Limitar contexto anterior para comparação
-  final limitedPrevious = previousContent.length > 12000
-      ? previousContent.substring(previousContent.length - 12000)
-      : previousContent;
-
-  // Dividir conteúdo anterior em parágrafos
-  final paragraphs = limitedPrevious
-      .split('\n\n')
-      .where((p) => p.trim().isNotEmpty)
-      .toList();
-
-  // 🚀 OTIMIZAÇÃO CRÍTICA: Limitar a 10 últimos parágrafos
-  final recentParagraphs = paragraphs.length > 10
-      ? paragraphs.sublist(paragraphs.length - 10)
-      : paragraphs;
-
-  // Dividir novo bloco em parágrafos
-  final newParagraphs = newBlock
-      .split('\n\n')
-      .where((p) => p.trim().isNotEmpty)
-      .toList();
-
-  // 🎯 AJUSTE FINO: Verificar cada parágrafo novo contra os RECENTES
-  int highSimilarityCount = 0;
-
-  for (final newPara in newParagraphs) {
-    // 🔥 AJUSTE: Detectar parágrafos de 50+ palavras (era 100)
-    final wordCount = newPara.trim().split(RegExp(r'\s+')).length;
-    if (wordCount < 50) continue; // Ignorar parágrafos muito curtos
-
-    if (highSimilarityCount >= 2) break;
-
-    for (final oldPara in recentParagraphs) {
-      final oldWordCount = oldPara.trim().split(RegExp(r'\s+')).length;
-      if (oldWordCount < 50) continue; // Ignorar parágrafos muito curtos
-
-      final similarity = _calculateSimilarityStatic(newPara, oldPara);
-
-      // 🔥 AJUSTE: Threshold reduzido de 85% para 80%
-      if (similarity >= threshold) {
-        highSimilarityCount++;
-
-        if (highSimilarityCount >= 2) {
-          return {
-            'isSimilar': true,
-            'reason':
-                '$highSimilarityCount paragraphs with ${(similarity * 100).toStringAsFixed(1)}% similarity',
-          };
-        }
-        break;
-      }
-    }
-  }
-
-  return {'isSimilar': false, 'reason': 'Content is unique'};
-}
-
-/// Versão estática de _hasLiteralDuplication para usar em Isolate
-/// 🔥 FORTALECIDO: Detecta duplicações literais com mais agressividade
-bool _hasLiteralDuplicationStatic(String newBlock, String previousContent) {
-  if (previousContent.length < 500) {
-    return false; // 🔥 REDUZIDO: Era 1000, agora 500
-  }
-
-  // 🆕 NOVO: Verificar parágrafos completos duplicados (para transições de seção)
-  final newParagraphs = newBlock
-      .split('\n\n')
-      .where(
-        (p) =>
-            p.trim().isNotEmpty && p.trim().split(RegExp(r'\s+')).length > 30,
-      )
-      .map((p) => p.trim().toLowerCase())
-      .toList();
-
-  final prevParagraphs = previousContent
-      .split('\n\n')
-      .where(
-        (p) =>
-            p.trim().isNotEmpty && p.trim().split(RegExp(r'\s+')).length > 30,
-      )
-      .map((p) => p.trim().toLowerCase())
-      .toList();
-
-  // 🔥 CRÍTICO: Detectar parágrafos idênticos (problema do Quitéria)
-  for (final newPara in newParagraphs) {
-    for (final prevPara in prevParagraphs) {
-      // Similaridade exata ou muito próxima (95%+)
-      if (newPara == prevPara) {
-        return true; // Parágrafo duplicado exato
-      }
-
-      // 🆕 Verificar similaridade estrutural (mesmas primeiras 50 palavras)
-      final newWords = newPara.split(RegExp(r'\s+'));
-      final prevWords = prevPara.split(RegExp(r'\s+'));
-
-      if (newWords.length > 50 && prevWords.length > 50) {
-        final newStart = newWords.take(50).join(' ');
-        final prevStart = prevWords.take(50).join(' ');
-
-        if (newStart == prevStart) {
-          return true; // Início idêntico em parágrafo longo
-        }
-      }
-    }
-  }
-
-  // 🔥 Verificação de sequências de palavras (original)
-  final newWords = newBlock.split(RegExp(r'\s+'));
-  if (newWords.length < 150) return false; // 🔥 REDUZIDO: Era 200, agora 150
-
-  final prevWords = previousContent.split(RegExp(r'\s+'));
-  if (prevWords.length < 150) return false; // 🔥 REDUZIDO: Era 200, agora 150
-
-  // 🔥 OTIMIZADO: Verificar sequências menores (150 palavras em vez de 200)
-  for (int i = 0; i <= newWords.length - 150; i++) {
-    final newSequence = newWords.sublist(i, i + 150).join(' ').toLowerCase();
-
-    for (int j = 0; j <= prevWords.length - 150; j++) {
-      final prevSequence = prevWords
-          .sublist(j, j + 150)
-          .join(' ')
-          .toLowerCase();
-
-      if (newSequence == prevSequence) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-/// Versão estática de _calculateSimilarity para usar em Isolate
-double _calculateSimilarityStatic(String text1, String text2) {
-  if (text1.isEmpty || text2.isEmpty) return 0.0;
-
-  final normalized1 = text1.toLowerCase().trim().replaceAll(
-    RegExp(r'\s+'),
-    ' ',
-  );
-  final normalized2 = text2.toLowerCase().trim().replaceAll(
-    RegExp(r'\s+'),
-    ' ',
-  );
-
-  if (normalized1 == normalized2) return 1.0;
-
-  const nGramSize = 8;
-  final words1 = normalized1.split(' ');
-  final words2 = normalized2.split(' ');
-
-  if (words1.length < nGramSize || words2.length < nGramSize) {
-    final commonWords = words1.toSet().intersection(words2.toSet()).length;
-    return commonWords / max(words1.length, words2.length);
-  }
-
-  final ngrams1 = <String>{};
-  for (int i = 0; i <= words1.length - nGramSize; i++) {
-    ngrams1.add(words1.sublist(i, i + nGramSize).join(' '));
-  }
-
-  final ngrams2 = <String>{};
-  for (int i = 0; i <= words2.length - nGramSize; i++) {
-    ngrams2.add(words2.sublist(i, i + nGramSize).join(' '));
-  }
-
-  final intersection = ngrams1.intersection(ngrams2).length;
-  final union = ngrams1.union(ngrams2).length;
-
-  return union > 0 ? intersection / union : 0.0;
+  return isTooSimilarIsolate(params);
 }
 
 /// Implementação consolidada limpa do GeminiService
@@ -261,6 +57,10 @@ class GeminiService {
   late final LlmClient _llmClient;
   late final WorldStateManager _worldStateManager;
   late final ScriptValidator _scriptValidator;
+
+  // 🏗️ v7.6.65: MÓDULOS EXTRAÍDOS (Refatoração SOLID - Fase 1)
+  // Nota: DuplicationDetector e TextCleaner são classes estáticas
+  // NameTracker e RateLimiter disponíveis para uso futuro via imports
 
   // 🚀 v7.6.20: Adaptive Delay Manager (economia de 40-50% do tempo)
   DateTime? _lastSuccessfulCall;
@@ -331,6 +131,9 @@ class GeminiService {
     _llmClient = LlmClient(instanceId: _instanceId);
     _worldStateManager = WorldStateManager(llmClient: _llmClient);
     _scriptValidator = ScriptValidator(llmClient: _llmClient);
+
+    // 🏗️ v7.6.65: Módulos DuplicationDetector e TextCleaner são estáticos
+    // NameTracker e RateLimiter disponíveis via imports para uso futuro
 
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -6343,17 +6146,10 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
   // 🏗️ v7.6.64: _makeApiRequest migrado para LlmClient._makeRequest (SOLID)
   // Todas as chamadas agora usam _llmClient.generateText()
 
+  // 🏗️ v7.6.65: DELEGAÇÃO para TextCleaner (Refatoração SOLID)
   // Limpar texto de marcações indesejadas
   String _cleanGeneratedText(String text) {
-    return text
-        // Remove "CONTINUAÇÃO:" no início ou meio do texto
-        .replaceAll(RegExp(r'CONTINUAÇÃO:\s*', caseSensitive: false), '')
-        // Remove "CONTEXTO FINAL:" se aparecer
-        .replaceAll(RegExp(r'CONTEXTO FINAL:\s*', caseSensitive: false), '')
-        // Remove linhas vazias duplas
-        .replaceAll(RegExp(r'\n\n\n+'), '\n\n')
-        // Remove espaços desnecessários no início
-        .trim();
+    return TextCleaner.cleanGeneratedText(text);
   }
 
   // 🆕 SISTEMA DE RASTREAMENTO DE NOMES - v4 (SOLUÇÃO TÉCNICA)
@@ -6714,147 +6510,9 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
   }
 
   // ===================== SISTEMA ANTI-REPETIÇÃO =====================
+  // 🏗️ v7.6.65: Métodos delegados para DuplicationDetector (Refatoração SOLID)
 
-  /// Verifica se há duplicação LITERAL de blocos inteiros (cópia exata)
-  /// Retorna true se encontrar blocos de 200+ palavras duplicados
-  /// 🔥 FORTALECIDO: Detecta duplicações literais com múltiplas camadas
-  bool _hasLiteralDuplication(String newBlock, String previousContent) {
-    if (previousContent.isEmpty || newBlock.isEmpty) return false;
-    if (previousContent.length < 500) {
-      return false; // 🔥 REDUZIDO: Era implícito, agora 500
-    }
-
-    // 🆕 CAMADA 1: Verificar parágrafos completos duplicados
-    final newParagraphs = newBlock
-        .split('\n\n')
-        .where(
-          (p) =>
-              p.trim().isNotEmpty && p.trim().split(RegExp(r'\s+')).length > 30,
-        )
-        .map((p) => p.trim().toLowerCase())
-        .toList();
-
-    final prevParagraphs = previousContent
-        .split('\n\n')
-        .where(
-          (p) =>
-              p.trim().isNotEmpty && p.trim().split(RegExp(r'\s+')).length > 30,
-        )
-        .map((p) => p.trim().toLowerCase())
-        .toList();
-
-    // 🔥 CRÍTICO: Detectar parágrafos idênticos
-    for (final newPara in newParagraphs) {
-      for (final prevPara in prevParagraphs) {
-        if (newPara == prevPara) {
-          if (kDebugMode) {
-            debugPrint('🚨 PARÁGRAFO DUPLICADO EXATO DETECTADO!');
-            debugPrint(
-              '   Preview: ${newPara.substring(0, min(100, newPara.length))}...',
-            );
-          }
-          return true; // Parágrafo duplicado exato
-        }
-
-        // 🆕 Verificar início idêntico (primeiras 50 palavras)
-        final newWords = newPara.split(RegExp(r'\s+'));
-        final prevWords = prevPara.split(RegExp(r'\s+'));
-
-        if (newWords.length > 50 && prevWords.length > 50) {
-          final newStart = newWords.take(50).join(' ');
-          final prevStart = prevWords.take(50).join(' ');
-
-          if (newStart == prevStart) {
-            if (kDebugMode) {
-              debugPrint('🚨 INÍCIO DE PARÁGRAFO DUPLICADO DETECTADO!');
-              debugPrint('   Primeiras 50 palavras são idênticas');
-            }
-            return true;
-          }
-        }
-      }
-    }
-
-    // 🆕 CAMADA 2: Verificar sequências de palavras (original, mas fortalecido)
-    final newWords = newBlock.trim().split(RegExp(r'\s+'));
-    final prevWords = previousContent.trim().split(RegExp(r'\s+'));
-
-    if (newWords.length < 150 || prevWords.length < 150) {
-      return false; // 🔥 REDUZIDO: Era 200
-    }
-
-    // 🔥 OTIMIZADO: Verificar sequências menores (150 palavras)
-    for (int i = 0; i <= newWords.length - 150; i++) {
-      final newSequence = newWords.sublist(i, i + 150).join(' ').toLowerCase();
-
-      for (int j = 0; j <= prevWords.length - 150; j++) {
-        final prevSequence = prevWords
-            .sublist(j, j + 150)
-            .join(' ')
-            .toLowerCase();
-
-        if (newSequence == prevSequence) {
-          if (kDebugMode) {
-            debugPrint('🚨 DUPLICAÇÃO LITERAL DE 150 PALAVRAS DETECTADA!');
-            debugPrint(
-              '   Preview: ${newSequence.substring(0, min(100, newSequence.length))}...',
-            );
-          }
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  /// Calcula similaridade entre dois textos usando n-grams
-  /// Retorna valor entre 0.0 (totalmente diferente) e 1.0 (idêntico)
-  double _calculateSimilarity(String text1, String text2) {
-    if (text1.isEmpty || text2.isEmpty) return 0.0;
-
-    // Normalizar textos (remover espaços extras, lowercase)
-    final normalized1 = text1.toLowerCase().trim().replaceAll(
-      RegExp(r'\s+'),
-      ' ',
-    );
-    final normalized2 = text2.toLowerCase().trim().replaceAll(
-      RegExp(r'\s+'),
-      ' ',
-    );
-
-    if (normalized1 == normalized2) return 1.0; // Idênticos
-
-    // Criar n-grams (sequências de N palavras)
-    const nGramSize =
-        8; // 🔥 AUMENTADO: Era 5, agora 8 para detectar blocos maiores
-    final words1 = normalized1.split(' ');
-    final words2 = normalized2.split(' ');
-
-    if (words1.length < nGramSize || words2.length < nGramSize) {
-      // Textos muito curtos, comparar palavra por palavra
-      final commonWords = words1.toSet().intersection(words2.toSet()).length;
-      return commonWords / max(words1.length, words2.length);
-    }
-
-    // Gerar n-grams
-    final ngrams1 = <String>{};
-    for (int i = 0; i <= words1.length - nGramSize; i++) {
-      ngrams1.add(words1.sublist(i, i + nGramSize).join(' '));
-    }
-
-    final ngrams2 = <String>{};
-    for (int i = 0; i <= words2.length - nGramSize; i++) {
-      ngrams2.add(words2.sublist(i, i + nGramSize).join(' '));
-    }
-
-    // Calcular interseção (n-grams em comum)
-    final intersection = ngrams1.intersection(ngrams2).length;
-    final union = ngrams1.union(ngrams2).length;
-
-    return union > 0 ? intersection / union : 0.0;
-  }
-
+  // 🏗️ v7.6.65: DELEGAÇÃO para DuplicationDetector (Refatoração SOLID)
   /// Verifica se novo bloco é muito similar aos blocos anteriores
   /// Retorna true se similaridade > threshold (padrão 85%) OU se há duplicação literal
   bool _isTooSimilar(
@@ -6862,85 +6520,11 @@ O narrador observa e conta, mas NÃO é o protagonista.''';
     String previousContent, {
     double threshold = 0.85,
   }) {
-    if (previousContent.isEmpty) return false;
-
-    // 🔥 PRIORIDADE 1: Verificar duplicação literal de blocos grandes (cópia exata)
-    if (_hasLiteralDuplication(newBlock, previousContent)) {
-      if (kDebugMode) {
-        debugPrint(
-          '🚨 BLOQUEIO CRÍTICO: Duplicação literal de bloco inteiro detectada!',
-        );
-      }
-      return true; // Bloquear imediatamente
-    }
-
-    // 🚀 OTIMIZAÇÃO: Limitar contexto anterior para comparação
-    // 🚨 CRÍTICO: 20k caracteres ainda causava timeout nos blocos finais
-    // Reduzido para 12k caracteres (~2k palavras) - suficiente para detectar repetições
-    final limitedPrevious = previousContent.length > 12000
-        ? previousContent.substring(previousContent.length - 12000)
-        : previousContent;
-
-    // Dividir conteúdo anterior em parágrafos
-    final paragraphs = limitedPrevious
-        .split('\n\n')
-        .where((p) => p.trim().isNotEmpty)
-        .toList();
-
-    // 🚀 OTIMIZAÇÃO CRÍTICA: Limitar a 10 últimos parágrafos (era 20)
-    // Reduzido para eliminar travamentos "não respondendo"
-    final recentParagraphs = paragraphs.length > 10
-        ? paragraphs.sublist(paragraphs.length - 10)
-        : paragraphs;
-
-    // Dividir novo bloco em parágrafos
-    final newParagraphs = newBlock
-        .split('\n\n')
-        .where((p) => p.trim().isNotEmpty)
-        .toList();
-
-    // Verificar cada parágrafo novo contra os RECENTES (não todos)
-    int highSimilarityCount = 0;
-
-    for (final newPara in newParagraphs) {
-      if (newPara.trim().length < 100) {
-        continue; // Ignorar parágrafos muito curtos
-      }
-
-      // 🚀 OTIMIZAÇÃO: Parar se já encontrou repetição suficiente
-      if (highSimilarityCount >= 2) break;
-
-      for (final oldPara in recentParagraphs) {
-        if (oldPara.trim().length < 100) continue;
-
-        final similarity = _calculateSimilarity(newPara, oldPara);
-
-        if (similarity >= threshold) {
-          highSimilarityCount++;
-          if (kDebugMode) {
-            debugPrint(
-              '⚠️ REPETIÇÃO DETECTADA (parágrafo $highSimilarityCount)!',
-            );
-            debugPrint(
-              '   Similaridade: ${(similarity * 100).toStringAsFixed(1)}% (threshold: ${(threshold * 100).toInt()}%)',
-            );
-          }
-
-          // 🔥 Se encontrar 2+ parágrafos muito similares = bloco repetido
-          if (highSimilarityCount >= 2) {
-            if (kDebugMode) {
-              debugPrint(
-                '🚨 BLOQUEIO: $highSimilarityCount parágrafos com alta similaridade!',
-              );
-            }
-            return true;
-          }
-          break; // Não precisa comparar esse parágrafo com outros
-        }
-      }
-    }
-
-    return false;
+    return DuplicationDetector.isTooSimilar(
+      newBlock,
+      previousContent,
+      threshold: threshold,
+    );
   }
 
   // Cache para evitar reprocessamento em contagens frequentes
