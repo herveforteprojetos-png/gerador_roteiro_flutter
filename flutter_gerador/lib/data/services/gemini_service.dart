@@ -191,8 +191,11 @@ class GeminiService {
     // Isso garante que cada nova gera??o comece do zero
     _resetGlobalRateLimit();
 
-    // ?? v4: Resetar rastreador de nomes para nova hist?ria
-    _resetNameTracker();
+    // 🔄 v4: Resetar rastreador de nomes para nova história
+    _namesUsedInCurrentStory.clear();
+    if (kDebugMode) {
+      debugPrint('🗑️ Rastreador de nomes resetado para nova história');
+    }
 
     // ?? v7.6.37: Resetar personagens introduzidos para detec??o de duplicatas
     PostGenerationFixer.resetIntroducedCharacters();
@@ -803,7 +806,13 @@ class GeminiService {
               metadata: {'bloco': block, 'nomes': duplicatedNames},
             );
           }
-          _addNamesToTracker(added);
+          // 🔧 v7.6.88: Inline de _addNamesToTracker
+          final extractedNames = NameValidator.extractNamesFromText(added);
+          _namesUsedInCurrentStory.addAll(extractedNames);
+          if (kDebugMode && extractedNames.isNotEmpty) {
+            debugPrint('📝 Nomes extraídos do bloco: ${extractedNames.join(", ")}');
+            debugPrint('📊 Total de nomes únicos na história: ${_namesUsedInCurrentStory.length}');
+          }
 
           // ?? VALIDA??O CR?TICA 4: Verificar inconsist?ncias em rela??es familiares
           _validateFamilyRelations(added, block);
@@ -3715,38 +3724,17 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   }
 
   // 🔧 v7.6.84: Wrappers _extractNamesFromText e _validateNamesInText removidos
-  // Usar NameValidator.extractNamesFromText() e NameValidator.validateNamesInText() diretamente
+  // 🔧 v7.6.88: Métodos _addNamesToTracker e _resetNameTracker inlined
 
-  /// Adiciona nomes novos ao rastreador global
-  void _addNamesToTracker(String text) {
-    final names = NameValidator.extractNamesFromText(text);
-    _namesUsedInCurrentStory.addAll(names);
-
-    if (kDebugMode && names.isNotEmpty) {
-      debugPrint('📝 Nomes extraídos do bloco: ${names.join(", ")}');
-      debugPrint(
-        '📊 Total de nomes únicos na história: ${_namesUsedInCurrentStory.length}',
-      );
-    }
-  }
-
-  /// Reseta o rastreador de nomes (início de nova história)
-  void _resetNameTracker() {
-    _namesUsedInCurrentStory.clear();
-    if (kDebugMode) {
-      debugPrint('?? Rastreador de nomes resetado para nova hist?ria');
-    }
-  }
-
-  // M?todo p?blico para uso nos providers - OTIMIZADO PARA CONTEXTO
-  // ?? v7.6.51: Suporte a qualityMode para Pipeline Modelo ?nico
-  // ??? v7.6.64: Agora delega para LlmClient (SOLID)
+  // Método público para uso nos providers - OTIMIZADO PARA CONTEXTO
+  // 📊 v7.6.51: Suporte a qualityMode para Pipeline Modelo Único
+  // 🔧 v7.6.64: Agora delega para LlmClient (SOLID)
   Future<String> generateTextWithApiKey({
     required String prompt,
     required String apiKey,
     String? model, // Se null, usa qualityMode
     String qualityMode =
-        'pro', // ?? NOVO: Para determinar modelo automaticamente
+        'pro', // 📊 NOVO: Para determinar modelo automaticamente
     int maxTokens =
         16384, // AUMENTADO: Era 8192, agora 16384 para contextos mais ricos
   }) async {
