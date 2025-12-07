@@ -526,6 +526,48 @@ class RolePatterns {
     return englishToPortuguese[role.toLowerCase()] ?? role.toLowerCase();
   }
 
+  /// 🔧 v7.6.74: Papéis familiares que NÃO devem ser normalizados
+  /// Permite múltiplas famílias na mesma história sem falsos positivos
+  static const familyRoles = [
+    'mãe', 'pai', 'filho', 'filha', 'irmão', 'irmã',
+    'avô', 'avó', 'tio', 'tia', 'primo', 'prima',
+    'sogro', 'sogra', 'cunhado', 'cunhada',
+    'mother', 'father', 'son', 'daughter', 'brother', 'sister',
+    'grandfather', 'grandmother', 'uncle', 'aunt', 'cousin',
+    'father-in-law', 'mother-in-law', 'brother-in-law', 'sister-in-law',
+    'mère', 'père', 'fils', 'fille', 'frère', 'sœur',
+    'grand-père', 'grand-mère', 'oncle', 'tante', 'cousin', 'cousine',
+  ];
+
+  /// 🔧 v7.6.74: Normaliza papel SELETIVAMENTE (evita falsos positivos)
+  ///
+  /// PAPÉIS FAMILIARES: Mantém completo "mãe de Emily" → "mãe de emily"
+  /// PAPÉIS GENÉRICOS: Normaliza "advogado de Sarah" → "advogado"
+  ///
+  /// Exemplo:
+  /// - "mãe de Emily" → "mãe de emily" (mantém relação)
+  /// - "irmão de João" → "irmão de joão" (mantém relação)
+  /// - "advogado de Sarah" → "advogado" (remove relação)
+  /// - "médico de Michael" → "médico" (remove relação)
+  static String normalizeRoleSelective(String role) {
+    final roleLower = role.toLowerCase().trim();
+
+    // Verificar se é papel familiar - NÃO normalizar
+    for (final familyRole in familyRoles) {
+      if (roleLower.contains(familyRole)) {
+        // ✅ MANTER COMPLETO: "mãe de Emily" permanece "mãe de emily"
+        return roleLower;
+      }
+    }
+
+    // 🔄 PAPÉIS GENÉRICOS: Normalizar (remover sufixo "de [Nome]")
+    final normalized = roleLower
+        .replaceAll(RegExp(r'\s+de\s+[A-ZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝŸa-zàáâãäåçèéêëìíîïñòóôõöùúûüýÿ]+.*$'), '')
+        .trim();
+
+    return normalized;
+  }
+
   /// Verifica se dois papéis são equivalentes
   static bool areRolesEquivalent(String role1, String role2) {
     return normalizeRole(role1) == normalizeRole(role2);

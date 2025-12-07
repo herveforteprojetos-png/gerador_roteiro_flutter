@@ -3215,86 +3215,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   /// - "irm?o de Jo?o" ? "irm?o de jo?o" (mant?m rela??o)
   /// - "advogado de Sarah" ? "advogado" (remove rela??o)
   /// - "m?dico de Michael" ? "m?dico" (remove rela??o)
-  String _normalizeRole(String role) {
-    final roleLower = role.toLowerCase().trim();
-
-    // ?? v7.6.26: PAP?IS FAMILIARES - N?O normalizar (manter contexto familiar)
-    // Permite m?ltiplas fam?lias na mesma hist?ria sem falsos positivos
-    final familyRoles = [
-      'm?e',
-      'pai',
-      'filho',
-      'filha',
-      'irm?o',
-      'irm?',
-      'av?',
-      'av?',
-      'tio',
-      'tia',
-      'primo',
-      'prima',
-      'sogro',
-      'sogra',
-      'cunhado',
-      'cunhada',
-      'mother',
-      'father',
-      'son',
-      'daughter',
-      'brother',
-      'sister',
-      'grandfather',
-      'grandmother',
-      'uncle',
-      'aunt',
-      'cousin',
-      'father-in-law',
-      'mother-in-law',
-      'brother-in-law',
-      'sister-in-law',
-      'm?re',
-      'p?re',
-      'fils',
-      'fille',
-      'fr?re',
-      's?ur',
-      'grand-p?re',
-      'grand-m?re',
-      'oncle',
-      'tante',
-      'cousin',
-      'cousine',
-    ];
-
-    // Verificar se ? papel familiar
-    for (final familyRole in familyRoles) {
-      if (roleLower.contains(familyRole)) {
-        // ? MANTER COMPLETO: "m?e de Emily" permanece "m?e de emily"
-        // Isso permite Sarah ser "m?e de Emily" e Jennifer ser "m?e de Michael"
-        if (kDebugMode) {
-          debugPrint(
-            '??????????? v7.6.26: Papel familiar detectado, mantendo completo: "$roleLower"',
-          );
-        }
-        return roleLower;
-      }
-    }
-
-    // ?? PAP?IS GEN?RICOS: Normalizar (remover sufixo "de [Nome]")
-    // "advogado de Sarah" ? "advogado"
-    // "m?dico de Jo?o" ? "m?dico"
-    final normalized = roleLower
-        .replaceAll(RegExp(r'\s+de\s+[A-Z????????????a-z????????????]+.*$'), '')
-        .trim();
-
-    if (kDebugMode && normalized != roleLower) {
-      debugPrint(
-        '?? v7.6.26: Papel gen?rico normalizado: "$roleLower" ? "$normalized"',
-      );
-    }
-
-    return normalized;
-  }
+  /// 🎯 v7.6.74: Delegado ao módulo RolePatterns (SOLID)
+  String _normalizeRole(String role) =>
+      RolePatterns.normalizeRoleSelective(role);
 
   /// ??? v7.6.67: Delegando para m�dulo RolePatterns
   String? _extractRoleForName(String name, String text) {
