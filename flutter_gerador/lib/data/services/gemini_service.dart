@@ -207,7 +207,16 @@ class GeminiService {
     // ?? v7.6.37: Resetar personagens introduzidos para detec??o de duplicatas
     PostGenerationFixer.resetIntroducedCharacters();
 
-    if (!_canMakeRequest()) {
+    // ?? v7.6.94: Verifica circuit breaker inline
+    bool canRequest = !_isCircuitOpen;
+    if (!canRequest && _lastFailureTime != null &&
+        DateTime.now().difference(_lastFailureTime!) > _circuitResetTime) {
+      _isCircuitOpen = false;
+      _failureCount = 0;
+      _lastFailureTime = null;
+      canRequest = true;
+    }
+    if (!canRequest) {
       return ScriptResult.error(
         errorMessage:
             'Servi�o temporariamente indispon�vel. Tente mais tarde.',
@@ -1337,18 +1346,6 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   // ===================== Infra =====================
   static String _genId() =>
       'gemini_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(999)}';
-
-  bool _canMakeRequest() {
-    if (!_isCircuitOpen) return true;
-    if (_lastFailureTime != null &&
-        DateTime.now().difference(_lastFailureTime!) > _circuitResetTime) {
-      _isCircuitOpen = false;
-      _failureCount = 0;
-      _lastFailureTime = null;
-      return true;
-    }
-    return false;
-  }
 
   void _startWatchdog() {
     _stopWatchdog();
