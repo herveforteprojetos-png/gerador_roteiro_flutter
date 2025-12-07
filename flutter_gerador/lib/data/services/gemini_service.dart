@@ -3016,10 +3016,6 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     return result;
   }
 
-  /// ?? Delegado ao m�dulo PerspectiveBuilder (SOLID)
-  double _getLanguageVerbosityMultiplier(String language) =>
-      PerspectiveBuilder.getLanguageVerbosityMultiplier(language);
-
   Future<String> _generateBlockContent(
     String previous,
     int target,
@@ -3192,7 +3188,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
     // ?? AJUSTE POR IDIOMA: Compensar verbosidade natural de cada idioma
     // Portugu?s (baseline 1.0) funciona perfeitamente, outros ajustam proporcionalmente
-    final languageMultiplier = _getLanguageVerbosityMultiplier(c.language);
+    final languageMultiplier = PerspectiveBuilder.getLanguageVerbosityMultiplier(c.language);
     final adjustedTarget = (limitedNeeded * languageMultiplier).round();
 
     // Detectar se ? espanhol para mensagem espec?fica
