@@ -48,22 +48,19 @@ void _log(String message, {String level = 'info'}) {
         .trim();
     debugPrint('[${level.toUpperCase()}] $cleaned');
   }
-  // Produ??o: info/warning n?o logam (evita spam)
+  // Produção: info/warning não logam (evita spam)
 }
 
-/// ??? v7.6.65: FUN??ES TOP-LEVEL DELEGANDO PARA M?DULOS (Refatora??o SOLID)
-/// ?? FUN??O TOP-LEVEL para filtrar par?grafos duplicados em Isolate
-String _filterDuplicateParagraphsStatic(Map<String, dynamic> params) {
-  return filterDuplicateParagraphsIsolate(params);
-}
+/// 🏗️ v7.6.65: FUNÇÕES TOP-LEVEL DELEGANDO PARA MÓDULOS (Refatoração SOLID)
+/// 🔧 v7.6.78: _filterDuplicateParagraphsStatic removido (delegado ao TextFilter)
 
-/// ?? FUN??O TOP-LEVEL para execu??o em Isolate separado
-/// Evita travar UI thread durante verifica??o de repeti??o
+/// 🚀 FUNÇÃO TOP-LEVEL para execução em Isolate separado
+/// Evita travar UI thread durante verificação de repetição
 Map<String, dynamic> _isTooSimilarInIsolate(Map<String, dynamic> params) {
   return isTooSimilarIsolate(params);
 }
 
-/// Implementa??o consolidada limpa do GeminiService
+/// Implementação consolidada limpa do GeminiService
 class GeminiService {
   final Dio _dio;
   final String _instanceId;
@@ -2206,108 +2203,16 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   Map<String, int> _extractNamesFromSnippet(String snippet) =>
       NameValidator.extractNamesFromSnippet(snippet);
 
-  // ?? EXECUTAR EM ISOLATE para n?o travar UI
+  /// 🔧 v7.6.78: Delegado ao módulo TextFilter (SOLID)
   Future<String> _filterDuplicateParagraphs(
     String existing,
     String addition,
-  ) async {
-    if (addition.trim().isEmpty) return '';
+  ) async =>
+      TextFilter.filterDuplicateParagraphs(existing, addition);
 
-    // Para textos pequenos, executar direto (mais r?pido que spawn isolate)
-    if (existing.length < 3000 && addition.length < 1000) {
-      return _filterDuplicateParagraphsSync(existing, addition);
-    }
-
-    // Textos grandes: processar em isolate separado
-    return await compute(_filterDuplicateParagraphsStatic, {
-      'existing': existing,
-      'addition': addition,
-    });
-  }
-
-  // Vers?o s?ncrona para casos r?pidos
-  String _filterDuplicateParagraphsSync(String existing, String addition) {
-    if (addition.trim().isEmpty) return '';
-
-    // ?? OTIMIZA??O CR?TICA: Comparar apenas ?ltimos ~5000 caracteres
-    final recentText = existing.length > 5000
-        ? existing.substring(existing.length - 5000)
-        : existing;
-
-    final existingSet = recentText
-        .split(RegExp(r'\n{2,}'))
-        .map((p) => p.trim())
-        .where((p) => p.isNotEmpty)
-        .toSet();
-
-    final seen = <String>{};
-    final buffer = <String>[];
-
-    for (final rawParagraph in addition.split(RegExp(r'\n{2,}'))) {
-      final paragraph = rawParagraph.trim();
-      if (paragraph.isEmpty) {
-        continue;
-      }
-
-      if (existingSet.contains(paragraph)) {
-        continue;
-      }
-
-      if (!seen.add(paragraph)) {
-        continue;
-      }
-
-      buffer.add(paragraph);
-    }
-
-    return buffer.join('\n\n');
-  }
-
-  /// ?? Detecta par?grafos duplicados no roteiro final (apenas para LOG)
-  /// N?O remove nada, apenas alerta no console para debugging
-  void _detectDuplicateParagraphsInFinalScript(String fullScript) {
-    final paragraphs = fullScript
-        .split(RegExp(r'\n{2,}'))
-        .map((p) => p.trim())
-        .where((p) => p.isNotEmpty)
-        .toList();
-
-    final seen = <String, int>{};
-    var duplicateCount = 0;
-
-    for (var i = 0; i < paragraphs.length; i++) {
-      final paragraph = paragraphs[i];
-
-      if (seen.containsKey(paragraph)) {
-        duplicateCount++;
-        final firstIndex = seen[paragraph]!;
-        final preview = paragraph.length > 80
-            ? '${paragraph.substring(0, 80)}...'
-            : paragraph;
-
-        debugPrint('?? DUPLICA??O DETECTADA:');
-        debugPrint(
-          '   ?? Par?grafo #${firstIndex + 1} repetido no par?grafo #${i + 1}',
-        );
-        debugPrint('   ?? Pr?via: "$preview"');
-      } else {
-        seen[paragraph] = i;
-      }
-    }
-
-    if (duplicateCount > 0) {
-      debugPrint(
-        '?? TOTAL: $duplicateCount par?grafo(s) duplicado(s) encontrado(s) no roteiro final!',
-      );
-      debugPrint(
-        '   ?? DICA: Fortale?a as instru??es anti-repeti??o no prompt',
-      );
-    } else {
-      debugPrint(
-        '? VERIFICA??O: Nenhuma duplica??o de par?grafo detectada no roteiro final',
-      );
-    }
-  }
+  /// 🔧 v7.6.78: Delegado ao módulo TextFilter (SOLID)
+  void _detectDuplicateParagraphsInFinalScript(String fullScript) =>
+      TextFilter.detectDuplicates(fullScript);
 
   // ??? v7.6.64: _removeDuplicateConsecutiveParagraphs removido (n?o era usado)
 
