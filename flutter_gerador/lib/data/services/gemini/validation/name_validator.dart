@@ -275,34 +275,126 @@ class NameValidator {
   }
 
   /// Extrai nomes de um texto usando regex
+  /// 🔧 v7.6.76: Versão completa com detecção de nomes compostos
   static Set<String> extractNamesFromText(String text) {
     final names = <String>{};
     if (text.isEmpty) return names;
 
-    // Regex: palavras capitalizadas (possíveis nomes)
+    // 🎯 v7.6.30: DETECTAR NOMES COMPOSTOS PRIMEIRO (Arthur Evans, Mary Jane, etc)
+    final compoundNamePattern = RegExp(
+      r'\b([A-ZÀ-Ú][a-zà-ú]{1,14}(?:\s+[A-ZÀ-Ú][a-zà-ú]{1,14}){1,2})\b',
+      multiLine: true,
+    );
+
+    final compoundMatches = compoundNamePattern.allMatches(text);
+    final processedWords = <String>{}; // Rastrear palavras já processadas
+
+    for (final match in compoundMatches) {
+      final fullName = match.group(1);
+      if (fullName != null && !isCommonPhrase(fullName)) {
+        names.add(fullName);
+        for (final word in fullName.split(' ')) {
+          processedWords.add(word);
+        }
+      }
+    }
+
+    // Regex para nomes simples
     final nameRegex = RegExp(
-      r'\b([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+(?:\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)*)\b',
+      r'\b([A-ZÀ-Ú][a-zà-ú]{1,14})\b',
+      multiLine: true,
     );
 
     for (final match in nameRegex.allMatches(text)) {
       final potentialName = match.group(1)?.trim() ?? '';
 
-      // Filtros
+      // Pular se já processado como parte de nome composto
+      if (processedWords.contains(potentialName)) continue;
+
+      // Filtros básicos
       if (potentialName.length < 3) continue;
-      if (potentialName.length > 30) {
-        continue; // Nomes muito longos não são pessoas
-      }
+      if (potentialName.length > 30) continue;
 
       // Verificar se é stopword
       if (nameStopwords.contains(potentialName.toLowerCase())) continue;
 
-      // Verificar se parece nome de pessoa (banco curado)
+      // 🎯 Filtro de palavras comuns
+      if (_commonWordsFilter.contains(potentialName)) continue;
+
+      // Verificar se parece nome de pessoa
       if (!looksLikePersonName(potentialName)) continue;
 
       names.add(potentialName);
     }
 
     return names;
+  }
+
+  /// 🔧 v7.6.76: Filtro de palavras comuns que não são nomes
+  static final Set<String> _commonWordsFilter = {
+    // Pronomes
+    'He', 'She', 'It', 'They', 'We', 'You', 'I',
+    // Possessivos
+    'My', 'Your', 'His', 'Her', 'Their', 'Our', 'Its',
+    // Conjunções
+    'And', 'But', 'Or', 'Because', 'So', 'Yet', 'For',
+    // Artigos
+    'The', 'A', 'An',
+    // Preposições comuns
+    'In', 'On', 'At', 'To', 'From', 'With', 'By', 'Of', 'As',
+    // Advérbios temporais
+    'Then', 'When', 'After', 'Before', 'Now', 'Today', 'Tomorrow',
+    'Yesterday', 'While', 'During', 'Since', 'Until', 'Although', 'Though',
+    // Advérbios de frequência
+    'Always', 'Never', 'Often', 'Sometimes', 'Usually', 'Rarely',
+    'Maybe', 'Perhaps', 'Almost', 'Just', 'Only', 'Even', 'Still',
+    // Quantificadores
+    'Much', 'Many', 'Few', 'Little', 'Some', 'Any', 'All', 'Most',
+    'Both', 'Each', 'Every', 'Either', 'Neither', 'One', 'Two', 'Three',
+    // Outros comuns
+    'This', 'That', 'These', 'Those', 'There', 'Here', 'Where',
+    'What', 'Which', 'Who', 'Whose', 'Whom', 'Why', 'How',
+    // Verbos auxiliares
+    'Was', 'Were', 'Is', 'Are', 'Am', 'Has', 'Have', 'Had',
+    'Do', 'Does', 'Did', 'Will', 'Would', 'Could', 'Should',
+    'Can', 'May', 'Might', 'Must',
+    // Dias da semana
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+    // Meses
+    'January', 'February', 'March', 'April', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+    // Português
+    'Então', 'Quando', 'Depois', 'Antes', 'Agora', 'Hoje', 'Amanhã', 'Ontem',
+    'Naquela', 'Aquela', 'Aquele', 'Naquele', 'Enquanto', 'Durante', 'Embora',
+    'Porém', 'Portanto', 'Assim', 'Nunca', 'Sempre', 'Talvez', 'Quase',
+    'Apenas', 'Mesmo', 'Também', 'Muito', 'Pouco', 'Tanto', 'Onde',
+    'Como', 'Porque', 'Mas', 'Ou', 'Para', 'Com', 'Sem', 'Por',
+    // Termos técnicos
+    'Tax', 'Certificate', 'Bearer', 'Shares', 'Switzerland',
+    'Consider', 'Tucked',
+  };
+
+  /// 🔧 v7.6.76: Verifica se frase composta é nome real ou expressão comum
+  static bool isCommonPhrase(String phrase) {
+    final phraseLower = phrase.toLowerCase();
+
+    const commonPhrases = {
+      'new york', 'los angeles', 'san francisco', 'las vegas',
+      'united states', 'north carolina', 'south carolina',
+      'good morning', 'good night', 'good afternoon',
+      'thank you', 'excuse me', 'oh my',
+      'dear god', 'holy shit', 'oh well',
+      'right now', 'just then', 'back then',
+      'even though', 'as if', 'so much',
+      'too much', 'very much', 'much more',
+      // Português
+      'são paulo', 'rio de', 'belo horizonte',
+      'bom dia', 'boa tarde', 'boa noite',
+      'meu deus', 'nossa senhora', 'por favor',
+      'de repente', 'de novo', 'tão pouco',
+    };
+
+    return commonPhrases.contains(phraseLower);
   }
 
   /// Valida se há nomes duplicados em papéis diferentes
