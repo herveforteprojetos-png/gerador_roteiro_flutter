@@ -28,10 +28,11 @@ import 'package:flutter_gerador/data/services/gemini/validation/name_constants.d
 import 'package:flutter_gerador/data/services/gemini/validation/relationship_patterns.dart';
 import 'package:flutter_gerador/data/services/gemini/validation/role_patterns.dart';
 
-// 🏗️ v7.6.67: MÓDULOS DE PROMPTS (Refatoração SOLID)
+// 🏗️ v7.6.70: MÓDULOS DE PROMPTS (Refatoração SOLID)
+import 'package:flutter_gerador/data/services/gemini/prompts/period_helper.dart';
 import 'package:flutter_gerador/data/services/gemini/prompts/perspective_builder.dart';
 
-/// ?? Helper padronizado para logs (mant�m emojis em debug, limpa em produ��o)
+/// 🔧 Helper padronizado para logs (mantém emojis em debug, limpa em produção)
 void _log(String message, {String level = 'info'}) {
   if (kDebugMode) {
     // Debug: mant�m emojis e formata��o original
@@ -2317,195 +2318,39 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     return hints;
   }
 
-  // ??????????????????????????????????????????????????????????????????
-  // ?? SISTEMA DE ESTILOS NARRATIVOS
-  // ??????????????????????????????????????????????????????????????????
+  // 📅 SISTEMA DE ESTILOS NARRATIVOS (Delegado ao PeriodHelper)
 
-  /// Extrai ano de strings como "Ano 1890, Velho Oeste" ou "1920, Nova York"
-  String _extractYear(String localizacao) {
-    if (localizacao.trim().isEmpty) return '';
+  /// 🎯 Delegado ao módulo PeriodHelper (SOLID)
+  String _extractYear(String localizacao) =>
+      PeriodHelper.extractYear(localizacao);
 
-    // Padr�es: "Ano 1890", "ano 1920", "Year 1850", "1776"
-    final yearRegex = RegExp(r'(?:Ano|ano|Year|year)?\s*(\d{4})');
-    final match = yearRegex.firstMatch(localizacao);
+  /// 🎯 Delegado ao módulo PeriodHelper (SOLID)
+  List<String> _getAnachronismList(String year) =>
+      PeriodHelper.getAnachronismList(year);
 
-    if (match != null) {
-      final year = match.group(1)!;
-      final yearInt = int.tryParse(year);
+  /// 🎯 Delegado ao módulo PeriodHelper (SOLID)
+  List<String> _getPeriodElements(String year, String? genre) =>
+      PeriodHelper.getPeriodElements(year, genre);
 
-      // Validar se � um ano razo�vel (1000-2100)
-      if (yearInt != null && yearInt >= 1000 && yearInt <= 2100) {
-        return year;
-      }
-    }
-
-    return '';
-  }
-
-  /// Retorna lista de anacronismos a evitar baseado no ano
-  List<String> _getAnachronismList(String year) {
-    if (year.isEmpty) return [];
-
-    final yearInt = int.tryParse(year);
-    if (yearInt == null) return [];
-
-    final anachronisms = <String>[];
-
-    // Tecnologias por per�odo (data da inven��o/populariza��o)
-    if (yearInt < 1876) anachronisms.add('Telefone (inventado em 1876)');
-    if (yearInt < 1879) {
-      anachronisms.add('L�mpada el�trica (inventada em 1879)');
-    }
-    if (yearInt < 1886) {
-      anachronisms.add('Autom�vel a gasolina (inventado em 1886)');
-    }
-    if (yearInt < 1895) anachronisms.add('Cinema (inventado em 1895)');
-    if (yearInt < 1903) anachronisms.add('Avi�o (inventado em 1903)');
-    if (yearInt < 1920) {
-      anachronisms.add('R�dio comercial (popularizado em 1920)');
-    }
-    if (yearInt < 1927) anachronisms.add('Cinema sonoro (1927)');
-    if (yearInt < 1936) anachronisms.add('Televis�o comercial (1936)');
-    if (yearInt < 1946) anachronisms.add('Computador eletr�nico (ENIAC 1946)');
-    if (yearInt < 1950) anachronisms.add('Cart�o de cr�dito (1950)');
-    if (yearInt < 1969) anachronisms.add('Internet/ARPANET (1969)');
-    if (yearInt < 1973) anachronisms.add('Telefone celular (1973)');
-    if (yearInt < 1981) anachronisms.add('Computador pessoal (IBM PC 1981)');
-    if (yearInt < 1983) anachronisms.add('Internet comercial (1983)');
-    if (yearInt < 1991) anachronisms.add('World Wide Web (1991)');
-    if (yearInt < 2001) anachronisms.add('Wikipedia (2001)');
-    if (yearInt < 2004) anachronisms.add('Facebook (2004)');
-    if (yearInt < 2006) anachronisms.add('Twitter (2006)');
-    if (yearInt < 2007) anachronisms.add('iPhone/Smartphone moderno (2007)');
-
-    return anachronisms;
-  }
-
-  /// Retorna elementos de �poca que DEVEM ser inclu�dos
-  List<String> _getPeriodElements(String year, String? genre) {
-    if (year.isEmpty) return [];
-
-    final yearInt = int.tryParse(year);
-    if (yearInt == null) return [];
-
-    final elements = <String>[];
-
-    // ?? WESTERN (1850-1900)
-    if (genre == 'western' && yearInt >= 1850 && yearInt <= 1900) {
-      elements.addAll([
-        'Rev�lver (Colt Peacemaker comum ap�s 1873)',
-        'Saloon com portas batentes',
-        'Cavalo como transporte principal',
-        'Dilig�ncia (stagecoach)',
-        'Xerife e delegados',
-        'Lei do mais r�pido',
-      ]);
-
-      if (yearInt >= 1869) {
-        elements.add('Ferrovia transcontinental (completada em 1869)');
-      }
-      if (yearInt >= 1844) {
-        elements.add('Tel�grafo para comunica��o � dist�ncia');
-      }
-    }
-
-    // ?? ELEMENTOS GERAIS POR PER�ODO
-    if (yearInt < 1850) {
-      // Era pr�-industrial
-      elements.addAll([
-        'Ilumina��o a vela ou lampi�o a �leo',
-        'Transporte por carro�a ou cavalo',
-        'Cartas entregues por mensageiro',
-        'Vestimentas formais e conservadoras',
-        'Sociedade rigidamente hier�rquica',
-      ]);
-    } else if (yearInt >= 1850 && yearInt < 1900) {
-      // Era vitoriana/industrial
-      elements.addAll([
-        'Ilumina��o a g�s nas cidades',
-        'Trem a vapor (ferrovias em expans�o)',
-        'Tel�grafo para comunica��o',
-        'Fotografia (daguerre�tipo)',
-        'Jornais impressos',
-      ]);
-    } else if (yearInt >= 1900 && yearInt < 1920) {
-      // Belle �poque / Era Eduardiana
-      elements.addAll([
-        'Primeiros autom�veis (ainda raros)',
-        'Telefone fixo (casas ricas)',
-        'Cinema mudo',
-        'Ilumina��o el�trica nas cidades',
-        'Fon�grafo (m�sica gravada)',
-      ]);
-    } else if (yearInt >= 1920 && yearInt < 1945) {
-      // Entre-guerras
-      elements.addAll([
-        'R�dio como principal entretenimento',
-        'Cinema sonoro (ap�s 1927)',
-        'Autom�veis mais comuns',
-        'Telefone residencial',
-        'Avi�es comerciais (raros)',
-      ]);
-    } else if (yearInt >= 1945 && yearInt < 1970) {
-      // P�s-guerra / Era de ouro
-      elements.addAll([
-        'Televis�o em preto e branco',
-        'Autom�vel como padr�o',
-        'Eletrodom�sticos modernos',
-        'Cinema em cores',
-        'Discos de vinil',
-      ]);
-    } else if (yearInt >= 1970 && yearInt < 1990) {
-      // Era moderna
-      elements.addAll([
-        'Televis�o em cores',
-        'Telefone residencial fixo',
-        'Fitas cassete e VHS',
-        'Primeiros computadores pessoais (ap�s 1981)',
-        'Walkman (m�sica port�til)',
-      ]);
-    } else if (yearInt >= 1990 && yearInt < 2007) {
-      // Era digital inicial
-      elements.addAll([
-        'Internet discada/banda larga',
-        'Celular b�sico (sem smartphone)',
-        'E-mail',
-        'CDs e DVDs',
-        'Computadores pessoais comuns',
-      ]);
-    } else if (yearInt >= 2007 && yearInt <= 2025) {
-      // Era dos smartphones
-      elements.addAll([
-        'Smartphone touchscreen',
-        'Redes sociais (Facebook, Twitter, Instagram)',
-        'Wi-Fi ub�quo',
-        'Streaming de v�deo/m�sica',
-        'Apps para tudo',
-      ]);
-    }
-
-    return elements;
-  }
-
-  /// Gera orienta��o de estilo narrativo baseado na configura��o
+  /// Gera orientação de estilo narrativo baseado na configuração
   String _getNarrativeStyleGuidance(ScriptConfig config) {
     final style = config.narrativeStyle;
 
     switch (style) {
       case 'reflexivo_memorias':
         return '''
-??????????????????????????????????????????????????????????????????
-?? ESTILO NARRATIVO: REFLEXIVO (MEM�RIAS)
-??????????????????????????????????????????????????????????????????
+🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭
+📝 ESTILO NARRATIVO: REFLEXIVO (MEMÓRIAS)
+🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭🎭
 
-**Tom:** Nost�lgico, pausado, introspectivo, suave
+**Tom:** Nostálgico, pausado, introspectivo, suave
 **Ritmo:** Lento e contemplativo, com pausas naturais
 **Perspectiva emocional:** Olhar do presente para o passado com sabedoria
 
 **ESTRUTURA NARRATIVA:**
-1. Come�ar com gatilhos de mem�ria: "Eu me lembro...", "Naquele tempo...", "Era uma �poca em que..."
+1. Começar com gatilhos de memória: "Eu me lembro...", "Naquele tempo...", "Era uma época em que..."
 2. Intercalar presente e passado sutilmente
-3. Usar pausas reflexivas (retic�ncias, sil�ncios)
+3. Usar pausas reflexivas (reticências, silêncios)
 4. Incluir detalhes sensoriais: cheiro, textura, luz, sons
 5. Mencionar pequenas coisas que marcam �poca (objetos, costumes)
 
