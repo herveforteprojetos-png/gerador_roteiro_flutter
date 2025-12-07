@@ -196,7 +196,9 @@ class GeminiService {
 
     // ?? CORRE??O CR?TICA: Resetar vari?veis globais ANTES de verificar rate limit
     // Isso garante que cada nova gera??o comece do zero
-    _resetGlobalRateLimit();
+    _globalRequestCount = 0;
+    _globalLastRequestTime = DateTime.now();
+    _rateLimitBusy = false;
 
     // 🔄 v4: Resetar rastreador de nomes para nova história
     _namesUsedInCurrentStory.clear();
@@ -1292,20 +1294,15 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     _stopWatchdog();
 
     // ?? NOVO: Resetar vari?veis static tamb?m (rate limiting global)
-    _resetGlobalRateLimit();
+    _globalRequestCount = 0;
+    _globalLastRequestTime = DateTime.now();
+    _rateLimitBusy = false;
 
     if (kDebugMode) {
       debugPrint(
         '[$_instanceId] ? Estado completamente resetado (incluindo rate limit global)',
       );
     }
-  }
-
-  // ?? NOVO: M?todo para resetar rate limiting global entre gera??es
-  static void _resetGlobalRateLimit() {
-    _globalRequestCount = 0;
-    _globalLastRequestTime = DateTime.now();
-    _rateLimitBusy = false;
   }
 
   Future<String> generateText(String prompt) async {
