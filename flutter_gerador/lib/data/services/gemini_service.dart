@@ -126,7 +126,7 @@ class GeminiService {
   }
 
   GeminiService({String? instanceId})
-    : _instanceId = instanceId ?? _genId(),
+    : _instanceId = instanceId ?? 'gemini_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(999)}',
       _dio = Dio(
         BaseOptions(
           connectTimeout: const Duration(
@@ -1344,8 +1344,6 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   }
 
   // ===================== Infra =====================
-  static String _genId() =>
-      'gemini_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(999)}';
 
   void _startWatchdog() {
     _stopWatchdog();
