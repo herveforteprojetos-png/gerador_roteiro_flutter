@@ -1518,12 +1518,6 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     _consecutive503Errors = max(0, _consecutive503Errors - 1); // Decay
   }
 
-  /// Registra erro 503 da API
-  void _recordApi503Error() {
-    _consecutive503Errors++;
-    _consecutiveSuccesses = 0;
-  }
-
   Future<T> _retryOnRateLimit<T>(
     Future<T> Function() op, {
     int maxRetries = 6,
@@ -1556,7 +1550,8 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
             errorStr.contains('server error') ||
             errorStr.contains('service unavailable')) {
           // ?? v7.6.20: Registrar erro 503 para Adaptive Delay Manager
-          _recordApi503Error();
+          _consecutive503Errors++;
+          _consecutiveSuccesses = 0;
 
           // ?? v7.6.19: Fallback OpenAI REMOVIDO - respeitar sele??o do usu?rio
           // Se usu?rio escolheu Gemini, usar APENAS Gemini (mesmo com erros 503)
