@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../models/script_config.dart';
+import '../utils/character_guidance.dart';
+
 /// 📝 Classe para armazenar uma nota sobre um personagem em um bloco específico
 class CharacterNote {
   final int blockNumber;
@@ -627,5 +630,76 @@ class CharacterTracker {
     _roleToName.clear();
     _characterHistories.clear();
     _characterResolution.clear();
+  }
+
+  /// 🔧 SOLID v7.6.81: Inicializa tracker com nomes do config
+  ///
+  /// Carrega nomes do protagonista, secundário e extrai do título.
+  /// Atribui papéis apropriados a cada nome.
+  static void bootstrap(CharacterTracker tracker, ScriptConfig config) {
+    final names = <String>{};
+    final fromProtagonist = <String>{};
+    final fromSecondary = <String>{};
+    final fromContext = <String>{};
+    final fromTitle = <String>{};
+
+    if (config.protagonistName.trim().isNotEmpty) {
+      final name = config.protagonistName.trim();
+      names.add(name);
+      fromProtagonist.add(name);
+    }
+    if (config.secondaryCharacterName.trim().isNotEmpty) {
+      final name = config.secondaryCharacterName.trim();
+      names.add(name);
+      fromSecondary.add(name);
+    }
+
+    // Context removido - não há mais nomes para extrair do contexto manual
+
+    // 🆕 NOVO: Extrair gênero e relações de personagens do título
+    final titleNames = CharacterGuidanceBuilder.extractHintsFromTitle(
+      config.title,
+      '',
+    );
+    names.addAll(titleNames);
+    fromTitle.addAll(titleNames);
+
+    // ✅ CORREÇÃO BUG ALBERTO: Adicionar nomes COM papéis ao tracker
+    for (final name in names) {
+      // Context removido - papel não pode mais ser extraído do contexto manual
+
+      // Para protagonista e secundário, usar papéis explícitos
+      if (fromProtagonist.contains(name)) {
+        tracker.addName(name, role: 'protagonista');
+      } else if (fromSecondary.contains(name)) {
+        tracker.addName(name, role: 'secundário');
+      } else {
+        tracker.addName(name, role: 'indefinido');
+      }
+    }
+
+    // 📝 LOG DETALHADO: Mostrar origem de cada nome carregado
+    if (kDebugMode && tracker.confirmedNames.isNotEmpty) {
+      debugPrint(
+        '🔰 TRACKER BOOTSTRAP - ${tracker.confirmedNames.length} nome(s) carregado(s):',
+      );
+      if (fromProtagonist.isNotEmpty) {
+        debugPrint('   🎭 Protagonista: ${fromProtagonist.join(", ")}');
+      }
+      if (fromSecondary.isNotEmpty) {
+        debugPrint('   🎬 Secundário: ${fromSecondary.join(", ")}');
+      }
+      if (fromContext.isNotEmpty) {
+        debugPrint('   📖 Do contexto: ${fromContext.join(", ")}');
+      }
+      if (fromTitle.isNotEmpty) {
+        debugPrint('   📌 Do título: ${fromTitle.join(", ")}');
+      }
+      debugPrint('   ✅ Total: ${tracker.confirmedNames.join(", ")}');
+    } else if (kDebugMode) {
+      debugPrint(
+        '🔰 TRACKER BOOTSTRAP: Nenhum nome inicial fornecido (será detectado no bloco 1)',
+      );
+    }
   }
 }

@@ -204,16 +204,16 @@ class GeminiService {
       );
     }
 
-    // CORRE��O: Reset completo do estado para nova gera��o
+    // CORREÇÃO: Reset completo do estado para nova geração
     resetState();
 
-    // Tracker global alimentado com os nomes definidos pelo usu�rio/contexto
+    // Tracker global alimentado com os nomes definidos pelo usuário/contexto
     final persistentTracker = CharacterTracker();
-    _bootstrapCharacterTracker(persistentTracker, config);
+    CharacterTracker.bootstrap(persistentTracker, config);
 
-    // ??? v7.6.64: WORLD STATE - Agora usa WorldState do m?dulo (SOLID)
-    // Rastreia personagens, invent?rio, fatos e resumo da hist?ria
-    // Usa o MESMO modelo selecionado pelo usu?rio (Pipeline Modelo ?nico)
+    // 🔧 v7.6.64: WORLD STATE - Agora usa WorldState do módulo (SOLID)
+    // Rastreia personagens, inventário, fatos e resumo da história
+    // Usa o MESMO modelo selecionado pelo usuário (Pipeline Modelo Único)
     final worldState = WorldState();
 
     // ??? v7.6.64: Reset e inicializa??o do WorldStateManager (SOLID)
@@ -2009,75 +2009,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
   // ===================== Geração de Blocos =====================
   // 🔧 v7.6.80: Wrappers de BaseRules removidos - usar BaseRules.* diretamente
+  // 🔧 v7.6.81: _bootstrapCharacterTracker movido para CharacterTracker.bootstrap()
 
-  void _bootstrapCharacterTracker(
-    CharacterTracker tracker,
-    ScriptConfig config,
-  ) {
-    final names = <String>{};
-    final fromProtagonist = <String>{};
-    final fromSecondary = <String>{};
-    final fromContext = <String>{};
-    final fromTitle = <String>{};
-
-    if (config.protagonistName.trim().isNotEmpty) {
-      final name = config.protagonistName.trim();
-      names.add(name);
-      fromProtagonist.add(name);
-    }
-    if (config.secondaryCharacterName.trim().isNotEmpty) {
-      final name = config.secondaryCharacterName.trim();
-      names.add(name);
-      fromSecondary.add(name);
-    }
-
-    // Context removido - n?o h? mais nomes para extrair do contexto manual
-
-    // ?? NOVO: Extrair g?nero e rela??es de personagens do t?tulo
-    final titleNames = _extractCharacterHintsFromTitle(config.title, '');
-    names.addAll(titleNames);
-    fromTitle.addAll(titleNames);
-
-    // ?? CORRE??O BUG ALBERTO: Adicionar nomes COM pap?is ao tracker
-    for (final name in names) {
-      // Context removido - papel n?o pode mais ser extra?do do contexto manual
-
-      // Para protagonista e secund?rio, usar pap?is expl?citos
-      if (fromProtagonist.contains(name)) {
-        tracker.addName(name, role: 'protagonista');
-      } else if (fromSecondary.contains(name)) {
-        tracker.addName(name, role: 'secund?rio');
-      } else {
-        tracker.addName(name, role: 'indefinido');
-      }
-    }
-
-    // ?? LOG DETALHADO: Mostrar origem de cada nome carregado
-    if (kDebugMode && tracker.confirmedNames.isNotEmpty) {
-      debugPrint(
-        '?? TRACKER BOOTSTRAP - ${tracker.confirmedNames.length} nome(s) carregado(s):',
-      );
-      if (fromProtagonist.isNotEmpty) {
-        debugPrint('   ?? Protagonista: ${fromProtagonist.join(", ")}');
-      }
-      if (fromSecondary.isNotEmpty) {
-        debugPrint('   ?? Secund?rio: ${fromSecondary.join(", ")}');
-      }
-      if (fromContext.isNotEmpty) {
-        debugPrint('   ?? Do contexto: ${fromContext.join(", ")}');
-      }
-      if (fromTitle.isNotEmpty) {
-        debugPrint('   ?? Do t?tulo: ${fromTitle.join(", ")}');
-      }
-      debugPrint('   ? Total: ${tracker.confirmedNames.join(", ")}');
-    } else if (kDebugMode) {
-      debugPrint(
-        '?? TRACKER BOOTSTRAP: Nenhum nome inicial fornecido (ser? detectado no bloco 1)',
-      );
-    }
-  }
-
-  /// ?? v7.6.25: Atualiza tracker, RETORNA FALSE se houve conflito de papel
+  /// 🔧 v7.6.25: Atualiza tracker, RETORNA FALSE se houve conflito de papel
   bool _updateTrackerFromContextSnippet(
     CharacterTracker tracker,
     ScriptConfig config,
@@ -2157,12 +2091,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   ) =>
       CharacterGuidanceBuilder.buildGuidance(config, tracker);
 
-
-  /// 🔧 Delegado ao módulo CharacterGuidanceBuilder (SOLID v7.6.75)
-  Set<String> _extractCharacterHintsFromTitle(String title, String context) =>
-      CharacterGuidanceBuilder.extractHintsFromTitle(title, context);
-
-  /// ?? Delegado ao m�dulo NarrativeStyleBuilder (SOLID)
+  /// 🔧 Delegado ao módulo NarrativeStyleBuilder (SOLID)
   String _getNarrativeStyleGuidance(ScriptConfig config) =>
       NarrativeStyleBuilder.getNarrativeStyleGuidance(config);
 
