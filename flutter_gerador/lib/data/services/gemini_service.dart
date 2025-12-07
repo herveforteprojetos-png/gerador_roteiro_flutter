@@ -2999,18 +2999,11 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   }
 
   // 🔧 v7.6.82: Wrappers _looksLikePersonName e _isLikelyName removidos
-  // Usar NameValidator.looksLikePersonName() e NameValidator.isLikelyName() diretamente
+  // 🔧 v7.6.85: Wrappers perspectiveLabel e _getPerspectiveInstruction removidos
+  // Usar PerspectiveBuilder.perspectiveLabel() e PerspectiveBuilder.getPerspectiveInstruction() diretamente
 
-  /// 🔧 Delegado ao módulo PerspectiveBuilder (SOLID)
-  static String perspectiveLabel(String perspective) =>
-      PerspectiveBuilder.perspectiveLabel(perspective);
-
-  /// 🔧 Delegado ao módulo PerspectiveBuilder (SOLID)
-  String _getPerspectiveInstruction(String perspective, ScriptConfig config) =>
-      PerspectiveBuilder.getPerspectiveInstruction(perspective, config);
-
-  /// ?? OTIMIZA��O: Limita contexto aos �ltimos blocos para evitar timeouts
-  /// Mant�m apenas os �ltimos N blocos + resumo inicial para continuidade
+  /// 📦 OTIMIZAÇÃO: Limita contexto aos últimos blocos para evitar timeouts
+  /// Mantém apenas os últimos N blocos + resumo inicial para continuidade
   String _buildLimitedContext(
     String fullContext,
     int currentBlock,
@@ -3500,8 +3493,8 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         '   ?? SE HOUVER D?VIDA: Use "Megan" em vez de tentar definir rela??o familiar!\n'
         '????????????????????????????????????????????????????\n';
 
-    // ?? CRITICAL: ADICIONAR INSTRU??O DE PERSPECTIVA/G?NERO NO IN?CIO DO PROMPT
-    final perspectiveInstruction = _getPerspectiveInstruction(c.perspective, c);
+    // 🔒 CRITICAL: ADICIONAR INSTRUÇÃO DE PERSPECTIVA/GÊNERO NO INÍCIO DO PROMPT
+    final perspectiveInstruction = PerspectiveBuilder.getPerspectiveInstruction(c.perspective, c);
 
     // ?? NOVO: Combinar prompt do template (compacto) + informa??es de bloco
     final compactPrompt = MainPromptTemplate.buildCompactPrompt(
