@@ -26,8 +26,11 @@ import 'package:flutter_gerador/data/services/gemini/tools/tools_modules.dart';
 // 🏗️ v7.6.67: MÓDULOS DE VALIDAÇÃO (Refatoração SOLID - Fase 5)
 import 'package:flutter_gerador/data/services/gemini/validation/name_constants.dart';
 // name_validator.dart exportado via gemini_modules.dart
-import 'package:flutter_gerador/data/services/gemini/validation/relationship_patterns.dart';
+// relationship_patterns.dart usado via CharacterValidation module
 import 'package:flutter_gerador/data/services/gemini/validation/role_patterns.dart';
+
+// 🏗️ v7.6.101: MÓDULO DE VALIDAÇÃO DE PERSONAGENS (SOLID)
+import 'package:flutter_gerador/data/services/gemini/validation/character_validation.dart';
 
 // 🏗️ v7.6.70: MÓDULOS DE PROMPTS (Refatoração SOLID)
 // narrative_styles.dart exportado via gemini_modules.dart
@@ -82,6 +85,9 @@ class GeminiService {
 
   // Debug Logger
   final _debugLogger = DebugLogManager();
+
+  // 🏗️ v7.6.101: Módulo de validação de personagens (SOLID)
+  late final CharacterValidation _characterValidation;
 
   // ?? SISTEMA DE RASTREAMENTO DE NOMES - v4 (SOLU??O T?CNICA)
   // Armazena todos os nomes usados na hist?ria atual para prevenir duplica??es
@@ -144,6 +150,9 @@ class GeminiService {
     _llmClient = LlmClient(instanceId: _instanceId);
     _worldStateManager = WorldStateManager(llmClient: _llmClient);
     _scriptValidator = ScriptValidator(llmClient: _llmClient);
+    
+    // 🏗️ v7.6.101: Módulo de validação de personagens
+    _characterValidation = CharacterValidation(_debugLogger);
 
     // ??? v7.6.65: M?dulos DuplicationDetector e TextCleaner s?o est?ticos
     // NameTracker e RateLimiter dispon?veis via imports para uso futuro
@@ -668,11 +677,11 @@ class GeminiService {
         if (added.trim().isNotEmpty) {
           // ?? VALIDA??O CR?TICA 1: Detectar e registrar protagonista no Bloco 1
           if (block == 1) {
-            _detectAndRegisterProtagonist(added, config, persistentTracker);
+            _characterValidation.detectAndRegisterProtagonist(added, config, persistentTracker);
           }
 
           // ?? VALIDA??O CR?TICA 2: Verificar se protagonista mudou de nome
-          final protagonistChanged = _detectProtagonistNameChange(
+          final protagonistChanged = _characterValidation.detectProtagonistNameChange(
             added,
             config,
             persistentTracker,
@@ -680,7 +689,7 @@ class GeminiService {
           );
 
           // ?? VALIDA??O CR?TICA 3: Verificar se algum nome foi reutilizado
-          _validateNameReuse(added, persistentTracker, block);
+          _characterValidation.validateNameReuse(added, persistentTracker, block);
 
           // ?? VALIDA??O CR?TICA 4: REJEITAR BLOCO se protagonista mudou ou personagens trocaram de nome
           final characterNameChanges = _detectCharacterNameChanges(
@@ -743,7 +752,7 @@ class GeminiService {
               }
 
               // Validar se regenera??o corrigiu o problema
-              final stillChanged = _detectProtagonistNameChange(
+              final stillChanged = _characterValidation.detectProtagonistNameChange(
                 regenerated,
                 config,
                 persistentTracker,
@@ -839,7 +848,7 @@ class GeminiService {
           }
 
           // ?? VALIDA??O CR?TICA 4: Verificar inconsist?ncias em rela??es familiares
-          _validateFamilyRelations(added, block);
+          _characterValidation.validateFamilyRelations(added, block);
 
           // ⏱️ v7.6.41: Resetar watchdog a cada bloco bem-sucedido
           // Evita timeout em roteiros longos (35+ blocos)
@@ -864,7 +873,7 @@ class GeminiService {
           // ?? v7.6.28: VALIDA??O DE NOMES DUPLICADOS (antes da v7.6.25)
           // OBJETIVO: Detectar quando MESMO NOME aparece em PAP?IS DIFERENTES
           // EXEMPLO: "Mark" como boyfriend + "Mark" como attorney
-          final duplicateNameConflict = _validateUniqueNames(
+          final duplicateNameConflict = _characterValidation.validateUniqueNames(
             added,
             persistentTracker,
             block,
@@ -996,7 +1005,7 @@ class GeminiService {
 
               if (added.trim().isNotEmpty) {
                 // ?? v7.6.28: VALIDAR nomes duplicados PRIMEIRO
-                final retryHasDuplicateNames = _validateUniqueNames(
+                final retryHasDuplicateNames = _characterValidation.validateUniqueNames(
                   added,
                   persistentTracker,
                   block,
@@ -2071,807 +2080,14 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
   // 🏗️ v7.6.64: _buildRecoveryPrompt migrado para ScriptPromptBuilder.buildRecoveryPrompt()
 
-  /// 🎯 v7.6.17: Detecta e registra o nome da protagonista no Bloco 1
-  /// Extrai o primeiro nome próprio encontrado e registra no tracker
-  void _detectAndRegisterProtagonist(
-    String generatedText,
-    ScriptConfig config,
-    CharacterTracker tracker,
-  ) {
-    final configName = config.protagonistName.trim();
-    if (configName.isEmpty) return;
-
-    // Extrair todos os nomes do texto
-    final names = NameValidator.extractNamesFromText(generatedText);
-
-    // Procurar o nome configurado
-    if (names.contains(configName)) {
-      tracker.setProtagonistName(configName);
-      if (kDebugMode) {
-        debugPrint('? Bloco 1: Protagonista "$configName" confirmada');
-      }
-    } else {
-      // Se nome configurado não apareceu, pegar primeiro nome válido
-      final validNames = names.where((n) => NameValidator.looksLikePersonName(n)).toList();
-      if (validNames.isNotEmpty) {
-        final detectedName = validNames.first;
-        tracker.setProtagonistName(detectedName);
-        if (kDebugMode) {
-          debugPrint(
-            '?? Bloco 1: Nome configurado "$configName" n?o usado, '
-            'detectado "$detectedName" como protagonista',
-          );
-        }
-      }
-    }
-  }
-
-  /// ?? v7.6.17: Valida se protagonista manteve o mesmo nome
-  /// Retorna true se mudan?a detectada (bloco deve ser rejeitado)
-  bool _detectProtagonistNameChange(
-    String generatedText,
-    ScriptConfig config,
-    CharacterTracker tracker,
-    int blockNumber,
-  ) {
-    if (blockNumber == 1) return false; // Bloco 1 sempre v?lido
-
-    final registeredName = tracker.getProtagonistName();
-    if (registeredName == null) return false; // Sem protagonista registrada
-
-    // Extrair todos os nomes do bloco atual
-    final currentNames = NameValidator.extractNamesFromText(generatedText);
-
-    // Verificar se protagonista registrada aparece
-    final protagonistPresent = currentNames.contains(registeredName);
-
-    // Verificar se há outros nomes válidos (possível troca)
-    final otherValidNames = currentNames
-        .where((n) => n != registeredName && NameValidator.looksLikePersonName(n))
-        .toList();
-
-    // ?? DETEC??O: Se protagonista n?o apareceu MAS h? outros nomes v?lidos
-    if (!protagonistPresent && otherValidNames.isNotEmpty) {
-      if (kDebugMode) {
-        debugPrint(
-          '?? Bloco $blockNumber: Protagonista "$registeredName" ausente!',
-        );
-        debugPrint('   Nomes encontrados: ${otherValidNames.join(", ")}');
-        debugPrint('   ?? Poss?vel mudan?a de nome!');
-      }
-
-      _debugLogger.error(
-        'Mudan?a de protagonista detectada',
-        blockNumber: blockNumber,
-        details:
-            'Esperado "$registeredName", encontrado ${otherValidNames.join(", ")}',
-        metadata: {
-          'protagonistaEsperada': registeredName,
-          'nomesEncontrados': otherValidNames,
-        },
-      );
-
-      return true; // Bloco deve ser rejeitado
-    }
-
-    return false; // Nome consistente
-  }
-
-  /// ?? VALIDA??O CR?TICA: Detecta reutiliza??o de nomes de personagens
-  /// Cada personagem deve ter apenas 1 nome ?nico
-  /// Retorna true se valida??o passou, false se detectou erro cr?tico
-  bool _validateProtagonistName(
-    String generatedText,
-    ScriptConfig config,
-    int blockNumber,
-  ) {
-    final protagonistName = config.protagonistName.trim();
-    if (protagonistName.isEmpty) {
-      return true; // Sem protagonista configurada = ok
-    }
-
-    // ?? NOVA VALIDA??O: Detectar auto-apresenta??es com nomes errados
-    // Padr?es: "my name is X", "i'm X", "call me X"
-    final nameIntroPatterns = [
-      RegExp(r'my name is ([A-Z][a-z]+)', caseSensitive: false),
-      RegExp(r"i'm ([A-Z][a-z]+)", caseSensitive: false),
-      RegExp(r'call me ([A-Z][a-z]+)', caseSensitive: false),
-      RegExp(r"i am ([A-Z][a-z]+)", caseSensitive: false),
-    ];
-
-    for (final pattern in nameIntroPatterns) {
-      final match = pattern.firstMatch(generatedText);
-      if (match != null) {
-        final introducedName = match.group(1);
-        if (introducedName != null &&
-            introducedName.toLowerCase() != protagonistName.toLowerCase()) {
-          _log(
-            '?? ERRO CR?TICO: AUTO-APRESENTA??O COM NOME ERRADO!',
-            level: 'critical',
-          );
-          _log(
-            '   ? Protagonista configurada: "$protagonistName"',
-            level: 'critical',
-          );
-          _log(
-            '   ? Nome na auto-apresenta??o: "$introducedName"',
-            level: 'critical',
-          );
-          _log('   ?? Trecho: "${match.group(0)}"', level: 'critical');
-          _log('   ?? BLOCO SER? REJEITADO E REGENERADO', level: 'critical');
-
-          return false; // ?? REJEITAR BLOCO
-        }
-      }
-    }
-
-    // ?? PARTE 1: Validar protagonista espec?fica
-    final suspiciousNames = [
-      'Wanessa',
-      'Carla',
-      'Beatriz',
-      'Fernanda',
-      'Juliana',
-      'Mariana',
-      'Patr?cia',
-      'Roberta',
-      'Silvia',
-      'Tatiana',
-      'Carlos',
-      'Eduardo',
-      'Fernando',
-      'Gustavo',
-      'Henrique',
-      'Leonardo',
-      'Marcelo',
-      'Rafael',
-      'Rodrigo',
-      'Thiago',
-      // Nomes comuns em ingl?s (caso do roteiro gerado)
-      'Hannah',
-      'Laura',
-      'Jessica',
-      'Sarah',
-      'Emily',
-      'Emma',
-      'Olivia',
-      'Sophia',
-      'Michael',
-      'David',
-      'James',
-      'John',
-      'Robert',
-    ];
-
-    final hasProtagonist = generatedText.contains(protagonistName);
-
-    for (final suspiciousName in suspiciousNames) {
-      if (suspiciousName.toLowerCase() == protagonistName.toLowerCase()) {
-        continue; // Nome suspeito ? o pr?prio protagonista configurado
-      }
-
-      if (generatedText.contains(suspiciousName)) {
-        // ?? DEBUG: Log erro cr?tico de nome
-        _debugLogger.error(
-          "Troca de nome detectada: '$suspiciousName'",
-          blockNumber: blockNumber,
-          details:
-              "Protagonista deveria ser '$protagonistName' mas encontrei '$suspiciousName'",
-          metadata: {
-            'protagonista': protagonistName,
-            'nomeEncontrado': suspiciousName,
-          },
-        );
-
-        _log(
-          '?? ERRO CR?TICO DETECTADO NO BLOCO $blockNumber:',
-          level: 'critical',
-        );
-        _log(
-          '   ? Protagonista deveria ser: "$protagonistName"',
-          level: 'critical',
-        );
-        _log(
-          '   ? Mas encontrei nome suspeito: "$suspiciousName"',
-          level: 'critical',
-        );
-        _log(
-          '   ?? POSS?VEL TROCA DE NOME DA PROTAGONISTA!',
-          level: 'critical',
-        );
-        _log('   ?? BLOCO SER? REJEITADO E REGENERADO', level: 'critical');
-
-        return false; // ?? REJEITAR BLOCO
-      }
-    }
-
-    if (!hasProtagonist && blockNumber <= 2) {
-      // ?? DEBUG: Log aviso de protagonista ausente
-      _debugLogger.warning(
-        "Protagonista ausente",
-        details: "'$protagonistName' n?o apareceu no bloco $blockNumber",
-        metadata: {'bloco': blockNumber, 'protagonista': protagonistName},
-      );
-
-      debugPrint(
-        '?? AVISO: Protagonista "$protagonistName" n?o apareceu no bloco $blockNumber',
-      );
-    } else if (hasProtagonist) {
-      // ?? DEBUG: Log valida??o bem-sucedida
-      _debugLogger.validation(
-        "Protagonista validada",
-        blockNumber: blockNumber,
-        details: "'$protagonistName' presente no bloco",
-        metadata: {'protagonista': protagonistName},
-      );
-    }
-
-    return true; // Valida??o passou
-  }
-
-  /// ?? v7.6.22: VALIDA��O DE RELACIONAMENTOS FAMILIARES
-  /// ??? v7.6.67: Refatorado para usar RelationshipPatterns module
-  /// Detecta contradi��es l�gicas em �rvores geneal�gicas
-  /// Retorna true se relacionamentos s�o consistentes, false se h� erros
-  bool _validateFamilyRelationships(String text, int blockNumber) {
-    if (text.isEmpty) return true;
-
-    // Mapa de relacionamentos encontrados: pessoa ? rela��o ? pessoa relacionada
-    final Map<String, Map<String, Set<String>>> relationships = {};
-
-    // ??? v7.6.67: Usa padr�es do m�dulo RelationshipPatterns
-    final patterns = RelationshipPatterns.allRelationPatterns;
-
-    // Extrair relacionamentos do texto
-    for (final entry in patterns.entries) {
-      final relationType = entry.key;
-      final pattern = entry.value;
-
-      for (final match in pattern.allMatches(text)) {
-        final name = match.group(1);
-        if (name != null) {
-          relationships.putIfAbsent('protagonist', () => {});
-          relationships['protagonist']!.putIfAbsent(relationType, () => {});
-          relationships['protagonist']![relationType]!.add(name);
-        }
-      }
-    }
-
-    // Validar relacionamentos l?gicos
-    bool hasError = false;
-
-    // REGRA 1: Se X ? meu cunhado/cunhada, ent?o:
-    //   - X deve ser irm?o/irm? do meu c?njuge OU
-    //   - X deve ser c?njuge do meu irm?o/irm?
-    final brotherInLaw = relationships['protagonist']?['cunhado'] ?? {};
-    final sisterInLaw = relationships['protagonist']?['cunhada'] ?? {};
-    final husband = relationships['protagonist']?['marido'] ?? {};
-    final wife = relationships['protagonist']?['esposa'] ?? {};
-    final brother = relationships['protagonist']?['irm?o'] ?? {};
-    final sister = relationships['protagonist']?['irm?'] ?? {};
-
-    for (final inLaw in [...brotherInLaw, ...sisterInLaw]) {
-      // Se X ? cunhado mas nunca mencionamos c?njuge nem irm?os = ERRO
-      if (husband.isEmpty &&
-          wife.isEmpty &&
-          brother.isEmpty &&
-          sister.isEmpty) {
-        if (kDebugMode) {
-          debugPrint(
-            '?? ERRO: $inLaw ? cunhado/cunhada mas n?o h? c?njuge nem irm?os mencionados!',
-          );
-        }
-        hasError = true;
-      }
-    }
-
-    // REGRA 2: Se X ? meu sogro/sogra, ent?o:
-    //   - Eu DEVO ter c?njuge (marido/esposa)
-    //   - X deve ser pai/m?e do meu c?njuge
-    final fatherInLaw = relationships['protagonist']?['sogro'] ?? {};
-    final motherInLaw = relationships['protagonist']?['sogra'] ?? {};
-
-    if (fatherInLaw.isNotEmpty || motherInLaw.isNotEmpty) {
-      if (husband.isEmpty && wife.isEmpty) {
-        if (kDebugMode) {
-          debugPrint(
-            '?? ERRO: Tem sogro/sogra mas protagonista n?o tem c?njuge!',
-          );
-          debugPrint('   ? Se X ? sogro, protagonista DEVE ter esposa/marido');
-        }
-        hasError = true;
-      }
-    }
-
-    // REGRA 3: Se X ? meu genro/nora, ent?o:
-    //   - Eu DEVO ter filho/filha
-    //   - X deve ser c?njuge do meu filho/filha
-    final sonInLaw = relationships['protagonist']?['genro'] ?? {};
-    final daughterInLaw = relationships['protagonist']?['nora'] ?? {};
-
-    if (sonInLaw.isNotEmpty || daughterInLaw.isNotEmpty) {
-      // Verificar se menciona filhos (procurar padr?o mais amplo)
-      final hasChildren = text.contains(
-        RegExp(
-          r'meu filho|minha filha|my son|my daughter',
-          caseSensitive: false,
-        ),
-      );
-
-      if (!hasChildren) {
-        if (kDebugMode) {
-          debugPrint('?? ERRO: Tem genro/nora mas n?o menciona filhos!');
-          debugPrint(
-            '   ? Se X ? genro/nora, protagonista DEVE ter filho/filha',
-          );
-        }
-        hasError = true;
-      }
-    }
-
-    // REGRA 4: Se X ? meu neto/neta, ent?o:
-    //   - Eu DEVO ter filhos
-    //   - X deve ser filho/filha dos meus filhos
-    final grandson = relationships['protagonist']?['neto'] ?? {};
-    final granddaughter = relationships['protagonist']?['neta'] ?? {};
-
-    if (grandson.isNotEmpty || granddaughter.isNotEmpty) {
-      final hasChildren = text.contains(
-        RegExp(
-          r'meu filho|minha filha|my son|my daughter',
-          caseSensitive: false,
-        ),
-      );
-
-      if (!hasChildren) {
-        if (kDebugMode) {
-          debugPrint('?? ERRO: Tem neto/neta mas n?o menciona filhos!');
-          debugPrint(
-            '   ? Se X ? neto/neta, protagonista DEVE ter filho/filha',
-          );
-        }
-        hasError = true;
-      }
-    }
-
-    // REGRA 5: Detectar contradi??es com sufixos -in-law
-    // Exemplo: "my brother Paul married Megan" + "my father-in-law Alan"
-    // Se Megan ? filha de Alan, ent?o Alan ? sogro de Paul (n?o do protagonista)
-    final marriedPattern = RegExp(
-      r'my (brother|sister)(?:,)?\s+([A-Z][a-z]+)\s+(?:married|casou com)\s+([A-Z][a-z]+)',
-      caseSensitive: false,
-    );
-
-    for (final match in marriedPattern.allMatches(text)) {
-      final sibling = match.group(2); // Nome do irm?o/irm?
-      final spouse = match.group(3); // Nome do c?njuge do irm?o/irm?
-
-      if (sibling != null && spouse != null) {
-        // Se texto diz "X's father Alan" ou "father of X"
-        final parentPattern = RegExp(
-          r'(?:' +
-              spouse +
-              r"'s father|father of " +
-              spouse +
-              r'|pai de ' +
-              spouse +
-              r')(?:,)?\s+([A-Z][a-z]+)',
-          caseSensitive: false,
-        );
-
-        for (final parentMatch in parentPattern.allMatches(text)) {
-          final parentName = parentMatch.group(1);
-
-          // Se esse pai foi chamado de "my father-in-law" = ERRO
-          if (parentName != null && fatherInLaw.contains(parentName)) {
-            if (kDebugMode) {
-              debugPrint('?? ERRO DE RELACIONAMENTO GENEAL?GICO!');
-              debugPrint(
-                '   ? $parentName ? pai de $spouse (c?njuge de $sibling)',
-              );
-              debugPrint(
-                '   ? Mas texto chama $parentName de "my father-in-law"',
-              );
-              debugPrint(
-                '   ? CORRETO seria: "$parentName ? sogro do meu irm?o $sibling"',
-              );
-            }
-            hasError = true;
-          }
-        }
-      }
-    }
-
-    if (hasError) {
-      if (kDebugMode) {
-        debugPrint(
-          '? BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!',
-        );
-        debugPrint(
-          '   ?? For?ando regenera??o com l?gica geneal?gica correta...',
-        );
-      }
-    }
-
-    return !hasError; // Retorna true se n?o h? erros
-  }
-
-  /// ?? EXTRA??O DE PAPEL: Identifica o papel/rela??o de um nome em um texto
-  /// Retorna o primeiro papel encontrado ou null se n?o detectar nenhum
-  /// ?? v7.6.28: Valida se h? nomes duplicados em pap?is diferentes
-  /// ?? v7.6.32: NOVA VALIDA??O - Detecta quando MESMO PAPEL tem NOMES DIFERENTES
-  /// ?? v7.6.33: PAP?IS POSSESSIVOS SINGULARES - Detecta "my lawyer" como papel ?nico
-  /// ?? v7.6.34: FIX MULTI-WORD ROLES - Corrige detec??o de "executive assistant", "financial advisor"
-  ///
-  /// OBJETIVO 1 (v7.6.28): Detectar quando MESMO NOME aparece para PERSONAGENS DIFERENTES
-  /// EXEMPLO RUIM: "Mark" como boyfriend + "Mark" como attorney
-  ///
-  /// OBJETIVO 2 (v7.6.32): Detectar quando MESMO PAPEL ? atribu?do a NOMES DIFERENTES
-  /// EXEMPLO RUIM: "Ashley" como protagonista + "Emily" como protagonista
-  ///
-  /// OBJETIVO 3 (v7.6.33/34): Detectar quando PAPEL POSSESSIVO tem NOMES DIFERENTES
-  /// EXEMPLOS RUINS:
-  ///   - "my lawyer, Richard" (Bloco 5) ? "my lawyer, Mark" (Bloco 10)
-  ///   - "my executive assistant, Lauren" (Bloco 7) ? "my executive assistant, Danielle" (Bloco 12)
-  /// L?GICA: "my X" = possessivo singular = papel ?nico (n?o pode ter m?ltiplos)
-  /// ?? v7.6.34: Agora captura corretamente multi-word roles (executive assistant, financial advisor, etc.)
-  ///
-  /// Retorna TRUE se houver conflito (bloco deve ser rejeitado)
-  /// Retorna FALSE se nomes s?o ?nicos (bloco pode ser aceito)
-  bool _validateUniqueNames(
-    String blockText,
-    CharacterTracker tracker,
-    int blockNumber,
-  ) {
-    if (blockText.trim().isEmpty) return false; // Texto vazio = sem erro
-
-    // Extrair nomes do bloco atual
-    final namesInBlock = NameValidator.extractNamesFromText(blockText);
-
-    // Verificar cada nome extra?do
-    for (final name in namesInBlock) {
-      // ---------------------------------------------------------------
-      // VALIDA??O 1 (v7.6.28): MESMO NOME em PAP?IS DIFERENTES
-      // ---------------------------------------------------------------
-      if (tracker.hasName(name)) {
-        // Nome j? existe - verificar se ? o MESMO personagem ou REUSO indevido
-
-        // Extrair papel atual deste nome no bloco
-        final currentRole = RolePatterns.extractRoleForName(name, blockText);
-
-        // Extrair papel registrado anteriormente
-        final previousRole = tracker.getRole(name);
-
-        if (currentRole != null && previousRole != null) {
-          // Normalizar papéis para comparação
-          final normalizedCurrent = RolePatterns.normalizeRoleSelective(currentRole);
-          final normalizedPrevious = RolePatterns.normalizeRoleSelective(previousRole);
-
-          // Se pap?is s?o DIFERENTES = NOME DUPLICADO (ERRO!)
-          if (normalizedCurrent != normalizedPrevious &&
-              normalizedCurrent != 'indefinido' &&
-              normalizedPrevious != 'indefinido') {
-            if (kDebugMode) {
-              debugPrint('?????? v7.6.28: NOME DUPLICADO DETECTADO! ??????');
-              debugPrint('   ? Nome: "$name"');
-              debugPrint(
-                '   ? Papel anterior: "$previousRole" ? "$normalizedPrevious"',
-              );
-              debugPrint(
-                '   ? Papel atual: "$currentRole" ? "$normalizedCurrent"',
-              );
-              debugPrint(
-                '   ?? EXEMPLO DO BUG: "Mark" sendo boyfriend E attorney!',
-              );
-              debugPrint(
-                '   ?? Bloco $blockNumber ser? REJEITADO e REGENERADO',
-              );
-              debugPrint('?????? FIM DO ALERTA ??????');
-            }
-
-            _debugLogger.error(
-              "Nome duplicado em pap?is diferentes - Bloco $blockNumber",
-              blockNumber: blockNumber,
-              details:
-                  "Nome '$name': papel anterior '$previousRole', papel atual '$currentRole'",
-              metadata: {
-                'nome': name,
-                'papelAnterior': previousRole,
-                'papelAtual': currentRole,
-              },
-            );
-
-            return true; // ? CONFLITO DETECTADO
-          }
-        }
-      }
-
-      // ---------------------------------------------------------------
-      // ?? VALIDA??O 2 (v7.6.32): MESMO PAPEL em NOMES DIFERENTES
-      // ---------------------------------------------------------------
-      final currentRole = RolePatterns.extractRoleForName(name, blockText);
-
-      if (currentRole != null && currentRole != 'indefinido') {
-        final normalizedCurrent = RolePatterns.normalizeRoleSelective(currentRole);
-
-        // Verificar se este PAPEL j? existe com um NOME DIFERENTE
-        for (final existingName in tracker.confirmedNames) {
-          if (existingName.toLowerCase() == name.toLowerCase()) {
-            continue; // Mesmo nome = OK (j? validado acima)
-          }
-
-          final existingRole = tracker.getRole(existingName);
-          if (existingRole == null) continue;
-
-          final normalizedExisting = RolePatterns.normalizeRoleSelective(existingRole);
-
-          // ?? PAP?IS CR?TICOS que DEVEM ser ?nicos (1 nome por papel)
-          final uniqueRoles = {
-            'protagonista',
-            'protagonist',
-            'main character',
-            'narradora',
-            'narrador',
-            'narrator',
-            'hero',
-            'heroine',
-            'her?i',
-            'hero?na',
-          };
-
-          // Se MESMO PAPEL com NOMES DIFERENTES = ERRO CR?TICO!
-          if (normalizedCurrent == normalizedExisting) {
-            // Verificar se ? papel cr?tico que deve ser ?nico
-            bool isCriticalRole = false;
-            for (final uniqueRole in uniqueRoles) {
-              if (normalizedCurrent.contains(uniqueRole) ||
-                  normalizedExisting.contains(uniqueRole)) {
-                isCriticalRole = true;
-                break;
-              }
-            }
-
-            if (isCriticalRole) {
-              if (kDebugMode) {
-                debugPrint('?????? v7.6.32: PAPEL DUPLICADO DETECTADO! ??????');
-                debugPrint('   ? Papel: "$currentRole" ? "$normalizedCurrent"');
-                debugPrint('   ? Nome anterior: "$existingName"');
-                debugPrint('   ? Nome atual: "$name"');
-                debugPrint(
-                  '   ?? EXEMPLO DO BUG: "Ashley" sendo protagonista E "Emily" sendo protagonista!',
-                );
-                debugPrint(
-                  '   ?? Bloco $blockNumber ser? REJEITADO e REGENERADO',
-                );
-                debugPrint('?????? FIM DO ALERTA ??????');
-              }
-
-              _debugLogger.error(
-                "Papel duplicado com nomes diferentes - Bloco $blockNumber",
-                blockNumber: blockNumber,
-                details:
-                    "Papel '$currentRole': nome anterior '$existingName', nome atual '$name'",
-                metadata: {
-                  'papel': currentRole,
-                  'nomeAnterior': existingName,
-                  'nomeAtual': name,
-                },
-              );
-
-              return true; // ? CONFLITO CR?TICO DETECTADO
-            }
-          }
-        }
-      }
-
-      // ---------------------------------------------------------------
-      // ?? VALIDA??O 3 (v7.6.33): PAP?IS POSSESSIVOS SINGULARES
-      // ---------------------------------------------------------------
-      // OBJETIVO: Detectar pap?is ?nicos indicados por possessivos singulares
-      // EXEMPLO RUIM: "my lawyer, Richard" (Bloco 5) ? "my lawyer, Mark" (Bloco 10)
-      //
-      // Quando texto usa "my X" (possessive singular), indica papel ?nico
-      // N?o pode haver m?ltiplas inst?ncias: "my lawyer" = apenas 1 advogado
-      //
-      // ?? Detecta padr?es:
-      // - "my lawyer", "my attorney", "my doctor"
-      // - "my therapist", "my accountant", "my agent"
-      // - "my boss", "my mentor", "my partner"
-      //
-      // ?? IMPORTANTE: "my lawyers" (plural) N?O ? considerado ?nico
-      // ---------------------------------------------------------------
-
-      // Padr?o para detectar possessivos singulares
-      // Captura: "my [role]" mas N?O "my [role]s" (plural)
-      // ?? v7.6.34: EXPANDIDO para capturar multi-word roles (executive assistant, financial advisor, etc.)
-      final possessiveSingularPattern = RegExp(
-        r'\b(?:my|nossa)\s+(?:executive\s+assistant|personal\s+assistant|financial\s+advisor|real\s+estate\s+agent|estate\s+planner|tax\s+advisor|makeup\s+artist|physical\s+therapist|occupational\s+therapist|speech\s+therapist|au\s+pair|dalai\s+lama|vice[-\s]president|lawyer|attorney|doctor|therapist|accountant|agent|boss|mentor|partner|adviser|advisor|consultant|coach|teacher|tutor|counselor|psychologist|psychiatrist|dentist|surgeon|specialist|physician|nurse|caregiver|assistant|secretary|manager|supervisor|director|ceo|cfo|cto|president|chairman|investor|banker|auditor|notary|mediator|arbitrator|investigator|detective|officer|sergeant|captain|lieutenant|judge|magistrate|prosecutor|defender|guardian|curator|executor|trustee|beneficiary|architect|engineer|contractor|builder|designer|decorator|landscaper|gardener|housekeeper|maid|butler|chef|cook|driver|chauffeur|pilot|navigator|guide|translator|interpreter|editor|publisher|producer|publicist|stylist|hairdresser|barber|beautician|esthetician|masseuse|trainer|nutritionist|dietitian|pharmacist|optometrist|veterinarian|groomer|walker|sitter|nanny|governess|babysitter|midwife|doula|chiropractor|acupuncturist|hypnotist|healer|shaman|priest|pastor|minister|rabbi|imam|monk|nun|chaplain|deacon|elder|bishop|archbishop|cardinal|pope|guru|sensei|sifu|master|grandmaster)(?![a-z])',
-        caseSensitive: false,
-      );
-
-      final possessiveMatches = possessiveSingularPattern.allMatches(blockText);
-
-      for (final match in possessiveMatches) {
-        // ?? v7.6.34: Captura o grupo completo (incluindo multi-word roles)
-        final possessiveRole = match
-            .group(0)
-            ?.replaceFirst(
-              RegExp(r'\b(?:my|nossa)\s+', caseSensitive: false),
-              '',
-            )
-            .toLowerCase()
-            .trim();
-
-        if (possessiveRole == null || possessiveRole.isEmpty) continue;
-
-        // Verificar se J? existe este papel possessivo com NOME DIFERENTE
-        for (final existingName in tracker.confirmedNames) {
-          if (existingName.toLowerCase() == name.toLowerCase()) {
-            continue; // Mesmo nome = OK
-          }
-
-          final existingRole = tracker.getRole(existingName);
-          if (existingRole == null) continue;
-
-          final normalizedExisting = RolePatterns.normalizeRoleSelective(existingRole).toLowerCase();
-
-          // ?? v7.6.34: Match exato ou cont?m o papel completo (executive assistant, etc.)
-          final possessiveRoleNormalized = possessiveRole.replaceAll(
-            RegExp(r'\s+'),
-            ' ',
-          );
-
-          // Verificar se papel possessivo j? existe
-          if (normalizedExisting.contains(possessiveRoleNormalized) ||
-              possessiveRoleNormalized.contains(
-                normalizedExisting.split(' ').last,
-              )) {
-            if (kDebugMode) {
-              debugPrint(
-                '?????? v7.6.34: PAPEL POSSESSIVO SINGULAR DUPLICADO! ??????',
-              );
-              debugPrint('   ? Papel possessivo: "my $possessiveRole"');
-              debugPrint(
-                '   ? Nome anterior: "$existingName" (papel: "$existingRole")',
-              );
-              debugPrint('   ? Nome atual: "$name"');
-              debugPrint('   ?? EXEMPLOS DO BUG:');
-              debugPrint('      - "my lawyer, Richard" ? "my lawyer, Mark"');
-              debugPrint(
-                '      - "my executive assistant, Lauren" ? "my executive assistant, Danielle"',
-              );
-              debugPrint(
-                '   ?? "my X" indica papel ?NICO - n?o pode haver m?ltiplos!',
-              );
-              debugPrint(
-                '   ?? Bloco $blockNumber ser? REJEITADO e REGENERADO',
-              );
-              debugPrint('?????? FIM DO ALERTA ??????');
-            }
-
-            _debugLogger.error(
-              "Papel possessivo singular duplicado - Bloco $blockNumber",
-              blockNumber: blockNumber,
-              details:
-                  "'my $possessiveRole': nome anterior '$existingName', nome atual '$name'",
-              metadata: {
-                'papelPossessivo': possessiveRole,
-                'nomeAnterior': existingName,
-                'nomeAtual': name,
-              },
-            );
-
-            return true; // ? CONFLITO POSSESSIVO DETECTADO
-          }
-        }
-      }
-    }
-
-    return false; // ? Nenhum conflito de nomes ou pap?is
-  }
-
-  // 🔧 v7.6.86: Wrapper _extractRoleForName removido
-  // 🔧 v7.6.87: Wrapper _normalizeRole removido
-  // Usar RolePatterns.extractRoleForName() e RolePatterns.normalizeRoleSelective() diretamente
-
-  /// 🔍 VALIDAÇÃO FORTALECIDA: Detecta quando um nome é reutilizado para outro personagem
-  /// 🔧 v7.6.67: Refatorado para usar RolePatterns module
-  /// Exemplo: "Regina" sendo usada para sogra E amiga, "Marta" para irmã de A e irmã de B
-  void _validateNameReuse(
-    String generatedText,
-    CharacterTracker tracker,
-    int blockNumber,
-  ) {
-    // Extrair todos os nomes do texto gerado
-    final namePattern = RegExp(r'\b([A-Z������������������a-z������������������]{2,})\b');
-    final foundNames = <String>{};
-
-    for (final match in namePattern.allMatches(generatedText)) {
-      final name = match.group(1)?.trim();
-      if (name != null && NameValidator.looksLikePersonName(name)) {
-        foundNames.add(name);
-      }
-    }
-
-    // Verificar se algum nome encontrado J� existe no tracker com papel diferente
-    for (final name in foundNames) {
-      if (tracker.hasName(name)) {
-        final existingRole = tracker.getRole(name);
-
-        // ??? v7.6.67: Usar RolePatterns para extrair papel atual
-        final currentRole = RolePatterns.extractRoleForName(name, generatedText);
-        
-        if (currentRole != null) {
-          // DETEC��O: Se papel atual difere do existente
-          if (existingRole == null || existingRole == 'indefinido') {
-            // Nome existia SEM papel definido, agora tem papel
-            if (kDebugMode) {
-              debugPrint('?? Nome "$name" definido como $currentRole (bloco $blockNumber)');
-            }
-          } else if (!RolePatterns.areRolesEquivalent(currentRole, existingRole)) {
-            // Conflito de pap�is
-            _debugLogger.error(
-              "Reutiliza��o de nome: '$name'",
-              blockNumber: blockNumber,
-              details:
-                  "Nome '$name' usado em m�ltiplos pap�is diferentes:\n"
-                  "- Papel anterior: $existingRole\n"
-                  "- Papel atual: $currentRole",
-              metadata: {
-                'nome': name,
-                'papelAnterior': existingRole,
-                'papelAtual': currentRole,
-              },
-            );
-
-            if (kDebugMode) {
-              debugPrint('? ERRO: Nome "$name" reutilizado!');
-              debugPrint('   Papel anterior: $existingRole');
-              debugPrint('   Papel atual: $currentRole');
-            }
-          }
-        }
-      }
-    }
-
-    // DEBUG: Log valida��o completa
-    _debugLogger.validation(
-      "Valida��o de reutiliza��o completa",
-      blockNumber: blockNumber,
-      details: "${foundNames.length} nomes verificados",
-      metadata: {'nomesVerificados': foundNames.length},
-    );
-  }
-
-  /// ?? NOVA VALIDA��O: Detecta inconsist�ncias em rela��es familiares
-  /// ??? v7.6.67: Refatorado para usar RolePatterns module
-  /// Exemplo: "meu Pai Francisco" vs "meu marido Francisco" = CONFUS�O
-  void _validateFamilyRelations(String generatedText, int blockNumber) {
-    // Extrair nomes mencionados no texto
-    final namePattern = RegExp(r'\b([A-Z������������������][a-z������������������]{2,})\b');
-    final names = <String>{};
-
-    for (final match in namePattern.allMatches(generatedText)) {
-      final name = match.group(1)?.trim();
-      if (name != null && NameValidator.looksLikePersonName(name)) {
-        names.add(name);
-      }
-    }
-
-    // Para cada nome, usar RolePatterns para detectar papel
-    for (final name in names) {
-      final role = RolePatterns.extractRoleForName(name, generatedText);
-      
-      // Se detectou papel, verificar se h� conflitos
-      if (role != null) {
-        // Verificar se mesmo nome aparece em contextos conflitantes
-        // usando l�gica simplificada baseada no m�dulo
-        if (kDebugMode) {
-          debugPrint('?? Nome "$name" detectado como: $role (bloco $blockNumber)');
-        }
-      }
-    }
-  }
+  // 🏗️ v7.6.101: Métodos de validação de personagens extraídos para CharacterValidation module:
+  //   - detectAndRegisterProtagonist()
+  //   - detectProtagonistNameChange()
+  //   - validateProtagonistName()
+  //   - validateFamilyRelationships()
+  //   - validateUniqueNames()
+  //   - validateNameReuse()
+  //   - validateFamilyRelations()
 
   /// ?? NOVA VALIDA��O CR�TICA v7.6.16: Detecta mudan�as de nome de personagens
   /// Compara pap?is conhecidos (tracker) com novos nomes mencionados no texto
@@ -3551,7 +2767,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
       // ?? v7.6.21: VALIDA??O CR?TICA - Nome da protagonista
       if (filtered.isNotEmpty) {
-        final isValidProtagonist = _validateProtagonistName(
+        final isValidProtagonist = _characterValidation.validateProtagonistName(
           filtered,
           c,
           blockNumber,
@@ -3567,7 +2783,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         }
 
         // ?? v7.6.22: VALIDA??O CR?TICA - Relacionamentos familiares
-        final hasValidRelationships = _validateFamilyRelationships(
+        final hasValidRelationships = _characterValidation.validateFamilyRelationships(
           filtered,
           blockNumber,
         );
