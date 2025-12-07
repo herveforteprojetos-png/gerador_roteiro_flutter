@@ -251,6 +251,25 @@ class RelationshipPatterns {
     return extracted;
   }
 
+  /// Obtém todos os padrões combinados (PT, EN, FR, ES)
+  /// Usado para validação multi-idioma
+  static Map<String, RegExp> get allRelationPatterns {
+    return {
+      ...portugueseRelations,
+      // Inglês com sufixo _en para evitar colisão
+      ...englishRelations.map((k, v) => MapEntry('${k}_en', v)),
+      // Francês com sufixo _fr
+      ...frenchRelations.map((k, v) => MapEntry('${k}_fr', v)),
+      // Espanhol com sufixo _es
+      ...spanishRelations.map((k, v) => MapEntry('${k}_es', v)),
+      // Padrão de casamento (multi-idioma)
+      'married_to': RegExp(
+        r'([A-Z][a-z]+)\s+(?:casou com|married|se casou com)\s+([A-Z][a-z]+)',
+        caseSensitive: false,
+      ),
+    };
+  }
+
   /// Padrões para detectar auto-apresentação com nome
   static final List<RegExp> nameIntroPatterns = [
     RegExp(r'my name is ([A-Z][a-z]+)', caseSensitive: false),

@@ -20,8 +20,11 @@ import 'package:flutter_gerador/data/services/gemini/detection/detection_modules
 // ignore: unused_import
 import 'package:flutter_gerador/data/services/gemini/infra/infra_modules.dart'; // Para uso futuro
 
-// ??? v7.6.66: M�DULOS EXTRA�DOS (Refatora��o SOLID - Fase 2)
+// 🏗️ v7.6.66: MÓDULOS EXTRAÍDOS (Refatoração SOLID - Fase 2)
 import 'package:flutter_gerador/data/services/gemini/tools/tools_modules.dart';
+
+// 🏗️ v7.6.67: MÓDULOS DE VALIDAÇÃO (Refatoração SOLID - Fase 5)
+import 'package:flutter_gerador/data/services/gemini/validation/relationship_patterns.dart';
 
 /// ?? Helper padronizado para logs (mant�m emojis em debug, limpa em produ��o)
 void _log(String message, {String level = 'info'}) {
@@ -3247,119 +3250,18 @@ no vasto manto azul do infinito."
     return true; // Valida��o passou
   }
 
-  /// ?? v7.6.22: VALIDA��O DE RELACIONAMENTOS FAMILIARES
-  /// Detecta contradi��es l�gicas em �rvores geneal�gicas
-  /// Retorna true se relacionamentos s�o consistentes, false se h� erros
+  /// 🔗 v7.6.22: VALIDAÇÃO DE RELACIONAMENTOS FAMILIARES
+  /// 🏗️ v7.6.67: Refatorado para usar RelationshipPatterns module
+  /// Detecta contradições lógicas em árvores genealógicas
+  /// Retorna true se relacionamentos são consistentes, false se há erros
   bool _validateFamilyRelationships(String text, int blockNumber) {
     if (text.isEmpty) return true;
 
-    // Mapa de relacionamentos encontrados: pessoa ? rela��o ? pessoa relacionada
+    // Mapa de relacionamentos encontrados: pessoa → relação → pessoa relacionada
     final Map<String, Map<String, Set<String>>> relationships = {};
 
-    // Padr�es de relacionamentos em m�ltiplos idiomas
-    final patterns = {
-      // Portugu�s
-      'marido': RegExp(
-        r'meu marido(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'esposa': RegExp(
-        r'minha esposa(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'pai': RegExp(r'meu pai(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'm�e': RegExp(r'minha m�e(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'irm�o': RegExp(r'meu irm�o(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'irm�': RegExp(r'minha irm�(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'sogro': RegExp(r'meu sogro(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'sogra': RegExp(
-        r'minha sogra(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'cunhado': RegExp(
-        r'meu cunhado(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'cunhada': RegExp(
-        r'minha cunhada(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'genro': RegExp(r'meu genro(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'nora': RegExp(r'minha nora(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'neto': RegExp(r'meu neto(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'neta': RegExp(r'minha neta(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'av�': RegExp(r'meu av�(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'av�': RegExp(r'minha av�(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-
-      // Ingl�s
-      'husband_en': RegExp(
-        r'my husband(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'wife_en': RegExp(r'my wife(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-      'father_en': RegExp(
-        r'my father(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'mother_en': RegExp(
-        r'my mother(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'brother_en': RegExp(
-        r'my brother(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'sister_en': RegExp(
-        r'my sister(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'father_in_law_en': RegExp(
-        r'my father-in-law(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'mother_in_law_en': RegExp(
-        r'my mother-in-law(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'brother_in_law_en': RegExp(
-        r'my brother-in-law(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'sister_in_law_en': RegExp(
-        r'my sister-in-law(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'son_in_law_en': RegExp(
-        r'my son-in-law(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'daughter_in_law_en': RegExp(
-        r'my daughter-in-law(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'grandson_en': RegExp(
-        r'my grandson(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'granddaughter_en': RegExp(
-        r'my granddaughter(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'grandfather_en': RegExp(
-        r'my grandfather(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-      'grandmother_en': RegExp(
-        r'my grandmother(?:,)?\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-
-      // Padr�es de casamento (detectar quem casa com quem)
-      'married_to': RegExp(
-        r'([A-Z][a-z]+)\s+(?:casou com|married|se casou com)\s+([A-Z][a-z]+)',
-        caseSensitive: false,
-      ),
-    };
+    // 🏗️ v7.6.67: Usa padrões do módulo RelationshipPatterns
+    final patterns = RelationshipPatterns.allRelationPatterns;
 
     // Extrair relacionamentos do texto
     for (final entry in patterns.entries) {
