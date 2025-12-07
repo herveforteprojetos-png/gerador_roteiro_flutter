@@ -6,3 +6,4 @@ export 'family_relations.dart';
 export 'name_validator.dart';
 export 'post_generation_fixer.dart';
 export 'relationship_patterns.dart';
+export 'role_patterns.dart';
