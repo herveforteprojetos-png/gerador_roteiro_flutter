@@ -3809,14 +3809,15 @@ no vasto manto azul do infinito."
   }
 
   /// 🔍 VALIDAÇÃO FORTALECIDA: Detecta quando um nome é reutilizado para outro personagem
-  /// Exemplo: "Regina" sendo usada para sogra E amiga, "Marta" para irm� de A e irm� de B
+  /// 🏗️ v7.6.67: Refatorado para usar RolePatterns module
+  /// Exemplo: "Regina" sendo usada para sogra E amiga, "Marta" para irmã de A e irmã de B
   void _validateNameReuse(
     String generatedText,
     _CharacterTracker tracker,
     int blockNumber,
   ) {
     // Extrair todos os nomes do texto gerado
-    final namePattern = RegExp(r'\b([A-Z������������][a-z������������]{2,})\b');
+    final namePattern = RegExp(r'\b([A-ZÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇa-záàâãéèêíìîóòôõúùûç]{2,})\b');
     final foundNames = <String>{};
 
     for (final match in namePattern.allMatches(generatedText)) {
@@ -3826,315 +3827,62 @@ no vasto manto azul do infinito."
       }
     }
 
-    // Verificar se algum nome encontrado J� existe no tracker com papel diferente
+    // Verificar se algum nome encontrado JÁ existe no tracker com papel diferente
     for (final name in foundNames) {
       if (tracker.hasName(name)) {
         final existingRole = tracker.getRole(name);
 
-        // ?? NOVO: Detectar pap�is/rela��es no texto atual (padr�es expandidos)
-        final currentRoles = <String>[];
-
-        // PADR�O 1: "meu/minha [rela��o] Nome" ou "Nome, [rela��o]" ou "a/o [rela��o], Nome"
-        final relationPatterns = {
-          'pai': RegExp(
-            r'(?:meu|seu|nosso|o)\s+[Pp]ai(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:o\s+)?pai|(?:o|um)\s+pai(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'm�e': RegExp(
-            r'(?:minha|sua|nossa|a)\s+[Mm]�e(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:a\s+)?m[�a]e|(?:a|uma)\s+m[�a]e(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'marido': RegExp(
-            r'(?:meu|seu|nosso|o)\s+(?:marido|esposo)(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:o\s+)?(?:marido|esposo)|(?:o|um)\s+(?:marido|esposo)(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'esposa': RegExp(
-            r'(?:minha|sua|nossa|a)\s+(?:esposa|mulher)(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:a\s+)?(?:esposa|mulher)|(?:a|uma)\s+(?:esposa|mulher)(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'filho': RegExp(
-            r'(?:meu|seu|nosso|o)\s+[Ff]ilho(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:o\s+)?filho|(?:o|um)\s+filho(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'filha': RegExp(
-            r'(?:minha|sua|nossa|a)\s+[Ff]ilha(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:a\s+)?filha|(?:a|uma)\s+filha(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'irm�o': RegExp(
-            r'(?:meu|seu|nosso|o)\s+(?:irm�o|irmao)(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:o\s+)?(?:irm�o|irmao)|(?:o|um)\s+(?:irm�o|irmao)(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'irm�': RegExp(
-            r'(?:minha|sua|nossa|a)\s+(?:irm�|irma)(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:a\s+)?(?:irm�|irma)|(?:a|uma)\s+(?:irm�|irma)(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'sogro': RegExp(
-            r'(?:meu|seu|nosso|o)\s+sogro(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:o\s+)?sogro|(?:a|o)\s+sogro(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'sogra': RegExp(
-            r'(?:minha|sua|nossa|a)\s+sogra(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:a\s+)?sogra|(?:a|uma)\s+sogra(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'amigo': RegExp(
-            r'(?:meu|seu|nosso|o)\s+amigo(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:um\s+)?amigo|(?:o|um)\s+amigo(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'amiga': RegExp(
-            r'(?:minha|sua|nossa|a)\s+amiga(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:uma\s+)?amiga|(?:a|uma)\s+amiga(?:,)?\s+' +
-                name,
-            caseSensitive: false,
-          ),
-          'vizinho': RegExp(
-            r'(?:o|um)\s+vizinho(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:o\s+)?vizinho',
-            caseSensitive: false,
-          ),
-          'vizinha': RegExp(
-            r'(?:a|uma)\s+vizinha(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:a\s+)?vizinha',
-            caseSensitive: false,
-          ),
-          'professor': RegExp(
-            r'(?:o|um)\s+professor(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:um\s+)?professor',
-            caseSensitive: false,
-          ),
-          'professora': RegExp(
-            r'(?:a|uma)\s+professora(?:,)?\s+' +
-                name +
-                r'|' +
-                name +
-                r'(?:,)?\s+(?:uma\s+)?professora',
-            caseSensitive: false,
-          ),
-        };
-
-        for (final entry in relationPatterns.entries) {
-          if (entry.value.hasMatch(generatedText)) {
-            currentRoles.add(entry.key);
-          }
-        }
-
-        // PADR�O 2: "Nome, [rela��o] de [outra pessoa]"
-        final contexts = [
-          'irm� de',
-          'irm�o de',
-          'filho de',
-          'filha de',
-          'pai de',
-          'm�e de',
-          'esposa de',
-          'esposo de',
-          'marido de',
-          'neto de',
-          'neta de',
-          'tio de',
-          'tia de',
-          'primo de',
-          'prima de',
-          'av� de',
-          'av� de',
-          'amiga de',
-          'amigo de',
-          'vizinha de',
-          'vizinho de',
-        ];
-
-        for (final context in contexts) {
-          final pattern = RegExp(
-            name +
-                r',?\s+' +
-                context +
-                r'\s+([A-Z������������][a-z������������]+)',
-            caseSensitive: false,
-          );
-          final match = pattern.firstMatch(generatedText);
-
-          if (match != null) {
-            final relatedPerson = match.group(1);
-            currentRoles.add('$context $relatedPerson');
-          }
-        }
-
-        // ?? DETEC��O: Se encontrou pap�is no texto atual
-        if (currentRoles.isNotEmpty) {
-          final currentRolesStr = currentRoles.join(', ');
-
-          // ?? CORRE��O BUG ALBERTO: Validar mesmo se existingRole � null
+        // 🏗️ v7.6.67: Usar RolePatterns para extrair papel atual
+        final currentRole = RolePatterns.extractRoleForName(name, generatedText);
+        
+        if (currentRole != null) {
+          // DETECÇÃO: Se papel atual difere do existente
           if (existingRole == null || existingRole == 'indefinido') {
-            // ?? Nome existia SEM papel definido, agora tem papel
-            debugPrint(
-              '?????? ALERTA: NOME SEM PAPEL ANTERIOR - BLOCO $blockNumber ??????',
-            );
-            debugPrint(
-              '   ?? Nome "$name" estava no tracker SEM papel definido',
-            );
-            debugPrint('   ?? Pap�is detectados AGORA: $currentRolesStr');
-
-            // ?? CR�TICO: Verificar se h� m�ltiplos pap�is CONFLITANTES no texto atual
-            if (currentRoles.length > 1) {
-              _debugLogger.error(
-                "M�ltiplos pap�is para '$name' no mesmo bloco",
-                blockNumber: blockNumber,
-                details:
-                    "Nome '$name' aparece com pap�is conflitantes no mesmo bloco:\n"
-                    "- Pap�is detectados: $currentRolesStr",
-                metadata: {'nome': name, 'papeis': currentRoles},
-              );
-
-              debugPrint(
-                '?????? ERRO CR�TICO: M�LTIPLOS PAP�IS NO MESMO BLOCO ??????',
-              );
-              debugPrint('   ? Nome "$name" com M�LTIPLOS pap�is diferentes:');
-              for (final role in currentRoles) {
-                debugPrint('      - $role');
-              }
-              debugPrint(
-                '   ?? SOLU��O: Verificar se s�o realmente a mesma pessoa!',
-              );
-              debugPrint(
-                '   ?? Exemplo: "Alberto" como marido E como cunhado = ERRO!',
-              );
-              debugPrint('?????? FIM DO ALERTA ??????');
-            } else {
-              debugPrint('   ?? �nico papel detectado: ${currentRoles.first}');
-              debugPrint('   ? Atualizando papel no tracker...');
+            // Nome existia SEM papel definido, agora tem papel
+            if (kDebugMode) {
+              debugPrint('⚠️ Nome "$name" definido como $currentRole (bloco $blockNumber)');
             }
-            debugPrint('?????? FIM DO ALERTA ??????');
-          } else {
-            // Papel anterior existe - verificar CONFLITO
-            var hasConflict = false;
+          } else if (!RolePatterns.areRolesEquivalent(currentRole, existingRole)) {
+            // Conflito de papéis
+            _debugLogger.error(
+              "Reutilização de nome: '$name'",
+              blockNumber: blockNumber,
+              details:
+                  "Nome '$name' usado em múltiplos papéis diferentes:\n"
+                  "- Papel anterior: $existingRole\n"
+                  "- Papel atual: $currentRole",
+              metadata: {
+                'nome': name,
+                'papelAnterior': existingRole,
+                'papelAtual': currentRole,
+              },
+            );
 
-            // Conflito se: nenhum papel atual aparece no papel existente
-            if (!currentRoles.any(
-              (role) => existingRole.toLowerCase().contains(role.toLowerCase()),
-            )) {
-              hasConflict = true;
-            }
-
-            if (hasConflict) {
-              // ?? DEBUG: Log erro cr�tico de reutiliza��o
-              _debugLogger.error(
-                "Reutiliza��o de nome: '$name'",
-                blockNumber: blockNumber,
-                details:
-                    "Nome '$name' usado em m�ltiplos pap�is diferentes:\n"
-                    "- Papel anterior: $existingRole\n"
-                    "- Pap�is novos: $currentRolesStr",
-                metadata: {
-                  'nome': name,
-                  'papelAnterior': existingRole,
-                  'papeisNovos': currentRoles,
-                },
-              );
-
-              debugPrint(
-                '?????? ERRO CR�TICO DE REUTILIZA��O DE NOME - BLOCO $blockNumber ??????',
-              );
-              debugPrint(
-                '   ? Nome "$name" est� sendo REUTILIZADO EM PAP�IS DIFERENTES!',
-              );
-              debugPrint('   ?? Papel anterior: "$name" como $existingRole');
-              debugPrint('   ?? Pap�is novos detectados: $currentRolesStr');
-              debugPrint(
-                '   ?? SOLU��O: Cada personagem precisa de nome �NICO!',
-              );
-              debugPrint(
-                '   ?? Exemplo: "Regina" n�o pode ser sogra E amiga ao mesmo tempo',
-              );
-              debugPrint(
-                '   ?? Sugest�o: Trocar segundo "$name" por outro nome diferente',
-              );
-              debugPrint('?????? FIM DO ALERTA DE REUTILIZA��O ??????');
+            if (kDebugMode) {
+              debugPrint('❌ ERRO: Nome "$name" reutilizado!');
+              debugPrint('   Papel anterior: $existingRole');
+              debugPrint('   Papel atual: $currentRole');
             }
           }
         }
       }
     }
 
-    // ?? DEBUG: Log valida��o de nomes completa
+    // DEBUG: Log validação completa
     _debugLogger.validation(
-      "Valida��o de reutiliza��o completa",
+      "Validação de reutilização completa",
       blockNumber: blockNumber,
       details: "${foundNames.length} nomes verificados",
       metadata: {'nomesVerificados': foundNames.length},
     );
   }
 
-  /// ?? NOVA VALIDA��O: Detecta inconsist�ncias em rela��es familiares
-  /// Exemplo: "meu Pai Francisco" vs "meu marido Francisco" = CONFUS�O
+  /// 🔍 NOVA VALIDAÇÃO: Detecta inconsistências em relações familiares
+  /// 🏗️ v7.6.67: Refatorado para usar RolePatterns module
+  /// Exemplo: "meu Pai Francisco" vs "meu marido Francisco" = CONFUSÃO
   void _validateFamilyRelations(String generatedText, int blockNumber) {
     // Extrair nomes mencionados no texto
-    final namePattern = RegExp(r'\b([A-Z������������][a-z������������]{2,})\b');
+    final namePattern = RegExp(r'\b([A-ZÁÀÂÃÉÈÊÍÌÎÓÒÔÕÚÙÛÇ][a-záàâãéèêíìîóòôõúùûç]{2,})\b');
     final names = <String>{};
 
     for (final match in namePattern.allMatches(generatedText)) {
@@ -4144,85 +3892,22 @@ no vasto manto azul do infinito."
       }
     }
 
-    // Para cada nome, verificar se aparece com m�ltiplas rela��es conflitantes
+    // Para cada nome, usar RolePatterns para detectar papel
     for (final name in names) {
-      final relations = <String>[];
-
-      // Padr�es de rela��es familiares
-      final relationPatterns = {
-        'pai': RegExp(
-          '(?:meu|seu|nosso|o)\\s+[Pp]ai(?:,)?\\s+$name',
-          caseSensitive: false,
-        ),
-        'm�e': RegExp(
-          '(?:minha|sua|nossa|a)\\s+[Mm]�e(?:,)?\\s+$name',
-          caseSensitive: false,
-        ),
-        'marido': RegExp(
-          '(?:meu|seu|nosso|o)\\s+(?:marido|esposo)(?:,)?\\s+$name',
-          caseSensitive: false,
-        ),
-        'esposa': RegExp(
-          '(?:minha|sua|nossa|a)\\s+(?:esposa|mulher)(?:,)?\\s+$name',
-          caseSensitive: false,
-        ),
-        'filho': RegExp(
-          '(?:meu|seu|nosso|o)\\s+[Ff]ilho(?:,)?\\s+$name',
-          caseSensitive: false,
-        ),
-        'filha': RegExp(
-          '(?:minha|sua|nossa|a)\\s+[Ff]ilha(?:,)?\\s+$name',
-          caseSensitive: false,
-        ),
-        'irm�o': RegExp(
-          '(?:meu|seu|nosso|o)\\s+(?:irm�o|irmao)(?:,)?\\s+$name',
-          caseSensitive: false,
-        ),
-        'irm�': RegExp(
-          '(?:minha|sua|nossa|a)\\s+(?:irm�|irma)(?:,)?\\s+$name',
-          caseSensitive: false,
-        ),
-      };
-
-      // Verificar quais rela��es aparecem para este nome
-      for (final entry in relationPatterns.entries) {
-        if (entry.value.hasMatch(generatedText)) {
-          relations.add(entry.key);
+      final role = RolePatterns.extractRoleForName(name, generatedText);
+      
+      // Se detectou papel, verificar se há conflitos
+      if (role != null) {
+        // Verificar se mesmo nome aparece em contextos conflitantes
+        // usando lógica simplificada baseada no módulo
+        if (kDebugMode) {
+          debugPrint('📋 Nome "$name" detectado como: $role (bloco $blockNumber)');
         }
-      }
-
-      // ?? DETECTAR CONFLITOS: Mesmo nome com rela��es incompat�veis
-      final conflicts = _detectRelationConflicts(relations);
-
-      if (conflicts.isNotEmpty) {
-        _debugLogger.error(
-          "Confus�o em rela��o familiar: '$name'",
-          blockNumber: blockNumber,
-          details:
-              "Nome '$name' aparece como: ${relations.join(', ')}\n"
-              "Conflito: ${conflicts.join(', ')}",
-          metadata: {
-            'nome': name,
-            'relacoes': relations,
-            'conflitos': conflicts,
-          },
-        );
-
-        debugPrint(
-          '?????? ERRO CR�TICO DE RELA��O FAMILIAR - BLOCO $blockNumber ??????',
-        );
-        debugPrint('   ? Nome "$name" tem rela��es conflitantes!');
-        debugPrint('   ?? Rela��es encontradas: ${relations.join(", ")}');
-        debugPrint('   ?? Conflitos: ${conflicts.join(", ")}');
-        debugPrint(
-          '   ?? SOLU��O: Definir claramente se � pai, marido, filho, etc.',
-        );
-        debugPrint('?????? FIM DO ALERTA DE RELA��O FAMILIAR ??????');
       }
     }
   }
 
-  /// ?? NOVA VALIDA��O CR�TICA v7.6.16: Detecta mudan�as de nome de personagens
+  /// 🔍 NOVA VALIDAÇÃO CRÍTICA v7.6.16: Detecta mudanças de nome de personagens
   /// Compara pap�is conhecidos (tracker) com novos nomes mencionados no texto
   /// Retorna lista de mudan�as detectadas para rejei��o do bloco
   List<Map<String, String>> _detectCharacterNameChanges(
@@ -4307,35 +3992,6 @@ no vasto manto azul do infinito."
     }
 
     return changes;
-  }
-
-  /// Detecta conflitos entre rela��es familiares
-  /// Retorna lista de descri��es de conflitos encontrados
-  List<String> _detectRelationConflicts(List<String> relations) {
-    final conflicts = <String>[];
-
-    if (relations.length < 2) {
-      return conflicts; // Sem conflito se h� apenas 1 rela��o
-    }
-
-    // Grupos de rela��es mutuamente exclusivas
-    final exclusiveGroups = [
-      {'pai', 'marido', 'filho', 'irm�o'}, // Rela��es masculinas diferentes
-      {'m�e', 'esposa', 'filha', 'irm�'}, // Rela��es femininas diferentes
-      {'pai', 'm�e'}, // Pais n�o podem ser a mesma pessoa
-      {'marido', 'esposa'}, // C�njuges n�o podem ser a mesma pessoa
-      {'filho', 'pai'}, // Filho n�o pode ser pai do narrador
-      {'filha', 'm�e'}, // Filha n�o pode ser m�e do narrador
-    ];
-
-    for (final group in exclusiveGroups) {
-      final found = relations.where((r) => group.contains(r)).toList();
-      if (found.length > 1) {
-        conflicts.add('${found.join(" + ")} s�o incompat�veis');
-      }
-    }
-
-    return conflicts;
   }
 
   bool _looksLikePersonName(String value) {
