@@ -349,9 +349,15 @@ class GeminiService {
           },
         );
 
-        final phaseIdx = _getPhaseIndexFromProgress(block / totalBlocks);
-        final phase = _phases[phaseIdx];
+        // ?? v7.6.100: _getPhaseIndexFromProgress inline-ado
         final progress = block / totalBlocks;
+        final phaseIdx = progress <= 0.15 ? 0
+            : progress <= 0.30 ? 1
+            : progress <= 0.65 ? 2
+            : progress <= 0.80 ? 3
+            : progress <= 0.95 ? 4
+            : 5;
+        final phase = _phases[phaseIdx];
         final elapsed = DateTime.now().difference(start);
         final estTotal = progress > 0
             ? Duration(
@@ -1635,14 +1641,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     'Finaliza??o',
   ];
 
-  int _getPhaseIndexFromProgress(double p) {
-    if (p <= 0.15) return 0;
-    if (p <= 0.30) return 1;
-    if (p <= 0.65) return 2;
-    if (p <= 0.80) return 3;
-    if (p <= 0.95) return 4;
-    return 5;
-  }
+  // ?? v7.6.100: _getPhaseIndexFromProgress removido - inline-ado no loop de blocos
 
   List<String> _generateBlockLogs(
     String phase,
