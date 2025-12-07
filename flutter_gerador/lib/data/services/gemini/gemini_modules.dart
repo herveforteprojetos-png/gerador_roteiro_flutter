@@ -14,6 +14,9 @@ export 'progress/generation_progress_manager.dart';
 // 🏗️ v7.6.67: Módulo de Estilos Narrativos
 export 'prompts/narrative_styles.dart';
 
+// 🏗️ v7.6.70: Módulo de Perspectiva
+export 'prompts/perspective_builder.dart';
+
 // Prompts (export com hide para evitar conflitos de classes com o tracker)
 // export '../prompts/prompt_builder.dart'; // REMOVIDO: Arquivo deletado na limpeza v7.6.65
 export '../prompts/base_rules.dart';
