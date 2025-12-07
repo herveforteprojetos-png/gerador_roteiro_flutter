@@ -2566,9 +2566,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         final previousRole = tracker.getRole(name);
 
         if (currentRole != null && previousRole != null) {
-          // Normalizar pap?is para compara??o
-          final normalizedCurrent = _normalizeRole(currentRole);
-          final normalizedPrevious = _normalizeRole(previousRole);
+          // Normalizar papéis para comparação
+          final normalizedCurrent = RolePatterns.normalizeRoleSelective(currentRole);
+          final normalizedPrevious = RolePatterns.normalizeRoleSelective(previousRole);
 
           // Se pap?is s?o DIFERENTES = NOME DUPLICADO (ERRO!)
           if (normalizedCurrent != normalizedPrevious &&
@@ -2615,7 +2615,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
       final currentRole = RolePatterns.extractRoleForName(name, blockText);
 
       if (currentRole != null && currentRole != 'indefinido') {
-        final normalizedCurrent = _normalizeRole(currentRole);
+        final normalizedCurrent = RolePatterns.normalizeRoleSelective(currentRole);
 
         // Verificar se este PAPEL j? existe com um NOME DIFERENTE
         for (final existingName in tracker.confirmedNames) {
@@ -2626,7 +2626,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
           final existingRole = tracker.getRole(existingName);
           if (existingRole == null) continue;
 
-          final normalizedExisting = _normalizeRole(existingRole);
+          final normalizedExisting = RolePatterns.normalizeRoleSelective(existingRole);
 
           // ?? PAP?IS CR?TICOS que DEVEM ser ?nicos (1 nome por papel)
           final uniqueRoles = {
@@ -2736,7 +2736,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
           final existingRole = tracker.getRole(existingName);
           if (existingRole == null) continue;
 
-          final normalizedExisting = _normalizeRole(existingRole).toLowerCase();
+          final normalizedExisting = RolePatterns.normalizeRoleSelective(existingRole).toLowerCase();
 
           // ?? v7.6.34: Match exato ou cont?m o papel completo (executive assistant, etc.)
           final possessiveRoleNormalized = possessiveRole.replaceAll(
@@ -2793,22 +2793,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     return false; // ? Nenhum conflito de nomes ou pap?is
   }
 
-  /// ?? v7.6.26: Normaliza papel SELETIVAMENTE (evita falsos positivos)
-  ///
-  /// PAP?IS FAMILIARES: Mant?m completo "m?e de Emily" ? "m?e de Michael"
-  /// PAP?IS GEN?RICOS: Normaliza "advogado de Sarah" ? "advogado"
-  ///
-  /// Exemplo:
-  /// - "m?e de Emily" ? "m?e de emily" (mant?m rela??o)
-  /// - "irm?o de Jo?o" ? "irm?o de jo?o" (mant?m rela??o)
-  /// - "advogado de Sarah" ? "advogado" (remove rela??o)
-  /// - "m?dico de Michael" ? "m?dico" (remove rela??o)
-  /// 🎯 v7.6.74: Delegado ao módulo RolePatterns (SOLID)
-  String _normalizeRole(String role) =>
-      RolePatterns.normalizeRoleSelective(role);
-
   // 🔧 v7.6.86: Wrapper _extractRoleForName removido
-  // Usar RolePatterns.extractRoleForName() diretamente
+  // 🔧 v7.6.87: Wrapper _normalizeRole removido
+  // Usar RolePatterns.extractRoleForName() e RolePatterns.normalizeRoleSelective() diretamente
 
   /// 🔍 VALIDAÇÃO FORTALECIDA: Detecta quando um nome é reutilizado para outro personagem
   /// 🔧 v7.6.67: Refatorado para usar RolePatterns module
