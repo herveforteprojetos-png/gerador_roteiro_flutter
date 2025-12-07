@@ -3717,14 +3717,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   // ??? v7.6.64: _makeApiRequest migrado para LlmClient._makeRequest (SOLID)
   // Todas as chamadas agora usam _llmClient.generateText()
 
-  // ??? v7.6.65: DELEGA??O para TextCleaner (Refatora??o SOLID)
-  // Limpar texto de marca??es indesejadas
-  String _cleanGeneratedText(String text) {
-    return TextCleaner.cleanGeneratedText(text);
-  }
-
   // 🔧 v7.6.84: Wrappers _extractNamesFromText e _validateNamesInText removidos
   // 🔧 v7.6.88: Métodos _addNamesToTracker e _resetNameTracker inlined
+  // 🔧 v7.6.89: Wrapper _cleanGeneratedText removido - usar TextCleaner.cleanGeneratedText()
 
   // Método público para uso nos providers - OTIMIZADO PARA CONTEXTO
   // 📊 v7.6.51: Suporte a qualityMode para Pipeline Modelo Único
@@ -3766,9 +3761,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         );
         debugPrint('GeminiService: Length: ${result.length}');
 
-        // Aplicar limpeza adicional se necess?rio
+        // Aplicar limpeza adicional se necessário
         final cleanResult = result.isNotEmpty
-            ? _cleanGeneratedText(result)
+            ? TextCleaner.cleanGeneratedText(result)
             : '';
         return cleanResult;
       } catch (e) {
