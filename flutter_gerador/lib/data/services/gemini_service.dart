@@ -761,7 +761,7 @@ class GeminiService {
           }
 
           // 🔧 v7.6.17: VALIDAÇÃO UNIVERSAL DE TODOS OS NOMES (primários + secundários)
-          final allNamesInBlock = _extractNamesFromText(
+          final allNamesInBlock = NameValidator.extractNamesFromText(
             added,
           ).where((n) => NameValidator.looksLikePersonName(n)).toList();
 
@@ -782,8 +782,8 @@ class GeminiService {
             }
           }
 
-          // ?? v4: EXTRA??O E RASTREAMENTO DE NOMES
-          final duplicatedNames = _validateNamesInText(
+          // 🔍 v4: EXTRAÇÃO E RASTREAMENTO DE NOMES
+          final duplicatedNames = NameValidator.validateNamesInText(
             added,
             _namesUsedInCurrentStory,
           );
@@ -2105,7 +2105,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     if (configName.isEmpty) return;
 
     // Extrair todos os nomes do texto
-    final names = _extractNamesFromText(generatedText);
+    final names = NameValidator.extractNamesFromText(generatedText);
 
     // Procurar o nome configurado
     if (names.contains(configName)) {
@@ -2143,7 +2143,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     if (registeredName == null) return false; // Sem protagonista registrada
 
     // Extrair todos os nomes do bloco atual
-    final currentNames = _extractNamesFromText(generatedText);
+    final currentNames = NameValidator.extractNamesFromText(generatedText);
 
     // Verificar se protagonista registrada aparece
     final protagonistPresent = currentNames.contains(registeredName);
@@ -2549,7 +2549,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     if (blockText.trim().isEmpty) return false; // Texto vazio = sem erro
 
     // Extrair nomes do bloco atual
-    final namesInBlock = _extractNamesFromText(blockText);
+    final namesInBlock = NameValidator.extractNamesFromText(blockText);
 
     // Verificar cada nome extra?do
     for (final name in namesInBlock) {
@@ -3736,35 +3736,23 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     return TextCleaner.cleanGeneratedText(text);
   }
 
-  // ?? SISTEMA DE RASTREAMENTO DE NOMES - v4 (SOLU??O T?CNICA)
-  /// Extrai nomes pr?prios capitalizados do texto gerado
-  /// Retorna Set de nomes encontrados (n?o duplicados)
-  /// 🔧 v7.6.76: Delegado ao módulo NameValidator (SOLID)
-  Set<String> _extractNamesFromText(String text) =>
-      NameValidator.extractNamesFromText(text);
-
-
-  /// 🔧 v7.6.77: Delegado ao módulo NameValidator (SOLID)
-  List<String> _validateNamesInText(
-    String newBlock,
-    Set<String> previousNames,
-  ) =>
-      NameValidator.validateNamesInText(newBlock, previousNames);
+  // 🔧 v7.6.84: Wrappers _extractNamesFromText e _validateNamesInText removidos
+  // Usar NameValidator.extractNamesFromText() e NameValidator.validateNamesInText() diretamente
 
   /// Adiciona nomes novos ao rastreador global
   void _addNamesToTracker(String text) {
-    final names = _extractNamesFromText(text);
+    final names = NameValidator.extractNamesFromText(text);
     _namesUsedInCurrentStory.addAll(names);
 
     if (kDebugMode && names.isNotEmpty) {
-      debugPrint('?? Nomes extra?dos do bloco: ${names.join(", ")}');
+      debugPrint('📝 Nomes extraídos do bloco: ${names.join(", ")}');
       debugPrint(
-        '?? Total de nomes ?nicos na hist?ria: ${_namesUsedInCurrentStory.length}',
+        '📊 Total de nomes únicos na história: ${_namesUsedInCurrentStory.length}',
       );
     }
   }
 
-  /// Reseta o rastreador de nomes (in?cio de nova hist?ria)
+  /// Reseta o rastreador de nomes (início de nova história)
   void _resetNameTracker() {
     _namesUsedInCurrentStory.clear();
     if (kDebugMode) {
