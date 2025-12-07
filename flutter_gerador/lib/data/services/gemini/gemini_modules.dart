@@ -4,6 +4,7 @@ export 'api/gemini_api_client.dart';
 export 'utils/word_counter.dart';
 export 'utils/similarity_calculator.dart';
 export 'utils/text_filter.dart';
+export 'utils/character_guidance.dart'; // 🆕 v7.6.75
 export 'validation/anti_repetition.dart';
 export 'validation/name_validator.dart';
 export 'validation/family_relations.dart';

@@ -23,13 +23,13 @@ import 'package:flutter_gerador/data/services/gemini/infra/infra_modules.dart'; 
 // ??? v7.6.66: M�DULOS EXTRA�DOS (Refatora��o SOLID - Fase 2)
 import 'package:flutter_gerador/data/services/gemini/tools/tools_modules.dart';
 
-// ??? v7.6.67: M�DULOS DE VALIDA��O (Refatora��o SOLID - Fase 5)
+// 🏗️ v7.6.67: MÓDULOS DE VALIDAÇÃO (Refatoração SOLID - Fase 5)
 import 'package:flutter_gerador/data/services/gemini/validation/name_constants.dart';
-import 'package:flutter_gerador/data/services/gemini/validation/name_validator.dart';
+// name_validator.dart exportado via gemini_modules.dart
 import 'package:flutter_gerador/data/services/gemini/validation/relationship_patterns.dart';
 import 'package:flutter_gerador/data/services/gemini/validation/role_patterns.dart';
 
-// ??? v7.6.70: M�DULOS DE PROMPTS (Refatora��o SOLID)
+// 🏗️ v7.6.70: MÓDULOS DE PROMPTS (Refatoração SOLID)
 // narrative_styles.dart exportado via gemini_modules.dart
 // perspective_builder.dart exportado via gemini_modules.dart
 
@@ -2183,144 +2183,20 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
       }
     });
 
-    return !hasRoleConflict; // ? true = OK, ? false = ERRO
+    return !hasRoleConflict; // ✅ true = OK, ❌ false = ERRO
   }
 
-  /// ?? Traduz termos de parentesco do portugu?s para o idioma do roteiro
-  /// ?? WRAPPER: Chama o novo m?dulo BaseRules
-  String _translateFamilyTerms(String text, String language) {
-    return BaseRules.translateFamilyTerms(language, text);
-  }
-
+  /// 🔧 Delegado ao módulo CharacterGuidanceBuilder (SOLID v7.6.75)
   String _buildCharacterGuidance(
     ScriptConfig config,
     CharacterTracker tracker,
-  ) {
-    final lines = <String>[];
-    final baseNames = <String>{};
+  ) =>
+      CharacterGuidanceBuilder.buildGuidance(config, tracker);
 
-    final protagonist = config.protagonistName.trim();
-    if (protagonist.isNotEmpty) {
-      final translatedProtagonist = _translateFamilyTerms(
-        protagonist,
-        config.language,
-      );
-      lines.add(
-        '- Protagonista: "$translatedProtagonist" ? mantenha exatamente este nome e sua fun??o.',
-      );
-      baseNames.add(protagonist.toLowerCase());
-    }
 
-    final secondary = config.secondaryCharacterName.trim();
-    if (secondary.isNotEmpty) {
-      final translatedSecondary = _translateFamilyTerms(
-        secondary,
-        config.language,
-      );
-      lines.add(
-        '- Personagem secund?rio: "$translatedSecondary" ? preserve o mesmo nome em todos os blocos.',
-      );
-      baseNames.add(secondary.toLowerCase());
-    }
-
-    final additional =
-        tracker.confirmedNames
-            .where((n) => !baseNames.contains(n.toLowerCase()))
-            .toList()
-          ..sort((a, b) => a.compareTo(b));
-
-    for (final name in additional) {
-      // ?? CORRIGIDO: Adicionar personagens mencionados (n?o s?o hints de narrador)
-      if (name.startsWith('PERSONAGEM MENCIONADO')) {
-        // Remover marcador e traduzir termo familiar antes de adicionar ao prompt
-        final cleanName = name.replaceFirst('PERSONAGEM MENCIONADO: ', '');
-        final translatedName = _translateFamilyTerms(
-          cleanName,
-          config.language,
-        );
-        lines.add(
-          '- Personagem mencionado: $translatedName (manter como refer?ncia familiar)',
-        );
-      } else {
-        final translatedName = _translateFamilyTerms(name, config.language);
-        lines.add(
-          '- Personagem estabelecido: "$translatedName" ? n?o altere este nome nem invente apelidos.',
-        );
-      }
-    }
-
-    if (lines.isEmpty) return '';
-
-    return 'PERSONAGENS ESTABELECIDOS:\n${lines.join('\n')}\nNunca substitua esses nomes por varia??es ou apelidos.\n';
-  }
-
-  // ?? CORRIGIDO: Extrair hints de g?nero/rela??es APENAS como contexto, N?O como narrador
-  // O t?tulo ? apenas o GANCHO da hist?ria, n?o define quem narra!
-  // Quem narra ? definido por: Perspectiva + Campo Protagonista + Contexto do usu?rio
-  Set<String> _extractCharacterHintsFromTitle(String title, String context) {
-    final hints = <String>{};
-    if (title.trim().isEmpty) return hints;
-
-    final titleLower = title.toLowerCase();
-    final contextLower = context.toLowerCase();
-
-    // ?? DETECTAR: 1) Rela??es familiares e 2) Nomes pr?prios mencionados no t?tulo
-
-    // 1?? RELA??ES FAMILIARES
-    final charactersInTitle = {
-      'm?e': 'PERSONAGEM MENCIONADO: M?e',
-      'pai': 'PERSONAGEM MENCIONADO: Pai',
-      'filho': 'PERSONAGEM MENCIONADO: Filho',
-      'filha': 'PERSONAGEM MENCIONADO: Filha',
-      'esposa': 'PERSONAGEM MENCIONADO: Esposa',
-      'marido': 'PERSONAGEM MENCIONADO: Marido',
-      'irm?': 'PERSONAGEM MENCIONADO: Irm?',
-      'irm?o': 'PERSONAGEM MENCIONADO: Irm?o',
-      'av?': 'PERSONAGEM MENCIONADO: Av?',
-      'av?': 'PERSONAGEM MENCIONADO: Av?',
-      'tia': 'PERSONAGEM MENCIONADO: Tia',
-      'tio': 'PERSONAGEM MENCIONADO: Tio',
-    };
-
-    for (final entry in charactersInTitle.entries) {
-      if (titleLower.contains(entry.key) || contextLower.contains(entry.key)) {
-        hints.add(entry.value);
-        if (kDebugMode) {
-          debugPrint(
-            '?? Personagem detectado no t?tulo: ${entry.key} ? ${entry.value}',
-          );
-        }
-      }
-    }
-
-    // 2?? NOMES PR?PRIOS MENCIONADOS NO T?TULO
-    // Detectar padr?es como: "Voc? ? Michael?" ou "chamado Jo?o" ou "nome: Maria"
-    final namePatterns = [
-      RegExp(
-        r'(?:?|chamad[oa]|nome:|sou)\s+([A-Z????????????][a-z????????????]+(?:\s+[A-Z????????????][a-z????????????]+)?)',
-        caseSensitive: false,
-      ),
-      RegExp(r'"([A-Z????????????][a-z????????????]+)"'), // Nomes entre aspas
-      RegExp(
-        r'protagonista\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-    ];
-
-    for (final pattern in namePatterns) {
-      for (final match in pattern.allMatches(title)) {
-        final name = match.group(1)?.trim() ?? '';
-        if (_looksLikePersonName(name) && name.length >= 3) {
-          hints.add('NOME MENCIONADO NO T?TULO: $name');
-          if (kDebugMode) {
-            debugPrint('?? Nome pr?prio detectado no t?tulo: $name');
-          }
-        }
-      }
-    }
-
-    return hints;
-  }
+  /// 🔧 Delegado ao módulo CharacterGuidanceBuilder (SOLID v7.6.75)
+  Set<String> _extractCharacterHintsFromTitle(String title, String context) =>
+      CharacterGuidanceBuilder.extractHintsFromTitle(title, context);
 
   /// ?? Delegado ao m�dulo NarrativeStyleBuilder (SOLID)
   String _getNarrativeStyleGuidance(ScriptConfig config) =>
