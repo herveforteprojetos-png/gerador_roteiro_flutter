@@ -1512,12 +1512,6 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     return Duration(seconds: 2); // 2s m?ximo
   }
 
-  /// Registra sucesso de chamada da API
-  void _recordApiSuccess() {
-    _lastSuccessfulCall = DateTime.now();
-    _consecutive503Errors = max(0, _consecutive503Errors - 1); // Decay
-  }
-
   Future<T> _retryOnRateLimit<T>(
     Future<T> Function() op, {
     int maxRetries = 6,
@@ -3567,7 +3561,8 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
       // ?? v7.6.20: Registrar sucesso da API para Adaptive Delay Manager
       if (data.isNotEmpty) {
-        _recordApiSuccess();
+        _lastSuccessfulCall = DateTime.now();
+        _consecutive503Errors = max(0, _consecutive503Errors - 1);
       }
 
       final text = data;
@@ -3744,7 +3739,8 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
         // ?? v7.6.20: Registrar sucesso da API para Adaptive Delay Manager
         if (result.isNotEmpty) {
-          _recordApiSuccess();
+          _lastSuccessfulCall = DateTime.now();
+          _consecutive503Errors = max(0, _consecutive503Errors - 1);
         }
 
         debugPrint(
