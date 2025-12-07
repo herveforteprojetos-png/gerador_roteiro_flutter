@@ -2049,8 +2049,8 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         return;
       }
 
-      // ?? CORRE??O BUG ALBERTO: Extrair papel antes de adicionar
-      final role = _extractRoleForName(name, snippet);
+      // ✅ CORREÇÃO BUG ALBERTO: Extrair papel antes de adicionar
+      final role = RolePatterns.extractRoleForName(name, snippet);
 
       if (role != null) {
         final success = tracker.addName(name, role: role); // ?? v7.6.25
@@ -2560,7 +2560,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         // Nome j? existe - verificar se ? o MESMO personagem ou REUSO indevido
 
         // Extrair papel atual deste nome no bloco
-        final currentRole = _extractRoleForName(name, blockText);
+        final currentRole = RolePatterns.extractRoleForName(name, blockText);
 
         // Extrair papel registrado anteriormente
         final previousRole = tracker.getRole(name);
@@ -2612,7 +2612,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
       // ---------------------------------------------------------------
       // ?? VALIDA??O 2 (v7.6.32): MESMO PAPEL em NOMES DIFERENTES
       // ---------------------------------------------------------------
-      final currentRole = _extractRoleForName(name, blockText);
+      final currentRole = RolePatterns.extractRoleForName(name, blockText);
 
       if (currentRole != null && currentRole != 'indefinido') {
         final normalizedCurrent = _normalizeRole(currentRole);
@@ -2807,14 +2807,12 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   String _normalizeRole(String role) =>
       RolePatterns.normalizeRoleSelective(role);
 
-  /// ??? v7.6.67: Delegando para m�dulo RolePatterns
-  String? _extractRoleForName(String name, String text) {
-    return RolePatterns.extractRoleForName(name, text);
-  }
+  // 🔧 v7.6.86: Wrapper _extractRoleForName removido
+  // Usar RolePatterns.extractRoleForName() diretamente
 
-  /// ?? VALIDA��O FORTALECIDA: Detecta quando um nome � reutilizado para outro personagem
-  /// ??? v7.6.67: Refatorado para usar RolePatterns module
-  /// Exemplo: "Regina" sendo usada para sogra E amiga, "Marta" para irm� de A e irm� de B
+  /// 🔍 VALIDAÇÃO FORTALECIDA: Detecta quando um nome é reutilizado para outro personagem
+  /// 🔧 v7.6.67: Refatorado para usar RolePatterns module
+  /// Exemplo: "Regina" sendo usada para sogra E amiga, "Marta" para irmã de A e irmã de B
   void _validateNameReuse(
     String generatedText,
     CharacterTracker tracker,
