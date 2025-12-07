@@ -1070,9 +1070,15 @@ class GeminiService {
         ); // ULTRA-OTIMIZADO: Era 50ms, agora 10ms
 
         // Delay adicional entre blocos para evitar sobrecarga
-        await Future.delayed(
-          Duration(milliseconds: _getBlockDelay(block, totalBlocks)),
-        );
+        // ?? v7.6.99: _getBlockDelay inline-ado
+        final blockProgress = block / totalBlocks;
+        final blockDelayMs = blockProgress <= 0.15 ? 50
+            : blockProgress <= 0.30 ? 75
+            : blockProgress <= 0.65 ? 100
+            : blockProgress <= 0.80 ? 125
+            : blockProgress <= 0.95 ? 75
+            : 50;
+        await Future.delayed(Duration(milliseconds: blockDelayMs));
       }
 
       // ?? EXPANS�O FOR�ADA DESATIVADA
@@ -1651,16 +1657,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     ];
   }
 
-  int _getBlockDelay(int block, int total) {
-    final p = block / total;
-    // OTIMIZADO: Delays m?nimos para maximizar velocidade (sem afetar qualidade)
-    if (p <= 0.15) return 50; // Reduzido de 100ms para 50ms
-    if (p <= 0.30) return 75; // Reduzido de 150ms para 75ms
-    if (p <= 0.65) return 100; // Reduzido de 200ms para 100ms
-    if (p <= 0.80) return 125; // Reduzido de 250ms para 125ms
-    if (p <= 0.95) return 75; // Reduzido de 150ms para 75ms
-    return 50; // Reduzido de 100ms para 50ms
-  }
+  // ?? v7.6.99: _getBlockDelay removido - inline-ado no loop de blocos
 
   bool _checkTargetMet(String text, ScriptConfig c) {
     if (c.measureType == 'caracteres') {
