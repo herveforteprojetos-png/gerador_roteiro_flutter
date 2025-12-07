@@ -760,10 +760,10 @@ class GeminiService {
             }
           }
 
-          // ?? v7.6.17: VALIDA??O UNIVERSAL DE TODOS OS NOMES (prim?rios + secund?rios)
+          // 🔧 v7.6.17: VALIDAÇÃO UNIVERSAL DE TODOS OS NOMES (primários + secundários)
           final allNamesInBlock = _extractNamesFromText(
             added,
-          ).where((n) => _looksLikePersonName(n)).toList();
+          ).where((n) => NameValidator.looksLikePersonName(n)).toList();
 
           // Detectar nomes novos n?o registrados no tracker
           final unregisteredNames = allNamesInBlock
@@ -2041,8 +2041,8 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
       if (locationLower.isNotEmpty && normalized == locationLower) return;
       if (NameConstants.isStopword(normalized)) return;
 
-      // v7.6.63: Valida��o estrutural (aceita nomes do LLM)
-      if (!_isLikelyName(name)) {
+      // v7.6.63: Validação estrutural (aceita nomes do LLM)
+      if (!NameValidator.isLikelyName(name)) {
         if (kDebugMode) {
           debugPrint('Tracker ignorou texto invalido: "$name"');
         }
@@ -2136,8 +2136,8 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         debugPrint('? Bloco 1: Protagonista "$configName" confirmada');
       }
     } else {
-      // Se nome configurado n?o apareceu, pegar primeiro nome v?lido
-      final validNames = names.where((n) => _looksLikePersonName(n)).toList();
+      // Se nome configurado não apareceu, pegar primeiro nome válido
+      final validNames = names.where((n) => NameValidator.looksLikePersonName(n)).toList();
       if (validNames.isNotEmpty) {
         final detectedName = validNames.first;
         tracker.setProtagonistName(detectedName);
@@ -2170,9 +2170,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     // Verificar se protagonista registrada aparece
     final protagonistPresent = currentNames.contains(registeredName);
 
-    // Verificar se h? outros nomes v?lidos (poss?vel troca)
+    // Verificar se há outros nomes válidos (possível troca)
     final otherValidNames = currentNames
-        .where((n) => n != registeredName && _looksLikePersonName(n))
+        .where((n) => n != registeredName && NameValidator.looksLikePersonName(n))
         .toList();
 
     // ?? DETEC??O: Se protagonista n?o apareceu MAS h? outros nomes v?lidos
@@ -2848,7 +2848,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
     for (final match in namePattern.allMatches(generatedText)) {
       final name = match.group(1)?.trim();
-      if (name != null && _looksLikePersonName(name)) {
+      if (name != null && NameValidator.looksLikePersonName(name)) {
         foundNames.add(name);
       }
     }
@@ -2913,7 +2913,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
     for (final match in namePattern.allMatches(generatedText)) {
       final name = match.group(1)?.trim();
-      if (name != null && _looksLikePersonName(name)) {
+      if (name != null && NameValidator.looksLikePersonName(name)) {
         names.add(name);
       }
     }
@@ -2995,7 +2995,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
       for (final match in matches) {
         final newName = match.group(1)?.trim();
-        if (newName == null || !_looksLikePersonName(newName)) continue;
+        if (newName == null || !NameValidator.looksLikePersonName(newName)) continue;
 
         // Verificar se este papel j? tem um nome no tracker
         final existingName = tracker.getNameForRole(role);
@@ -3020,18 +3020,14 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     return changes;
   }
 
-  /// 🎯 v7.6.73: Delegado ao módulo NameValidator (SOLID)
-  bool _looksLikePersonName(String value) =>
-      NameValidator.looksLikePersonName(value);
+  // 🔧 v7.6.82: Wrappers _looksLikePersonName e _isLikelyName removidos
+  // Usar NameValidator.looksLikePersonName() e NameValidator.isLikelyName() diretamente
 
-  /// 🎯 v7.6.73: Delegado ao módulo NameValidator (SOLID)
-  bool _isLikelyName(String text) => NameValidator.isLikelyName(text);
-
-  /// ?? Delegado ao m�dulo PerspectiveBuilder (SOLID)
+  /// 🔧 Delegado ao módulo PerspectiveBuilder (SOLID)
   static String perspectiveLabel(String perspective) =>
       PerspectiveBuilder.perspectiveLabel(perspective);
 
-  /// ?? Delegado ao m�dulo PerspectiveBuilder (SOLID)
+  /// 🔧 Delegado ao módulo PerspectiveBuilder (SOLID)
   String _getPerspectiveInstruction(String perspective, ScriptConfig config) =>
       PerspectiveBuilder.getPerspectiveInstruction(perspective, config);
 
