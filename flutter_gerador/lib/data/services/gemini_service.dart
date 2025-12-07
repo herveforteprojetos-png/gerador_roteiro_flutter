@@ -156,7 +156,9 @@ class GeminiService {
         },
         onResponse: (r, h) {
           if (kDebugMode) debugPrint('[$_instanceId] <- ${r.statusCode}');
-          _resetCircuit();
+          _isCircuitOpen = false;
+          _failureCount = 0;
+          _lastFailureTime = null;
           h.next(r);
         },
         onError: (e, h) {
@@ -1330,11 +1332,6 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   // ===================== Infra =====================
   static String _genId() =>
       'gemini_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(999)}';
-  void _resetCircuit() {
-    _isCircuitOpen = false;
-    _failureCount = 0;
-    _lastFailureTime = null;
-  }
 
   void _registerFailure() {
     _failureCount++;
@@ -1349,7 +1346,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     if (!_isCircuitOpen) return true;
     if (_lastFailureTime != null &&
         DateTime.now().difference(_lastFailureTime!) > _circuitResetTime) {
-      _resetCircuit();
+      _isCircuitOpen = false;
+      _failureCount = 0;
+      _lastFailureTime = null;
       return true;
     }
     return false;
