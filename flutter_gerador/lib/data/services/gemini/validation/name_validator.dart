@@ -404,4 +404,61 @@ class NameValidator {
 
     return null;
   }
+
+  /// 🔧 v7.6.73: Validação simples de nome (aceita criatividade do LLM)
+  /// Resolve bug de rejeitar nomes coreanos, compostos, etc.
+  static bool isLikelyName(String text) {
+    if (text.isEmpty) return false;
+    // Aceita qualquer string que comece com letra maiúscula
+    // e contenha apenas letras, espaços, hífens ou apóstrofos
+    final nameRegex = RegExp(
+      r"^[A-Z\u00C0-\u00DC\u0100-\u017F\uAC00-\uD7AF][a-zA-Z\u00C0-\u00FF\u0100-\u017F\uAC00-\uD7AF\s\-\']+$",
+    );
+    return nameRegex.hasMatch(text.trim());
+  }
+
+  /// 🔧 v7.6.73: Verifica estrutura válida de nome próprio
+  static bool hasValidNameStructure(String name) {
+    // Mínimo 2 caracteres, máximo 15
+    if (name.length < 2 || name.length > 15) return false;
+
+    // Primeira letra maiúscula
+    if (name[0] != name[0].toUpperCase()) return false;
+
+    // Resto em minúsculas (permite acentos)
+    final rest = name.substring(1);
+    if (rest != rest.toLowerCase()) return false;
+
+    // Apenas letras (permite acentuação)
+    final validPattern = RegExp(r'^[A-ZÀ-Ú][a-zà-ú]+$');
+    return validPattern.hasMatch(name);
+  }
+
+  /// 🔧 v7.6.73: Verifica se é palavra comum (não-nome)
+  static bool isCommonWord(String word) {
+    final lower = word.toLowerCase();
+
+    // Palavras comuns em múltiplos idiomas
+    const commonWords = {
+      // Português
+      'então', 'quando', 'depois', 'antes', 'agora', 'hoje',
+      'ontem', 'sempre', 'nunca', 'muito', 'pouco', 'nada',
+      'tudo', 'algo', 'alguém', 'ninguém', 'mesmo', 'outra',
+      'outro', 'cada', 'toda', 'todo', 'todos', 'onde', 'como',
+      'porque', 'porém', 'mas', 'para', 'com', 'sem', 'por',
+      'sobre', 'entre', 'durante', 'embora', 'enquanto',
+      // English
+      'then', 'when', 'after', 'before', 'now', 'today',
+      'yesterday', 'always', 'never', 'much', 'little', 'nothing',
+      'everything', 'something', 'someone', 'nobody', 'same', 'other',
+      'each', 'every', 'where', 'because', 'however', 'though',
+      'while', 'about', 'between',
+      // Español
+      'entonces', 'después', 'ahora', 'hoy', 'ayer', 'siempre',
+      'mucho', 'alguien', 'nadie', 'mismo', 'pero', 'sin', 'aunque',
+      'mientras',
+    };
+
+    return commonWords.contains(lower);
+  }
 }

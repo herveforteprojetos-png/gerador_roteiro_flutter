@@ -25,6 +25,7 @@ import 'package:flutter_gerador/data/services/gemini/tools/tools_modules.dart';
 
 // ??? v7.6.67: M�DULOS DE VALIDA��O (Refatora��o SOLID - Fase 5)
 import 'package:flutter_gerador/data/services/gemini/validation/name_constants.dart';
+import 'package:flutter_gerador/data/services/gemini/validation/name_validator.dart';
 import 'package:flutter_gerador/data/services/gemini/validation/relationship_patterns.dart';
 import 'package:flutter_gerador/data/services/gemini/validation/role_patterns.dart';
 
@@ -3486,80 +3487,12 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     return changes;
   }
 
-  bool _looksLikePersonName(String value) {
-    final cleaned = value.trim();
-    if (cleaned.isEmpty) return false;
+  /// 🎯 v7.6.73: Delegado ao módulo NameValidator (SOLID)
+  bool _looksLikePersonName(String value) =>
+      NameValidator.looksLikePersonName(value);
 
-    // v7.6.63: Valida??o estrutural simples (Gemini ? o Casting Director)
-    // Aceitar se parece nome pr?prio e n?o ? palavra comum
-    if (_isLikelyName(cleaned) && !_isCommonWord(cleaned)) {
-      return true;
-    }
-
-    // Fallback: estrutura v?lida
-    if (_hasValidNameStructure(cleaned) && !_isCommonWord(cleaned)) {
-      return true;
-    }
-
-    return false;
-  }
-
-  /// v7.6.63: Valida??o simples de nome (aceita criatividade do LLM)
-  /// Resolve bug de rejeitar nomes coreanos, compostos, etc.
-  bool _isLikelyName(String text) {
-    if (text.isEmpty) return false;
-    // Aceita qualquer string que comece com letra maiuscula
-    // e contenha apenas letras, espacos, hifens ou apostrofos
-    final nameRegex = RegExp(
-      r"^[A-Z\u00C0-\u00DC\u0100-\u017F\uAC00-\uD7AF][a-zA-Z\u00C0-\u00FF\u0100-\u017F\uAC00-\uD7AF\s\-\']+$",
-    );
-    return nameRegex.hasMatch(text.trim());
-  }
-
-  /// ?? v7.6.17: Verifica estrutura v?lida de nome pr?prio
-  bool _hasValidNameStructure(String name) {
-    // M?nimo 2 caracteres, m?ximo 15
-    if (name.length < 2 || name.length > 15) return false;
-
-    // Primeira letra mai?scula
-    if (name[0] != name[0].toUpperCase()) return false;
-
-    // Resto em min?sculas (permite acentos)
-    final rest = name.substring(1);
-    if (rest != rest.toLowerCase()) return false;
-
-    // Apenas letras (permite acentua??o)
-    final validPattern = RegExp(r'^[A-Z?-?][a-z?-?]+$');
-    return validPattern.hasMatch(name);
-  }
-
-  /// ?? v7.6.17: Verifica se ? palavra comum (n?o-nome)
-  bool _isCommonWord(String word) {
-    final lower = word.toLowerCase();
-
-    // Palavras comuns em m?ltiplos idiomas (sem duplica??es)
-    final commonWords = {
-      // Portugu?s
-      'ent?o', 'quando', 'depois', 'antes', 'agora', 'hoje',
-      'ontem', 'sempre', 'nunca', 'muito', 'pouco', 'nada',
-      'tudo', 'algo', 'algu?m', 'ningu?m', 'mesmo', 'outra',
-      'outro', 'cada', 'toda', 'todo', 'todos', 'onde', 'como',
-      'porque', 'por?m', 'mas', 'para', 'com', 'sem', 'por',
-      'sobre', 'entre', 'durante', 'embora', 'enquanto',
-      // English
-      'then', 'when', 'after', 'before', 'now', 'today',
-      'yesterday', 'always', 'never', 'much', 'little', 'nothing',
-      'everything', 'something', 'someone', 'nobody', 'same', 'other',
-      'each', 'every', 'where', 'because', 'however', 'though',
-      'while', 'about', 'between',
-      // Espa?ol (apenas palavras exclusivas, sem sobreposi??o com PT/EN)
-      'entonces', 'despu�s', 'ahora', 'hoy', 'ayer', 'siempre',
-      'mucho', 'alguien', 'nadie', 'mismo', 'pero', 'sin', 'aunque',
-      'mientras',
-    };
-
-    return commonWords.contains(lower);
-  }
+  /// 🎯 v7.6.73: Delegado ao módulo NameValidator (SOLID)
+  bool _isLikelyName(String text) => NameValidator.isLikelyName(text);
 
   /// ?? Delegado ao m�dulo PerspectiveBuilder (SOLID)
   static String perspectiveLabel(String perspective) =>
