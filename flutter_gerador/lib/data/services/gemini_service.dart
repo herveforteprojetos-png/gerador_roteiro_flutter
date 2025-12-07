@@ -1085,12 +1085,12 @@ class GeminiService {
         '',
       );
 
-      // ?? v7.6.43: REMOVER PAR?GRAFOS DUPLICADOS DO ROTEIRO FINAL
-      var deduplicatedScript = _removeAllDuplicateParagraphs(cleanedAcc);
+      // 🧹 v7.6.43: REMOVER PARÁGRAFOS DUPLICADOS DO ROTEIRO FINAL
+      var deduplicatedScript = TextFilter.removeAllDuplicateParagraphs(cleanedAcc);
 
-      // ?? DETEC??O FINAL: Verificar se h? par?grafos duplicados restantes (apenas LOG)
+      // 🔍 DETECÇÃO FINAL: Verificar se há parágrafos duplicados restantes (apenas LOG)
       if (kDebugMode) {
-        _detectDuplicateParagraphsInFinalScript(deduplicatedScript);
+        TextFilter.detectDuplicates(deduplicatedScript);
       }
 
       // ?? v7.6.45: VALIDA??O RIGOROSA DE COER?NCIA COM T?TULO
@@ -2025,7 +2025,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         .map((n) => n.toLowerCase())
         .toSet();
     final locationLower = config.localizacao.trim().toLowerCase();
-    final candidateCounts = _extractNamesFromSnippet(snippet);
+    final candidateCounts = NameValidator.extractNamesFromSnippet(snippet);
 
     candidateCounts.forEach((name, count) {
       final normalized = name.toLowerCase();
@@ -2084,35 +2084,13 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     return !hasRoleConflict; // ✅ true = OK, ❌ false = ERRO
   }
 
-  /// 🔧 Delegado ao módulo CharacterGuidanceBuilder (SOLID v7.6.75)
-  String _buildCharacterGuidance(
-    ScriptConfig config,
-    CharacterTracker tracker,
-  ) =>
-      CharacterGuidanceBuilder.buildGuidance(config, tracker);
-
-  /// 🔧 Delegado ao módulo NarrativeStyleBuilder (SOLID)
-  String _getNarrativeStyleGuidance(ScriptConfig config) =>
-      NarrativeStyleBuilder.getNarrativeStyleGuidance(config);
-
-  /// 🔧 v7.6.77: Delegado ao módulo NameValidator (SOLID)
-  Map<String, int> _extractNamesFromSnippet(String snippet) =>
-      NameValidator.extractNamesFromSnippet(snippet);
-
-  /// 🔧 v7.6.78: Delegado ao módulo TextFilter (SOLID)
-  Future<String> _filterDuplicateParagraphs(
-    String existing,
-    String addition,
-  ) async =>
-      TextFilter.filterDuplicateParagraphs(existing, addition);
-
-  /// 🔧 v7.6.78: Delegado ao módulo TextFilter (SOLID)
-  void _detectDuplicateParagraphsInFinalScript(String fullScript) =>
-      TextFilter.detectDuplicates(fullScript);
-
-  /// 🔧 v7.6.79: Delegado ao módulo TextFilter (SOLID)
-  String _removeAllDuplicateParagraphs(String fullScript) =>
-      TextFilter.removeAllDuplicateParagraphs(fullScript);
+  // 🔧 v7.6.83: Wrappers removidos - usar diretamente:
+  //   - CharacterGuidanceBuilder.buildGuidance()
+  //   - NarrativeStyleBuilder.getNarrativeStyleGuidance()
+  //   - NameValidator.extractNamesFromSnippet()
+  //   - TextFilter.filterDuplicateParagraphs()
+  //   - TextFilter.detectDuplicates()
+  //   - TextFilter.removeAllDuplicateParagraphs()
 
   // 🏗️ v7.6.64: _buildRecoveryPrompt migrado para ScriptPromptBuilder.buildRecoveryPrompt()
 
@@ -3230,7 +3208,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
       trackerInfo +=
           '   ? SEMPRE use "$protagonistName" quando se referir ? protagonista!\n';
     }
-    final characterGuidance = _buildCharacterGuidance(c, tracker);
+    final characterGuidance = CharacterGuidanceBuilder.buildGuidance(c, tracker);
 
     // ?? v7.6.52: WORLD STATE CONTEXT - Mem?ria Infinita
     // Adiciona contexto estruturado de personagens, invent?rio e fatos
@@ -3273,7 +3251,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         ? 'GERE EXATAMENTE $adjustedTarget palabras (M?NIMO $minAcceptable, M?XIMO $maxAcceptable). ? MELHOR ficar perto de $adjustedTarget do que muito abaixo!'
         : 'GERE EXATAMENTE $adjustedTarget palavras (M?NIMO $minAcceptable, M?XIMO $maxAcceptable). ? MELHOR ficar perto de $adjustedTarget do que muito abaixo!';
     final localizationGuidance = BaseRules.buildLocalizationGuidance(c);
-    final narrativeStyleGuidance = _getNarrativeStyleGuidance(c);
+    final narrativeStyleGuidance = NarrativeStyleBuilder.getNarrativeStyleGuidance(c);
 
     // ?? DEBUG: Verificar se modo GLOBAL est? sendo passado corretamente
     if (kDebugMode) {
@@ -3616,7 +3594,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
       final text = data;
       final filtered = text.isNotEmpty
-          ? await _filterDuplicateParagraphs(previous, text)
+          ? await TextFilter.filterDuplicateParagraphs(previous, text)
           : '';
 
       // ?? v7.6.21: VALIDA??O CR?TICA - Nome da protagonista
