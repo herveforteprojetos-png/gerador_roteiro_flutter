@@ -2007,41 +2007,8 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     return baseTarget > maxBlockSize ? maxBlockSize : baseTarget;
   }
 
-  // ===================== Gera??o de Blocos =====================
-
-  /// ?? WRAPPER: Chama o novo m?dulo BaseRules
-  String _getLanguageInstruction(String l) {
-    return BaseRules.getLanguageInstruction(l);
-  }
-
-  /// ?? WRAPPER: Chama o novo m?dulo BaseRules
-  String _getStartInstruction(
-    String language, {
-    required bool withTitle,
-    String? title,
-  }) {
-    return BaseRules.getStartInstruction(
-      language,
-      withTitle: withTitle,
-      title: title,
-    );
-  }
-
-  /// ?? WRAPPER: Chama o novo m?dulo BaseRules
-  String _getContinueInstruction(String language) {
-    return BaseRules.getContinueInstruction(language);
-  }
-
-  /// ?? Traduz labels de metadados (TEMA, SUBTEMA, etc) para o idioma selecionado
-  /// ?? WRAPPER: Chama o novo m?dulo BaseRules
-  Map<String, String> _getMetadataLabels(String language) {
-    return BaseRules.getMetadataLabels(language);
-  }
-
-  /// ?? WRAPPER: Chama o novo m?dulo BaseRules
-  String _buildLocalizationGuidance(ScriptConfig config) {
-    return BaseRules.buildLocalizationGuidance(config);
-  }
+  // ===================== Geração de Blocos =====================
+  // 🔧 v7.6.80: Wrappers de BaseRules removidos - usar BaseRules.* diretamente
 
   void _bootstrapCharacterTracker(
     CharacterTracker tracker,
@@ -3380,7 +3347,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     final measure = isSpanish
         ? 'GERE EXATAMENTE $adjustedTarget palabras (M?NIMO $minAcceptable, M?XIMO $maxAcceptable). ? MELHOR ficar perto de $adjustedTarget do que muito abaixo!'
         : 'GERE EXATAMENTE $adjustedTarget palavras (M?NIMO $minAcceptable, M?XIMO $maxAcceptable). ? MELHOR ficar perto de $adjustedTarget do que muito abaixo!';
-    final localizationGuidance = _buildLocalizationGuidance(c);
+    final localizationGuidance = BaseRules.buildLocalizationGuidance(c);
     final narrativeStyleGuidance = _getNarrativeStyleGuidance(c);
 
     // ?? DEBUG: Verificar se modo GLOBAL est? sendo passado corretamente
@@ -3400,16 +3367,16 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     String instruction;
     if (previous.isEmpty) {
       if (c.startWithTitlePhrase && c.title.trim().isNotEmpty) {
-        instruction = _getStartInstruction(
+        instruction = BaseRules.getStartInstruction(
           c.language,
           withTitle: true,
           title: c.title,
         );
       } else {
-        instruction = _getStartInstruction(c.language, withTitle: false);
+        instruction = BaseRules.getStartInstruction(c.language, withTitle: false);
       }
     } else {
-      instruction = _getContinueInstruction(c.language);
+      instruction = BaseRules.getContinueInstruction(c.language);
     }
 
     // v7.6.63: Gemini ? o Casting Director - cria nomes apropriados para o idioma
@@ -3417,7 +3384,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     final nameList = ''; // N?o mais necess?rio - LLM gera nomes contextualmente
 
     // ?? Obter labels traduzidos para os metadados
-    final labels = _getMetadataLabels(c.language);
+    final labels = BaseRules.getMetadataLabels(c.language);
 
     //  Definir se inclui tema/subtema ou modo livre
     final temaSection = c.tema == 'Livre (Sem Tema)'
@@ -3635,7 +3602,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
     // ?? NOVO: Combinar prompt do template (compacto) + informa??es de bloco
     final compactPrompt = MainPromptTemplate.buildCompactPrompt(
-      language: _getLanguageInstruction(c.language),
+      language: BaseRules.getLanguageInstruction(c.language),
       instruction: instruction,
       temaSection: temaSection,
       localizacao: c.localizacao,
