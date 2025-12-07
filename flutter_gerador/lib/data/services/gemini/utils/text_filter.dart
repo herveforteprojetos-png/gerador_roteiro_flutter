@@ -95,4 +95,61 @@ class TextFilter {
       }
     }
   }
+
+  /// 🔧 v7.6.79: Remove TODAS as duplicatas de parágrafos (não apenas consecutivas)
+  /// Mantém a primeira ocorrência e remove todas as repetições posteriores
+  static String removeAllDuplicateParagraphs(String fullScript) {
+    final paragraphs = fullScript.split(RegExp(r'\n{2,}'));
+
+    if (paragraphs.length < 2) return fullScript;
+
+    final seen = <String>{};
+    final seenNormalized = <String>{};
+    final result = <String>[];
+    var removedCount = 0;
+
+    for (final rawParagraph in paragraphs) {
+      final paragraph = rawParagraph.trim();
+
+      if (paragraph.isEmpty) continue;
+
+      // Normalizar para comparação (ignorar espaços extras)
+      final normalized = paragraph
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .toLowerCase();
+
+      // Verificar duplicata exata
+      if (seen.contains(paragraph)) {
+        removedCount++;
+        if (kDebugMode) {
+          final preview = paragraph.length > 50
+              ? '${paragraph.substring(0, 50)}...'
+              : paragraph;
+          debugPrint('🗑️ REMOVIDO duplicata exata: "$preview"');
+        }
+        continue;
+      }
+
+      // Verificar duplicata normalizada (ignora case e espaços)
+      if (seenNormalized.contains(normalized)) {
+        removedCount++;
+        if (kDebugMode) {
+          debugPrint('🗑️ REMOVIDO duplicata similar (case/espaços diferentes)');
+        }
+        continue;
+      }
+
+      seen.add(paragraph);
+      seenNormalized.add(normalized);
+      result.add(paragraph);
+    }
+
+    if (kDebugMode && removedCount > 0) {
+      debugPrint(
+        '✅ v7.6.43: Total de $removedCount parágrafo(s) duplicado(s) removido(s) do roteiro final',
+      );
+    }
+
+    return result.join('\n\n');
+  }
 }

@@ -2214,69 +2214,14 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   void _detectDuplicateParagraphsInFinalScript(String fullScript) =>
       TextFilter.detectDuplicates(fullScript);
 
-  // ??? v7.6.64: _removeDuplicateConsecutiveParagraphs removido (n?o era usado)
+  /// 🔧 v7.6.79: Delegado ao módulo TextFilter (SOLID)
+  String _removeAllDuplicateParagraphs(String fullScript) =>
+      TextFilter.removeAllDuplicateParagraphs(fullScript);
 
-  /// ?? v7.6.43: Remove TODAS as duplicatas de par?grafos (n?o apenas consecutivas)
-  /// Mant?m a primeira ocorr?ncia e remove todas as repeti??es posteriores
-  String _removeAllDuplicateParagraphs(String fullScript) {
-    final paragraphs = fullScript.split(RegExp(r'\n{2,}'));
+  // 🏗️ v7.6.64: _buildRecoveryPrompt migrado para ScriptPromptBuilder.buildRecoveryPrompt()
 
-    if (paragraphs.length < 2) return fullScript;
-
-    final seen = <String>{};
-    final seenNormalized = <String>{};
-    final result = <String>[];
-    var removedCount = 0;
-
-    for (final rawParagraph in paragraphs) {
-      final paragraph = rawParagraph.trim();
-
-      if (paragraph.isEmpty) continue;
-
-      // Normalizar para compara??o (ignorar espa?os extras)
-      final normalized = paragraph
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .toLowerCase();
-
-      // Verificar duplicata exata
-      if (seen.contains(paragraph)) {
-        removedCount++;
-        if (kDebugMode) {
-          final preview = paragraph.length > 50
-              ? '${paragraph.substring(0, 50)}...'
-              : paragraph;
-          debugPrint('?? REMOVIDO duplicata exata: "$preview"');
-        }
-        continue;
-      }
-
-      // Verificar duplicata normalizada (ignora case e espa?os)
-      if (seenNormalized.contains(normalized)) {
-        removedCount++;
-        if (kDebugMode) {
-          debugPrint('?? REMOVIDO duplicata similar (case/espa?os diferentes)');
-        }
-        continue;
-      }
-
-      seen.add(paragraph);
-      seenNormalized.add(normalized);
-      result.add(paragraph);
-    }
-
-    if (removedCount > 0) {
-      debugPrint(
-        '? v7.6.43: Total de $removedCount par?grafo(s) duplicado(s) removido(s) do roteiro final',
-      );
-    }
-
-    return result.join('\n\n');
-  }
-
-  // ??? v7.6.64: _buildRecoveryPrompt migrado para ScriptPromptBuilder.buildRecoveryPrompt()
-
-  /// ?? v7.6.17: Detecta e registra o nome da protagonista no Bloco 1
-  /// Extrai o primeiro nome pr?prio encontrado e registra no tracker
+  /// 🎯 v7.6.17: Detecta e registra o nome da protagonista no Bloco 1
+  /// Extrai o primeiro nome próprio encontrado e registra no tracker
   void _detectAndRegisterProtagonist(
     String generatedText,
     ScriptConfig config,
