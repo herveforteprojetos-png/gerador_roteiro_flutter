@@ -24,6 +24,7 @@ import 'package:flutter_gerador/data/services/gemini/infra/infra_modules.dart'; 
 import 'package:flutter_gerador/data/services/gemini/tools/tools_modules.dart';
 
 // 🏗️ v7.6.67: MÓDULOS DE VALIDAÇÃO (Refatoração SOLID - Fase 5)
+import 'package:flutter_gerador/data/services/gemini/validation/name_constants.dart';
 import 'package:flutter_gerador/data/services/gemini/validation/relationship_patterns.dart';
 import 'package:flutter_gerador/data/services/gemini/validation/role_patterns.dart';
 
@@ -2127,17 +2128,17 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
       final normalized = name.toLowerCase();
       if (existingLower.contains(normalized)) return;
 
-      // ?? v7.6.31: REMOVER filtro "count < 2" - BUG CR�TICO!
-      // PROBLEMA: "Janice" com 1 men��o no Bloco 2 n�o entrava no tracker
-      // RESULTADO: "Janice" no Bloco 9 passava na valida��o (tracker vazio)
-      // SOLU��O: Adicionar TODOS os nomes v�lidos, independente de contagem
-      // A valida��o isValidName() j� garante que s�o nomes reais
-      // if (count < 2) return; // ? REMOVIDO - causava duplica��es
+      // 🔧 v7.6.31: REMOVER filtro "count < 2" - BUG CRÍTICO!
+      // PROBLEMA: "Janice" com 1 menção no Bloco 2 não entrava no tracker
+      // RESULTADO: "Janice" no Bloco 9 passava na validação (tracker vazio)
+      // SOLUÇÃO: Adicionar TODOS os nomes válidos, independente de contagem
+      // A validação isValidName() já garante que são nomes reais
+      // if (count < 2) return; // ❌ REMOVIDO - causava duplicações
 
       if (locationLower.isNotEmpty && normalized == locationLower) return;
-      if (_nameStopwords.contains(normalized)) return;
+      if (NameConstants.isStopword(normalized)) return;
 
-      // v7.6.63: Valida��o estrutural (aceita nomes do LLM)
+      // v7.6.63: Validação estrutural (aceita nomes do LLM)
       if (!_isLikelyName(name)) {
         if (kDebugMode) {
           debugPrint('Tracker ignorou texto invalido: "$name"');
@@ -4064,196 +4065,13 @@ no vasto manto azul do infinito."
       'each', 'every', 'where', 'because', 'however', 'though',
       'while', 'about', 'between',
       // Espa�ol (apenas palavras exclusivas, sem sobreposi��o com PT/EN)
-      'entonces', 'despu�s', 'ahora', 'hoy', 'ayer', 'siempre',
+      'entonces', 'después', 'ahora', 'hoy', 'ayer', 'siempre',
       'mucho', 'alguien', 'nadie', 'mismo', 'pero', 'sin', 'aunque',
       'mientras',
     };
 
     return commonWords.contains(lower);
   }
-
-  static final Set<String> _nameStopwords = {
-    // Plataformas/sites
-    'youtube',
-    'internet',
-    'instagram',
-    'facebook',
-    'whatsapp',
-    'tiktok',
-    'google',
-    'cta',
-
-    // Pa�ses/lugares
-    'brasil', 'portugal', 'portugues',
-
-    // Pronomes e palavras comuns capitalizadas no in�cio de frases
-    'ele',
-    'ela',
-    'eles',
-    'elas',
-    'nao',
-    'sim',
-    'mas',
-    'mais',
-    'cada',
-    'todo',
-    'toda',
-    'todos',
-    'meu',
-    'minha',
-    'meus',
-    'minhas',
-    'seu',
-    'sua',
-    'seus',
-    'suas',
-    'nosso',
-    'nossa',
-    'esse',
-    'essa',
-    'esses',
-    'essas',
-    'aquele',
-    'aquela',
-    'aquilo',
-    'isto',
-    'isso',
-    'tudo',
-    'nada',
-    'algo',
-    'alguem',
-    'ninguem',
-    'qualquer',
-    'outro',
-    'outra',
-    'mesmo',
-    'mesma',
-    'esta', 'este', 'estes', 'estas',
-
-    // Substantivos comuns que podem ser capitalizados
-    'filho',
-    'filha',
-    'filhos',
-    'pai',
-    'mae',
-    'pais',
-    'irmao',
-    'irma',
-    'tio',
-    'tia',
-    'avo', 'neto', 'neta', 'marido', 'esposa', 'noivo', 'noiva',
-    'amigo', 'amiga', 'primo', 'prima', 'sobrinho', 'sobrinha',
-    'senhor',
-    'senhora',
-    'doutor',
-    'doutora',
-    'cliente',
-    'pessoa',
-    'pessoas',
-    'gente',
-    'familia', 'casa', 'mundo', 'vida', 'tempo', 'dia', 'noite', 'momento',
-
-    // Adv�rbios/conjun��es/preposi��es comuns no in�cio de frase
-    'entao',
-    'depois',
-    'antes',
-    'agora',
-    'hoje',
-    'ontem',
-    'amanha',
-    'sempre',
-    'nunca',
-    'talvez',
-    'porem',
-    'contudo',
-    'entretanto',
-    'portanto',
-    'enquanto',
-    'quando',
-    'onde',
-    'havia', 'houve', 'tinha', 'foram', 'eram', 'estava', 'estavam',
-    'dentro',
-    'fora',
-    'acima',
-    'abaixo',
-    'perto',
-    'longe',
-    'aqui',
-    'ali',
-    'alem',
-    'apenas',
-    'somente',
-    'tambem',
-    'inclusive',
-    'ate',
-    'ainda',
-    'logo',
-    'ja',
-    'nem',
-
-    // Preposi��es e artigos (raramente, mas podem aparecer)
-    'com', 'sem', 'sobre', 'para', 'pela', 'pelo', 'uma', 'umas', 'uns', 'por',
-
-    // ?? FIX CR�TICO: Palavras que a AI usou como NOMES FANTASMA (do roteiro analisado)
-    'lagrimas',
-    'l�grimas',
-    'justica',
-    'justi�a',
-    'ponto',
-    'semanas',
-    'aconteceu',
-    'todas', 'ajuda', 'consolo', 'vamos', 'conhe�o', 'conheco', 'lembra',
-
-    // ?? v7.6.39: Palavras em ingl�s que N�O s�o nomes (evitar "Grand" etc.)
-    'grand', 'grandfather', 'grandmother', 'grandpa', 'grandma',
-    'father', 'mother', 'brother', 'sister', 'uncle', 'aunt',
-    'cousin', 'nephew', 'niece', 'husband', 'wife', 'spouse',
-    'son', 'daughter', 'child', 'children', 'parent', 'parents',
-    'lawyer', 'attorney', 'doctor', 'nurse', 'teacher', 'professor',
-    'judge', 'officer', 'detective', 'manager', 'boss', 'therapist',
-    'someone', 'anyone', 'everyone', 'nobody', 'somebody', 'anybody',
-    'nothing', 'something', 'everything', 'anything',
-    'said', 'told', 'asked', 'replied', 'explained', 'answered',
-    'speaking', 'talking', 'calling', 'waiting', 'looking',
-    'morning', 'afternoon', 'evening', 'night', 'today', 'tomorrow',
-    'office', 'house', 'home', 'room', 'building', 'street', 'city',
-    'the', 'and', 'but', 'for', 'with', 'from', 'about', 'into',
-    'just', 'only', 'even', 'still', 'already', 'always', 'never',
-
-    // Verbos comuns no in�cio de frase (EXPANDIDO)
-    'era', 'foi', 'seria', 'pode', 'podia', 'deve', 'devia',
-    'senti', 'sentiu', 'pensei', 'pensou', 'vi', 'viu', 'ouvi', 'ouviu',
-    'fiz', 'fez', 'disse', 'falou', 'quis', 'pude', 'p�de',
-    'tive',
-    'teve',
-    'sabia',
-    'soube',
-    'imaginei',
-    'imaginou',
-    'acreditei',
-    'acreditou',
-    'percebi', 'percebeu', 'notei', 'notou', 'lembrei', 'lembrou',
-    'passei', 'abri', 'olhei', 'escrevo', 'escreveu', 'podes',
-    'queria', 'quer', 'tenho', 'tem',
-    'levei', 'levou', 'trouxe', 'deixei', 'deixou', 'encontrei', 'encontrou',
-    'cheguei', 'chegou', 'sai', 'saiu', 'entrei', 'entrou',
-    'peguei',
-    'pegou',
-    'coloquei',
-    'colocou',
-    'tirei',
-    'tirou',
-    'guardei',
-    'guardou',
-    'voltei',
-    'voltou',
-    'segui',
-    'seguiu',
-    'comecei',
-    'come�ou',
-    'terminei',
-    'terminou',
-  };
 
   /// 🎯 Delegado ao módulo PerspectiveBuilder (SOLID)
   static String perspectiveLabel(String perspective) =>
@@ -4311,110 +4129,9 @@ no vasto manto azul do infinito."
     return result;
   }
 
-  // ?? MULTIPLICADORES DE VERBOSIDADE POR IDIOMA
-  // Baseado em an�lise de quantas palavras cada idioma precisa para expressar a mesma ideia
-  // Portugu�s = 1.0 (baseline) funciona perfeitamente
-  double _getLanguageVerbosityMultiplier(String language) {
-    final normalized = language.toLowerCase().trim();
-
-    // ???? ESPANHOL: Tende a ser ~15-20% mais verboso que portugu�s
-    if (normalized.contains('espanhol') ||
-        normalized.contains('spanish') ||
-        normalized.contains('espa�ol') ||
-        normalized == 'es' ||
-        normalized == 'es-mx') {
-      return 0.85; // Pedir 15% menos para compensar
-    }
-
-    // ???? INGL�S: Tende a ser ~15-20% mais CONCISO que portugu�s
-    // RAZ�O: Ingl�s usa menos palavras para expressar mesma ideia
-    // EXEMPLO: "Eu estava pensando nisso" = 4 palavras ? "I was thinking" = 3 palavras
-    // SOLU��O: Pedir um pouco MAIS palavras para compensar a concis�o
-    // ?? AJUSTE: Reduzido de 1.18x ? 1.05x (estava gerando +21% a mais)
-    if (normalized.contains('ingl�s') ||
-        normalized.contains('ingles') ||
-        normalized.contains('english') ||
-        normalized == 'en' ||
-        normalized == 'en-us') {
-      return 1.05; // Pedir 5% MAIS para compensar concis�o
-    }
-
-    // ???? FRANC�S: Tende a ser ~10-15% mais verboso que portugu�s
-    if (normalized.contains('franc') ||
-        normalized.contains('french') ||
-        normalized == 'fr') {
-      return 0.90; // Pedir 10% menos para compensar
-    }
-
-    // ???? ITALIANO: Tende a ser ~10% mais verboso que portugu�s
-    if (normalized.contains('italia') ||
-        normalized.contains('italian') ||
-        normalized == 'it') {
-      return 0.92; // Pedir 8% menos para compensar
-    }
-
-    // ???? ALEM�O: Similar ao portugu�s (palavras compostas compensam artigos)
-    if (normalized.contains('alem') ||
-        normalized.contains('german') ||
-        normalized == 'de') {
-      return 1.0; // Sem ajuste
-    }
-
-    // ???? RUSSO: Muito conciso (sem artigos, casos gramaticais)
-    if (normalized.contains('russo') ||
-        normalized.contains('russian') ||
-        normalized == 'ru') {
-      return 1.15; // Pedir 15% mais para compensar
-    }
-
-    // ???? POLON�S: Ligeiramente mais conciso que portugu�s
-    if (normalized.contains('polon') ||
-        normalized.contains('polish') ||
-        normalized == 'pl') {
-      return 1.05; // Pedir 5% mais para compensar
-    }
-
-    // ???? TURCO: Muito conciso (aglutina��o de palavras)
-    if (normalized.contains('turco') ||
-        normalized.contains('turk') ||
-        normalized == 'tr') {
-      return 1.20; // Pedir 20% mais para compensar
-    }
-
-    // ???? B�LGARO: Similar ao russo, conciso
-    if (normalized.contains('b�lgar') ||
-        normalized.contains('bulgar') ||
-        normalized == 'bg') {
-      return 1.12; // Pedir 12% mais para compensar
-    }
-
-    // ???? CROATA: Ligeiramente mais conciso
-    if (normalized.contains('croat') ||
-        normalized.contains('hrvat') ||
-        normalized == 'hr') {
-      return 1.08; // Pedir 8% mais para compensar
-    }
-
-    // ???? ROMENO: Similar ao portugu�s (l�ngua latina)
-    if (normalized.contains('romen') ||
-        normalized.contains('roman') ||
-        normalized == 'ro') {
-      return 1.0; // Sem ajuste
-    }
-
-    // ???? COREANO: Muito conciso (aglutina��o) + Modelo tende a ser pregui�oso
-    // AN�LISE: Pedindo 1.0x, ele entrega ~70% da meta.
-    // SOLU��O: Pedir 1.55x (55% a mais) para for�ar expans�o ou atingir o teto natural.
-    if (normalized.contains('coreano') ||
-        normalized.contains('korean') ||
-        normalized.contains('???') ||
-        normalized == 'ko') {
-      return 1.55;
-    }
-
-    // ???? PORTUGU�S ou OUTROS: Baseline perfeito
-    return 1.0;
-  }
+  /// 🎯 Delegado ao módulo PerspectiveBuilder (SOLID)
+  double _getLanguageVerbosityMultiplier(String language) =>
+      PerspectiveBuilder.getLanguageVerbosityMultiplier(language);
 
   Future<String> _generateBlockContent(
     String previous,
