@@ -817,9 +817,14 @@ class GeminiService {
           // ?? VALIDA??O CR?TICA 4: Verificar inconsist?ncias em rela??es familiares
           _validateFamilyRelations(added, block);
 
-          // ?? v7.6.41: Resetar watchdog a cada bloco bem-sucedido
+          // ⏱️ v7.6.41: Resetar watchdog a cada bloco bem-sucedido
           // Evita timeout em roteiros longos (35+ blocos)
-          _resetWatchdog();
+          if (_isOperationRunning && !_isCancelled) {
+            _startWatchdog(); // Reinicia o timer
+            if (kDebugMode) {
+              debugPrint('[$_instanceId] Watchdog resetado - operação ativa');
+            }
+          }
 
           // ?? DEBUG: Log bloco completado com sucesso
           _debugLogger.success(
@@ -1371,16 +1376,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     });
   }
 
-  /// ?? v7.6.41: Resetar watchdog a cada bloco bem-sucedido
-  /// Evita timeout em roteiros longos quando a gera??o est? funcionando
-  void _resetWatchdog() {
-    if (_isOperationRunning && !_isCancelled) {
-      _startWatchdog(); // Reinicia o timer
-      if (kDebugMode) {
-        debugPrint('[$_instanceId] Watchdog resetado - opera??o ativa');
-      }
-    }
-  }
+  // 🔧 v7.6.90: _resetWatchdog inlined no loop de blocos
 
   void _stopWatchdog() {
     if (_watchdogTimer != null) {
