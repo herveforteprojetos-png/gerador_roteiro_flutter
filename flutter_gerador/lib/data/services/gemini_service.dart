@@ -163,7 +163,12 @@ class GeminiService {
         },
         onError: (e, h) {
           if (kDebugMode) debugPrint('[$_instanceId] ERROR: ${e.message}');
-          _registerFailure();
+          _failureCount++;
+          _lastFailureTime = DateTime.now();
+          if (_failureCount >= _maxFailures) {
+            _isCircuitOpen = true;
+            if (kDebugMode) debugPrint('[$_instanceId] Circuit aberto');
+          }
           h.next(e);
         },
       ),
@@ -1332,15 +1337,6 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   // ===================== Infra =====================
   static String _genId() =>
       'gemini_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(999)}';
-
-  void _registerFailure() {
-    _failureCount++;
-    _lastFailureTime = DateTime.now();
-    if (_failureCount >= _maxFailures) {
-      _isCircuitOpen = true;
-      if (kDebugMode) debugPrint('[$_instanceId] Circuit aberto');
-    }
-  }
 
   bool _canMakeRequest() {
     if (!_isCircuitOpen) return true;
