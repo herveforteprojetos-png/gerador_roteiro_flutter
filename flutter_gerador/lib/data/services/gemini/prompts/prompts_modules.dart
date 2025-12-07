@@ -4,3 +4,4 @@
 library prompts_modules;
 
 export 'narrative_styles.dart';
+export 'perspective_builder.dart';
