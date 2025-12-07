@@ -399,6 +399,7 @@ class NameValidator {
 
   /// Valida se há nomes duplicados em papéis diferentes
   /// Retorna lista de nomes duplicados encontrados
+  /// 🔧 v7.6.77: Versão completa com validação case-insensitive
   static List<String> validateNamesInText(
     String newBlock,
     Set<String> previousNames,
@@ -406,6 +407,7 @@ class NameValidator {
     final duplicates = <String>[];
     final newNames = extractNamesFromText(newBlock);
 
+    // Validação case-sensitive
     for (final name in newNames) {
       if (previousNames.contains(name)) {
         if (!duplicates.contains(name)) {
@@ -414,8 +416,46 @@ class NameValidator {
       }
     }
 
+    // 🎯 Validação case-insensitive para nomes em minúsculas
+    // Detecta casos como "my lawyer, mark" onde "mark" deveria ser "Mark"
+    final previousNamesLower = previousNames.map((n) => n.toLowerCase()).toSet();
+
+    final lowercasePattern = RegExp(r'\b([a-z][a-z]{1,14})\b');
+    final lowercaseMatches = lowercasePattern.allMatches(newBlock);
+
+    for (final match in lowercaseMatches) {
+      final word = match.group(1);
+      if (word != null && previousNamesLower.contains(word.toLowerCase())) {
+        // Verificar se não é palavra comum
+        if (!_commonLowerWords.contains(word.toLowerCase())) {
+          final originalName = previousNames.firstWhere(
+            (n) => n.toLowerCase() == word.toLowerCase(),
+            orElse: () => word,
+          );
+
+          if (!duplicates.contains(originalName)) {
+            duplicates.add(originalName);
+          }
+        }
+      }
+    }
+
     return duplicates;
   }
+
+  /// 🔧 v7.6.77: Palavras comuns em minúsculas (não são nomes)
+  static const Set<String> _commonLowerWords = {
+    'the', 'and', 'but', 'for', 'with', 'from', 'about', 'into',
+    'through', 'during', 'before', 'after', 'above', 'below',
+    'between', 'under', 'again', 'further', 'then', 'once',
+    'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each',
+    'other', 'some', 'such', 'only', 'own', 'same', 'than', 'too',
+    'very', 'can', 'will', 'just', 'now', 'like', 'back', 'even',
+    'still', 'also', 'well', 'way', 'because', 'while', 'since',
+    'until', 'both', 'was', 'were', 'been', 'being', 'have', 'has',
+    'had', 'having', 'does', 'did', 'doing', 'would', 'could',
+    'should', 'might', 'must', 'shall', 'may',
+  };
 
   /// Extrai nomes de um snippet com contagem de ocorrências
   static Map<String, int> extractNamesFromSnippet(String snippet) {

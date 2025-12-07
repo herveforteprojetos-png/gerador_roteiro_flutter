@@ -2202,21 +2202,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   String _getNarrativeStyleGuidance(ScriptConfig config) =>
       NarrativeStyleBuilder.getNarrativeStyleGuidance(config);
 
-  Map<String, int> _extractNamesFromSnippet(String snippet) {
-    final counts = <String, int>{};
-    final regex = RegExp(
-      r'\b([A-Z�������������������������ݟAAACCCCD�EEEEEGGGGHHIIIIIJK?LLL?LNNN?OOO�RRRSSS�TTTUUUUUUWYZZ�a-z���������������������������aaaccccddeeeeegggghhiiiiijk?lll?lnnn?ooo�rrrsss�tttuuuuuuwyzz�]+(?:\s+[A-Z�������������������������ݟAAACCCCD�EEEEEGGGGHHIIIIIJK?LLL?LNNN?OOO�RRRSSS�TTTUUUUUUWYZZ�a-z���������������������������aaaccccddeeeeegggghhiiiiijk?lll?lnnn?ooo�rrrsss�tttuuuuuuwyzz�]+)*)\b',
-    );
-
-    for (final match in regex.allMatches(snippet)) {
-      final candidate = match.group(1)?.trim() ?? '';
-      if (!_looksLikePersonName(candidate)) continue;
-      final normalized = candidate.replaceAll(RegExp(r'\s+'), ' ');
-      counts[normalized] = (counts[normalized] ?? 0) + 1;
-    }
-
-    return counts;
-  }
+  /// 🔧 v7.6.77: Delegado ao módulo NameValidator (SOLID)
+  Map<String, int> _extractNamesFromSnippet(String snippet) =>
+      NameValidator.extractNamesFromSnippet(snippet);
 
   // ?? EXECUTAR EM ISOLATE para n?o travar UI
   Future<String> _filterDuplicateParagraphs(
@@ -4035,136 +4023,13 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   Set<String> _extractNamesFromText(String text) =>
       NameValidator.extractNamesFromText(text);
 
-  /// Valida se há nomes duplicados em papéis diferentes
-  /// Retorna lista de nomes duplicados encontrados
+
+  /// 🔧 v7.6.77: Delegado ao módulo NameValidator (SOLID)
   List<String> _validateNamesInText(
     String newBlock,
     Set<String> previousNames,
-  ) {
-    final duplicates = <String>[];
-    final newNames = _extractNamesFromText(newBlock);
-
-    for (final name in newNames) {
-      if (previousNames.contains(name)) {
-        // ?? Nome j? usado anteriormente!
-        if (!duplicates.contains(name)) {
-          duplicates.add(name);
-        }
-      }
-    }
-
-    // ?? NOVA CAMADA: Valida??o case-insensitive para nomes em min?sculas
-    // Detecta casos como "my lawyer, mark" onde "mark" deveria ser "Mark"
-    final previousNamesLower = previousNames
-        .map((n) => n.toLowerCase())
-        .toSet();
-
-    // Buscar palavras em min?sculas que correspondem a nomes confirmados
-    final lowercasePattern = RegExp(r'\b([a-z][a-z]{1,14})\b');
-    final lowercaseMatches = lowercasePattern.allMatches(newBlock);
-
-    for (final match in lowercaseMatches) {
-      final word = match.group(1);
-      if (word != null && previousNamesLower.contains(word.toLowerCase())) {
-        // Verificar se n?o ? palavra comum (conjun??o, preposi??o, etc)
-        final commonLowerWords = {
-          'the',
-          'and',
-          'but',
-          'for',
-          'with',
-          'from',
-          'about',
-          'into',
-          'through',
-          'during',
-          'before',
-          'after',
-          'above',
-          'below',
-          'between',
-          'under',
-          'again',
-          'further',
-          'then',
-          'once',
-          'here',
-          'there',
-          'when',
-          'where',
-          'why',
-          'how',
-          'all',
-          'each',
-          'other',
-          'some',
-          'such',
-          'only',
-          'own',
-          'same',
-          'than',
-          'too',
-          'very',
-          'can',
-          'will',
-          'just',
-          'now',
-          'like',
-          'back',
-          'even',
-          'still',
-          'also',
-          'well',
-          'way',
-          'because',
-          'while',
-          'since',
-          'until',
-          'both',
-          'was',
-          'were',
-          'been',
-          'being',
-          'have',
-          'has',
-          'had',
-          'having',
-          'does',
-          'did',
-          'doing',
-          'would',
-          'could',
-          'should',
-          'might',
-          'must',
-          'shall',
-          'may',
-        };
-
-        if (!commonLowerWords.contains(word.toLowerCase())) {
-          // Encontrar o nome original (capitalizado) na lista
-          final originalName = previousNames.firstWhere(
-            (n) => n.toLowerCase() == word.toLowerCase(),
-            orElse: () => word,
-          );
-
-          if (!duplicates.contains(originalName)) {
-            duplicates.add(originalName);
-            if (kDebugMode) {
-              debugPrint(
-                '?? DUPLICA??O DETECTADA (case-insensitive): "$word" ? j? existe como "$originalName"',
-              );
-              debugPrint(
-                '   ?? Gemini escreveu nome em min?sculas, mas j? foi usado capitalizado antes!',
-              );
-            }
-          }
-        }
-      }
-    }
-
-    return duplicates;
-  }
+  ) =>
+      NameValidator.validateNamesInText(newBlock, previousNames);
 
   /// Adiciona nomes novos ao rastreador global
   void _addNamesToTracker(String text) {
