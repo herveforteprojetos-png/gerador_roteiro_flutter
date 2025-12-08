@@ -42,6 +42,8 @@ import 'package:flutter_gerador/data/services/gemini/generation/context_builder.
 // ⚡ v7.6.72: MÓDULO TRACKING (Refatoração SOLID)
 // character_tracker.dart exportado via gemini_modules.dart
 
+import 'package:flutter_gerador/data/services/gemini/utils/text_utils.dart';
+
 /// ?? Helper padronizado para logs (mant�m emojis em debug, limpa em produ��o)
 void _log(String message, {String level = 'info'}) {
   if (kDebugMode) {
@@ -59,12 +61,7 @@ void _log(String message, {String level = 'info'}) {
 
 /// 🏗️ v7.6.65: FUNÇÕES TOP-LEVEL DELEGANDO PARA MÓDULOS (Refatoração SOLID)
 /// 🔧 v7.6.78: _filterDuplicateParagraphsStatic removido (delegado ao TextFilter)
-
-/// 🚀 FUNÇÃO TOP-LEVEL para execução em Isolate separado
-/// Evita travar UI thread durante verificação de repetição
-Map<String, dynamic> _isTooSimilarInIsolate(Map<String, dynamic> params) {
-  return isTooSimilarIsolate(params);
-}
+/// 🔧 v7.6.106: _isTooSimilarInIsolate removido (delegado ao TextUtils)
 
 /// Implementação consolidada limpa do GeminiService
 class GeminiService {
@@ -545,7 +542,7 @@ class GeminiService {
         // ? VALIDA??O ANTI-REPETI??O EM ISOLATE: Verificar sem travar UI
         if (added.trim().isNotEmpty && acc.length > 500) {
           // Executar em isolate separado para n?o bloquear UI thread
-          final result = await compute(_isTooSimilarInIsolate, {
+          final result = await compute(TextUtils.isTooSimilarInIsolate, {
             'newBlock': added,
             'previousContent': acc,
             'threshold':
@@ -595,7 +592,7 @@ class GeminiService {
             );
 
             // Verificar novamente com threshold ainda mais alto (90%)
-            final retryResult = await compute(_isTooSimilarInIsolate, {
+            final retryResult = await compute(TextUtils.isTooSimilarInIsolate, {
               'newBlock': regenerated,
               'previousContent': acc,
               'threshold': 0.85, // ?? AJUSTADO: Era 0.90, agora 0.85
@@ -632,7 +629,7 @@ class GeminiService {
                 ),
               );
 
-              final stillSimilar2 = _isTooSimilar(
+              final stillSimilar2 = TextUtils.isTooSimilar(
                 regenerated2,
                 acc,
                 threshold: 0.90,
@@ -1385,7 +1382,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
       if (_isOperationRunning && !_isCancelled) {
         if (kDebugMode) {
           debugPrint(
-            '[$_instanceId] Watchdog timeout - cancelando opera��o ap�s ${_maxOperationTime.inMinutes} min',
+            '[$_instanceId] Watchdog timeout - cancelando opera��o ap?s ${_maxOperationTime.inMinutes} min',
           );
         }
         _isCancelled = true;
@@ -1638,14 +1635,14 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
 
         if (kDebugMode) {
           debugPrint(
-            '[$_instanceId] Erro final ap�s $maxRetries tentativas: $e',
+            '[$_instanceId] Erro final ap?s $maxRetries tentativas: $e',
           );
         }
         rethrow;
       }
     }
     throw Exception(
-      'Limite de tentativas excedido ap�s $maxRetries tentativas',
+      'Limite de tentativas excedido ap?s $maxRetries tentativas',
     );
   }
 
@@ -1876,7 +1873,6 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     // E validar? caracteres no resultado final
 
     // ?? AJUSTE POR IDIOMA: Compensar verbosidade natural de cada idioma
-    // Portugu?s (baseline 1.0) funciona perfeitamente, outros ajustam proporcionalmente
     final languageMultiplier = PerspectiveBuilder.getLanguageVerbosityMultiplier(c.language);
     final adjustedTarget = (limitedNeeded * languageMultiplier).round();
 
@@ -1930,7 +1926,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     // Removido banco de nomes est?tico em favor de gera??o din?mica via LLM
     final nameList = ''; // N?o mais necess?rio - LLM gera nomes contextualmente
 
-    // ?? Obter labels traduzidos para os metadados
+    // Obter labels traduzidos para os metadados
     final labels = BaseRules.getMetadataLabels(c.language);
 
     //  Definir se inclui tema/subtema ou modo livre
@@ -2067,7 +2063,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         '?? REGRAS DE PERSONAGENS SECUND?RIOS:\n'
         '   ? TODO personagem introduzido DEVE ter resolu??o clara:\n'
         '   ? Se aparece na investiga??o ? DEVE aparecer no cl?max/desfecho\n'
-        '   ? Se fornece informa??o crucial ? DEVE testemunhar/ajudar no final\n'
+        '   ? Se fornece informa??o crucial ? DEVE testemunha/ajudar no final\n'
         '   ? Se ? v?tima/testemunha do passado ? DEVE ter papel na justi?a/vingan?a\n'
         '   ? PROIBIDO: introduzir personagem importante e depois abandon?-lo\n'
         '   ? Exemplo: Se Robert Peterson revela segredo ? ele DEVE aparecer no tribunal/confronto final\n'
@@ -2085,7 +2081,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
         '   \n'
         '   ? Se "Robert revelou que seu pai Harold foi enganado":\n'
         '      ? No cl?max: "Robert entrou no tribunal. Olhou Alan nos olhos..."\n'
-        '      ? No desfecho: "Robert finalmente tinha paz. A verdade sobre Harold veio ? tona."\n'
+        '      ? No desfecho: "Robert finalmente tinha paz. A verdade sobre Harold veio ? tona"\n'
         '   \n'
         '   ? Se "Kimberly, a paralegal, guardou c?pias dos documentos":\n'
         '      ? No cl?max: "Kimberly testemunhou. \'Alan me ordenou falsificar a assinatura\'..."\n'
@@ -2436,19 +2432,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   // ??? v7.6.65: M?todos delegados para DuplicationDetector (Refatora??o SOLID)
 
   // ??? v7.6.65: DELEGA??O para DuplicationDetector (Refatora??o SOLID)
-  /// Verifica se novo bloco ? muito similar aos blocos anteriores
-  /// Retorna true se similaridade > threshold (padr?o 85%) OU se h? duplica??o literal
-  bool _isTooSimilar(
-    String newBlock,
-    String previousContent, {
-    double threshold = 0.85,
-  }) {
-    return DuplicationDetector.isTooSimilar(
-      newBlock,
-      previousContent,
-      threshold: threshold,
-    );
-  }
+  // 🔧 v7.6.106: _isTooSimilar removido - usar TextUtils.isTooSimilar() diretamente
 
   // Cache para evitar reprocessamento em contagens frequentes
   final Map<int, int> _wordCountCache = {};
@@ -2456,7 +2440,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   int _countWords(String text) {
     if (text.isEmpty) return 0;
 
-    // Cache baseado no hash do texto (economiza mem?ria vs armazenar string completa)
+    // Cache baseado no hash do texto (economiza memória vs armazenar string completa)
     final hash = text.hashCode;
     if (_wordCountCache.containsKey(hash)) {
       return _wordCountCache[hash]!;
@@ -2507,6 +2491,8 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     String perspective =
         'terceira_pessoa', // PERSPECTIVA CONFIGURADA PELO USU?RIO
     String qualityMode = 'pro', // ?? NOVO: Para Pipeline Modelo ?nico
+    int maxTokens =
+        16384, // AUMENTADO: Era 8192, agora 16384 para contextos mais ricos
   }) async {
     try {
       // Usar idioma e perspectiva configurados pelo usu?rio (n?o detectar)
