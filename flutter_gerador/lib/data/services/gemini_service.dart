@@ -29,6 +29,9 @@ import 'package:flutter_gerador/data/services/gemini/tools/tools_modules.dart';
 // 🏗️ v7.6.101: MÓDULO DE VALIDAÇÃO DE PERSONAGENS (SOLID)
 import 'package:flutter_gerador/data/services/gemini/validation/character_validation.dart';
 
+// 🏗️ v7.6.104: MÓDULO DE CÁLCULO DE BLOCOS (SOLID)
+import 'package:flutter_gerador/data/services/gemini/generation/block_calculator.dart';
+
 // 🏗️ v7.6.70: MÓDULOS DE PROMPTS (Refatoração SOLID)
 // narrative_styles.dart exportado via gemini_modules.dart
 // perspective_builder.dart exportado via gemini_modules.dart
@@ -336,7 +339,8 @@ class GeminiService {
     _startWatchdog();
     final start = DateTime.now();
     try {
-      final totalBlocks = _calculateTotalBlocks(config);
+      // 🔧 v7.6.104: Delegado para BlockCalculator
+      final totalBlocks = BlockCalculator.calculateTotalBlocks(config);
       var acc = '';
 
       for (var block = 1; block <= totalBlocks && !_isCancelled; block++) {
@@ -414,7 +418,8 @@ class GeminiService {
           await Future.delayed(adaptiveDelay);
         }
 
-        final targetForBlock = _calculateTargetForBlock(
+        // 🔧 v7.6.104: Delegado para BlockCalculator
+        final targetForBlock = BlockCalculator.calculateTargetForBlock(
           block,
           totalBlocks,
           config,
@@ -1097,19 +1102,20 @@ class GeminiService {
       }
 
       // ?? EXPANS�O FOR�ADA DESATIVADA
-      // Sistema de expans�o removido para evitar m�ltiplos finais empilhados.
-      // A meta de caracteres deve ser atingida atrav�s do ajuste dos blocos iniciais,
-      // n�o for�ando continua��es ap�s a hist�ria j� ter conclu�do naturalmente.
+      // Sistema de expansão removido para evitar múltiplos finais empilhados.
+      // A meta de caracteres deve ser atingida através do ajuste dos blocos iniciais,
+      // não forçando continuações após a história já ter concluído naturalmente.
       // Isso preserva a qualidade narrativa e evita finais duplicados.
 
-      if (!_isCancelled && !_checkTargetMet(acc, config)) {
+      // 🔧 v7.6.104: Delegado para BlockCalculator
+      if (!_isCancelled && !BlockCalculator.checkTargetMet(acc, config)) {
         final needed = config.measureType == 'caracteres'
             ? (config.quantity - acc.length)
             : (config.quantity - _countWords(acc));
 
         if (kDebugMode) {
           debugPrint(
-            '[$_instanceId] ?? Meta n�o atingida - Faltam $needed ${config.measureType}',
+            '[$_instanceId] ⚠️ Meta não atingida - Faltam $needed ${config.measureType}',
           );
           debugPrint(
             '[$_instanceId] ? DICA: Aumente o tamanho dos blocos iniciais para atingir a meta',
@@ -1665,333 +1671,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     ];
   }
 
-  // ?? v7.6.99: _getBlockDelay removido - inline-ado no loop de blocos
-
-  bool _checkTargetMet(String text, ScriptConfig c) {
-    if (c.measureType == 'caracteres') {
-      // TOLER�NCIA ZERO: S� aceita se atingir pelo menos 99.5% da meta
-      final tol = max(
-        50,
-        (c.quantity * 0.005).round(),
-      ); // M�ximo 0.5% ou 50 chars, o que for maior
-      return text.length >= (c.quantity - tol);
-    }
-    final wc = _countWords(text);
-    // TOLER�NCIA ZERO: S� aceita se atingir pelo menos 99% da meta
-    final tol = max(
-      10,
-      (c.quantity * 0.01).round(),
-    ); // M�ximo 1% ou 10 palavras, o que for maior
-    return wc >= (c.quantity - tol);
-  }
-
-  int _calculateTotalBlocks(ScriptConfig c) {
-    // ?? NORMALIZA??O: Converter tudo para palavras equivalentes
-    // Isso garante que quantidades equivalentes de conte?do recebam blocos similares
-    // ?? IMPORTANTE: N?O aplicar multiplicador de idioma aqui!
-    //    O multiplicador ? aplicado por bloco, n?o no total de blocos.
-    //    Caso contr?rio, ingl?s (1.05x) geraria blocos extras desnecess?rios.
-
-    // ???? AJUSTE ESPECIAL PARA COREANO: Densidade de caracteres menor
-    // Hangul: 1 caractere = 1 s?laba completa ? menos chars por palavra
-    // F?rmula coreano: 4.2 chars/palavra (vs ingl?s/PT: 5.5)
-    final isKoreanMeasure =
-        c.language.contains('???') ||
-        c.language.toLowerCase().contains('coreano') ||
-        c.language.toLowerCase().contains('korean');
-
-    final charToWordRatio = (c.measureType == 'caracteres' && isKoreanMeasure)
-        ? 4.2 // Coreano: alta densidade sil?bica
-        : 5.5; // Outros idiomas: padr?o
-
-    int wordsEquivalent = c.measureType == 'caracteres'
-        ? (c.quantity / charToWordRatio)
-              .round() // Convers?o: chars ? palavras
-        : c.quantity;
-
-    if (kDebugMode) {
-      debugPrint('?? C?LCULO DE BLOCOS (DEBUG):');
-      debugPrint('   Idioma: "${c.language}"');
-      debugPrint('   IsKoreanMeasure? $isKoreanMeasure');
-      debugPrint('   Ratio: $charToWordRatio');
-      debugPrint('   WordsEquivalent: $wordsEquivalent');
-    }
-
-    // ?? AJUSTE AUTOM?TICO PARA IDIOMAS COM ALFABETOS PESADOS
-    // IMPORTANTE: Este ajuste s? deve ser aplicado para medida em CARACTERES!
-    // Para medida em PALAVRAS, n?o aplicar redu??o (o multiplicador 1.20 j? compensa)
-    // Diferentes alfabetos ocupam diferentes quantidades de bytes em UTF-8
-    // Ajustamos palavras equivalentes para evitar timeout de contexto em roteiros longos
-
-    // ?? N?VEL 2: Cir?lico e Alfabetos Pesados - 2-3 bytes/char ? Redu??o de 12%
-    final cyrillicLanguages = [
-      'Russo', 'B?lgaro', 'S?rvio', // Cir?lico
-    ];
-
-    // ?? N?VEL 2B: Outros N?o-Latinos - 2-3 bytes/char ? Redu??o de 15%
-    // ATEN??O: Coreano FOI REMOVIDO desta lista (usa estrat?gia de blocos m?ltiplos)
-    final otherNonLatinLanguages = [
-      'Hebraico', 'Grego', 'Tailand?s', // Sem?ticos e outros
-    ];
-
-    // ?? N?VEL 1: Latinos com Diacr?ticos Pesados - 1.2-1.5 bytes/char ? Redu??o de 8%
-    final heavyDiacriticLanguages = [
-      'Turco',
-      'Polon?s',
-      'Tcheco',
-      'Vietnamita',
-      'H?ngaro',
-    ];
-
-    // ?? CORRE??O: Aplicar ajuste SOMENTE para 'caracteres', nunca para 'palavras'
-    // Motivo: O problema de timeout s? ocorre com caracteres (tokens UTF-8)
-    // Para palavras, o multiplicador 1.20 j? ? suficiente para compensar varia??o
-    if (c.measureType == 'caracteres' && wordsEquivalent > 6000) {
-      double adjustmentFactor = 1.0;
-      String adjustmentLevel = '';
-
-      if (cyrillicLanguages.contains(c.language)) {
-        adjustmentFactor = 0.88; // -12% (AJUSTADO: era -20%)
-        adjustmentLevel = 'CIR?LICO';
-      } else if (otherNonLatinLanguages.contains(c.language)) {
-        adjustmentFactor = 0.85; // -15%
-        adjustmentLevel = 'N?O-LATINO';
-      } else if (heavyDiacriticLanguages.contains(c.language)) {
-        adjustmentFactor = 0.92; // -8% (AJUSTADO: era -10%)
-        adjustmentLevel = 'DIACR?TICOS';
-      }
-
-      if (adjustmentFactor < 1.0) {
-        final originalWords = wordsEquivalent;
-        wordsEquivalent = (wordsEquivalent * adjustmentFactor).round();
-        if (kDebugMode) {
-          debugPrint('?? AJUSTE $adjustmentLevel (CARACTERES): ${c.language}');
-          debugPrint(
-            '   $originalWords ? $wordsEquivalent palavras equiv. (${(adjustmentFactor * 100).toInt()}%)',
-          );
-        }
-      }
-    }
-
-    // ?????????????????????????????????????????????????????????????????????????????
-    // ?? v7.6.53: CHUNKING OTIMIZADO POR IDIOMA - Pipeline de Modelo ?nico
-    // ?????????????????????????????????????????????????????????????????????????????
-    //
-    // ESPECIFICA??O DE PALAVRAS POR BLOCO (pal/bloco):
-    //   ???? PORTUGU?S:     1.200 - 1.500 pal/bloco (verboso, latino)
-    //   ???? COREANO:       600 - 800 pal/bloco (Hangul, alta densidade)
-    //   ???????? CIR?LICOS:  900 - 1.100 pal/bloco (tokens pesados)
-    //   ???? TURCO:         1.000 - 1.200 pal/bloco (aglutinante)
-    //   ???? POLON?S:       1.000 - 1.200 pal/bloco (diacr?ticos)
-    //   ???? ALEM?O:        1.000 - 1.200 pal/bloco (palavras compostas)
-    //   ?? LATINOS:        1.200 - 1.500 pal/bloco (EN, ES, FR, IT, RO)
-    //
-    // F?RMULA: blocos = wordsEquivalent / target_pal_bloco
-    // ?????????????????????????????????????????????????????????????????????????????
-
-    final langLower = c.language.toLowerCase();
-
-    // ?? DETEC??O DE IDIOMA
-    final isPortuguese = langLower.contains('portugu') || langLower == 'pt';
-    final isKorean =
-        c.language.contains('???') ||
-        langLower.contains('coreano') ||
-        langLower.contains('korean') ||
-        langLower == 'ko';
-    final isRussian = langLower.contains('russo') || langLower == 'ru';
-    final isBulgarian =
-        langLower.contains('b?lgar') ||
-        langLower.contains('bulgar') ||
-        langLower == 'bg';
-    final isCyrillic = isRussian || isBulgarian;
-    final isTurkish = langLower.contains('turco') || langLower == 'tr';
-    final isPolish = langLower.contains('polon') || langLower == 'pl';
-    final isGerman = langLower.contains('alem') || langLower == 'de';
-    // Latinos: en, es-mx, fr, it, ro (usam valores similares ao portugu?s)
-    final isLatin =
-        langLower.contains('ingl?s') ||
-        langLower.contains('english') ||
-        langLower == 'en' ||
-        langLower.contains('espanhol') ||
-        langLower.contains('espa?ol') ||
-        langLower.contains('es') ||
-        langLower.contains('franc?s') ||
-        langLower.contains('fran?ais') ||
-        langLower == 'fr' ||
-        langLower.contains('italiano') ||
-        langLower == 'it' ||
-        langLower.contains('romeno') ||
-        langLower.contains('rom?n') ||
-        langLower == 'ro';
-
-    // ?? TARGET DE PALAVRAS POR BLOCO (centro do range)
-    int targetPalBloco;
-    String langCategory;
-
-    if (isKorean) {
-      targetPalBloco = 700; // 600-800 pal/bloco
-      langCategory = '???? COREANO';
-    } else if (isCyrillic) {
-      targetPalBloco = 1000; // 900-1100 pal/bloco
-      langCategory = '?? CIR?LICO';
-    } else if (isTurkish) {
-      targetPalBloco = 1100; // 1000-1200 pal/bloco
-      langCategory = '???? TURCO';
-    } else if (isPolish) {
-      targetPalBloco = 1100; // 1000-1200 pal/bloco
-      langCategory = '???? POLON?S';
-    } else if (isGerman) {
-      targetPalBloco = 1100; // 1000-1200 pal/bloco
-      langCategory = '???? ALEM?O';
-    } else if (isPortuguese) {
-      targetPalBloco = 1350; // 1200-1500 pal/bloco
-      langCategory = '???? PORTUGU?S';
-    } else if (isLatin) {
-      targetPalBloco = 1350; // 1200-1500 pal/bloco
-      langCategory = '?? LATINO';
-    } else {
-      // Fallback para idiomas n?o especificados
-      targetPalBloco = 1200;
-      langCategory = '?? OUTROS';
-    }
-
-    // ?? C?LCULO DE BLOCOS: words / target
-    int calculatedBlocks = (wordsEquivalent / targetPalBloco).ceil();
-
-    // ?? LIMITES DE SEGURAN?A
-    // M?nimo: 2 blocos (intro + conclus?o)
-    // M?ximo: varia por idioma para evitar erro 503
-    int minBlocks = 2;
-    int maxBlocks;
-
-    if (isKorean) {
-      maxBlocks = 50; // Coreano precisa de mais blocos menores
-    } else if (isCyrillic) {
-      maxBlocks = 30; // Cir?licos s?o mais pesados
-    } else {
-      maxBlocks = 25; // Latinos e outros s?o eficientes
-    }
-
-    // Aplicar limites
-    int finalBlocks = calculatedBlocks.clamp(minBlocks, maxBlocks);
-
-    // ???? COMPENSA??O COREANO: +18% blocos para compensar sub-gera??o natural
-    if (isKorean) {
-      finalBlocks = (finalBlocks * 1.18).ceil().clamp(minBlocks, maxBlocks);
-    }
-
-    if (kDebugMode) {
-      final actualPalBloco = (wordsEquivalent / finalBlocks).round();
-      debugPrint(
-        '   $langCategory: $wordsEquivalent palavras ? $targetPalBloco target = $calculatedBlocks ? $finalBlocks blocos (~$actualPalBloco pal/bloco)',
-      );
-    }
-
-    return finalBlocks;
-  }
-
-  int _calculateTargetForBlock(int current, int total, ScriptConfig c) {
-    // ?? CALIBRA??O AJUSTADA: Multiplicador reduzido de 1.20 para 0.95 (95%)
-    // PROBLEMA DETECTADO: Roteiros saindo 30% maiores (Wanessa +28%, Quit?ria +30%)
-    // AN?LISE: Gemini est? gerando MAIS do que o pedido, n?o menos
-    // SOLU??O: Reduzir multiplicador para evitar sobre-gera??o
-    // Target: Ficar entre -5% e +10% do alvo (?10% aceit?vel)
-
-    // ?? CORRE??O: Usar a mesma l?gica de normaliza??o que _calculateTotalBlocks
-    // ???? AJUSTE ESPECIAL PARA COREANO: Densidade de caracteres menor
-    final isKoreanTarget =
-        c.language.contains('???') ||
-        c.language.toLowerCase().contains('coreano') ||
-        c.language.toLowerCase().contains('korean');
-
-    final charToWordRatio = (c.measureType == 'caracteres' && isKoreanTarget)
-        ? 4.2 // Coreano: alta densidade sil?bica
-        : 5.5; // Outros idiomas: padr?o
-
-    int targetQuantity = c.measureType == 'caracteres'
-        ? (c.quantity / charToWordRatio)
-              .round() // Convers?o: chars ? palavras
-        : c.quantity;
-
-    // ?? v10: REMOVIDO boost artificial
-    // Li??o: Gemini ignora multiplicadores - gera naturalmente
-    // Solu??o: Usar mesma tabela de blocos do portugu?s (comprovada)
-
-    // ?? Aplicar os mesmos ajustes de idioma que em _calculateTotalBlocks
-    // IMPORTANTE: S? aplicar para 'caracteres', nunca para 'palavras'
-    // ATEN??O: Coreano usa estrat?gia de blocos m?ltiplos, n?o redu??o percentual
-    if (c.measureType == 'caracteres' && targetQuantity > 6000) {
-      final cyrillicLanguages = ['Russo', 'B?lgaro', 'S?rvio'];
-      final otherNonLatinLanguages = ['Hebraico', 'Grego', 'Tailand?s'];
-      final heavyDiacriticLanguages = [
-        'Turco',
-        'Polon?s',
-        'Tcheco',
-        'Vietnamita',
-        'H?ngaro',
-      ];
-
-      if (cyrillicLanguages.contains(c.language)) {
-        targetQuantity = (targetQuantity * 0.88).round();
-      } else if (otherNonLatinLanguages.contains(c.language)) {
-        targetQuantity = (targetQuantity * 0.85).round();
-      } else if (heavyDiacriticLanguages.contains(c.language)) {
-        targetQuantity = (targetQuantity * 0.92).round();
-      }
-    }
-
-    // ?? AJUSTE CR?TICO: Multiplicador calibrado por idioma
-    // HIST?RICO:
-    //   v1: 1.05 ? Gerou 86.7% (d?ficit de -13.3%) ?
-    //   v2: 1.15 ? Gerou 116% (excesso de +16%) ?
-    //   v3: 1.08 ? Gerou 112% (excesso de +12%) ??
-    //   v4.1: 0.98 ? Esperado: 98-105% (ideal) ?
-    //   v5.0: 1.08 ? Gerava bem (100%+) MAS erro 503 (10 blocos grandes) ?
-    //   v6.0: 0.85 ? N?o d? 503 MAS gera s? 82% (8700/10600) ?
-    //   v6.1: 0.95 ? Ainda baixo, gera s? 87% (9200/10600) ?
-    //   v6.2: 1.00 ? Melhorou mas ainda 91% (9600/10600) ?
-    //   v6.3: 1.05 ? Melhor, mas ainda 100% (10600) ou 77% (8500) vari?vel ??
-    //   v6.4: 1.08 ? Volta ao valor do v5.0 MAS ainda d? 503 com 12 blocos ?
-    //   v6.5: 1.05 ? Reduz para 1.05 + AUMENTA blocos (12?14) = blocos 25% menores ??
-    //   v7.6.42: 1.18 ? Coreano espec?fico para compensar sub-gera??o de ~15%
-    //
-    // ???? COREANO v12: Multiplicador 1.18 para compensar sub-gera??o natural
-    // AN?LISE: Coreano gera apenas ~84.6% do pedido (11k de 13k)
-    // SOLU??O: Pedir 18% a mais para compensar
-    double multiplier;
-    if (isKoreanTarget) {
-      multiplier = 1.18; // ???? v12: Compensar sub-gera??o de ~15%
-    } else if (c.language.toLowerCase().contains('portugu')) {
-      multiplier = 1.05; // v6.5: Portugu?s
-    } else {
-      multiplier = 1.05; // Outros idiomas
-    }
-
-    // Calcular target acumulado at? este bloco (com margem ajustada)
-    final cumulativeTarget = (targetQuantity * (current / total) * multiplier)
-        .round();
-
-    // Calcular target acumulado do bloco anterior
-    final previousCumulativeTarget = current > 1
-        ? (targetQuantity * ((current - 1) / total) * multiplier).round()
-        : 0;
-
-    // DELTA = palavras necess?rias NESTE bloco espec?fico
-    final baseTarget = cumulativeTarget - previousCumulativeTarget;
-
-    // LIMITES por bloco individual (aumentado para evitar cortes)
-    final maxBlockSize = c.measureType == 'caracteres' ? 15000 : 5000;
-
-    // Para o ?ltimo bloco, usar o multiplicador ajustado por idioma
-    // Portugu?s: 1.05 para compensar leve sub-gera??o (~105% do target)
-    // Outros: 0.95 para evitar sobre-gera??o
-    if (current == total) {
-      final wordsPerBlock = (targetQuantity / total).ceil();
-      return min((wordsPerBlock * multiplier).round(), maxBlockSize);
-    }
-
-    return baseTarget > maxBlockSize ? maxBlockSize : baseTarget;
-  }
+  // 🔧 v7.6.99: _getBlockDelay removido - inline-ado no loop de blocos
+  // 🔧 v7.6.104: _checkTargetMet, _calculateTotalBlocks, _calculateTargetForBlock
+  //             migrados para BlockCalculator module
 
   // ===================== Geração de Blocos =====================
   // 🔧 v7.6.80: Wrappers de BaseRules removidos - usar BaseRules.* diretamente
