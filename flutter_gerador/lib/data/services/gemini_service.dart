@@ -24,10 +24,7 @@ import 'package:flutter_gerador/data/services/gemini/infra/infra_modules.dart'; 
 import 'package:flutter_gerador/data/services/gemini/tools/tools_modules.dart';
 
 // 🏗️ v7.6.67: MÓDULOS DE VALIDAÇÃO (Refatoração SOLID - Fase 5)
-import 'package:flutter_gerador/data/services/gemini/validation/name_constants.dart';
-// name_validator.dart exportado via gemini_modules.dart
-// relationship_patterns.dart usado via CharacterValidation module
-import 'package:flutter_gerador/data/services/gemini/validation/role_patterns.dart';
+// 🔧 v7.6.103: name_constants, name_validator, role_patterns - usados via CharacterValidation
 
 // 🏗️ v7.6.101: MÓDULO DE VALIDAÇÃO DE PERSONAGENS (SOLID)
 import 'package:flutter_gerador/data/services/gemini/validation/character_validation.dart';
@@ -901,17 +898,18 @@ class GeminiService {
             // ?? For?ar regenera??o: bloco vazio = retry autom?tico
             added = '';
           } else {
-            // ? v7.6.28: Nomes ?nicos, prosseguir para valida??o de pap?is
+            // ✅ v7.6.28: Nomes únicos, prosseguir para validação de papéis
 
-            // ?? v7.6.25: VALIDA??O DE CONFLITOS DE PAPEL
-            final trackerValid = _updateTrackerFromContextSnippet(
+            // 🔄 v7.6.25: VALIDAÇÃO DE CONFLITOS DE PAPEL
+            // 🔧 v7.6.103: Delegado para CharacterValidation
+            final trackerValid = _characterValidation.updateTrackerFromContextSnippet(
               persistentTracker,
               config,
               added,
             );
 
             if (!trackerValid) {
-              // ? BLOCO REJEITADO: Conflito de papel detectado (ex: advogado Martin ? Richard)
+              // ❌ BLOCO REJEITADO: Conflito de papel detectado (ex: advogado Martin → Richard)
               if (kDebugMode) {
                 debugPrint(
                   '? v7.6.25: BLOCO $block REJEITADO por CONFLITO DE PAPEL!',
@@ -1023,8 +1021,9 @@ class GeminiService {
                   continue; // Tentar pr?ximo retry
                 }
 
-                // ?? v7.6.25: VALIDAR conflitos de papel DEPOIS
-                final retryTrackerValid = _updateTrackerFromContextSnippet(
+                // 🔄 v7.6.25: VALIDAR conflitos de papel DEPOIS
+                // 🔧 v7.6.103: Delegado para CharacterValidation
+                final retryTrackerValid = _characterValidation.updateTrackerFromContextSnippet(
                   persistentTracker,
                   config,
                   added,
@@ -1998,79 +1997,6 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   // 🔧 v7.6.80: Wrappers de BaseRules removidos - usar BaseRules.* diretamente
   // 🔧 v7.6.81: _bootstrapCharacterTracker movido para CharacterTracker.bootstrap()
 
-  /// 🔧 v7.6.25: Atualiza tracker, RETORNA FALSE se houve conflito de papel
-  bool _updateTrackerFromContextSnippet(
-    CharacterTracker tracker,
-    ScriptConfig config,
-    String snippet,
-  ) {
-    if (snippet.trim().isEmpty) return true; // Snippet vazio = sem erro
-
-    bool hasRoleConflict = false; // ?? v7.6.25: Flag de erro
-
-    final existingLower = tracker.confirmedNames
-        .map((n) => n.toLowerCase())
-        .toSet();
-    final locationLower = config.localizacao.trim().toLowerCase();
-    final candidateCounts = NameValidator.extractNamesFromSnippet(snippet);
-
-    candidateCounts.forEach((name, count) {
-      final normalized = name.toLowerCase();
-      if (existingLower.contains(normalized)) return;
-
-      // ?? v7.6.31: REMOVER filtro "count < 2" - BUG CR�TICO!
-      // PROBLEMA: "Janice" com 1 men��o no Bloco 2 n�o entrava no tracker
-      // RESULTADO: "Janice" no Bloco 9 passava na valida��o (tracker vazio)
-      // SOLU��O: Adicionar TODOS os nomes v�lidos, independente de contagem
-      // A valida��o isValidName() j� garante que s�o nomes reais
-      // if (count < 2) return; // ? REMOVIDO - causava duplica��es
-
-      if (locationLower.isNotEmpty && normalized == locationLower) return;
-      if (NameConstants.isStopword(normalized)) return;
-
-      // v7.6.63: Validação estrutural (aceita nomes do LLM)
-      if (!NameValidator.isLikelyName(name)) {
-        if (kDebugMode) {
-          debugPrint('Tracker ignorou texto invalido: "$name"');
-        }
-        return;
-      }
-
-      // ✅ CORREÇÃO BUG ALBERTO: Extrair papel antes de adicionar
-      final role = RolePatterns.extractRoleForName(name, snippet);
-
-      if (role != null) {
-        final success = tracker.addName(name, role: role); // ?? v7.6.25
-        if (kDebugMode) {
-          if (success) {
-            debugPrint(
-              '?? v7.6.31: Tracker adicionou personagem COM PAPEL: "$name" = "$role" (ocorr?ncias: $count)',
-            );
-          } else {
-            debugPrint('? v7.6.25: CONFLITO DE PAPEL detectado!');
-            debugPrint('   Nome: "$name"');
-            debugPrint('   Papel tentado: "$role"');
-            hasRoleConflict = true; // ?? Marca erro
-          }
-        }
-      } else {
-        tracker.addName(name, role: 'indefinido');
-        if (kDebugMode) {
-          debugPrint(
-            '?? v7.6.31: Tracker adicionou personagem SEM PAPEL: "$name" (indefinido - ocorr?ncias: $count)',
-          );
-        }
-      }
-      if (kDebugMode) {
-        debugPrint(
-          '?? v7.6.31: Tracker adicionou personagem detectado: $name (ocorr?ncias: $count)',
-        );
-      }
-    });
-
-    return !hasRoleConflict; // ✅ true = OK, ❌ false = ERRO
-  }
-
   // 🔧 v7.6.83: Wrappers removidos - usar diretamente:
   //   - CharacterGuidanceBuilder.buildGuidance()
   //   - NarrativeStyleBuilder.getNarrativeStyleGuidance()
@@ -2086,6 +2012,11 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   //   - detectProtagonistNameChange()
   //   - validateProtagonistName()
   //   - validateFamilyRelationships()
+  //   - validateUniqueNames()
+  //   - validateNameReuse()
+  //   - validateFamilyRelations()
+  //   - detectCharacterNameChanges()
+  //   - updateTrackerFromContextSnippet() // 🔧 v7.6.103
   //   - validateUniqueNames()
   //   - validateNameReuse()
   //   - validateFamilyRelations()

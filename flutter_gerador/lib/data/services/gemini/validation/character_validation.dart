@@ -7,6 +7,7 @@ import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/models/debug_log.dart';
 import 'package:flutter_gerador/data/services/gemini/tracking/character_tracker.dart';
 import 'name_validator.dart';
+import 'name_constants.dart';
 import 'role_patterns.dart';
 import 'relationship_patterns.dart';
 
@@ -564,5 +565,72 @@ class CharacterValidation {
     }
 
     return changes;
+  }
+
+  // 🔧 v7.6.103: Extraído de gemini_service.dart
+  /// 🔧 Atualiza tracker com nomes do snippet, RETORNA FALSE se houve conflito de papel
+  bool updateTrackerFromContextSnippet(
+    CharacterTracker tracker,
+    ScriptConfig config,
+    String snippet,
+  ) {
+    if (snippet.trim().isEmpty) return true; // Snippet vazio = sem erro
+
+    bool hasRoleConflict = false;
+
+    final existingLower = tracker.confirmedNames
+        .map((n) => n.toLowerCase())
+        .toSet();
+    final locationLower = config.localizacao.trim().toLowerCase();
+    final candidateCounts = NameValidator.extractNamesFromSnippet(snippet);
+
+    candidateCounts.forEach((name, count) {
+      final normalized = name.toLowerCase();
+      if (existingLower.contains(normalized)) return;
+
+      if (locationLower.isNotEmpty && normalized == locationLower) return;
+      if (NameConstants.isStopword(normalized)) return;
+
+      // v7.6.63: Validação estrutural (aceita nomes do LLM)
+      if (!NameValidator.isLikelyName(name)) {
+        if (kDebugMode) {
+          debugPrint('Tracker ignorou texto invalido: "$name"');
+        }
+        return;
+      }
+
+      // ✅ CORREÇÃO BUG ALBERTO: Extrair papel antes de adicionar
+      final role = RolePatterns.extractRoleForName(name, snippet);
+
+      if (role != null) {
+        final success = tracker.addName(name, role: role);
+        if (kDebugMode) {
+          if (success) {
+            debugPrint(
+              '✅ Tracker adicionou personagem COM PAPEL: "$name" = "$role" (ocorrências: $count)',
+            );
+          } else {
+            debugPrint('❌ CONFLITO DE PAPEL detectado!');
+            debugPrint('   Nome: "$name"');
+            debugPrint('   Papel tentado: "$role"');
+            hasRoleConflict = true;
+          }
+        }
+      } else {
+        tracker.addName(name, role: 'indefinido');
+        if (kDebugMode) {
+          debugPrint(
+            '📝 Tracker adicionou personagem SEM PAPEL: "$name" (indefinido - ocorrências: $count)',
+          );
+        }
+      }
+      if (kDebugMode) {
+        debugPrint(
+          '📝 Tracker adicionou personagem detectado: $name (ocorrências: $count)',
+        );
+      }
+    });
+
+    return !hasRoleConflict; // ✅ true = OK, ❌ false = ERRO
   }
 }
