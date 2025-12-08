@@ -32,11 +32,14 @@ import 'package:flutter_gerador/data/services/gemini/validation/character_valida
 // 🏗️ v7.6.104: MÓDULO DE CÁLCULO DE BLOCOS (SOLID)
 import 'package:flutter_gerador/data/services/gemini/generation/block_calculator.dart';
 
+// 🏗️ v7.6.105: MÓDULO DE CONSTRUÇÃO DE CONTEXTO (SOLID)
+import 'package:flutter_gerador/data/services/gemini/generation/context_builder.dart';
+
 // 🏗️ v7.6.70: MÓDULOS DE PROMPTS (Refatoração SOLID)
 // narrative_styles.dart exportado via gemini_modules.dart
 // perspective_builder.dart exportado via gemini_modules.dart
 
-// ??? v7.6.72: M�DULO TRACKING (Refatora��o SOLID)
+// ⚡ v7.6.72: MÓDULO TRACKING (Refatoração SOLID)
 // character_tracker.dart exportado via gemini_modules.dart
 
 /// ?? Helper padronizado para logs (mant�m emojis em debug, limpa em produ��o)
@@ -1699,62 +1702,10 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   //   - validateFamilyRelations()
   //   - detectCharacterNameChanges()
   //   - updateTrackerFromContextSnippet() // 🔧 v7.6.103
-  //   - validateUniqueNames()
-  //   - validateNameReuse()
-  //   - validateFamilyRelations()
-  //   - detectCharacterNameChanges() // 🔧 v7.6.102
 
   // 🔧 v7.6.82: Wrappers _looksLikePersonName e _isLikelyName removidos
   // 🔧 v7.6.85: Wrappers perspectiveLabel e _getPerspectiveInstruction removidos
-  // Usar PerspectiveBuilder.perspectiveLabel() e PerspectiveBuilder.getPerspectiveInstruction() diretamente
-
-  /// 📦 OTIMIZAÇÃO: Limita contexto aos últimos blocos para evitar timeouts
-  /// Mantém apenas os últimos N blocos + resumo inicial para continuidade
-  String _buildLimitedContext(
-    String fullContext,
-    int currentBlock,
-    int maxRecentBlocks,
-  ) {
-    if (fullContext.isEmpty || currentBlock <= maxRecentBlocks) {
-      return fullContext; // Blocos iniciais usam tudo
-    }
-
-    // ⚡ LIMITE ABSOLUTO OTIMIZADO: Reduzido para evitar timeout em idiomas pesados
-    // 🛡️ CRÍTICO: 5.6k palavras causava timeout API 503 nos blocos 7-8
-    // 3.5k palavras = ~21k caracteres cirílico (mais seguro para Gemini)
-    const maxContextWords = 3500; // REDUZIDO de 4500 para 3500
-    final currentWords = _countWords(fullContext);
-
-    if (currentWords <= maxContextWords) {
-      return fullContext; // Contexto ainda est? em tamanho seguro
-    }
-
-    // Separar em blocos (par?grafos duplos ou mais)
-    final blocks = fullContext.split(RegExp(r'\n{2,}'));
-    if (blocks.length <= maxRecentBlocks + 5) {
-      return fullContext; // Ainda n?o tem muitos blocos
-    }
-
-    // Pegar resumo inicial (primeiros 3 par?grafos - REDUZIDO de 5 para 3)
-    final initialSummary = blocks.take(3).join('\n\n');
-
-    // Pegar ?ltimos N blocos completos (REDUZIDO multiplicador de 5 para 3)
-    final recentBlocks = blocks
-        .skip(max(0, blocks.length - maxRecentBlocks * 3))
-        .join('\n\n');
-
-    final result = '$initialSummary\n\n[...]\n\n$recentBlocks';
-
-    // Verificar se ainda est? muito grande
-    if (_countWords(result) > maxContextWords) {
-      // Reduzir ainda mais - s? ?ltimos blocos (REDUZIDO multiplicador de 3 para 2)
-      return blocks
-          .skip(max(0, blocks.length - maxRecentBlocks * 2))
-          .join('\n\n');
-    }
-
-    return result;
-  }
+  // 🔧 v7.6.105: _buildLimitedContext migrado para ContextBuilder.buildLimitedContext()
 
   Future<String> _generateBlockContent(
     String previous,
@@ -1764,45 +1715,43 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
     CharacterTracker tracker,
     int blockNumber,
     int totalBlocks, {
-    bool avoidRepetition =
-        false, // ?? NOVO: Flag para regenera??o anti-repeti??o
-    WorldState? worldState, // ??? v7.6.64: Usa WorldState do m?dulo (SOLID)
+    bool avoidRepetition = false,
+    WorldState? worldState,
   }) async {
-    // ?? IMPORTANTE: target vem SEMPRE em PALAVRAS de _calculateTargetForBlock()
-    // Mesmo quando measureType='caracteres', _calculateTargetForBlock j? converteu caracteres?palavras
-    // O Gemini trabalha melhor com contagem de PALAVRAS, ent?o sempre pedimos palavras no prompt
-    // Depois contamos caracteres no resultado final para validar se atingiu a meta do usu?rio
+    // 📦 IMPORTANTE: target vem SEMPRE em PALAVRAS de BlockCalculator.calculateTargetForBlock()
+    // Mesmo quando measureType='caracteres', já foi convertido caracteres→palavras
+    // O Gemini trabalha melhor com contagem de PALAVRAS, então sempre pedimos palavras no prompt
+    // Depois contamos caracteres no resultado final para validar se atingiu a meta do usuário
     final needed = target;
     if (needed <= 0) return '';
 
-    // ?? OTIMIZA??O CR?TICA: Limitar contexto aos ?ltimos N blocos
-    // v6.0: Portugu?s usa MENOS contexto (3 blocos) para evitar erro 503
-    // Outros idiomas: 4 blocos (padr?o)
-    // RATIONALE: Portugu?s = mais tokens ? precisa contexto menor
-    final isPortuguese = c.language.toLowerCase().contains('portugu');
-    final maxContextBlocks = isPortuguese
-        ? 3
-        : 4; // PORTUGU?S: 3 blocos (era 4)
+
+    // 🔧 v7.6.105: OTIMIZAÇÃO CRÍTICA: Limitar contexto aos últimos N blocos
+    // Delegado para ContextBuilder module
+    final maxContextBlocks = ContextBuilder.getMaxContextBlocks(c.language);
 
     // Blocos iniciais (1-4): contexto completo
-    // Blocos m?dios/finais (5+): ?ltimos N blocos apenas
+    // Blocos médios/finais (5+): últimos N blocos apenas
     String contextoPrevio = previous.isEmpty
         ? ''
-        : _buildLimitedContext(previous, blockNumber, maxContextBlocks);
+        : ContextBuilder.buildLimitedContext(
+            previous,
+            blockNumber,
+            maxContextBlocks,
+            _countWords,
+          );
 
-    if (kDebugMode && previous.isNotEmpty) {
-      final contextUsed = contextoPrevio.length;
-      final contextType = blockNumber <= maxContextBlocks
-          ? 'COMPLETO'
-          : 'LIMITADO (?ltimos $maxContextBlocks blocos)';
+    // Log de contexto usado
+    ContextBuilder.logContextUsage(
+      contextoPrevio,
+      blockNumber,
+      maxContextBlocks,
+      _countWords,
+    );
+    if (kDebugMode && previous.isNotEmpty && blockNumber > maxContextBlocks) {
       debugPrint(
-        '?? CONTEXTO $contextType: $contextUsed chars (${_countWords(contextoPrevio)} palavras)',
+        '   Original: ${previous.length} chars → Reduzido: ${contextoPrevio.length} chars (${((1 - contextoPrevio.length / previous.length) * 100).toStringAsFixed(0)}% menor)',
       );
-      if (blockNumber > maxContextBlocks) {
-        debugPrint(
-          '   Original: ${previous.length} chars ? Reduzido: $contextUsed chars (${((1 - contextUsed / previous.length) * 100).toStringAsFixed(0)}% menor)',
-        );
-      }
     }
 
     // ?? SOLU??O 3: Refor?ar os nomes confirmados no prompt para manter consist?ncia
