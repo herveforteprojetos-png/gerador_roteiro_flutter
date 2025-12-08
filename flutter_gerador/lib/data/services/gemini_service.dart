@@ -688,11 +688,12 @@ class GeminiService {
             block,
           );
 
-          // ?? VALIDA??O CR?TICA 3: Verificar se algum nome foi reutilizado
+          // ✅ VALIDAÇÃO CRÍTICA 3: Verificar se algum nome foi reutilizado
           _characterValidation.validateNameReuse(added, persistentTracker, block);
 
-          // ?? VALIDA??O CR?TICA 4: REJEITAR BLOCO se protagonista mudou ou personagens trocaram de nome
-          final characterNameChanges = _detectCharacterNameChanges(
+          // ✅ VALIDAÇÃO CRÍTICA 4: REJEITAR BLOCO se protagonista mudou ou personagens trocaram de nome
+          // 🔧 v7.6.102: Delegado para CharacterValidation
+          final characterNameChanges = _characterValidation.detectCharacterNameChanges(
             added,
             persistentTracker,
             block,
@@ -700,24 +701,24 @@ class GeminiService {
           if (protagonistChanged || characterNameChanges.isNotEmpty) {
             if (kDebugMode) {
               debugPrint(
-                '?????? BLOCO $block REJEITADO - MUDAN?A DE NOME DETECTADA! ??????',
+                '⚠️⚠️ BLOCO $block REJEITADO - MUDANÇA DE NOME DETECTADA! ⚠️⚠️',
               );
               if (protagonistChanged) {
                 final detected = persistentTracker.getProtagonistName();
                 debugPrint(
-                  '   ? PROTAGONISTA: "$detected" mudou para outro nome!',
+                  '   → PROTAGONISTA: "$detected" mudou para outro nome!',
                 );
               }
               for (final change in characterNameChanges) {
                 final role = change['role'] ?? 'personagem';
                 final oldName = change['oldName'] ?? '';
                 final newName = change['newName'] ?? '';
-                debugPrint('   ? $role: "$oldName" ? "$newName"');
+                debugPrint('   → $role: "$oldName" → "$newName"');
               }
-              debugPrint('   ?? Regenerando bloco (tentativa 1/3)...');
+              debugPrint('   🔄 Regenerando bloco (tentativa 1/3)...');
             }
 
-            // ?? v7.6.17: LIMITE DE REGENERA??ES para evitar loop infinito
+            // 🔄 v7.6.17: LIMITE DE REGENERAÇÕES para evitar loop infinito
             const maxRegenerations = 3;
             String? regenerated;
 
@@ -2088,93 +2089,7 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
   //   - validateUniqueNames()
   //   - validateNameReuse()
   //   - validateFamilyRelations()
-
-  /// ?? NOVA VALIDA��O CR�TICA v7.6.16: Detecta mudan�as de nome de personagens
-  /// Compara pap?is conhecidos (tracker) com novos nomes mencionados no texto
-  /// Retorna lista de mudan?as detectadas para rejei??o do bloco
-  List<Map<String, String>> _detectCharacterNameChanges(
-    String generatedText,
-    CharacterTracker tracker,
-    int blockNumber,
-  ) {
-    final changes = <Map<String, String>>[];
-
-    // Padr?es de rela??es familiares para detectar personagens
-    final relationPatterns = {
-      'pai': RegExp(
-        r'(?:meu|seu|nosso|o)\s+[Pp]ai(?:,)?\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-      'm?e': RegExp(
-        r'(?:minha|sua|nossa|a)\s+[Mm]?e(?:,)?\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-      'marido': RegExp(
-        r'(?:meu|seu|nosso|o)\s+(?:marido|esposo)(?:,)?\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-      'esposa': RegExp(
-        r'(?:minha|sua|nossa|a)\s+(?:esposa|mulher)(?:,)?\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-      'filho': RegExp(
-        r'(?:meu|seu|nosso|o)\s+[Ff]ilho(?:,)?\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-      'filha': RegExp(
-        r'(?:minha|sua|nossa|a)\s+[Ff]ilha(?:,)?\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-      'irm?o': RegExp(
-        r'(?:meu|seu|nosso|o)\s+(?:irm?o|irmao)(?:,)?\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-      'irm?': RegExp(
-        r'(?:minha|sua|nossa|a)\s+(?:irm?|irma)(?:,)?\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-      'advogado': RegExp(
-        r'(?:meu|seu|nosso|o)\s+[Aa]dvogad[oa](?:,)?\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-      'investigador': RegExp(
-        r'(?:o|um)\s+[Ii]nvestigador(?:,)?\s+([A-Z????????????][a-z????????????]+)',
-        caseSensitive: false,
-      ),
-    };
-
-    // Para cada papel rastreado, verificar se o nome mudou
-    for (final entry in relationPatterns.entries) {
-      final role = entry.key;
-      final pattern = entry.value;
-      final matches = pattern.allMatches(generatedText);
-
-      for (final match in matches) {
-        final newName = match.group(1)?.trim();
-        if (newName == null || !NameValidator.looksLikePersonName(newName)) continue;
-
-        // Verificar se este papel j? tem um nome no tracker
-        final existingName = tracker.getNameForRole(role);
-
-        if (existingName != null && existingName != newName) {
-          // ?? MUDAN?A DETECTADA!
-          changes.add({
-            'role': role,
-            'oldName': existingName,
-            'newName': newName,
-          });
-
-          if (kDebugMode) {
-            debugPrint(
-              '?? MUDAN?A DE NOME: "$role" era "$existingName" ? agora "$newName"!',
-            );
-          }
-        }
-      }
-    }
-
-    return changes;
-  }
+  //   - detectCharacterNameChanges() // 🔧 v7.6.102
 
   // 🔧 v7.6.82: Wrappers _looksLikePersonName e _isLikelyName removidos
   // 🔧 v7.6.85: Wrappers perspectiveLabel e _getPerspectiveInstruction removidos
@@ -2191,9 +2106,9 @@ ${missingElements.isEmpty ? '' : '?? Elementos ausentes:\n${missingElements.map(
       return fullContext; // Blocos iniciais usam tudo
     }
 
-    // ?? LIMITE ABSOLUTO OTIMIZADO: Reduzido para evitar timeout em idiomas pesados
-    // ?? CR?TICO: 5.6k palavras causava timeout API 503 nos blocos 7-8
-    // 3.5k palavras = ~21k caracteres cir?lico (mais seguro para Gemini)
+    // ⚡ LIMITE ABSOLUTO OTIMIZADO: Reduzido para evitar timeout em idiomas pesados
+    // 🛡️ CRÍTICO: 5.6k palavras causava timeout API 503 nos blocos 7-8
+    // 3.5k palavras = ~21k caracteres cirílico (mais seguro para Gemini)
     const maxContextWords = 3500; // REDUZIDO de 4500 para 3500
     final currentWords = _countWords(fullContext);
 

@@ -478,4 +478,91 @@ class CharacterValidation {
       }
     }
   }
+
+  // 🔧 v7.6.102: Extraído de gemini_service.dart
+  /// 🔍 Detecta mudanças de nomes de personagens no texto gerado
+  /// Retorna lista de mudanças detectadas com papel, nome antigo e novo
+  List<Map<String, String>> detectCharacterNameChanges(
+    String generatedText,
+    CharacterTracker tracker,
+    int blockNumber,
+  ) {
+    final changes = <Map<String, String>>[];
+
+    // Padrões de relações familiares para detectar personagens
+    final relationPatterns = {
+      'pai': RegExp(
+        r'(?:meu|seu|nosso|o)\s+[Pp]ai(?:,)?\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)',
+        caseSensitive: false,
+      ),
+      'mãe': RegExp(
+        r'(?:minha|sua|nossa|a)\s+[Mm]ãe(?:,)?\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)',
+        caseSensitive: false,
+      ),
+      'marido': RegExp(
+        r'(?:meu|seu|nosso|o)\s+(?:marido|esposo)(?:,)?\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)',
+        caseSensitive: false,
+      ),
+      'esposa': RegExp(
+        r'(?:minha|sua|nossa|a)\s+(?:esposa|mulher)(?:,)?\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)',
+        caseSensitive: false,
+      ),
+      'filho': RegExp(
+        r'(?:meu|seu|nosso|o)\s+[Ff]ilho(?:,)?\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)',
+        caseSensitive: false,
+      ),
+      'filha': RegExp(
+        r'(?:minha|sua|nossa|a)\s+[Ff]ilha(?:,)?\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)',
+        caseSensitive: false,
+      ),
+      'irmão': RegExp(
+        r'(?:meu|seu|nosso|o)\s+(?:irmão|irmao)(?:,)?\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)',
+        caseSensitive: false,
+      ),
+      'irmã': RegExp(
+        r'(?:minha|sua|nossa|a)\s+(?:irmã|irma)(?:,)?\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)',
+        caseSensitive: false,
+      ),
+      'advogado': RegExp(
+        r'(?:meu|seu|nosso|o)\s+[Aa]dvogad[oa](?:,)?\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)',
+        caseSensitive: false,
+      ),
+      'investigador': RegExp(
+        r'(?:o|um)\s+[Ii]nvestigador(?:,)?\s+([A-ZÀÁÂÃÉÊÍÓÔÕÚÇ][a-zàáâãéêíóôõúç]+)',
+        caseSensitive: false,
+      ),
+    };
+
+    // Para cada papel rastreado, verificar se o nome mudou
+    for (final entry in relationPatterns.entries) {
+      final role = entry.key;
+      final pattern = entry.value;
+      final matches = pattern.allMatches(generatedText);
+
+      for (final match in matches) {
+        final newName = match.group(1)?.trim();
+        if (newName == null || !NameValidator.looksLikePersonName(newName)) continue;
+
+        // Verificar se este papel já tem um nome no tracker
+        final existingName = tracker.getNameForRole(role);
+
+        if (existingName != null && existingName != newName) {
+          // ⚠️ MUDANÇA DETECTADA!
+          changes.add({
+            'role': role,
+            'oldName': existingName,
+            'newName': newName,
+          });
+
+          if (kDebugMode) {
+            debugPrint(
+              '⚠️ MUDANÇA DE NOME: "$role" era "$existingName" → agora "$newName"!',
+            );
+          }
+        }
+      }
+    }
+
+    return changes;
+  }
 }
