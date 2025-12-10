@@ -167,6 +167,34 @@ class BlockPromptBuilder {
       targetTotalWords: c.quantity,
     );
 
+    // 📊 Log do contador progressivo
+    if (kDebugMode) {
+      debugPrint('');
+      debugPrint(
+        '📊 ════════════════════════════════════════════════════════════',
+      );
+      debugPrint('📊 CONTADOR PROGRESSIVO - Bloco $blockNumber/$totalBlocks');
+      debugPrint(
+        '📊 ════════════════════════════════════════════════════════════',
+      );
+      debugPrint('📍 Ato: ${actInfo.actNumber} - ${actInfo.actName}');
+      debugPrint(
+        '📈 Palavras do Ato: ${actInfo.actCurrentWords}/${actInfo.actMaxWords}',
+      );
+      debugPrint('⏳ Restantes: ${actInfo.actRemainingWords} palavras');
+      debugPrint('📊 Total acumulado: $currentTotalWords palavras');
+      if (actInfo.actNumber == 2 && actInfo.actRemainingWords < 300) {
+        debugPrint('🚨 ALERTA: Ato 2 próximo do limite!');
+      }
+      if (actInfo.actNumber == 3 && actInfo.actRemainingWords > 500) {
+        debugPrint('✅ Ato 3 com espaço suficiente');
+      }
+      debugPrint(
+        '📊 ════════════════════════════════════════════════════════════',
+      );
+      debugPrint('');
+    }
+
     // 🚨 Construir mensagem visual do contador
     final progressCounter = _buildProgressCounter(actInfo, isSpanish);
 
