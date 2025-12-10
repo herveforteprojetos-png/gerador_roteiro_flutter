@@ -9,6 +9,7 @@ import 'package:flutter_gerador/data/models/debug_log.dart';
 import 'package:flutter_gerador/data/utils/text_capitalizer.dart';
 import 'gemini/gemini_modules.dart';
 import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart';
+import 'package:flutter_gerador/data/services/prompts/structure_rules.dart';
 import 'package:flutter_gerador/data/services/scripting/scripting_modules.dart';
 import 'package:flutter_gerador/data/services/gemini/detection/detection_modules.dart';
 import 'package:flutter_gerador/data/services/gemini/tools/tools_modules.dart';
@@ -73,7 +74,7 @@ class GeminiService {
 
   final _debugLogger = DebugLogManager();
   final Set<String> _namesUsedInCurrentStory = {};
-  
+
   // 🆕 v7.6.123: Contador de mantras em tempo real
   final Map<String, int> _mantraCounterRealTime = {};
 
@@ -97,18 +98,23 @@ class GeminiService {
   /// Retorna texto normalizado e opcionalmente extrai nomes detectados
   static String _normalizeGeminiBlock(String text, {int? blockNumber}) {
     if (text.trim().isEmpty) return text;
-    
+
     if (TextCapitalizer.isGeminiFormat(text)) {
       final extractedNames = <String>{};
-      final normalized = TextCapitalizer.normalizeGeminiOutput(text, extractedNames: extractedNames);
-      
+      final normalized = TextCapitalizer.normalizeGeminiOutput(
+        text,
+        extractedNames: extractedNames,
+      );
+
       if (kDebugMode && extractedNames.isNotEmpty && blockNumber != null) {
-        debugPrint('📝 [Bloco $blockNumber] TextCapitalizer: ${extractedNames.length} nomes → ${extractedNames.take(3).join(', ')}${extractedNames.length > 3 ? '...' : ''}');
+        debugPrint(
+          '📝 [Bloco $blockNumber] TextCapitalizer: ${extractedNames.length} nomes → ${extractedNames.take(3).join(', ')}${extractedNames.length > 3 ? '...' : ''}',
+        );
       }
-      
+
       return normalized;
     }
-    
+
     return text;
   }
 
@@ -258,7 +264,7 @@ class GeminiService {
           debugPrint('\n🔵 ═══════════════════════════════════════════');
           debugPrint('⏱️ [Bloco $block/$totalBlocks] INÍCIO');
         }
-        
+
         final progress = block / totalBlocks;
         final phase = BlockCalculator.getPhase(progress);
         final elapsed = DateTime.now().difference(start);
@@ -299,7 +305,9 @@ class GeminiService {
         if (block > 1 && _consecutive503Errors > 0) {
           final delay = _getAdaptiveDelay(blockNumber: block);
           if (kDebugMode) {
-            debugPrint('⏱️ [Bloco $block] ⚠️ Aplicando delay adaptativo: ${delay.inMilliseconds}ms (erros 503: $_consecutive503Errors)');
+            debugPrint(
+              '⏱️ [Bloco $block] ⚠️ Aplicando delay adaptativo: ${delay.inMilliseconds}ms (erros 503: $_consecutive503Errors)',
+            );
           }
           await Future.delayed(delay);
         }
@@ -309,13 +317,15 @@ class GeminiService {
           totalBlocks,
           config,
         );
-        
+
         // ⏱️ v7.6.125: Cronometrar geração inicial
         final genStartTime = DateTime.now();
         if (kDebugMode) {
-          debugPrint('⏱️ [Bloco $block] 🎬 Gerando conteúdo (meta: $targetForBlock palavras)...');
+          debugPrint(
+            '⏱️ [Bloco $block] 🎬 Gerando conteúdo (meta: $targetForBlock palavras)...',
+          );
         }
-        
+
         var added = await _retryOnRateLimit(
           () => _generateBlockContent(
             acc,
@@ -328,10 +338,12 @@ class GeminiService {
             worldState: worldState,
           ),
         );
-        
+
         final genDuration = DateTime.now().difference(genStartTime);
         if (kDebugMode) {
-          debugPrint('⏱️ [Bloco $block] ✅ Geração inicial: ${genDuration.inSeconds}s (${added.length} chars)');
+          debugPrint(
+            '⏱️ [Bloco $block] ✅ Geração inicial: ${genDuration.inSeconds}s (${added.length} chars)',
+          );
         }
 
         // 🆕 v7.6.136: Normaliza output do Gemini (minúsculo + NOMES → Title Case)
@@ -341,7 +353,10 @@ class GeminiService {
         // (lowercase exceto nomes próprios conhecidos)
         if (added.trim().isNotEmpty) {
           final knownNames = persistentTracker.roleToNameMap.values.toSet();
-          added = PostGenerationFixer.lowercaseExceptNames(added, knownNames: knownNames);
+          added = PostGenerationFixer.lowercaseExceptNames(
+            added,
+            knownNames: knownNames,
+          );
         }
 
         if (added.trim().isNotEmpty && block > 1) {
@@ -354,15 +369,21 @@ class GeminiService {
 
         if (added.trim().isEmpty && acc.isNotEmpty) {
           if (kDebugMode) {
-            debugPrint('⏱️ [Bloco $block] ⚠️ VAZIO - Iniciando ciclo de retries...');
+            debugPrint(
+              '⏱️ [Bloco $block] ⚠️ VAZIO - Iniciando ciclo de retries...',
+            );
           }
           // 🔥 v7.6.130: Retries com backoff exponencial (2-4-8s) para 503/erros
           // Antes: 1s, 2s, 3s = 6s total
           // Agora: 2s, 4s, 8s = 14s total (mais estável para quota Google)
           for (int retry = 1; retry <= 3; retry++) {
-            final retryDelay = retry == 1 ? 2 : (retry == 2 ? 4 : 8); // Exponencial
+            final retryDelay = retry == 1
+                ? 2
+                : (retry == 2 ? 4 : 8); // Exponencial
             if (kDebugMode) {
-              debugPrint('⏱️ [Bloco $block] 🔄 Retry $retry/3 - Aguardando ${retryDelay}s (backoff exponencial)...');
+              debugPrint(
+                '⏱️ [Bloco $block] 🔄 Retry $retry/3 - Aguardando ${retryDelay}s (backoff exponencial)...',
+              );
             }
             await Future.delayed(Duration(seconds: retryDelay));
 
@@ -388,7 +409,10 @@ class GeminiService {
             // 🆕 v7.6.141: Normaliza casing no retry
             if (added.trim().isNotEmpty) {
               final knownNames = persistentTracker.roleToNameMap.values.toSet();
-              added = PostGenerationFixer.lowercaseExceptNames(added, knownNames: knownNames);
+              added = PostGenerationFixer.lowercaseExceptNames(
+                added,
+                knownNames: knownNames,
+              );
             }
 
             if (added.trim().isNotEmpty) break;
@@ -403,7 +427,9 @@ class GeminiService {
         }
 
         // 🚀 v7.6.118: Validações de qualidade apenas para Pro (Flash é rápido)
-        final isFlashModelLoop = config.qualityMode.toLowerCase().contains('flash');
+        final isFlashModelLoop = config.qualityMode.toLowerCase().contains(
+          'flash',
+        );
         if (added.trim().isNotEmpty && acc.length > 500 && !isFlashModelLoop) {
           final result = await compute(TextUtils.isTooSimilarInIsolate, {
             'newBlock': added,
@@ -450,7 +476,10 @@ class GeminiService {
                 worldState: worldState,
               ),
             );
-            final normalizedRegen = _normalizeGeminiBlock(regenerated, blockNumber: block);
+            final normalizedRegen = _normalizeGeminiBlock(
+              regenerated,
+              blockNumber: block,
+            );
             if (normalizedRegen.trim().isNotEmpty &&
                 !ParagraphValidator.hasRepetitiveStarts(normalizedRegen)) {
               added = normalizedRegen;
@@ -477,7 +506,10 @@ class GeminiService {
                 worldState: worldState,
               ),
             );
-            final normalizedRestart = _normalizeGeminiBlock(regenerated, blockNumber: block);
+            final normalizedRestart = _normalizeGeminiBlock(
+              regenerated,
+              blockNumber: block,
+            );
             if (normalizedRestart.trim().isNotEmpty &&
                 !TextFilter.isRestartingStory(normalizedRestart, acc)) {
               added = normalizedRestart;
@@ -523,7 +555,9 @@ class GeminiService {
               .detectCharacterNameChanges(added, persistentTracker, block);
           if (protagonistChanged || characterNameChanges.isNotEmpty) {
             if (kDebugMode) {
-              debugPrint('⏱️ [Bloco $block] ⚠️ Mudança de nome detectada - Regenerando...');
+              debugPrint(
+                '⏱️ [Bloco $block] ⚠️ Mudança de nome detectada - Regenerando...',
+              );
             }
             String? regenerated;
             // 🚀 v7.6.118: Apenas 1 retry (era 3) - a maioria resolve na primeira
@@ -555,7 +589,7 @@ class GeminiService {
 
           // ⏱️ v7.6.125: Cronometrar extração de nomes
           final namesStartTime = DateTime.now();
-          
+
           // 🚀 OTIMIZAÇÃO: Extrair nomes em Isolate para textos grandes
           // 🆕 v7.6.124: Passando nomes conhecidos para lógica posicional
           List<String> allNames;
@@ -577,10 +611,12 @@ class GeminiService {
               persistentTracker.confirmedNames,
             ).toList();
           }
-          
+
           final namesDuration = DateTime.now().difference(namesStartTime);
           if (kDebugMode) {
-            debugPrint('⏱️ [Bloco $block] ✅ Extração de nomes: ${namesDuration.inMilliseconds}ms (${allNames.length} nomes)');
+            debugPrint(
+              '⏱️ [Bloco $block] ✅ Extração de nomes: ${namesDuration.inMilliseconds}ms (${allNames.length} nomes)',
+            );
           }
 
           allNames = allNames
@@ -626,14 +662,13 @@ class GeminiService {
           } else if (added.trim().isNotEmpty) {
             // 🚀 v7.6.117: OTIMIZAÇÃO - Atualizar WorldState apenas a cada 3 blocos
             // Isso reduz chamadas à API de 8 para ~3, economizando ~40-60 segundos
-            final shouldUpdateWorldState = block == 1 || 
-                block == totalBlocks || 
-                block % 3 == 0;
-            
+            final shouldUpdateWorldState =
+                block == 1 || block == totalBlocks || block % 3 == 0;
+
             if (shouldUpdateWorldState) {
               // ⏱️ v7.6.118: Cronometrar WorldState update
               final wsStartTime = DateTime.now();
-              
+
               await _worldStateManager.updateFromGeneratedBlock(
                 generatedBlock: added,
                 blockNumber: block,
@@ -641,12 +676,14 @@ class GeminiService {
                 qualityMode: config.qualityMode,
                 language: config.language,
               );
-              
+
               if (kDebugMode) {
                 final wsDuration = DateTime.now().difference(wsStartTime);
-                debugPrint('⏱️ [Bloco $block] WorldState update: ${wsDuration.inMilliseconds}ms');
+                debugPrint(
+                  '⏱️ [Bloco $block] WorldState update: ${wsDuration.inMilliseconds}ms',
+                );
               }
-              
+
               worldState.resumoAcumulado =
                   _worldStateManager.state.resumoAcumulado;
             }
@@ -656,15 +693,19 @@ class GeminiService {
         // ⏱️ v7.6.125: Log tempo total do bloco
         final blockTotalTime = DateTime.now().difference(blockStartTime);
         if (kDebugMode) {
-          debugPrint('⏱️ [Bloco $block] ⏹️ CONCLUÍDO em ${blockTotalTime.inSeconds}s (${blockTotalTime.inMilliseconds}ms)');
+          debugPrint(
+            '⏱️ [Bloco $block] ⏹️ CONCLUÍDO em ${blockTotalTime.inSeconds}s (${blockTotalTime.inMilliseconds}ms)',
+          );
           debugPrint('   📊 Palavras acumuladas: ${TextUtils.countWords(acc)}');
           debugPrint('🔵 ═══════════════════════════════════════════\n');
         }
-        
+
         if (added.trim().isEmpty) {
           int retryCount = 0;
           if (kDebugMode) {
-            debugPrint('⏱️ [Bloco $block] ⚠️ VAZIO após validações - Segundo ciclo de retries...');
+            debugPrint(
+              '⏱️ [Bloco $block] ⚠️ VAZIO após validações - Segundo ciclo de retries...',
+            );
           }
           // 🚀 v7.6.118: Delays reduzidos para 1s/2s/3s (era 2s/4s/6s)
           while (retryCount < 3 && added.trim().isEmpty) {
@@ -716,7 +757,7 @@ class GeminiService {
           "Bloco $block aceito: $blockWords palavras (total acumulado: $totalWords)",
           blockNumber: block,
         );
-        
+
         // 🆕 v7.6.123: Contador de mantras em tempo real
         _trackMantrasInBlock(added, block);
 
@@ -751,7 +792,9 @@ class GeminiService {
       );
 
       // 🚀 v7.6.117: Validação de título apenas para Pro (Flash é rápido, não precisa validar)
-      final isFlashModelFinal = config.qualityMode.toLowerCase().contains('flash');
+      final isFlashModelFinal = config.qualityMode.toLowerCase().contains(
+        'flash',
+      );
       if (config.title.trim().isNotEmpty && !isFlashModelFinal) {
         final validation = await _scriptValidator
             .validateTitleCoherenceRigorous(
@@ -829,9 +872,9 @@ class GeminiService {
     for (final pattern in mantraPatterns) {
       final regex = RegExp(pattern, caseSensitive: false);
       if (regex.hasMatch(blockText)) {
-        _mantraCounterRealTime[pattern] = 
+        _mantraCounterRealTime[pattern] =
             (_mantraCounterRealTime[pattern] ?? 0) + 1;
-        
+
         final count = _mantraCounterRealTime[pattern]!;
         if (count >= 2) {
           if (kDebugMode) {
@@ -1130,8 +1173,46 @@ class GeminiService {
       totalWords: c.quantity,
     );
 
+    // 🆕 v7.6.142: CONTADOR PROGRESSIVO - Calcular e exibir info do Ato atual
+    final currentTotalWords = TextUtils.countWords(previous);
+    final actInfo = StructureRules.getActInfo(
+      currentTotalWords: currentTotalWords,
+      targetTotalWords: c.quantity,
+    );
+
+    // 📊 Log do contador progressivo
+    if (kDebugMode) {
+      debugPrint('');
+      debugPrint(
+        '📊 ════════════════════════════════════════════════════════════',
+      );
+      debugPrint('📊 CONTADOR PROGRESSIVO - Bloco $blockNumber/$totalBlocks');
+      debugPrint(
+        '📊 ════════════════════════════════════════════════════════════',
+      );
+      debugPrint('📍 Ato: ${actInfo.actNumber} - ${actInfo.actName}');
+      debugPrint(
+        '📈 Palavras do Ato: ${actInfo.actCurrentWords}/${actInfo.actMaxWords}',
+      );
+      debugPrint('⏳ Restantes: ${actInfo.actRemainingWords} palavras');
+      debugPrint('📊 Total acumulado: $currentTotalWords palavras');
+      if (actInfo.actNumber == 2 && actInfo.actRemainingWords < 300) {
+        debugPrint('🚨 ALERTA: Ato 2 próximo do limite!');
+      }
+      if (actInfo.actNumber == 3 && actInfo.actRemainingWords > 500) {
+        debugPrint('✅ Ato 3 com espaço suficiente');
+      }
+      debugPrint(
+        '📊 ════════════════════════════════════════════════════════════',
+      );
+      debugPrint('');
+    }
+
+    // 🚨 Construir mensagem visual do contador para o prompt
+    final progressCounter = _buildProgressCounter(actInfo, isSpanish);
+
     final prompt =
-        '$perspectiveInstruction\n$worldStateContext$titleSection$compactPrompt';
+        '$perspectiveInstruction\n\n$progressCounter\n\n$worldStateContext$titleSection$compactPrompt';
 
     try {
       final languageNormalized = c.language.toLowerCase();
@@ -1144,26 +1225,28 @@ class GeminiService {
       final maxTokens = min((target * tokenMultiplier).ceil(), 50000);
 
       final selectedModel = _getSelectedModel(c.qualityMode);
-      
+
       // ⏱️ v7.6.118: CRONOMETRAGEM DA API
       final apiStartTime = DateTime.now();
       if (kDebugMode) {
         debugPrint('⏱️ [Bloco $blockNumber] Iniciando chamada API...');
         debugPrint('   📦 Prompt: ${prompt.length} chars');
       }
-      
+
       final data = await _llmClient.generateText(
         apiKey: c.apiKey,
         model: selectedModel,
         prompt: prompt,
         maxTokens: maxTokens,
       );
-      
+
       // ⏱️ Log do tempo de resposta da API
       final apiEndTime = DateTime.now();
       final apiDuration = apiEndTime.difference(apiStartTime);
       if (kDebugMode) {
-        debugPrint('⏱️ [Bloco $blockNumber] API respondeu em ${apiDuration.inMilliseconds}ms (${apiDuration.inSeconds}s)');
+        debugPrint(
+          '⏱️ [Bloco $blockNumber] API respondeu em ${apiDuration.inMilliseconds}ms (${apiDuration.inSeconds}s)',
+        );
         debugPrint('   📝 Resposta: ${data.length} chars');
       }
 
@@ -1198,7 +1281,9 @@ class GeminiService {
 
         // ⚠️ v7.6.120: Validar contagem de palavras com tolerância MUITO relaxada para Flash
         // Flash varia muito (pode gerar 500 ou 3000 palavras), então aceitamos quase tudo
-        final maxOveragePercent = isFlashModel ? 120.0 : 50.0; // Flash: até 120% acima do target
+        final maxOveragePercent = isFlashModel
+            ? 120.0
+            : 50.0; // Flash: até 120% acima do target
         final overagePercent =
             ((wordCount - adjustedTarget) / adjustedTarget) * 100;
         if (overagePercent > maxOveragePercent) {
@@ -1313,5 +1398,101 @@ class GeminiService {
     } catch (e) {
       return '';
     }
+  }
+
+  /// 🆕 v7.6.142: Constrói mensagem visual do contador progressivo
+  String _buildProgressCounter(ActInfo actInfo, bool isSpanish) {
+    final wordLabel = isSpanish ? 'PALABRA' : 'PALAVRA';
+    final wordsLabel = isSpanish ? 'PALABRAS' : 'PALAVRAS';
+    final remainingLabel = isSpanish ? 'FALTAN' : 'FALTAM';
+    final currentActLabel = isSpanish ? 'ACTO ACTUAL' : 'ATO ATUAL';
+
+    // Determinar cor/urgência com base nas palavras restantes
+    String urgency;
+    String icon;
+    if (actInfo.actNumber == 2 && actInfo.actRemainingWords < 300) {
+      // Ato 2 próximo do limite - URGÊNCIA MÁXIMA
+      urgency = '🚨🚨🚨 ATENÇÃO CRÍTICA 🚨🚨🚨';
+      icon = '🚨';
+    } else if (actInfo.actNumber == 3 && actInfo.actRemainingWords > 500) {
+      // Ato 3 com muito espaço ainda - ALERTA
+      urgency = '✅ ESPAÇO SUFICIENTE ✅';
+      icon = '✅';
+    } else {
+      urgency = '📊 PROGRESSO NORMAL 📊';
+      icon = '📊';
+    }
+
+    final buffer = StringBuffer();
+    buffer.writeln(
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    );
+    buffer.writeln('$icon CONTADOR PROGRESSIVO - $currentActLabel $icon');
+    buffer.writeln(
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    );
+    buffer.writeln('');
+    buffer.writeln('📍 ${actInfo.actName}');
+    buffer.writeln('');
+    buffer.writeln(
+      '$wordLabel ${actInfo.actCurrentWords} DE ${actInfo.actMaxWords} $wordsLabel',
+    );
+    buffer.writeln('$remainingLabel: ${actInfo.actRemainingWords} $wordsLabel');
+    buffer.writeln('');
+    buffer.writeln(urgency);
+    buffer.writeln('');
+
+    // Mensagens específicas por Ato
+    if (actInfo.actNumber == 1) {
+      buffer.writeln('⚠️ VOCÊ ESTÁ NO ATO 1 (Setup/Preparação)');
+      buffer.writeln('   • Apresente protagonista, conflito e mundo');
+      buffer.writeln(
+        '   • Quando atingir ${actInfo.actMaxWords} palavras → INICIE Ato 2',
+      );
+    } else if (actInfo.actNumber == 2) {
+      if (actInfo.actRemainingWords < 300) {
+        buffer.writeln('🚨 VOCÊ ESTÁ CHEGANDO NO LIMITE DO ATO 2! 🚨');
+        buffer.writeln(
+          '   • Faltam apenas ${actInfo.actRemainingWords} palavras!',
+        );
+        buffer.writeln('   • PREPARE o clímax e ENCERRE este Ato!');
+        buffer.writeln('   • ATO 3 precisa de MÍNIMO 35% do roteiro total!');
+        buffer.writeln(
+          '   • Se ultrapassar o limite, a história ficará INCOMPLETA!',
+        );
+      } else {
+        buffer.writeln('⚠️ VOCÊ ESTÁ NO ATO 2 (Desenvolvimento)');
+        buffer.writeln('   • Desenvolva conflitos e obstáculos');
+        buffer.writeln(
+          '   • 🛑 LIMITE MÁXIMO: ${actInfo.actMaxWords} palavras',
+        );
+        buffer.writeln('   • Quando chegar perto do limite → INICIE Ato 3');
+      }
+    } else if (actInfo.actNumber == 3) {
+      if (actInfo.actRemainingWords > 500) {
+        buffer.writeln('✅ VOCÊ ESTÁ NO ATO 3 (Resolução) - ESPAÇO SUFICIENTE');
+        buffer.writeln(
+          '   • Você tem ${actInfo.actRemainingWords} palavras restantes!',
+        );
+        buffer.writeln(
+          '   • DESENVOLVA clímax, resolução e desfecho COMPLETOS',
+        );
+        buffer.writeln(
+          '   • NÃO apresse o final - USE todo o espaço disponível!',
+        );
+      } else {
+        buffer.writeln('⚠️ VOCÊ ESTÁ NO ATO 3 (Resolução)');
+        buffer.writeln('   • Conclua com clímax + resolução + desfecho');
+        buffer.writeln('   • MÍNIMO: ${actInfo.actMaxWords} palavras');
+        buffer.writeln('   • Faltam: ${actInfo.actRemainingWords} palavras');
+      }
+    }
+
+    buffer.writeln('');
+    buffer.writeln(
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    );
+
+    return buffer.toString();
   }
 }
