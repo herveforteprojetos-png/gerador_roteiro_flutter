@@ -292,7 +292,9 @@ class CtaConfigNotifier extends StateNotifier<CtaConfig> {
       final geminiService = GeminiService();
       final scriptConfig = ref.read(scriptConfigProvider);
 
-      debugPrint('🎯 [CTA Provider] Gerando CTAs - Tipos solicitados: $ctaTypes');
+      debugPrint(
+        '🎯 [CTA Provider] Gerando CTAs - Tipos solicitados: $ctaTypes',
+      );
       debugPrint('🎯 [CTA Provider] Mapa de IDs: $ctaIdMap');
 
       // 🎯 v7.6.51: Pipeline Modelo Único - usar mesmo modelo do config

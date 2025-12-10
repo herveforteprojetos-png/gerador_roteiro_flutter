@@ -2,8 +2,76 @@
 /// Gerencia regras de 3 atos, checkpoints, fases narrativas e progressão de blocos
 library;
 
+/// Informações sobre o Ato atual
+class ActInfo {
+  final int actNumber; // 1, 2 ou 3
+  final String actName; // "ATO 1 - INÍCIO", etc
+  final int actCurrentWords; // palavras já escritas no Ato atual
+  final int actMaxWords; // máximo de palavras permitidas no Ato
+  final int actRemainingWords; // palavras restantes antes do limite
+  final bool isOverLimit; // true se ultrapassou o limite
+
+  const ActInfo({
+    required this.actNumber,
+    required this.actName,
+    required this.actCurrentWords,
+    required this.actMaxWords,
+    required this.actRemainingWords,
+    required this.isOverLimit,
+  });
+}
+
 /// Classe principal para regras de estrutura narrativa
 class StructureRules {
+  /// 🆕 v7.6.142: Calcula informações do Ato atual baseado em palavras acumuladas
+  static ActInfo getActInfo({
+    required int currentTotalWords,
+    required int targetTotalWords,
+  }) {
+    final act1Limit = (targetTotalWords * 0.25).round();
+    final act2Limit = (targetTotalWords * 0.45).round(); // MÁXIMO 45%
+
+    // Determinar em qual Ato estamos
+    if (currentTotalWords <= act1Limit) {
+      // Estamos no Ato 1
+      return ActInfo(
+        actNumber: 1,
+        actName: 'ATO 1 - INÍCIO (Setup)',
+        actCurrentWords: currentTotalWords,
+        actMaxWords: act1Limit,
+        actRemainingWords: act1Limit - currentTotalWords,
+        isOverLimit: false,
+      );
+    } else if (currentTotalWords <= act2Limit) {
+      // Estamos no Ato 2
+      final act2CurrentWords = currentTotalWords - act1Limit;
+      final act2MaxWords = act2Limit - act1Limit;
+      return ActInfo(
+        actNumber: 2,
+        actName: 'ATO 2 - MEIO (Desenvolvimento)',
+        actCurrentWords: act2CurrentWords,
+        actMaxWords: act2MaxWords,
+        actRemainingWords: act2MaxWords - act2CurrentWords,
+        isOverLimit: false,
+      );
+    } else {
+      // Estamos no Ato 3
+      final act3CurrentWords = currentTotalWords - act2Limit;
+      final act3MinWords = (targetTotalWords * 0.35).round();
+      final act3RemainingWords = act3MinWords - act3CurrentWords;
+
+      return ActInfo(
+        actNumber: 3,
+        actName: 'ATO 3 - FIM (Resolução)',
+        actCurrentWords: act3CurrentWords,
+        actMaxWords: act3MinWords, // Usar mínimo como "máximo" para Ato 3
+        actRemainingWords: act3RemainingWords,
+        isOverLimit:
+            currentTotalWords > act2Limit && act3CurrentWords < act3MinWords,
+      );
+    }
+  }
+
   /// Gera regras de estrutura de 3 atos
   static String getThreeActStructure({
     required int totalWords,

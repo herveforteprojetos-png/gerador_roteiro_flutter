@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../models/script_config.dart';
 import '../utils/character_guidance.dart';
+import '../validation/name_validator.dart';
 
 /// 📝 Classe para armazenar uma nota sobre um personagem em um bloco específico
 class CharacterNote {
@@ -149,69 +150,41 @@ class CharacterTracker {
   final Map<String, bool> _characterResolution = {};
 
   /// 🆕 v7.6.25: Retorna false se nome foi rejeitado (papel duplicado)
+  /// 🆕 v7.6.136: Usa NameValidator para evitar falsos positivos
   bool addName(String name, {String? role, int? blockNumber}) {
     if (name.isEmpty || name.length <= 2) return true; // Nome vazio não é erro
-
-    // 🆕 v7.6.30: VALIDAÇÃO DE SIMILARIDADE - Detectar variações de nomes
-    // Evita: "Arthur" vs "Arthur Evans", "John" vs "John Smith"
+    
+    // 🆕 v7.6.136: Ignorar FRASES (não são nomes de personagens)
+    // Ex: "Mas Mateus", "Com Helena", "Até César" → ignorar
+    if (NameValidator.isPhrase(name)) {
+      if (kDebugMode) {
+        debugPrint('⏭️ v7.6.136: "$name" ignorado (é frase, não nome)');
+      }
+      return true; // Não é erro, apenas ignorar
+    }
+    
+    // 🆕 v7.6.136: Ignorar nomes na WHITELIST de compostos
+    // Ex: "Futuro Brilhante", "Doutor Álvaro" → não são conflitos
     final nameLower = name.toLowerCase();
-    final nameWords = nameLower.split(' ');
-
-    for (final existingName in _confirmedNames) {
-      final existingLower = existingName.toLowerCase();
-      final existingWords = existingLower.split(' ');
-
-      // Caso 1: Nome exato (case-insensitive)
-      if (nameLower == existingLower) {
-        if (kDebugMode) {
-          final existingRole = _characterRoles[existingName] ?? 'desconhecido';
-          debugPrint(
-            '❌ v7.6.30 BLOQUEIO: "$name" já usado como "$existingRole"!',
-          );
-        }
-        return true; // Duplicata exata
+    if (NameValidator.compoundWhitelist.contains(nameLower)) {
+      if (kDebugMode) {
+        debugPrint('⏭️ v7.6.136: "$name" na whitelist de compostos');
       }
-
-      // Caso 2: Sobreposição de palavras (Arthur ⊂ Arthur Evans)
-      // "Arthur" está contido em "Arthur Evans" ou vice-versa
-      bool overlap = false;
-
-      if (nameWords.length == 1 && existingWords.length > 1) {
-        // Novo nome simples, já existe composto
-        if (existingWords.contains(nameLower)) {
-          overlap = true;
-        }
-      } else if (nameWords.length > 1 && existingWords.length == 1) {
-        // Novo nome composto, já existe simples
-        if (nameWords.contains(existingLower)) {
-          overlap = true;
-        }
-      } else if (nameWords.length > 1 && existingWords.length > 1) {
-        // Ambos compostos - verificar se compartilham palavras
-        final commonWords = nameWords.toSet().intersection(
-          existingWords.toSet(),
-        );
-        if (commonWords.isNotEmpty) {
-          overlap = true;
-        }
+      // Continuar adição normal, sem gerar conflito
+    }
+    
+    // 🆕 v7.6.136: Usar NameValidator.hasNameConflict() em vez de lógica duplicada
+    // Esta função já trata prefixos (Doutor, Senhor) e whitelist
+    if (NameValidator.hasNameConflict(name, _confirmedNames)) {
+      if (kDebugMode) {
+        debugPrint('🚨🚨🚨 v7.6.30: CONFLITO DE NOMES DETECTADO! 🚨🚨🚨');
+        debugPrint('   ❌ Nome novo: "$name"');
+        debugPrint('   ❌ Conflita com nomes existentes');
+        debugPrint('   💡 SOLUÇÃO: Use nomes COMPLETAMENTE diferentes');
+        debugPrint('   ❌ BLOQUEANDO adição de "$name"!');
+        debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
       }
-
-      if (overlap) {
-        if (kDebugMode) {
-          final existingRole = _characterRoles[existingName] ?? 'desconhecido';
-          debugPrint('🚨🚨🚨 v7.6.30: CONFLITO DE NOMES DETECTADO! 🚨🚨🚨');
-          debugPrint('   ❌ Nome novo: "$name"');
-          debugPrint(
-            '   ❌ Nome existente: "$existingName" (papel: $existingRole)',
-          );
-          debugPrint('   ⚠️ PROBLEMA: Nomes com sobreposição de palavras!');
-          debugPrint('   💡 EXEMPLO: "Arthur" conflita com "Arthur Evans"');
-          debugPrint('   💡 SOLUÇÃO: Use nomes COMPLETAMENTE diferentes');
-          debugPrint('   ❌ BLOQUEANDO adição de "$name"!');
-          debugPrint('🚨🚨🚨 FIM DO ALERTA 🚨🚨🚨');
-        }
-        return true; // Bloquear sobreposição
-      }
+      return true; // Bloquear conflito
     }
 
     // 🔒 VALIDAÇÃO CRÍTICA: Bloquear reuso de nomes

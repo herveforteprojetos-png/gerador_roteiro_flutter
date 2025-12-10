@@ -16,10 +16,7 @@ class CharacterGuidanceBuilder {
   /// Constrói o texto de guidance para personagens estabelecidos
   /// [config] - Configuração do roteiro com nomes de personagens
   /// [tracker] - Tracker com nomes confirmados ao longo da geração
-  static String buildGuidance(
-    ScriptConfig config,
-    CharacterTracker tracker,
-  ) {
+  static String buildGuidance(ScriptConfig config, CharacterTracker tracker) {
     final lines = <String>[];
     final baseNames = <String>{};
 

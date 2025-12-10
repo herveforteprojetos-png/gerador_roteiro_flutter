@@ -2,7 +2,7 @@ import '../models/field_help.dart';
 
 class HelpContent {
   // ==================== TOOLTIPS SIMPLES ====================
-  
+
   static const tooltips = {
     'narrativeStyle': FieldTooltip(
       'Define o tom e ritmo da narrativa. Combine com perspectiva adequada.',
@@ -29,13 +29,15 @@ class HelpContent {
       'Otimiza extensão para diferentes formatos de vídeo no YouTube.',
     ),
   };
-  
+
   // ==================== HELP POPUPS DETALHADOS ====================
-  
+
   static final narrativeStyleHelp = FieldHelp(
     title: '🎬 Estilo de Narração',
-    description: 'Define COMO a história é contada: o ritmo, tom e estrutura narrativa.',
-    tip: 'Para história de mulher idosa reflexiva, use "Reflexivo e Memórias" + "1ª Pessoa Idosa"',
+    description:
+        'Define COMO a história é contada: o ritmo, tom e estrutura narrativa.',
+    tip:
+        'Para história de mulher idosa reflexiva, use "Reflexivo e Memórias" + "1ª Pessoa Idosa"',
     sections: [
       HelpSection(
         emoji: '🎭',
@@ -55,9 +57,11 @@ class HelpContent {
         emoji: '🏇',
         title: 'Épico de Época',
         forWhat: 'Western 1890, guerras, aventura histórica',
-        combineWith: 'Localização com ano específico (ex: "Ano 1890, Velho Oeste")',
+        combineWith:
+            'Localização com ano específico (ex: "Ano 1890, Velho Oeste")',
         avoids: 'Anacronismos: carros, celulares, luz elétrica',
-        example: '"O sol escaldante de 1890 castigava Red Rock. Jake ajustou o revólver..."',
+        example:
+            '"O sol escaldante de 1890 castigava Red Rock. Jake ajustou o revólver..."',
       ),
       HelpSection(
         emoji: '🔍',
@@ -82,11 +86,12 @@ class HelpContent {
       ),
     ],
   );
-  
+
   static final perspectiveHelp = FieldHelp(
     title: '👁️ Perspectiva Narrativa',
     description: 'Define QUEM conta a história e como o leitor a experimenta.',
-    tip: 'Primeira pessoa cria conexão emocional. Terceira pessoa oferece visão mais ampla.',
+    tip:
+        'Primeira pessoa cria conexão emocional. Terceira pessoa oferece visão mais ampla.',
     sections: [
       HelpSection(
         emoji: '👴',
@@ -111,25 +116,29 @@ class HelpContent {
       ),
     ],
   );
-  
+
   static final genreHelp = FieldHelp(
     title: '🎬 Tipo de História',
-    description: 'Define a categoria e atmosfera específica da narrativa, influenciando elementos, vocabulário e tom.',
+    description:
+        'Define a categoria e atmosfera específica da narrativa, influenciando elementos, vocabulário e tom.',
     tip: 'Combine com temas compatíveis. Ex: Western + tema Vingança',
     sections: [
       HelpSection(
         emoji: '🤠',
         title: 'Western',
         forWhat: 'Velho Oeste, duelos, saloons, justiceiros',
-        combineWith: 'Estilo "Épico de Época" + localização com ano (1850-1900)',
-        example: '"O sol escaldante castigava Red Rock. Jake ajustou o revólver..."',
+        combineWith:
+            'Estilo "Épico de Época" + localização com ano (1850-1900)',
+        example:
+            '"O sol escaldante castigava Red Rock. Jake ajustou o revólver..."',
       ),
       HelpSection(
         emoji: '💼',
         title: 'Business',
         forWhat: 'Mundo corporativo, negócios, poder empresarial',
         combineWith: 'Tema "Poder e Corrupção" ou "Ascensão e Queda"',
-        example: '"A sala de reuniões estava tensa. O CEO sabia que alguém havia traído..."',
+        example:
+            '"A sala de reuniões estava tensa. O CEO sabia que alguém havia traído..."',
       ),
       HelpSection(
         emoji: '📖',
@@ -139,11 +148,13 @@ class HelpContent {
       ),
     ],
   );
-  
+
   static final localizationLevelHelp = FieldHelp(
     title: '🌍 Nível de Regionalismo',
-    description: 'Define se a história usa referências culturais específicas do Brasil ou mantém linguagem universal.',
-    tip: 'Use "Nacional" para histórias brasileiras com sabor local. Use "Global" para alcance internacional.',
+    description:
+        'Define se a história usa referências culturais específicas do Brasil ou mantém linguagem universal.',
+    tip:
+        'Use "Nacional" para histórias brasileiras com sabor local. Use "Global" para alcance internacional.',
     sections: [
       HelpSection(
         emoji: '🇧🇷',
@@ -161,9 +172,9 @@ class HelpContent {
       ),
     ],
   );
-  
+
   // ==================== TEMPLATES PRÉ-CONFIGURADOS ====================
-  
+
   static final templates = [
     ConfigTemplate(
       emoji: '👵',
@@ -175,9 +186,10 @@ class HelpContent {
         'tema': 'Família Disfuncional',
         'subtema': 'Segredos Familiares',
       },
-      resultPreview: '"Eu me lembro da tarde em que descobri a verdade sobre minha nora..."',
+      resultPreview:
+          '"Eu me lembro da tarde em que descobri a verdade sobre minha nora..."',
     ),
-    
+
     ConfigTemplate(
       emoji: '🤠',
       title: 'Velho Oeste 1890 - Duelo de Vingança',
@@ -191,9 +203,10 @@ class HelpContent {
         'genre': 'western',
       },
       avoids: ['Carros', 'Telefones', 'Luz elétrica', 'Linguagem moderna'],
-      resultPreview: '"O sol de 1890 castigava Red Rock. Jake ajustou o revólver..."',
+      resultPreview:
+          '"O sol de 1890 castigava Red Rock. Jake ajustou o revólver..."',
     ),
-    
+
     ConfigTemplate(
       emoji: '🔍',
       title: 'Curiosidades Históricas',
@@ -206,7 +219,7 @@ class HelpContent {
       },
       resultPreview: '"Você sabia que durante a Segunda Guerra Mundial..."',
     ),
-    
+
     ConfigTemplate(
       emoji: '⚡',
       title: 'Thriller de Vingança Moderna',
@@ -220,7 +233,7 @@ class HelpContent {
       },
       resultPreview: '"A porta explodiu. João correu. Sangue na parede."',
     ),
-    
+
     ConfigTemplate(
       emoji: '💔',
       title: 'Drama Romântico - Segunda Chance',
@@ -231,9 +244,10 @@ class HelpContent {
         'tema': 'Drama/Romance',
         'subtema': 'Segunda Chance',
       },
-      resultPreview: '"As águas do tempo lavaram as feridas, mas a cicatriz permanecia..."',
+      resultPreview:
+          '"As águas do tempo lavaram as feridas, mas a cicatriz permanecia..."',
     ),
-    
+
     ConfigTemplate(
       emoji: '🏛️',
       title: 'Biografia Histórica - Líder Revolucionário',
@@ -247,7 +261,7 @@ class HelpContent {
       },
       avoids: ['Tecnologias modernas', 'Linguagem contemporânea'],
     ),
-    
+
     ConfigTemplate(
       emoji: '🧪',
       title: 'Descoberta Científica',
@@ -258,9 +272,10 @@ class HelpContent {
         'tema': 'Ciência',
         'subtema': 'Descobertas Científicas',
       },
-      resultPreview: '"Marie Curie não sabia que aquela noite no laboratório mudaria a história..."',
+      resultPreview:
+          '"Marie Curie não sabia que aquela noite no laboratório mudaria a história..."',
     ),
-    
+
     ConfigTemplate(
       emoji: '👻',
       title: 'Terror Psicológico',
@@ -271,9 +286,10 @@ class HelpContent {
         'tema': 'Terror/Sobrenatural',
         'subtema': 'Horror Psicológico',
       },
-      resultPreview: '"Eu ouvi os passos no corredor. Mas eu estava sozinho em casa..."',
+      resultPreview:
+          '"Eu ouvi os passos no corredor. Mas eu estava sozinho em casa..."',
     ),
-    
+
     ConfigTemplate(
       emoji: '🚀',
       title: 'Ficção Científica - Viagem Espacial',
@@ -286,7 +302,7 @@ class HelpContent {
         'localizacao': 'Nave espacial, Ano 2187',
       },
     ),
-    
+
     ConfigTemplate(
       emoji: '💼',
       title: 'Ascensão Empresarial',
@@ -298,9 +314,10 @@ class HelpContent {
         'subtema': 'Império Empresarial',
         'genre': 'business',
       },
-      resultPreview: '"Eu construí esse império do zero. E não deixaria ninguém destruí-lo..."',
+      resultPreview:
+          '"Eu construí esse império do zero. E não deixaria ninguém destruí-lo..."',
     ),
-    
+
     ConfigTemplate(
       emoji: '🌍',
       title: 'Documentário de Viagem',
@@ -312,9 +329,10 @@ class HelpContent {
         'subtema': 'Destinos Exóticos',
         'localizacao': 'Tóquio, Japão',
       },
-      resultPreview: '"Cheguei em Tóquio sem saber o que esperar. O que descobri mudou minha vida..."',
+      resultPreview:
+          '"Cheguei em Tóquio sem saber o que esperar. O que descobri mudou minha vida..."',
     ),
-    
+
     ConfigTemplate(
       emoji: '⚔️',
       title: 'Épico Medieval',
@@ -327,7 +345,8 @@ class HelpContent {
         'localizacao': 'Inglaterra, Ano 1215',
       },
       avoids: ['Armas de fogo', 'Tecnologia moderna'],
-      resultPreview: '"O cavaleiro desembainhou a espada. A batalha final começaria ao amanhecer..."',
+      resultPreview:
+          '"O cavaleiro desembainhou a espada. A batalha final começaria ao amanhecer..."',
     ),
   ];
 }

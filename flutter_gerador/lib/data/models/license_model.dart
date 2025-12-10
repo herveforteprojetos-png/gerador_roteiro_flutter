@@ -54,7 +54,9 @@ class LicenseModel {
       licenseKey: json['licenseKey'],
       clientName: json['clientName'],
       createdAt: DateTime.parse(json['createdAt']),
-      expiresAt: json['expiresAt'] != null ? DateTime.parse(json['expiresAt']) : null,
+      expiresAt: json['expiresAt'] != null
+          ? DateTime.parse(json['expiresAt'])
+          : null,
       isActive: json['isActive'] ?? true,
       maxGenerations: json['maxGenerations'] ?? -1,
       usedGenerations: json['usedGenerations'] ?? 0,

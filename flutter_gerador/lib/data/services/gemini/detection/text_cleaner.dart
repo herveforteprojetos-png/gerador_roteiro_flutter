@@ -25,7 +25,10 @@ class TextCleaner {
 
   /// Filtra parágrafos duplicados de um texto em relação ao existente
   /// Versão síncrona para textos pequenos
-  static String filterDuplicateParagraphsSync(String existing, String addition) {
+  static String filterDuplicateParagraphsSync(
+    String existing,
+    String addition,
+  ) {
     if (addition.trim().isEmpty) return '';
 
     // 🚀 OTIMIZAÇÃO CRÍTICA: Comparar apenas últimos ~5000 caracteres
@@ -71,7 +74,9 @@ class TextCleaner {
       if (paragraph.isEmpty) continue;
 
       // Normalizar para comparação (ignorar espaços extras)
-      final normalized = paragraph.replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+      final normalized = paragraph
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .toLowerCase();
 
       // Verificar duplicata exata
       if (seen.contains(paragraph)) {
@@ -146,7 +151,9 @@ class TextCleaner {
       debugPrint(
         '🚨 TOTAL: $duplicateCount parágrafo(s) duplicado(s) encontrado(s) no roteiro final!',
       );
-      debugPrint('   💡 DICA: Fortaleça as instruções anti-repetição no prompt');
+      debugPrint(
+        '   💡 DICA: Fortaleça as instruções anti-repetição no prompt',
+      );
     } else {
       debugPrint(
         '✅ VERIFICAÇÃO: Nenhuma duplicação de parágrafo detectada no roteiro final',
@@ -197,7 +204,9 @@ class TextCleaner {
         .replaceAll(RegExp(r'NOTA:\s*[^\n]+\n?', caseSensitive: false), '')
         .replaceAll(RegExp(r'ATENÇÃO:\s*[^\n]+\n?', caseSensitive: false), '')
         .replaceAll(
-            RegExp(r'IMPORTANTE:\s*[^\n]+\n?', caseSensitive: false), '')
+          RegExp(r'IMPORTANTE:\s*[^\n]+\n?', caseSensitive: false),
+          '',
+        )
         .trim();
   }
 }

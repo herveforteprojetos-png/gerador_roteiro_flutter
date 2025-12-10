@@ -2,8 +2,6 @@
 // Sistema de Estilos Narrativos - Templates para diferentes tons de narração
 // Parte da arquitetura SOLID - Single Responsibility Principle
 
-library narrative_styles;
-
 import 'package:flutter_gerador/data/models/script_config.dart';
 
 /// 🎭 Classe para geração de orientações de estilo narrativo

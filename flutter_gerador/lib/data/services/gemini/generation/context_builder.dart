@@ -9,7 +9,7 @@ import 'package:flutter/foundation.dart';
 class ContextBuilder {
   /// 📦 OTIMIZAÇÃO: Limita contexto aos últimos blocos para evitar timeouts
   /// Mantém apenas os últimos N blocos + resumo inicial para continuidade
-  /// 
+  ///
   /// [countWords] é uma função para contar palavras (injetada para evitar dependência circular)
   static String buildLimitedContext(
     String fullContext,

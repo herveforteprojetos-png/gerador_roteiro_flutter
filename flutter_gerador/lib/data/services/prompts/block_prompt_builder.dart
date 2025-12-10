@@ -8,6 +8,7 @@ import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart'
 import 'package:flutter_gerador/data/services/gemini/utils/perspective_utils.dart';
 import 'package:flutter_gerador/data/services/scripting/script_prompt_builder.dart';
 import 'package:flutter_gerador/data/services/scripting/narrative_style_manager.dart';
+import 'package:flutter_gerador/data/services/prompts/structure_rules.dart';
 
 class BlockPromptBuilder {
   /// Constrói o prompt completo para um bloco de roteiro
@@ -25,6 +26,9 @@ class BlockPromptBuilder {
     // 🎯 IMPORTANTE: target vem SEMPRE em PALAVRAS
     final needed = target;
     if (needed <= 0) return '';
+
+    // 🆕 v7.6.142: Calcular palavras totais acumuladas até agora
+    final currentTotalWords = _countWords(previous);
 
     // 🚀 OTIMIZAÇÃO CRÍTICA: Limitar contexto aos últimos N blocos
     final isPortuguese = c.language.toLowerCase().contains('portugu');
@@ -156,6 +160,15 @@ class BlockPromptBuilder {
         c.language.toLowerCase().contains('espanhol') ||
         c.language.toLowerCase().contains('spanish') ||
         c.language.toLowerCase().contains('español');
+
+    // 🆕 v7.6.142: CONTADOR PROGRESSIVO - Mostrar situação do Ato atual
+    final actInfo = StructureRules.getActInfo(
+      currentTotalWords: currentTotalWords,
+      targetTotalWords: c.quantity,
+    );
+
+    // 🚨 Construir mensagem visual do contador
+    final progressCounter = _buildProgressCounter(actInfo, isSpanish);
 
     // 📏 CONTROLE RIGOROSO DE CONTAGEM: ±8% aceitável
     final minAcceptable = (adjustedTarget * 0.92).round();
@@ -367,10 +380,11 @@ class BlockPromptBuilder {
       measure: measure,
       avoidRepetition: avoidRepetition,
       labels: {},
+      totalWords: c.quantity,
     );
 
     final prompt =
-        '$perspectiveInstruction\n🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑\n\n$viralHookSection$worldStateContext$titleSection$compactPrompt';
+        '$perspectiveInstruction\n🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑\n\n$progressCounter\n\n$viralHookSection$worldStateContext$titleSection$compactPrompt';
 
     return prompt;
   }
@@ -558,6 +572,102 @@ class BlockPromptBuilder {
     if (lines.isEmpty) return '';
 
     return 'PERSONAGENS ESTABELECIDOS:\n${lines.join('\n')}\nNunca substitua esses nomes por variações ou apelidos.\n';
+  }
+
+  /// 🆕 v7.6.142: Constrói mensagem visual do contador progressivo
+  static String _buildProgressCounter(ActInfo actInfo, bool isSpanish) {
+    final wordLabel = isSpanish ? 'PALABRA' : 'PALAVRA';
+    final wordsLabel = isSpanish ? 'PALABRAS' : 'PALAVRAS';
+    final remainingLabel = isSpanish ? 'FALTAN' : 'FALTAM';
+    final currentActLabel = isSpanish ? 'ACTO ACTUAL' : 'ATO ATUAL';
+
+    // Determinar cor/urgência com base nas palavras restantes
+    String urgency;
+    String icon;
+    if (actInfo.actNumber == 2 && actInfo.actRemainingWords < 300) {
+      // Ato 2 próximo do limite - URGÊNCIA MÁXIMA
+      urgency = '🚨🚨🚨 ATENÇÃO CRÍTICA 🚨🚨🚨';
+      icon = '🚨';
+    } else if (actInfo.actNumber == 3 && actInfo.actRemainingWords > 500) {
+      // Ato 3 com muito espaço ainda - ALERTA
+      urgency = '✅ ESPAÇO SUFICIENTE ✅';
+      icon = '✅';
+    } else {
+      urgency = '📊 PROGRESSO NORMAL 📊';
+      icon = '📊';
+    }
+
+    final buffer = StringBuffer();
+    buffer.writeln(
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    );
+    buffer.writeln('$icon CONTADOR PROGRESSIVO - $currentActLabel $icon');
+    buffer.writeln(
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    );
+    buffer.writeln('');
+    buffer.writeln('📍 ${actInfo.actName}');
+    buffer.writeln('');
+    buffer.writeln(
+      '$wordLabel ${actInfo.actCurrentWords} DE ${actInfo.actMaxWords} $wordsLabel',
+    );
+    buffer.writeln('$remainingLabel: ${actInfo.actRemainingWords} $wordsLabel');
+    buffer.writeln('');
+    buffer.writeln(urgency);
+    buffer.writeln('');
+
+    // Mensagens específicas por Ato
+    if (actInfo.actNumber == 1) {
+      buffer.writeln('⚠️ VOCÊ ESTÁ NO ATO 1 (Setup/Preparação)');
+      buffer.writeln('   • Apresente protagonista, conflito e mundo');
+      buffer.writeln(
+        '   • Quando atingir ${actInfo.actMaxWords} palavras → INICIE Ato 2',
+      );
+    } else if (actInfo.actNumber == 2) {
+      if (actInfo.actRemainingWords < 300) {
+        buffer.writeln('🚨 VOCÊ ESTÁ CHEGANDO NO LIMITE DO ATO 2! 🚨');
+        buffer.writeln(
+          '   • Faltam apenas ${actInfo.actRemainingWords} palavras!',
+        );
+        buffer.writeln('   • PREPARE o clímax e ENCERRE este Ato!');
+        buffer.writeln('   • ATO 3 precisa de MÍNIMO 35% do roteiro total!');
+        buffer.writeln(
+          '   • Se ultrapassar o limite, a história ficará INCOMPLETA!',
+        );
+      } else {
+        buffer.writeln('⚠️ VOCÊ ESTÁ NO ATO 2 (Desenvolvimento)');
+        buffer.writeln('   • Desenvolva conflitos e obstáculos');
+        buffer.writeln(
+          '   • 🛑 LIMITE MÁXIMO: ${actInfo.actMaxWords} palavras',
+        );
+        buffer.writeln('   • Quando chegar perto do limite → INICIE Ato 3');
+      }
+    } else if (actInfo.actNumber == 3) {
+      if (actInfo.actRemainingWords > 500) {
+        buffer.writeln('✅ VOCÊ ESTÁ NO ATO 3 (Resolução) - ESPAÇO SUFICIENTE');
+        buffer.writeln(
+          '   • Você tem ${actInfo.actRemainingWords} palavras restantes!',
+        );
+        buffer.writeln(
+          '   • DESENVOLVA clímax, resolução e desfecho COMPLETOS',
+        );
+        buffer.writeln(
+          '   • NÃO apresse o final - USE todo o espaço disponível!',
+        );
+      } else {
+        buffer.writeln('⚠️ VOCÊ ESTÁ NO ATO 3 (Resolução)');
+        buffer.writeln('   • Conclua com clímax + resolução + desfecho');
+        buffer.writeln('   • MÍNIMO: ${actInfo.actMaxWords} palavras');
+        buffer.writeln('   • Faltam: ${actInfo.actRemainingWords} palavras');
+      }
+    }
+
+    buffer.writeln('');
+    buffer.writeln(
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    );
+
+    return buffer.toString();
   }
 
   // Cache para evitar reprocessamento em contagens frequentes

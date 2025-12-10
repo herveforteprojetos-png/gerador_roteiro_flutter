@@ -172,12 +172,16 @@ class DuplicationDetector {
 
     // Verificar sequências de 150 palavras
     for (int i = 0; i <= newWords.length - minSequenceWords; i++) {
-      final newSequence =
-          newWords.sublist(i, i + minSequenceWords).join(' ').toLowerCase();
+      final newSequence = newWords
+          .sublist(i, i + minSequenceWords)
+          .join(' ')
+          .toLowerCase();
 
       for (int j = 0; j <= prevWords.length - minSequenceWords; j++) {
-        final prevSequence =
-            prevWords.sublist(j, j + minSequenceWords).join(' ').toLowerCase();
+        final prevSequence = prevWords
+            .sublist(j, j + minSequenceWords)
+            .join(' ')
+            .toLowerCase();
 
         if (newSequence == prevSequence) {
           if (kDebugMode) {
@@ -197,10 +201,14 @@ class DuplicationDetector {
     if (text1.isEmpty || text2.isEmpty) return 0.0;
 
     // Normalizar textos
-    final normalized1 =
-        text1.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
-    final normalized2 =
-        text2.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
+    final normalized1 = text1.toLowerCase().trim().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
+    final normalized2 = text2.toLowerCase().trim().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
 
     if (normalized1 == normalized2) return 1.0;
 
@@ -236,8 +244,9 @@ class DuplicationDetector {
     if (addition.trim().isEmpty) return '';
 
     // Comparar apenas últimos ~5000 caracteres
-    final recentText =
-        existing.length > 5000 ? existing.substring(existing.length - 5000) : existing;
+    final recentText = existing.length > 5000
+        ? existing.substring(existing.length - 5000)
+        : existing;
 
     final existingSet = recentText
         .split(RegExp(r'\n{2,}'))

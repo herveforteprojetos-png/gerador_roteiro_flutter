@@ -14,11 +14,12 @@ class GenerationProgressView extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<GenerationProgressView> createState() => _GenerationProgressViewState();
+  ConsumerState<GenerationProgressView> createState() =>
+      _GenerationProgressViewState();
 }
 
-class _GenerationProgressViewState extends ConsumerState<GenerationProgressView> {
-  
+class _GenerationProgressViewState
+    extends ConsumerState<GenerationProgressView> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -42,24 +43,24 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Informações de progresso
                 _buildProgressInfo(),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Barra horizontal de progresso
                 _buildHorizontalProgressBar(),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Console detalhado
                 _buildDetailedConsole(),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Botão cancelar
                 _buildCancelButton(),
               ],
@@ -92,12 +93,15 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Informações detalhadas
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildInfoCard('Bloco', '${widget.progress.currentBlock}/${widget.progress.totalBlocks}'),
+              _buildInfoCard(
+                'Bloco',
+                '${widget.progress.currentBlock}/${widget.progress.totalBlocks}',
+              ),
               _buildInfoCard('Fase', widget.progress.currentPhase),
               _buildInfoCard('Palavras', '${widget.progress.wordsGenerated}'),
             ],
@@ -119,13 +123,7 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 12,
-          ),
-        ),
+        Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
       ],
     );
   }
@@ -157,9 +155,9 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
             ),
           ],
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         // Barra de progresso
         Container(
           width: double.infinity,
@@ -184,20 +182,22 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
             ),
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Indicadores de bloco
         Row(
           children: [
             for (int i = 1; i <= widget.progress.totalBlocks; i++)
               Expanded(
                 child: Container(
-                  margin: EdgeInsets.only(right: i < widget.progress.totalBlocks ? 4 : 0),
+                  margin: EdgeInsets.only(
+                    right: i < widget.progress.totalBlocks ? 4 : 0,
+                  ),
                   height: 4,
                   decoration: BoxDecoration(
-                    color: i <= widget.progress.currentBlock 
-                        ? AppColors.fireOrange 
+                    color: i <= widget.progress.currentBlock
+                        ? AppColors.fireOrange
                         : Colors.grey[700],
                     borderRadius: BorderRadius.circular(2),
                   ),
@@ -234,11 +234,7 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.terminal,
-                  color: AppColors.fireOrange,
-                  size: 14,
-                ),
+                Icon(Icons.terminal, color: AppColors.fireOrange, size: 14),
                 const SizedBox(width: 6),
                 Text(
                   'Console de Geração',
@@ -260,7 +256,7 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
               ],
             ),
           ),
-          
+
           // Content do console
           Expanded(
             child: Container(
@@ -269,13 +265,11 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
                 children: [
                   // Status atual compacto
                   _buildCurrentStatus(),
-                  
+
                   const SizedBox(height: 6),
-                  
+
                   // Logs scrolláveis
-                  Expanded(
-                    child: _buildScrollableLogs(),
-                  ),
+                  Expanded(child: _buildScrollableLogs()),
                 ],
               ),
             ),
@@ -296,11 +290,7 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.autorenew,
-            color: AppColors.fireOrange,
-            size: 12,
-          ),
+          Icon(Icons.autorenew, color: AppColors.fireOrange, size: 12),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -355,31 +345,37 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
 
   List<String> _getDetailedLogs() {
     List<String> detailedLogs = [];
-    
+
     // Adicionar logs de sistema
     detailedLogs.add('🚀 Sistema de geração iniciado');
-    detailedLogs.add('🔧 Configuração carregada: ${widget.progress.totalBlocks} blocos planejados');
-    
+    detailedLogs.add(
+      '🔧 Configuração carregada: ${widget.progress.totalBlocks} blocos planejados',
+    );
+
     // Adicionar logs baseados no progresso atual
     for (int i = 1; i <= widget.progress.currentBlock; i++) {
       if (i < widget.progress.currentBlock) {
-        detailedLogs.add('✅ Bloco $i/${{widget.progress.totalBlocks}} concluído');
+        detailedLogs.add(
+          '✅ Bloco $i/${{widget.progress.totalBlocks}} concluído',
+        );
       } else {
-        detailedLogs.add('⚡ Gerando bloco $i/${widget.progress.totalBlocks}...');
+        detailedLogs.add(
+          '⚡ Gerando bloco $i/${widget.progress.totalBlocks}...',
+        );
       }
     }
-    
+
     // Adicionar logs originais do progress
     for (String log in widget.progress.logs) {
       detailedLogs.add('📋 $log');
     }
-    
+
     // Adicionar informações de restante
     int remaining = widget.progress.totalBlocks - widget.progress.currentBlock;
     if (remaining > 0) {
       detailedLogs.add('📈 Restam $remaining blocos para conclusão');
     }
-    
+
     return detailedLogs;
   }
 
@@ -391,9 +387,7 @@ class _GenerationProgressViewState extends ConsumerState<GenerationProgressView>
         backgroundColor: Colors.red[600],
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),
       child: const Text('Cancelar'),
     );

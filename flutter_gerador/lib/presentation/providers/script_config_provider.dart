@@ -5,7 +5,8 @@ import 'package:flutter_gerador/data/models/localization_level.dart';
 
 class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
   ScriptConfigNotifier()
-      : super(ScriptConfig(
+    : super(
+        ScriptConfig(
           apiKey: '',
           model: 'gemini-2.5-pro',
           title: '',
@@ -20,18 +21,26 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
           startWithTitlePhrase: false, // NOVO: Default false
           protagonistName: '',
           secondaryCharacterName: '',
-        ));
+        ),
+      );
 
   // ?? FUN��O PARA DETECTAR IDIOMAS PROBLEM�TICOS
   String _getOptimalModelForLanguage(String language, String currentModel) {
     // Idiomas do leste europeu que t�m problemas com filtros de conte�do do Pro
-    const problematicLanguages = ['B�lgaro', 'Polon�s', 'Croata', 'Romeno', 'Turco', 'Russo'];
-    
+    const problematicLanguages = [
+      'B�lgaro',
+      'Polon�s',
+      'Croata',
+      'Romeno',
+      'Turco',
+      'Russo',
+    ];
+
     if (problematicLanguages.contains(language)) {
       // CORRE��O: Sempre usar 2.5 Pro para qualidade m�xima
       return 'gemini-2.5-pro'; // �NICO MODELO DISPON�VEL: Pro 2.5
     }
-    
+
     // Para outros idiomas, manter o modelo escolhido pelo usu�rio
     return currentModel;
   }
@@ -61,10 +70,12 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
     // ?? VERIFICA��O: Sempre usar Pro 2.5 para qualidade m�xima
     final finalModel = _getOptimalModelForLanguage(state.language, value);
     state = state.copyWith(model: finalModel);
-    
+
     // ?? AVISO se modelo foi sobrescrito
     if (finalModel != value) {
-      debugPrint('?? ScriptConfig: Modelo $value n�o compat�vel com idioma ${state.language} - usando $finalModel');
+      debugPrint(
+        '?? ScriptConfig: Modelo $value n�o compat�vel com idioma ${state.language} - usando $finalModel',
+      );
     }
   }
 
@@ -98,14 +109,18 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
     state = state.copyWith(language: value, model: optimalModel);
 
     if (optimalModel != previousModel) {
-      debugPrint('?? ScriptConfig: Idioma $value detectado - modelo mudado automaticamente para $optimalModel');
+      debugPrint(
+        '?? ScriptConfig: Idioma $value detectado - modelo mudado automaticamente para $optimalModel',
+      );
     }
   }
 
   void updateQualityMode(String mode) {
     // Atualizar qualityMode que ser� usado pelo gemini_service
     state = state.copyWith(qualityMode: mode);
-    debugPrint('?? ScriptConfig: Modelo alterado para ${mode == "pro" ? "2.5-PRO (Qualidade M�xima)" : "2.5-FLASH (4x Mais R�pido)"}');
+    debugPrint(
+      '?? ScriptConfig: Modelo alterado para ${mode == "pro" ? "2.5-PRO (Qualidade M�xima)" : "2.5-FLASH (4x Mais R�pido)"}',
+    );
   }
 
   void updatePerspective(String value) {
@@ -113,9 +128,7 @@ class ScriptConfigNotifier extends StateNotifier<ScriptConfig> {
   }
 }
 
-final scriptConfigProvider = StateNotifierProvider<ScriptConfigNotifier, ScriptConfig>((ref) {
-  return ScriptConfigNotifier();
-});
-
-
-
+final scriptConfigProvider =
+    StateNotifierProvider<ScriptConfigNotifier, ScriptConfig>((ref) {
+      return ScriptConfigNotifier();
+    });

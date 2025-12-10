@@ -529,14 +529,49 @@ class RolePatterns {
   /// 🔧 v7.6.74: Papéis familiares que NÃO devem ser normalizados
   /// Permite múltiplas famílias na mesma história sem falsos positivos
   static const familyRoles = [
-    'mãe', 'pai', 'filho', 'filha', 'irmão', 'irmã',
-    'avô', 'avó', 'tio', 'tia', 'primo', 'prima',
-    'sogro', 'sogra', 'cunhado', 'cunhada',
-    'mother', 'father', 'son', 'daughter', 'brother', 'sister',
-    'grandfather', 'grandmother', 'uncle', 'aunt', 'cousin',
-    'father-in-law', 'mother-in-law', 'brother-in-law', 'sister-in-law',
-    'mère', 'père', 'fils', 'fille', 'frère', 'sœur',
-    'grand-père', 'grand-mère', 'oncle', 'tante', 'cousin', 'cousine',
+    'mãe',
+    'pai',
+    'filho',
+    'filha',
+    'irmão',
+    'irmã',
+    'avô',
+    'avó',
+    'tio',
+    'tia',
+    'primo',
+    'prima',
+    'sogro',
+    'sogra',
+    'cunhado',
+    'cunhada',
+    'mother',
+    'father',
+    'son',
+    'daughter',
+    'brother',
+    'sister',
+    'grandfather',
+    'grandmother',
+    'uncle',
+    'aunt',
+    'cousin',
+    'father-in-law',
+    'mother-in-law',
+    'brother-in-law',
+    'sister-in-law',
+    'mère',
+    'père',
+    'fils',
+    'fille',
+    'frère',
+    'sœur',
+    'grand-père',
+    'grand-mère',
+    'oncle',
+    'tante',
+    'cousin',
+    'cousine',
   ];
 
   /// 🔧 v7.6.74: Normaliza papel SELETIVAMENTE (evita falsos positivos)
@@ -562,7 +597,12 @@ class RolePatterns {
 
     // 🔄 PAPÉIS GENÉRICOS: Normalizar (remover sufixo "de [Nome]")
     final normalized = roleLower
-        .replaceAll(RegExp(r'\s+de\s+[A-ZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝŸa-zàáâãäåçèéêëìíîïñòóôõöùúûüýÿ]+.*$'), '')
+        .replaceAll(
+          RegExp(
+            r'\s+de\s+[A-ZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝŸa-zàáâãäåçèéêëìíîïñòóôõöùúûüýÿ]+.*$',
+          ),
+          '',
+        )
         .trim();
 
     return normalized;

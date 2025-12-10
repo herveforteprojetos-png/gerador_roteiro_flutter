@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter_gerador/presentation/providers/cta_config_provider.dart';
 import 'package:flutter_gerador/presentation/providers/generation_config_provider.dart';
 import 'package:flutter_gerador/data/utils/cta_inserter.dart';
+import 'package:flutter_gerador/data/services/gemini/validation/name_validator.dart';
 
 class ScriptGenerationState {
   final bool isGenerating;
@@ -40,26 +41,29 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
     super.dispose();
   }
 
-  // 🚀 OTIMIZAÇÃO CRÍTICA: Método para atualizar progresso com debounce aumentado
+  // 🚀 OTIMIZAÇÃO ULTRA-AGRESSIVA: Debounce massivo para eliminar lags
   void _updateProgressDebounced(GenerationProgress progress) {
     _pendingProgress = progress;
 
     // Cancelar timer anterior se existir
     _debounceTimer?.cancel();
 
-    // 🔥 DEBOUNCE SUPER AGRESSIVO para máxima performance
-    // 0-30%: 1500ms (início moderado)
-    // 30-50%: 3000ms (contexto crescendo)
-    // 50-70%: 5000ms (contexto grande, operações pesadas)
-    // 70-100%: 8000ms (máximo overhead, mínimas atualizações)
+    // 🔥 DEBOUNCE ULTRA-AGRESSIVO: MÍNIMAS atualizações de UI
+    // Início (0-20%): 2000ms - estabelecendo baseline
+    // Crescimento (20-40%): 4000ms - contexto crescendo
+    // Meio (40-60%): 6000ms - operações pesadas
+    // Avançado (60-80%): 8000ms - máximo overhead
+    // Final (80-100%): 10000ms - quase sem atualizações
     final percentage = progress.percentage;
-    final debounceMs = percentage < 0.3
-        ? 1500
-        : percentage < 0.5
-        ? 3000
-        : percentage < 0.7
-        ? 5000
-        : 8000;
+    final debounceMs = percentage < 0.2
+        ? 2000
+        : percentage < 0.4
+        ? 4000
+        : percentage < 0.6
+        ? 6000
+        : percentage < 0.8
+        ? 8000
+        : 10000;
 
     _debounceTimer = Timer(Duration(milliseconds: debounceMs), () {
       if (_pendingProgress != null && !_cancelRequested) {
@@ -90,6 +94,9 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
     // CORREÇÃO: Reset completo de estado antes de nova geração
     _cancelRequested = false;
     geminiService.resetState(); // Reset do estado interno do service
+    
+    // 🔥 v7.6.128: Limpar cache de validações de nomes
+    NameValidator.clearCache();
 
     // Limpar resultado anterior e definir estado inicial
     state = ScriptGenerationState(
@@ -220,7 +227,7 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
   void cancelGeneration() {
     if (kDebugMode) debugPrint('Cancelling generation...');
     _cancelRequested = true;
-    geminiService.cancel(); // Chamar cancelamento no serviço
+    geminiService.cancelGeneration(); // Chamar cancelamento no serviço
     state = ScriptGenerationState(isGenerating: false);
   }
 

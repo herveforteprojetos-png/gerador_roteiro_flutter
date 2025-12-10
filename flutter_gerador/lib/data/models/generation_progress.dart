@@ -9,7 +9,7 @@ class GenerationProgress {
   final Duration? estimatedTimeRemaining;
   final List<String> logs;
   final int wordsGenerated;
-  
+
   // Campos legados para compatibilidade
   final int progress;
   final int generatedBlocks;

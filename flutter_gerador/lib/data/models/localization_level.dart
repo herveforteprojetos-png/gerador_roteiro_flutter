@@ -2,11 +2,11 @@ enum LocalizationLevel {
   /// Conteúdo globalizado - evita gírias e referências específicas de localidade
   /// Ideal para tradução e públicos internacionais
   global,
-  
+
   /// Conteúdo nacional - usa referências do país mas evita regionalismos extremos
   /// Bom para todo o território brasileiro
   national,
-  
+
   /// Conteúdo regional - inclui gírias e referências locais específicas
   /// Melhor engajamento com público da região específica
   regional;

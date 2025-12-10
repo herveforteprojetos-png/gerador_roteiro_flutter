@@ -8,7 +8,10 @@ class ScriptRepository {
 
   ScriptRepository(this.geminiService);
 
-  Future<ScriptResult> generateScript(ScriptConfig config, Function(GenerationProgress) onProgress) async {
+  Future<ScriptResult> generateScript(
+    ScriptConfig config,
+    Function(GenerationProgress) onProgress,
+  ) async {
     // Chama o serviço Gemini e retorna o resultado
     return await geminiService.generateScript(config, onProgress);
   }

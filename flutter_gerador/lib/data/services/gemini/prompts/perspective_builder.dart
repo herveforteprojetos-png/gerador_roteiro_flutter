@@ -2,8 +2,6 @@
 // Sistema de Perspectiva Narrativa e Multiplicadores de Idioma
 // Parte da arquitetura SOLID - Single Responsibility Principle
 
-library perspective_builder;
-
 import 'package:flutter_gerador/data/models/script_config.dart';
 
 /// 🎭 Classe para geração de instruções de perspectiva e ajustes de idioma

@@ -25,4 +25,3 @@ export '../prompts/structure_rules.dart';
 export '../prompts/youtube_rules.dart';
 export '../prompts/character_rules.dart'
     hide CharacterNote, CharacterHistory, CharacterTracker;
-

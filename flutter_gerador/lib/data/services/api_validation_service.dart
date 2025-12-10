@@ -16,7 +16,8 @@ class ApiValidationService {
     if (!apiKey.startsWith('AIza') || apiKey.length != 39) {
       return ApiValidationResult(
         isValid: false,
-        errorMessage: 'Formato inválido (deve começar com "AIza" e ter 39 caracteres)',
+        errorMessage:
+            'Formato inválido (deve começar com "AIza" e ter 39 caracteres)',
         errorType: ApiErrorType.invalidFormat,
       );
     }
@@ -25,19 +26,19 @@ class ApiValidationService {
       // Teste real da API com uma requisição simples - tenta v1beta primeiro, depois v1
       final client = HttpClient();
       HttpClientResponse? response;
-      
+
       // Lista de endpoints para testar em ordem de preferência
       final endpoints = [
         'https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey',
-        'https://generativelanguage.googleapis.com/v1/models?key=$apiKey', 
+        'https://generativelanguage.googleapis.com/v1/models?key=$apiKey',
       ];
-      
+
       Exception? lastError;
       for (final endpoint in endpoints) {
         try {
           final request = await client.getUrl(Uri.parse(endpoint));
           request.headers.set('Content-Type', 'application/json');
-          
+
           response = await request.close();
           if (response.statusCode == 200) {
             break; // Endpoint funcionou, sair do loop
@@ -47,12 +48,12 @@ class ApiValidationService {
           continue; // Tentar próximo endpoint
         }
       }
-      
+
       if (response == null || response.statusCode != 200) {
         throw lastError ?? Exception('Todos os endpoints falharam');
       }
       final responseBody = await response.transform(utf8.decoder).join();
-      
+
       client.close();
 
       if (response.statusCode == 200) {
@@ -65,8 +66,9 @@ class ApiValidationService {
       } else if (response.statusCode == 400) {
         // Chave inválida
         final responseData = json.decode(responseBody);
-        final errorMessage = responseData['error']?['message'] ?? 'Chave da API inválida';
-        
+        final errorMessage =
+            responseData['error']?['message'] ?? 'Chave da API inválida';
+
         return ApiValidationResult(
           isValid: false,
           errorMessage: 'Chave inválida: $errorMessage',
@@ -120,8 +122,8 @@ enum ApiErrorType {
 }
 
 enum ValidationState {
-  initial,     // Estado inicial, sem validação
-  validating,  // Validando a chave
-  valid,       // Chave válida
-  invalid,     // Chave inválida
+  initial, // Estado inicial, sem validação
+  validating, // Validando a chave
+  valid, // Chave válida
+  invalid, // Chave inválida
 }

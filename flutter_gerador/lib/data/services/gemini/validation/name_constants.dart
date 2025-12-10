@@ -2,8 +2,6 @@
 // Constantes de nomes e stopwords para validação de personagens
 // Parte da arquitetura SOLID - Single Responsibility Principle
 
-library name_constants;
-
 /// 🔤 Constantes para validação de nomes de personagens
 class NameConstants {
   NameConstants._(); // Previne instanciação

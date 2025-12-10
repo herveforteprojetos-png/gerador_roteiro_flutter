@@ -50,8 +50,12 @@ class WorkspaceConfig {
       workspaceName: json['workspaceName'] ?? '',
       apiKey: json['apiKey'],
       modelName: json['modelName'],
-      additionalSettings: Map<String, dynamic>.from(json['additionalSettings'] ?? {}),
-      lastUpdated: DateTime.parse(json['lastUpdated'] ?? DateTime.now().toIso8601String()),
+      additionalSettings: Map<String, dynamic>.from(
+        json['additionalSettings'] ?? {},
+      ),
+      lastUpdated: DateTime.parse(
+        json['lastUpdated'] ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 

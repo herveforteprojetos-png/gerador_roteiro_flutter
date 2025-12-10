@@ -12,7 +12,8 @@ class LoginPage extends ConsumerStatefulWidget {
   ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateMixin {
+class _LoginPageState extends ConsumerState<LoginPage>
+    with TickerProviderStateMixin {
   final TextEditingController _licenseController = TextEditingController();
   final FocusNode _licenseFocus = FocusNode();
   late AnimationController _animationController;
@@ -26,23 +27,22 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    ));
-    
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.3, 1.0, curve: Curves.easeOutBack),
-    ));
-    
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: const Interval(0.3, 1.0, curve: Curves.easeOutBack),
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -57,15 +57,18 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
   void _formatLicenseInput(String value) {
     // Remove todos os caracteres que não são letras ou números
     final cleanValue = value.replaceAll(RegExp(r'[^A-F0-9]'), '');
-    
+
     if (cleanValue.length <= 16) {
       // Adiciona hífens a cada 4 caracteres
       String formattedValue = '';
       for (int i = 0; i < cleanValue.length; i += 4) {
         if (i > 0) formattedValue += '-';
-        formattedValue += cleanValue.substring(i, (i + 4 > cleanValue.length) ? cleanValue.length : i + 4);
+        formattedValue += cleanValue.substring(
+          i,
+          (i + 4 > cleanValue.length) ? cleanValue.length : i + 4,
+        );
       }
-      
+
       if (formattedValue != _licenseController.text) {
         _licenseController.value = TextEditingValue(
           text: formattedValue,
@@ -85,7 +88,7 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    
+
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
       body: Container(
@@ -139,9 +142,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
                             color: Colors.white,
                           ),
                         ),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Título
                         Text(
                           'Gerador de Roteiros IA',
@@ -158,9 +161,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        
+
                         const SizedBox(height: 8),
-                        
+
                         Text(
                           'Criado por @guidarkyoutube',
                           style: TextStyle(
@@ -170,9 +173,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        
+
                         const SizedBox(height: 48),
-                        
+
                         // Campo de licença
                         Container(
                           decoration: BoxDecoration(
@@ -199,7 +202,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
                             textAlign: TextAlign.center,
                             textCapitalization: TextCapitalization.characters,
                             inputFormatters: [
-                              LengthLimitingTextInputFormatter(19), // XXXX-XXXX-XXXX-XXXX
+                              LengthLimitingTextInputFormatter(
+                                19,
+                              ), // XXXX-XXXX-XXXX-XXXX
                             ],
                             decoration: InputDecoration(
                               hintText: 'XXXX-XXXX-XXXX-XXXX',
@@ -233,15 +238,17 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Botão de login
                         SizedBox(
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: authState is LoadingState ? null : _handleLogin,
+                            onPressed: authState is LoadingState
+                                ? null
+                                : _handleLogin,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.fireOrange,
                               foregroundColor: Colors.white,
@@ -270,9 +277,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
                                   ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Mensagem de erro
                         if (authState is ErrorState)
                           Container(
@@ -302,9 +309,9 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
                               ],
                             ),
                           ),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Informações de demonstração
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -336,7 +343,8 @@ class _LoginPageState extends ConsumerState<LoginPage> with TickerProviderStateM
                               const SizedBox(height: 8),
                               GestureDetector(
                                 onTap: () {
-                                  _licenseController.text = 'DEMO-DEMO-DEMO-DEMO';
+                                  _licenseController.text =
+                                      'DEMO-DEMO-DEMO-DEMO';
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(

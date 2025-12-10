@@ -10,7 +10,7 @@ class FieldHelp {
   final String description;
   final List<HelpSection> sections;
   final String? tip;
-  
+
   const FieldHelp({
     required this.title,
     required this.description,
@@ -27,7 +27,7 @@ class HelpSection {
   final String? combineWith;
   final String? example;
   final String? avoids;
-  
+
   const HelpSection({
     required this.emoji,
     required this.title,
@@ -46,7 +46,7 @@ class ConfigTemplate {
   final Map<String, dynamic> config;
   final String? resultPreview;
   final List<String>? avoids;
-  
+
   const ConfigTemplate({
     required this.emoji,
     required this.title,

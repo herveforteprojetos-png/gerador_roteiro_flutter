@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart';
 /// Parte da refatoração SOLID do GeminiService v7.6.66
 class RateLimiter {
   final String instanceId;
-  
+
   // Circuit breaker
   bool _isCircuitOpen = false;
   int _failureCount = 0;
@@ -33,20 +33,16 @@ class RateLimiter {
   Timer? _watchdogTimer;
   bool _isOperationRunning = false;
   static const Duration _maxOperationTime = Duration(minutes: 60);
-  bool _isCancelled = false;
 
   // Adaptive delay
   DateTime? _lastSuccessfulCall;
   int _consecutive503Errors = 0;
   int _consecutiveSuccesses = 0;
 
+  /// Flag para indicar se a operação foi cancelada
+  bool isCancelled = false;
+
   RateLimiter({required this.instanceId});
-
-  /// Getter para verificar se está cancelado
-  bool get isCancelled => _isCancelled;
-
-  /// Setter para cancelar operação
-  set isCancelled(bool value) => _isCancelled = value;
 
   /// Reset do circuit breaker
   void resetCircuit() {
@@ -87,13 +83,13 @@ class RateLimiter {
     }
 
     _watchdogTimer = Timer(_maxOperationTime, () {
-      if (_isOperationRunning && !_isCancelled) {
+      if (_isOperationRunning && !isCancelled) {
         if (kDebugMode) {
           debugPrint(
             '[$instanceId] Watchdog timeout - cancelando operação após ${_maxOperationTime.inMinutes} min',
           );
         }
-        _isCancelled = true;
+        isCancelled = true;
         onTimeout?.call();
       }
     });
@@ -101,7 +97,7 @@ class RateLimiter {
 
   /// Reseta watchdog (para operações longas em progresso)
   void resetWatchdog({void Function()? onTimeout}) {
-    if (_isOperationRunning && !_isCancelled) {
+    if (_isOperationRunning && !isCancelled) {
       startWatchdog(onTimeout: onTimeout);
       if (kDebugMode) {
         debugPrint('[$instanceId] Watchdog resetado - operação ativa');
@@ -257,28 +253,28 @@ class RateLimiter {
   }) async {
     for (var attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        if (_isCancelled) {
+        if (isCancelled) {
           throw Exception('Operação cancelada');
         }
 
         await ensureRateLimit();
 
-        if (_isCancelled) {
+        if (isCancelled) {
           throw Exception('Operação cancelada');
         }
 
         return await operation();
       } catch (e) {
-        if (_isCancelled) {
+        if (isCancelled) {
           throw Exception('Operação cancelada');
         }
 
-        final errorStr = e.toString().toLowerCase();
+        String errorMsg = e.toString().toLowerCase();
 
         // Erro 503 (servidor indisponível)
-        if (errorStr.contains('503') ||
-            errorStr.contains('server error') ||
-            errorStr.contains('service unavailable')) {
+        if (errorMsg.contains('503') ||
+            errorMsg.contains('server error') ||
+            errorMsg.contains('service unavailable')) {
           recordApi503Error();
 
           if (attempt < maxRetries - 1) {
@@ -302,7 +298,7 @@ class RateLimiter {
         }
 
         // Erro 429 (rate limit)
-        if (errorStr.contains('429') && attempt < maxRetries - 1) {
+        if (errorMsg.contains('429') && attempt < maxRetries - 1) {
           final delay = Duration(seconds: (attempt + 1) * 5);
           if (kDebugMode) {
             debugPrint(
@@ -314,7 +310,7 @@ class RateLimiter {
         }
 
         // Timeout/Connection
-        if ((errorStr.contains('timeout') || errorStr.contains('connection')) &&
+        if ((errorMsg.contains('timeout') || errorMsg.contains('connection')) &&
             attempt < maxRetries - 1) {
           final delay = const Duration(seconds: 1);
           if (kDebugMode) {

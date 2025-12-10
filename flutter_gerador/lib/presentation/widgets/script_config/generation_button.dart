@@ -40,7 +40,10 @@ class GenerationButton extends StatelessWidget {
                   Text(AppStrings.generating),
                 ],
               )
-            : const Text(AppStrings.generateButton, style: TextStyle(fontSize: 16)),
+            : const Text(
+                AppStrings.generateButton,
+                style: TextStyle(fontSize: 16),
+              ),
       ),
     );
   }

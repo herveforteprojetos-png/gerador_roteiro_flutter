@@ -8,9 +8,9 @@ class SrtGeneratorDialog extends StatefulWidget {
   final Function(String) onGenerateSrt;
 
   const SrtGeneratorDialog({
-    super.key, 
-    required this.scriptController, 
-    required this.onGenerateSrt
+    super.key,
+    required this.scriptController,
+    required this.onGenerateSrt,
   });
 
   @override
@@ -34,7 +34,10 @@ class _SrtGeneratorDialogState extends State<SrtGeneratorDialog> {
         children: [
           Icon(Icons.subtitles, color: AppColors.fireOrange),
           const SizedBox(width: 8),
-          const Text('Configurações SRT', style: TextStyle(color: Colors.white)),
+          const Text(
+            'Configurações SRT',
+            style: TextStyle(color: Colors.white),
+          ),
         ],
       ),
       content: SizedBox(
@@ -47,62 +50,69 @@ class _SrtGeneratorDialogState extends State<SrtGeneratorDialog> {
               _buildConfigSlider(
                 'Velocidade de Fala (palavras/min)',
                 wordsPerMinute.toDouble(),
-                100, 300,
+                100,
+                300,
                 (value) => setState(() => wordsPerMinute = value.round()),
                 '$wordsPerMinute ppm',
               ),
               const SizedBox(height: 16),
-              
+
               // Caracteres por legenda
               _buildConfigSlider(
                 'Máximo de Caracteres por Legenda',
                 maxCharactersPerSubtitle.toDouble(),
-                40, 120,
-                (value) => setState(() => maxCharactersPerSubtitle = value.round()),
+                40,
+                120,
+                (value) =>
+                    setState(() => maxCharactersPerSubtitle = value.round()),
                 '$maxCharactersPerSubtitle chars',
               ),
               const SizedBox(height: 16),
-              
+
               // Linhas por legenda
               _buildConfigSlider(
                 'Máximo de Linhas por Legenda',
                 maxLinesPerSubtitle.toDouble(),
-                1, 3,
+                1,
+                3,
                 (value) => setState(() => maxLinesPerSubtitle = value.round()),
                 '$maxLinesPerSubtitle linhas',
               ),
               const SizedBox(height: 16),
-              
+
               // Tempo mínimo de exibição
               _buildConfigSlider(
                 'Tempo Mínimo de Exibição (seg)',
                 minDisplayTime,
-                0.5, 5.0,
+                0.5,
+                5.0,
                 (value) => setState(() => minDisplayTime = value),
                 '${minDisplayTime.toStringAsFixed(1)}s',
               ),
               const SizedBox(height: 16),
-              
+
               // Tempo máximo de exibição
               _buildConfigSlider(
                 'Tempo Máximo de Exibição (seg)',
                 maxDisplayTime,
-                3.0, 15.0,
+                3.0,
+                15.0,
                 (value) => setState(() => maxDisplayTime = value),
                 '${maxDisplayTime.toStringAsFixed(1)}s',
               ),
               const SizedBox(height: 16),
-              
+
               // Intervalo entre legendas
               _buildConfigSlider(
                 'Intervalo Entre Legendas (seg)',
                 gapBetweenSubtitles,
-                0.0, 2.0,
+                0.0,
+                2.0,
                 (value) => setState(() => gapBetweenSubtitles = value),
                 '${gapBetweenSubtitles.toStringAsFixed(1)}s',
               ),
               const SizedBox(height: 24),
-              
+
               // Preview das configurações
               Container(
                 padding: const EdgeInsets.all(12),
@@ -161,13 +171,13 @@ class _SrtGeneratorDialogState extends State<SrtGeneratorDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.fireOrange,
           ),
-          child: isGenerating 
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Text('Gerar SRT'),
+          child: isGenerating
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Gerar SRT'),
         ),
       ],
     );
@@ -245,9 +255,9 @@ class _SrtGeneratorDialogState extends State<SrtGeneratorDialog> {
       widget.onGenerateSrt(srtContent);
       Navigator.of(context).pop();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao gerar SRT: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao gerar SRT: $e')));
     } finally {
       setState(() => isGenerating = false);
     }

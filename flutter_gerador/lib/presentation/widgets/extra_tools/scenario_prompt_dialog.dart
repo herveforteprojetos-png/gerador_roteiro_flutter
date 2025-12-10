@@ -4,7 +4,11 @@ class ScenarioPromptDialog extends StatelessWidget {
   final TextEditingController scenarioController;
   final VoidCallback onGeneratePrompt;
 
-  const ScenarioPromptDialog({super.key, required this.scenarioController, required this.onGeneratePrompt});
+  const ScenarioPromptDialog({
+    super.key,
+    required this.scenarioController,
+    required this.onGeneratePrompt,
+  });
 
   @override
   Widget build(BuildContext context) {

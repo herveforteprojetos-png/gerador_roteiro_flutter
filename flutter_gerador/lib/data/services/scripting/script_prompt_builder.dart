@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_gerador/data/models/script_config.dart';
 import 'package:flutter_gerador/data/services/prompts/base_rules.dart';
 import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart';
+import 'package:flutter_gerador/data/utils/name_generator.dart';
 
 /// 🏗️ ScriptPromptBuilder - Construtor de Prompts para Geração de Roteiros
 ///
@@ -18,27 +19,66 @@ import 'package:flutter_gerador/data/services/prompts/main_prompt_template.dart'
 class ScriptPromptBuilder {
   /// 🚫 Regras ANTI-REPETIÇÃO e ANTI-LOOP (CRÍTICO - DEVE VIR PRIMEIRO)
   static const String antiRepetitionRules = """
-🚫 REGRAS DE ESTILO E CONTINUIDADE (CRÍTICO):
+🚫 REGRAS DE ESTILO E CONTINUIDADE (CRÍTICO - v7.6.110):
 
-1. **VARIE O INÍCIO DAS FRASES:**
-   - É PROIBIDO começar 3 parágrafos seguidos com o Nome do Personagem ou "Ele/Ela".
-   - Use conectivos de tempo e ação: "De repente...", "No entanto...", "Com o coração na mão...", "Apesar do medo...".
-   - Dê vida ao texto! Não seja robótico.
+1. **VARIE O INÍCIO DAS FRASES (VALIDAÇÃO AUTOMÁTICA):**
+   ❌ PROIBIDO: Começar 3+ parágrafos seguidos com o mesmo padrão
+   
+   EXEMPLOS DE INÍCIO PROIBIDO (repetitivo):
+   ❌ "Daniel caminhava..." → "Daniel olhou..." → "Daniel sentiu..."
+   ❌ "Ele hesitou..." → "Ele percebeu..." → "Ele decidiu..."
+   ❌ "A sala estava..." → "A porta estava..." → "A janela estava..."
+   
+   ✅ CORRETO: Variar estruturas
+   ✅ "Daniel caminhava..." → "De repente, uma sombra..." → "Com o coração acelerado, ele..."
+   ✅ "Ela hesitou..." → "Mas algo dentro dela gritava..." → "Apesar do medo, seus pés..."
+   
+   USO OBRIGATÓRIO de conectivos:
+   • "De repente...", "Subitamente...", "Naquele instante..."
+   • "No entanto...", "Porém...", "Contudo..."
+   • "Com o coração na mão...", "Apesar do medo...", "Mesmo com receio..."
+   • "Enquanto isso...", "Ao mesmo tempo...", "Segundos depois..."
 
 2. **AVANCE A HISTÓRIA (SEM ENROLAÇÃO):**
-   - Se o personagem está escondido, NÃO gaste 3 blocos descrevendo ele suando. Faça a ação acontecer!
-   - O vilão entra -> Procura -> Quase acha -> Sai. TUDO NO MESMO BLOCO.
-   - Ritmo ágil é prioridade.
+   ❌ PROIBIDO: Gastar múltiplos blocos no mesmo momento/ação
+   ✅ CORRETO: Ações completas em um bloco
+   
+   EXEMPLO ERRADO (lento demais):
+   Bloco 5: "Daniel escondia-se atrás da porta, suando..."
+   Bloco 6: "O suor escorria por sua testa, o coração disparado..."
+   Bloco 7: "Ele ouvia passos se aproximando lentamente..."
+   
+   EXEMPLO CORRETO (ritmo ágil):
+   Bloco 5: "Daniel escondia-se atrás da porta. O vilão entrou, procurou, quase o encontrou mas saiu. Ele respirou aliviado."
 
-3. **ANTI-ECO ESTRUTURAL:**
-   - Se você usou a frase "O crime paga um preço" no bloco anterior, É PROIBIDO usar de novo.
-   - Crie novas metáforas.
+3. **ANTI-ECO DE FRASES (LIMITE: 3-4 REPETIÇÕES):**
+   ❌ PROIBIDO: Repetir a mesma frase/mantra mais de 4 vezes
+   
+   EXEMPLO ERRADO:
+   • "A bondade sempre volta..." (aparece 12x no roteiro) ❌
+   • "O crime paga um preço..." (aparece 8x no roteiro) ❌
+   
+   ✅ CORRETO:
+   • Usar frase-chave 3-4 vezes no máximo
+   • Variar a forma: "A bondade retorna", "O bem volta para quem faz", "A compaixão tem recompensa"
 
-4. **PROFUNDIDADE EMOCIONAL (PARA YOUTUBE):**
-   - Personagens devem ter dúvidas REALISTAS antes de grandes decisões.
+4. **PROIBIDO: PARÁGRAFOS DUPLICADOS COM PEQUENAS VARIAÇÕES:**
+   ❌ NÃO copiar e colar blocos inteiros mudando só 2-3 palavras
+   
+   EXEMPLO ERRADO (duplicação semântica):
+   "Daniel caminhava apressado pela Rua do Comércio, o cheiro de pão fresco e café no ar..."
+   [10 parágrafos depois]
+   "Daniel caminhava apressado pela Rua dos Pinheiros, o cheiro de pão quente e café fresco no ar..."
+   
+   ✅ CORRETO: Criar novos parágrafos com conteúdo original
+
+5. **PROFUNDIDADE EMOCIONAL (PARA YOUTUBE):**
+   - Personagens devem ter dúvidas REALISTAS antes de grandes decisões
    - Exemplo: Ao receber proposta do CEO, mostre conflito: "E se for outra manipulação?"
-   - Vilões têm contradições: Educados mas cruéis, charmosos mas perigosos.
-   - Use descrições sensoriais ÚNICAS: "O ar condicionado sussurrava gelado" ao invés de "A sala era grande".
+   - Vilões têm contradições: Educados mas cruéis, charmosos mas perigosos
+   - Use descrições sensoriais ÚNICAS: "O ar condicionado sussurrava gelado" ao invés de "A sala era grande"
+
+⚠️ ATENÇÃO: Sistema de validação automática detectará e rejeitará blocos que violarem essas regras!
 """;
 
   /// 📏 Regras de formatação para TTS (Text-to-Speech)
@@ -368,7 +408,7 @@ $idadeInstrucao
       narrativeStyleGuidance: narrativeStyleGuidance,
       customPrompt: config.customPrompt,
       useCustomPrompt: config.useCustomPrompt,
-      nameList: '', // LLM gera nomes contextualmente
+      nameList: NameGenerator.generateNameList(getLanguageInstruction(config.language)),
       trackerInfo: trackerInfo,
       measure: measure,
       isSpanish: isSpanish,
@@ -381,6 +421,7 @@ $idadeInstrucao
       characterGuidance: characterGuidance,
       forbiddenNamesWarning: forbiddenNamesWarning,
       labels: labels,
+      totalWords: config.quantity,
     );
 
     // ⚠️ CRÍTICO: antiRepetitionRules ANTES de tudo para IA ler primeiro

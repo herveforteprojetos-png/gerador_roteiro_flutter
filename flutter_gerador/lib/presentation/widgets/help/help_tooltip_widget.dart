@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class HelpTooltipWidget extends StatelessWidget {
   final String message;
   final Widget child;
-  
+
   const HelpTooltipWidget({
     super.key,
     required this.message,

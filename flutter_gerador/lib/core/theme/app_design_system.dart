@@ -67,26 +67,40 @@ class AppDesignSystem {
   static const EdgeInsets paddingL = EdgeInsets.all(spacingL);
   static const EdgeInsets paddingXL = EdgeInsets.all(spacingXL);
 
-  static const EdgeInsets paddingHorizontalS = EdgeInsets.symmetric(horizontal: spacingS);
-  static const EdgeInsets paddingHorizontalM = EdgeInsets.symmetric(horizontal: spacingM);
-  static const EdgeInsets paddingHorizontalL = EdgeInsets.symmetric(horizontal: spacingL);
-  static const EdgeInsets paddingHorizontalXL = EdgeInsets.symmetric(horizontal: spacingXL);
+  static const EdgeInsets paddingHorizontalS = EdgeInsets.symmetric(
+    horizontal: spacingS,
+  );
+  static const EdgeInsets paddingHorizontalM = EdgeInsets.symmetric(
+    horizontal: spacingM,
+  );
+  static const EdgeInsets paddingHorizontalL = EdgeInsets.symmetric(
+    horizontal: spacingL,
+  );
+  static const EdgeInsets paddingHorizontalXL = EdgeInsets.symmetric(
+    horizontal: spacingXL,
+  );
 
-  static const EdgeInsets paddingVerticalS = EdgeInsets.symmetric(vertical: spacingS);
-  static const EdgeInsets paddingVerticalM = EdgeInsets.symmetric(vertical: spacingM);
-  static const EdgeInsets paddingVerticalL = EdgeInsets.symmetric(vertical: spacingL);
+  static const EdgeInsets paddingVerticalS = EdgeInsets.symmetric(
+    vertical: spacingS,
+  );
+  static const EdgeInsets paddingVerticalM = EdgeInsets.symmetric(
+    vertical: spacingM,
+  );
+  static const EdgeInsets paddingVerticalL = EdgeInsets.symmetric(
+    vertical: spacingL,
+  );
 
   // ======== COMPONENTES ========
-  
+
   /// Altura padrão para campos de entrada
   static const double fieldHeight = 40.0;
-  
+
   /// Raio de borda padrão
   static const double borderRadius = 8.0;
-  
+
   /// Altura do header compacto
   static const double headerHeight = 50.0;
-  
+
   /// Altura das abas de workspace
   static const double tabHeight = 45.0;
 
@@ -99,9 +113,7 @@ class AppDesignSystem {
 
   static BoxDecoration get headerDecoration => BoxDecoration(
     color: AppColors.darkSecondary,
-    border: Border(
-      bottom: BorderSide(color: AppColors.fireOrange, width: 2),
-    ),
+    border: Border(bottom: BorderSide(color: AppColors.fireOrange, width: 2)),
   );
 
   static InputDecoration getInputDecoration({

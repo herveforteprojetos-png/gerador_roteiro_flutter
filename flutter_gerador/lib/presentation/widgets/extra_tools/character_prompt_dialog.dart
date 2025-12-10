@@ -4,7 +4,11 @@ class CharacterPromptDialog extends StatelessWidget {
   final TextEditingController characterController;
   final VoidCallback onGeneratePrompt;
 
-  const CharacterPromptDialog({super.key, required this.characterController, required this.onGeneratePrompt});
+  const CharacterPromptDialog({
+    super.key,
+    required this.characterController,
+    required this.onGeneratePrompt,
+  });
 
   @override
   Widget build(BuildContext context) {

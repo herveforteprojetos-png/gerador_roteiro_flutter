@@ -5,11 +5,8 @@ import 'package:flutter_gerador/core/theme/app_colors.dart';
 /// Popup detalhado de ajuda que aparece ao clicar no botão ℹ️
 class HelpPopupWidget extends StatelessWidget {
   final FieldHelp help;
-  
-  const HelpPopupWidget({
-    super.key,
-    required this.help,
-  });
+
+  const HelpPopupWidget({super.key, required this.help});
 
   static void show(BuildContext context, FieldHelp help) {
     showDialog(
@@ -72,7 +69,7 @@ class HelpPopupWidget extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // Content
             Flexible(
               child: SingleChildScrollView(
@@ -98,9 +95,9 @@ class HelpPopupWidget extends StatelessWidget {
                         height: 1.5,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Sections
                     Text(
                       '✨ Quando usar cada opção:',
@@ -111,9 +108,9 @@ class HelpPopupWidget extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     ...help.sections.map((section) => _buildSection(section)),
-                    
+
                     // Tip
                     if (help.tip != null) ...[
                       const SizedBox(height: 20),
@@ -130,10 +127,7 @@ class HelpPopupWidget extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              '💡 ',
-                              style: TextStyle(fontSize: 18),
-                            ),
+                            const Text('💡 ', style: TextStyle(fontSize: 18)),
                             Expanded(
                               child: Text(
                                 'Dica: ${help.tip!}',
@@ -176,10 +170,7 @@ class HelpPopupWidget extends StatelessWidget {
           // Title
           Row(
             children: [
-              Text(
-                section.emoji,
-                style: const TextStyle(fontSize: 20),
-              ),
+              Text(section.emoji, style: const TextStyle(fontSize: 20)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -193,17 +184,14 @@ class HelpPopupWidget extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // For what
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '▸ ',
-                style: TextStyle(color: Colors.white70),
-              ),
+              const Text('▸ ', style: TextStyle(color: Colors.white70)),
               const Text(
                 'Para: ',
                 style: TextStyle(
@@ -214,25 +202,19 @@ class HelpPopupWidget extends StatelessWidget {
               Expanded(
                 child: Text(
                   section.forWhat,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    height: 1.4,
-                  ),
+                  style: const TextStyle(color: Colors.white70, height: 1.4),
                 ),
               ),
             ],
           ),
-          
+
           // Combine with
           if (section.combineWith != null) ...[
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '▸ ',
-                  style: TextStyle(color: Colors.white70),
-                ),
+                const Text('▸ ', style: TextStyle(color: Colors.white70)),
                 const Text(
                   'Combine com: ',
                   style: TextStyle(
@@ -243,26 +225,20 @@ class HelpPopupWidget extends StatelessWidget {
                 Expanded(
                   child: Text(
                     section.combineWith!,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      height: 1.4,
-                    ),
+                    style: const TextStyle(color: Colors.white70, height: 1.4),
                   ),
                 ),
               ],
             ),
           ],
-          
+
           // Example
           if (section.example != null) ...[
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '▸ ',
-                  style: TextStyle(color: Colors.white70),
-                ),
+                const Text('▸ ', style: TextStyle(color: Colors.white70)),
                 const Text(
                   'Exemplo: ',
                   style: TextStyle(
@@ -283,17 +259,14 @@ class HelpPopupWidget extends StatelessWidget {
               ],
             ),
           ],
-          
+
           // Avoids
           if (section.avoids != null) ...[
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '▸ ',
-                  style: TextStyle(color: Colors.white70),
-                ),
+                const Text('▸ ', style: TextStyle(color: Colors.white70)),
                 const Text(
                   'Evita: ',
                   style: TextStyle(
@@ -304,10 +277,7 @@ class HelpPopupWidget extends StatelessWidget {
                 Expanded(
                   child: Text(
                     section.avoids!,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      height: 1.4,
-                    ),
+                    style: const TextStyle(color: Colors.white70, height: 1.4),
                   ),
                 ),
               ],

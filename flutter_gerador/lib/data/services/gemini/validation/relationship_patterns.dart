@@ -12,10 +12,7 @@ class RelationshipPatterns {
 
   /// Padrões de relacionamentos familiares em Português
   static final Map<String, RegExp> portugueseRelations = {
-    'marido': RegExp(
-      r'meu marido(?:,)?\s+([A-Z][a-z]+)',
-      caseSensitive: false,
-    ),
+    'marido': RegExp(r'meu marido(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
     'esposa': RegExp(
       r'minha esposa(?:,)?\s+([A-Z][a-z]+)',
       caseSensitive: false,
@@ -69,7 +66,10 @@ class RelationshipPatterns {
     'wife': RegExp(r'my wife(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
     'father': RegExp(r'my father(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
     'mother': RegExp(r'my mother(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-    'brother': RegExp(r'my brother(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'brother': RegExp(
+      r'my brother(?:,)?\s+([A-Z][a-z]+)',
+      caseSensitive: false,
+    ),
     'sister': RegExp(r'my sister(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
     'father_in_law': RegExp(
       r'my father-in-law(?:,)?\s+([A-Z][a-z]+)',
@@ -181,8 +181,14 @@ class RelationshipPatterns {
     'esposa': RegExp(r'mi esposa(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
     'padre': RegExp(r'mi padre(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
     'madre': RegExp(r'mi madre(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-    'hermano': RegExp(r'mi hermano(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
-    'hermana': RegExp(r'mi hermana(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'hermano': RegExp(
+      r'mi hermano(?:,)?\s+([A-Z][a-z]+)',
+      caseSensitive: false,
+    ),
+    'hermana': RegExp(
+      r'mi hermana(?:,)?\s+([A-Z][a-z]+)',
+      caseSensitive: false,
+    ),
     'suegro': RegExp(r'mi suegro(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
     'suegra': RegExp(r'mi suegra(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
     'cuñado': RegExp(r'mi cuñado(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),

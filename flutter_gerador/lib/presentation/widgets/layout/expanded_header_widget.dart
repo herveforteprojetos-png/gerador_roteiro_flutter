@@ -46,7 +46,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     // Adicionar listeners para atualizar provider em tempo real
     apiKeyController.addListener(_onApiKeyChanged);
     titleController.addListener(() {
-      debugPrint('📝 titleController listener: Título = "${titleController.text}"');
+      debugPrint(
+        '📝 titleController listener: Título = "${titleController.text}"',
+      );
       ref
           .read(generationConfigProvider.notifier)
           .updateTitle(titleController.text);
@@ -161,7 +163,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
             padding: AppDesignSystem.paddingHorizontalL.add(
               AppDesignSystem.paddingVerticalS,
             ),
-            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.2)),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.2),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -527,7 +531,10 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
                         ),
                       ],
                     ),
-                    Divider(color: Colors.grey.withValues(alpha: 0.3), height: 32),
+                    Divider(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                      height: 32,
+                    ),
 
                     // Texto explicativo sobre os modelos
                     Container(
@@ -719,7 +726,9 @@ class _ExpandedHeaderWidgetState extends ConsumerState<ExpandedHeaderWidget> {
     required VoidCallback onToggleVisibility,
   }) {
     final hasKey = controller.text.trim().isNotEmpty;
-    final borderColor = hasKey ? Colors.green : iconColor.withValues(alpha: 0.5);
+    final borderColor = hasKey
+        ? Colors.green
+        : iconColor.withValues(alpha: 0.5);
 
     // Suffix icon com botão de visibilidade E check
     Widget suffixIcon = Row(

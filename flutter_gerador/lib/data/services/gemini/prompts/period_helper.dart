@@ -2,8 +2,6 @@
 // Sistema de Período Histórico e Anacronismos
 // Parte da arquitetura SOLID - Single Responsibility Principle
 
-library period_helper;
-
 /// 📅 Classe para validação de períodos históricos e anacronismos
 class PeriodHelper {
   PeriodHelper._(); // Previne instanciação

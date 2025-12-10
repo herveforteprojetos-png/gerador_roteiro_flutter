@@ -118,13 +118,13 @@ ${scriptContent.substring(0, scriptContent.length > 1000 ? 1000 : scriptContent.
       }
 
       final jsonString = cleanedResponse.substring(jsonStart, jsonEnd + 1);
-      
+
       final Map<String, String> ctas = {};
       for (final type in ctaTypes) {
         final pattern = '"$type"\\s*:\\s*"([^"]*(?:\\\\.[^"]*)*)"';
         final regex = RegExp(pattern, multiLine: true, dotAll: true);
         final match = regex.firstMatch(jsonString);
-        
+
         if (match != null) {
           String ctaText = match.group(1) ?? '';
           ctaText = ctaText.replaceAll(RegExp(r'\s+'), ' ').trim();

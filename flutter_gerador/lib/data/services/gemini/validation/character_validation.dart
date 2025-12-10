@@ -14,7 +14,9 @@ import 'relationship_patterns.dart';
 /// Função de log global (mantida para compatibilidade)
 void _log(String message, {String level = 'info'}) {
   if (kDebugMode) {
-    final prefix = level == 'critical' ? '🚨' : (level == 'warning' ? '⚠️' : 'ℹ️');
+    final prefix = level == 'critical'
+        ? '🚨'
+        : (level == 'warning' ? '⚠️' : 'ℹ️');
     debugPrint('$prefix $message');
   }
 }
@@ -23,7 +25,7 @@ void _log(String message, {String level = 'info'}) {
 /// Responsável por validar consistência de nomes e papéis
 class CharacterValidation {
   final DebugLogManager _debugLogger;
-  
+
   CharacterValidation(this._debugLogger);
 
   /// 🎯 v7.6.17: Detecta e registra o nome da protagonista no Bloco 1
@@ -43,7 +45,9 @@ class CharacterValidation {
         debugPrint('✅ Bloco 1: Protagonista "$configName" confirmada');
       }
     } else {
-      final validNames = names.where((n) => NameValidator.looksLikePersonName(n)).toList();
+      final validNames = names
+          .where((n) => NameValidator.looksLikePersonName(n))
+          .toList();
       if (validNames.isNotEmpty) {
         final detectedName = validNames.first;
         tracker.setProtagonistName(detectedName);
@@ -74,12 +78,16 @@ class CharacterValidation {
     final protagonistPresent = currentNames.contains(registeredName);
 
     final otherValidNames = currentNames
-        .where((n) => n != registeredName && NameValidator.looksLikePersonName(n))
+        .where(
+          (n) => n != registeredName && NameValidator.looksLikePersonName(n),
+        )
         .toList();
 
     if (!protagonistPresent && otherValidNames.isNotEmpty) {
       if (kDebugMode) {
-        debugPrint('⚠️ Bloco $blockNumber: Protagonista "$registeredName" ausente!');
+        debugPrint(
+          '⚠️ Bloco $blockNumber: Protagonista "$registeredName" ausente!',
+        );
         debugPrint('   Nomes encontrados: ${otherValidNames.join(", ")}');
         debugPrint('   🔄 Possível mudança de nome!');
       }
@@ -87,7 +95,8 @@ class CharacterValidation {
       _debugLogger.error(
         'Mudança de protagonista detectada',
         blockNumber: blockNumber,
-        details: 'Esperado "$registeredName", encontrado ${otherValidNames.join(", ")}',
+        details:
+            'Esperado "$registeredName", encontrado ${otherValidNames.join(", ")}',
         metadata: {
           'protagonistaEsperada': registeredName,
           'nomesEncontrados': otherValidNames,
@@ -124,9 +133,18 @@ class CharacterValidation {
         final introducedName = match.group(1);
         if (introducedName != null &&
             introducedName.toLowerCase() != protagonistName.toLowerCase()) {
-          _log('🚨 ERRO CRÍTICO: AUTO-APRESENTAÇÃO COM NOME ERRADO!', level: 'critical');
-          _log('   ❌ Protagonista configurada: "$protagonistName"', level: 'critical');
-          _log('   ❌ Nome na auto-apresentação: "$introducedName"', level: 'critical');
+          _log(
+            '🚨 ERRO CRÍTICO: AUTO-APRESENTAÇÃO COM NOME ERRADO!',
+            level: 'critical',
+          );
+          _log(
+            '   ❌ Protagonista configurada: "$protagonistName"',
+            level: 'critical',
+          );
+          _log(
+            '   ❌ Nome na auto-apresentação: "$introducedName"',
+            level: 'critical',
+          );
           _log('   📝 Trecho: "${match.group(0)}"', level: 'critical');
           _log('   🔄 BLOCO SERÁ REJEITADO E REGENERADO', level: 'critical');
           return false;
@@ -136,29 +154,72 @@ class CharacterValidation {
 
     // Lista de nomes suspeitos
     final suspiciousNames = [
-      'Wanessa', 'Carla', 'Beatriz', 'Fernanda', 'Juliana', 'Mariana',
-      'Patrícia', 'Roberta', 'Silvia', 'Tatiana', 'Carlos', 'Eduardo',
-      'Fernando', 'Gustavo', 'Henrique', 'Leonardo', 'Marcelo', 'Rafael',
-      'Rodrigo', 'Thiago', 'Hannah', 'Laura', 'Jessica', 'Sarah', 'Emily',
-      'Emma', 'Olivia', 'Sophia', 'Michael', 'David', 'James', 'John', 'Robert',
+      'Wanessa',
+      'Carla',
+      'Beatriz',
+      'Fernanda',
+      'Juliana',
+      'Mariana',
+      'Patrícia',
+      'Roberta',
+      'Silvia',
+      'Tatiana',
+      'Carlos',
+      'Eduardo',
+      'Fernando',
+      'Gustavo',
+      'Henrique',
+      'Leonardo',
+      'Marcelo',
+      'Rafael',
+      'Rodrigo',
+      'Thiago',
+      'Hannah',
+      'Laura',
+      'Jessica',
+      'Sarah',
+      'Emily',
+      'Emma',
+      'Olivia',
+      'Sophia',
+      'Michael',
+      'David',
+      'James',
+      'John',
+      'Robert',
     ];
 
     final hasProtagonist = generatedText.contains(protagonistName);
 
     for (final suspiciousName in suspiciousNames) {
-      if (suspiciousName.toLowerCase() == protagonistName.toLowerCase()) continue;
+      if (suspiciousName.toLowerCase() == protagonistName.toLowerCase()) {
+        continue;
+      }
 
       if (generatedText.contains(suspiciousName)) {
         _debugLogger.error(
           "Troca de nome detectada: '$suspiciousName'",
           blockNumber: blockNumber,
-          details: "Protagonista deveria ser '$protagonistName' mas encontrei '$suspiciousName'",
-          metadata: {'protagonista': protagonistName, 'nomeEncontrado': suspiciousName},
+          details:
+              "Protagonista deveria ser '$protagonistName' mas encontrei '$suspiciousName'",
+          metadata: {
+            'protagonista': protagonistName,
+            'nomeEncontrado': suspiciousName,
+          },
         );
 
-        _log('🚨 ERRO CRÍTICO DETECTADO NO BLOCO $blockNumber:', level: 'critical');
-        _log('   ❌ Protagonista deveria ser: "$protagonistName"', level: 'critical');
-        _log('   ❌ Mas encontrei nome suspeito: "$suspiciousName"', level: 'critical');
+        _log(
+          '🚨 ERRO CRÍTICO DETECTADO NO BLOCO $blockNumber:',
+          level: 'critical',
+        );
+        _log(
+          '   ❌ Protagonista deveria ser: "$protagonistName"',
+          level: 'critical',
+        );
+        _log(
+          '   ❌ Mas encontrei nome suspeito: "$suspiciousName"',
+          level: 'critical',
+        );
         _log('   🔄 BLOCO SERÁ REJEITADO E REGENERADO', level: 'critical');
         return false;
       }
@@ -170,7 +231,9 @@ class CharacterValidation {
         details: "'$protagonistName' não apareceu no bloco $blockNumber",
         metadata: {'bloco': blockNumber, 'protagonista': protagonistName},
       );
-      debugPrint('⚠️ AVISO: Protagonista "$protagonistName" não apareceu no bloco $blockNumber');
+      debugPrint(
+        '⚠️ AVISO: Protagonista "$protagonistName" não apareceu no bloco $blockNumber',
+      );
     } else if (hasProtagonist) {
       _debugLogger.validation(
         "Protagonista validada",
@@ -215,9 +278,14 @@ class CharacterValidation {
     final sister = relationships['protagonist']?['irmã'] ?? {};
 
     for (final inLaw in [...brotherInLaw, ...sisterInLaw]) {
-      if (husband.isEmpty && wife.isEmpty && brother.isEmpty && sister.isEmpty) {
+      if (husband.isEmpty &&
+          wife.isEmpty &&
+          brother.isEmpty &&
+          sister.isEmpty) {
         if (kDebugMode) {
-          debugPrint('⚠️ ERRO: $inLaw é cunhado/cunhada mas não há cônjuge nem irmãos!');
+          debugPrint(
+            '⚠️ ERRO: $inLaw é cunhado/cunhada mas não há cônjuge nem irmãos!',
+          );
         }
         hasError = true;
       }
@@ -229,7 +297,9 @@ class CharacterValidation {
     if (fatherInLaw.isNotEmpty || motherInLaw.isNotEmpty) {
       if (husband.isEmpty && wife.isEmpty) {
         if (kDebugMode) {
-          debugPrint('⚠️ ERRO: Tem sogro/sogra mas protagonista não tem cônjuge!');
+          debugPrint(
+            '⚠️ ERRO: Tem sogro/sogra mas protagonista não tem cônjuge!',
+          );
         }
         hasError = true;
       }
@@ -240,7 +310,10 @@ class CharacterValidation {
 
     if (sonInLaw.isNotEmpty || daughterInLaw.isNotEmpty) {
       final hasChildren = text.contains(
-        RegExp(r'meu filho|minha filha|my son|my daughter', caseSensitive: false),
+        RegExp(
+          r'meu filho|minha filha|my son|my daughter',
+          caseSensitive: false,
+        ),
       );
       if (!hasChildren) {
         if (kDebugMode) {
@@ -255,7 +328,10 @@ class CharacterValidation {
 
     if (grandson.isNotEmpty || granddaughter.isNotEmpty) {
       final hasChildren = text.contains(
-        RegExp(r'meu filho|minha filha|my son|my daughter', caseSensitive: false),
+        RegExp(
+          r'meu filho|minha filha|my son|my daughter',
+          caseSensitive: false,
+        ),
       );
       if (!hasChildren) {
         if (kDebugMode) {
@@ -266,7 +342,9 @@ class CharacterValidation {
     }
 
     if (hasError && kDebugMode) {
-      debugPrint('❌ BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!');
+      debugPrint(
+        '❌ BLOCO $blockNumber REJEITADO: Relacionamentos familiares inconsistentes!',
+      );
     }
 
     return !hasError;
@@ -290,8 +368,12 @@ class CharacterValidation {
         final previousRole = tracker.getRole(name);
 
         if (currentRole != null && previousRole != null) {
-          final normalizedCurrent = RolePatterns.normalizeRoleSelective(currentRole);
-          final normalizedPrevious = RolePatterns.normalizeRoleSelective(previousRole);
+          final normalizedCurrent = RolePatterns.normalizeRoleSelective(
+            currentRole,
+          );
+          final normalizedPrevious = RolePatterns.normalizeRoleSelective(
+            previousRole,
+          );
 
           if (normalizedCurrent != normalizedPrevious &&
               normalizedCurrent != 'indefinido' &&
@@ -305,8 +387,13 @@ class CharacterValidation {
             _debugLogger.error(
               "Nome duplicado em papéis diferentes - Bloco $blockNumber",
               blockNumber: blockNumber,
-              details: "Nome '$name': anterior '$previousRole', atual '$currentRole'",
-              metadata: {'nome': name, 'papelAnterior': previousRole, 'papelAtual': currentRole},
+              details:
+                  "Nome '$name': anterior '$previousRole', atual '$currentRole'",
+              metadata: {
+                'nome': name,
+                'papelAnterior': previousRole,
+                'papelAtual': currentRole,
+              },
             );
 
             return true;
@@ -318,7 +405,9 @@ class CharacterValidation {
       final currentRole = RolePatterns.extractRoleForName(name, blockText);
 
       if (currentRole != null && currentRole != 'indefinido') {
-        final normalizedCurrent = RolePatterns.normalizeRoleSelective(currentRole);
+        final normalizedCurrent = RolePatterns.normalizeRoleSelective(
+          currentRole,
+        );
 
         for (final existingName in tracker.confirmedNames) {
           if (existingName.toLowerCase() == name.toLowerCase()) continue;
@@ -326,17 +415,28 @@ class CharacterValidation {
           final existingRole = tracker.getRole(existingName);
           if (existingRole == null) continue;
 
-          final normalizedExisting = RolePatterns.normalizeRoleSelective(existingRole);
+          final normalizedExisting = RolePatterns.normalizeRoleSelective(
+            existingRole,
+          );
 
           final uniqueRoles = {
-            'protagonista', 'protagonist', 'main character',
-            'narradora', 'narrador', 'narrator',
-            'hero', 'heroine', 'herói', 'heroína',
+            'protagonista',
+            'protagonist',
+            'main character',
+            'narradora',
+            'narrador',
+            'narrator',
+            'hero',
+            'heroine',
+            'herói',
+            'heroína',
           };
 
           if (normalizedCurrent == normalizedExisting) {
             bool isCriticalRole = uniqueRoles.any(
-              (r) => normalizedCurrent.contains(r) || normalizedExisting.contains(r),
+              (r) =>
+                  normalizedCurrent.contains(r) ||
+                  normalizedExisting.contains(r),
             );
 
             if (isCriticalRole) {
@@ -349,8 +449,13 @@ class CharacterValidation {
               _debugLogger.error(
                 "Papel duplicado com nomes diferentes - Bloco $blockNumber",
                 blockNumber: blockNumber,
-                details: "Papel '$currentRole': anterior '$existingName', atual '$name'",
-                metadata: {'papel': currentRole, 'nomeAnterior': existingName, 'nomeAtual': name},
+                details:
+                    "Papel '$currentRole': anterior '$existingName', atual '$name'",
+                metadata: {
+                  'papel': currentRole,
+                  'nomeAnterior': existingName,
+                  'nomeAtual': name,
+                },
               );
 
               return true;
@@ -368,8 +473,12 @@ class CharacterValidation {
       final possessiveMatches = possessiveSingularPattern.allMatches(blockText);
 
       for (final match in possessiveMatches) {
-        final possessiveRole = match.group(0)
-            ?.replaceFirst(RegExp(r'\b(?:my|nossa)\s+', caseSensitive: false), '')
+        final possessiveRole = match
+            .group(0)
+            ?.replaceFirst(
+              RegExp(r'\b(?:my|nossa)\s+', caseSensitive: false),
+              '',
+            )
             .toLowerCase()
             .trim();
 
@@ -381,13 +490,22 @@ class CharacterValidation {
           final existingRole = tracker.getRole(existingName);
           if (existingRole == null) continue;
 
-          final normalizedExisting = RolePatterns.normalizeRoleSelective(existingRole).toLowerCase();
-          final possessiveRoleNormalized = possessiveRole.replaceAll(RegExp(r'\s+'), ' ');
+          final normalizedExisting = RolePatterns.normalizeRoleSelective(
+            existingRole,
+          ).toLowerCase();
+          final possessiveRoleNormalized = possessiveRole.replaceAll(
+            RegExp(r'\s+'),
+            ' ',
+          );
 
           if (normalizedExisting.contains(possessiveRoleNormalized) ||
-              possessiveRoleNormalized.contains(normalizedExisting.split(' ').last)) {
+              possessiveRoleNormalized.contains(
+                normalizedExisting.split(' ').last,
+              )) {
             if (kDebugMode) {
-              debugPrint('⚠️ v7.6.34: PAPEL POSSESSIVO DUPLICADO: "my $possessiveRole"');
+              debugPrint(
+                '⚠️ v7.6.34: PAPEL POSSESSIVO DUPLICADO: "my $possessiveRole"',
+              );
               debugPrint('   Nome anterior: "$existingName"');
               debugPrint('   Nome atual: "$name"');
             }
@@ -395,8 +513,13 @@ class CharacterValidation {
             _debugLogger.error(
               "Papel possessivo singular duplicado - Bloco $blockNumber",
               blockNumber: blockNumber,
-              details: "'my $possessiveRole': anterior '$existingName', atual '$name'",
-              metadata: {'papelPossessivo': possessiveRole, 'nomeAnterior': existingName, 'nomeAtual': name},
+              details:
+                  "'my $possessiveRole': anterior '$existingName', atual '$name'",
+              metadata: {
+                'papelPossessivo': possessiveRole,
+                'nomeAnterior': existingName,
+                'nomeAtual': name,
+              },
             );
 
             return true;
@@ -414,7 +537,9 @@ class CharacterValidation {
     CharacterTracker tracker,
     int blockNumber,
   ) {
-    final namePattern = RegExp(r'\b([A-ZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏa-zàáâãäåçèéêëìíîï]{2,})\b');
+    final namePattern = RegExp(
+      r'\b([A-ZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏa-zàáâãäåçèéêëìíîï]{2,})\b',
+    );
     final foundNames = <String>{};
 
     for (final match in namePattern.allMatches(generatedText)) {
@@ -427,19 +552,32 @@ class CharacterValidation {
     for (final name in foundNames) {
       if (tracker.hasName(name)) {
         final existingRole = tracker.getRole(name);
-        final currentRole = RolePatterns.extractRoleForName(name, generatedText);
+        final currentRole = RolePatterns.extractRoleForName(
+          name,
+          generatedText,
+        );
 
         if (currentRole != null) {
           if (existingRole == null || existingRole == 'indefinido') {
             if (kDebugMode) {
-              debugPrint('📝 Nome "$name" definido como $currentRole (bloco $blockNumber)');
+              debugPrint(
+                '📝 Nome "$name" definido como $currentRole (bloco $blockNumber)',
+              );
             }
-          } else if (!RolePatterns.areRolesEquivalent(currentRole, existingRole)) {
+          } else if (!RolePatterns.areRolesEquivalent(
+            currentRole,
+            existingRole,
+          )) {
             _debugLogger.error(
               "Reutilização de nome: '$name'",
               blockNumber: blockNumber,
-              details: "Papel anterior: $existingRole, Papel atual: $currentRole",
-              metadata: {'nome': name, 'papelAnterior': existingRole, 'papelAtual': currentRole},
+              details:
+                  "Papel anterior: $existingRole, Papel atual: $currentRole",
+              metadata: {
+                'nome': name,
+                'papelAnterior': existingRole,
+                'papelAtual': currentRole,
+              },
             );
 
             if (kDebugMode) {
@@ -462,7 +600,9 @@ class CharacterValidation {
 
   /// 🔍 Valida relações familiares (debug/logging)
   void validateFamilyRelations(String generatedText, int blockNumber) {
-    final namePattern = RegExp(r'\b([A-ZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏ][a-zàáâãäåçèéêëìíîï]{2,})\b');
+    final namePattern = RegExp(
+      r'\b([A-ZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏ][a-zàáâãäåçèéêëìíîï]{2,})\b',
+    );
     final names = <String>{};
 
     for (final match in namePattern.allMatches(generatedText)) {
@@ -475,7 +615,9 @@ class CharacterValidation {
     for (final name in names) {
       final role = RolePatterns.extractRoleForName(name, generatedText);
       if (role != null && kDebugMode) {
-        debugPrint('📝 Nome "$name" detectado como: $role (bloco $blockNumber)');
+        debugPrint(
+          '📝 Nome "$name" detectado como: $role (bloco $blockNumber)',
+        );
       }
     }
   }
@@ -542,7 +684,9 @@ class CharacterValidation {
 
       for (final match in matches) {
         final newName = match.group(1)?.trim();
-        if (newName == null || !NameValidator.looksLikePersonName(newName)) continue;
+        if (newName == null || !NameValidator.looksLikePersonName(newName)) {
+          continue;
+        }
 
         // Verificar se este papel já tem um nome no tracker
         final existingName = tracker.getNameForRole(role);

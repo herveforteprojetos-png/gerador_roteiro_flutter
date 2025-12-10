@@ -229,8 +229,27 @@ class WorldState {
   }
 
   /// Adiciona ou atualiza um personagem
+  /// 🆕 v7.6.117: Não sobrescreve personagens já existentes com nomes diferentes
   void upsertCharacter(String papel, WorldCharacter character) {
     final normalizedRole = _normalizeRole(papel);
+    
+    // Se já existe um personagem com este papel E tem nome diferente, não sobrescrever
+    final existing = personagens[normalizedRole];
+    if (existing != null && existing.nome.isNotEmpty) {
+      final existingNameNorm = existing.nome.toLowerCase().trim();
+      final newNameNorm = character.nome.toLowerCase().trim();
+      
+      // Se os nomes são diferentes, manter o original (evita inconsistência)
+      if (existingNameNorm != newNameNorm && existingNameNorm.isNotEmpty) {
+        if (kDebugMode) {
+          debugPrint(
+            '🌍 WorldState: IGNORANDO novo nome "${character.nome}" para $papel - já existe "${existing.nome}"',
+          );
+        }
+        return; // Não sobrescrever!
+      }
+    }
+    
     personagens[normalizedRole] = character;
     if (kDebugMode) {
       debugPrint(

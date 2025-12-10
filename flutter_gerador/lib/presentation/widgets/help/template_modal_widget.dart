@@ -69,19 +69,16 @@ class TemplateModalWidget extends ConsumerWidget {
                 ],
               ),
             ),
-            
+
             // Subtitle
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Text(
                 'Escolha um caso de uso para preencher automaticamente os campos:',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 15,
-                ),
+                style: TextStyle(color: Colors.white70, fontSize: 15),
               ),
             ),
-            
+
             // Templates list
             Expanded(
               child: ListView.builder(
@@ -129,10 +126,7 @@ class TemplateModalWidget extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Text(
-                  template.emoji,
-                  style: const TextStyle(fontSize: 28),
-                ),
+                Text(template.emoji, style: const TextStyle(fontSize: 28)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -147,7 +141,7 @@ class TemplateModalWidget extends ConsumerWidget {
               ],
             ),
           ),
-          
+
           // Content
           Padding(
             padding: const EdgeInsets.all(16),
@@ -163,9 +157,9 @@ class TemplateModalWidget extends ConsumerWidget {
                     height: 1.4,
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Configuration details
                 Wrap(
                   spacing: 8,
@@ -174,7 +168,7 @@ class TemplateModalWidget extends ConsumerWidget {
                     return _buildConfigChip(entry.key, entry.value.toString());
                   }).toList(),
                 ),
-                
+
                 // Result preview
                 if (template.resultPreview != null) ...[
                   const SizedBox(height: 16),
@@ -191,10 +185,7 @@ class TemplateModalWidget extends ConsumerWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          '📝 ',
-                          style: TextStyle(fontSize: 16),
-                        ),
+                        const Text('📝 ', style: TextStyle(fontSize: 16)),
                         Expanded(
                           child: Text(
                             template.resultPreview!,
@@ -210,7 +201,7 @@ class TemplateModalWidget extends ConsumerWidget {
                     ),
                   ),
                 ],
-                
+
                 // Avoids
                 if (template.avoids != null) ...[
                   const SizedBox(height: 12),
@@ -227,10 +218,7 @@ class TemplateModalWidget extends ConsumerWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          '⚠️ ',
-                          style: TextStyle(fontSize: 16),
-                        ),
+                        const Text('⚠️ ', style: TextStyle(fontSize: 16)),
                         Expanded(
                           child: Text(
                             'Evita automaticamente: ${template.avoids!.join(", ")}',
@@ -245,9 +233,9 @@ class TemplateModalWidget extends ConsumerWidget {
                     ),
                   ),
                 ],
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Apply button
                 Center(
                   child: ElevatedButton(
@@ -305,7 +293,7 @@ class TemplateModalWidget extends ConsumerWidget {
         displayKey = 'Gênero';
         break;
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -319,10 +307,7 @@ class TemplateModalWidget extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            '✅ ',
-            style: TextStyle(fontSize: 12),
-          ),
+          const Text('✅ ', style: TextStyle(fontSize: 12)),
           Text(
             '$displayKey: ',
             style: const TextStyle(
@@ -333,10 +318,7 @@ class TemplateModalWidget extends ConsumerWidget {
           ),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
       ),
@@ -350,31 +332,31 @@ class TemplateModalWidget extends ConsumerWidget {
   ) {
     final configNotifier = ref.read(generationConfigProvider.notifier);
     final config = template.config;
-    
+
     // Apply each configuration
     if (config.containsKey('perspective')) {
       configNotifier.updatePerspective(config['perspective']);
     }
-    
+
     if (config.containsKey('narrativeStyle')) {
       configNotifier.updateNarrativeStyle(config['narrativeStyle']);
     }
-    
+
     if (config.containsKey('tema')) {
       configNotifier.updateTema(config['tema']);
     }
-    
+
     if (config.containsKey('subtema')) {
       configNotifier.updateSubtema(config['subtema']);
     }
-    
+
     if (config.containsKey('localizacao')) {
       configNotifier.updateLocalizacao(config['localizacao']);
     }
-    
+
     // Close modal
     Navigator.of(context).pop();
-    
+
     // Show confirmation
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -382,9 +364,7 @@ class TemplateModalWidget extends ConsumerWidget {
           children: [
             Text(template.emoji),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text('Configuração "${template.title}" aplicada!'),
-            ),
+            Expanded(child: Text('Configuração "${template.title}" aplicada!')),
           ],
         ),
         backgroundColor: Colors.green,

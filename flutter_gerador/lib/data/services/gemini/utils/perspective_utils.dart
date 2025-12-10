@@ -33,7 +33,10 @@ class PerspectiveUtils {
   }
 
   // ?? CORRIGIDO: Instrução CLARA de perspectiva com contexto do protagonista
-  static String getPerspectiveInstruction(String perspective, ScriptConfig config) {
+  static String getPerspectiveInstruction(
+    String perspective,
+    ScriptConfig config,
+  ) {
     final protagonistInfo = config.protagonistName.trim().isNotEmpty
         ? ' O protagonista é "${config.protagonistName}".'
         : '';
