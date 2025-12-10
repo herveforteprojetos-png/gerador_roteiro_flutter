@@ -1,6 +1,8 @@
 // ignore_for_file: avoid_print
 import 'package:flutter/foundation.dart';
 
+import 'name_validator.dart';
+
 /// 🔧 v7.6.39: Corretor Pós-Geração de Nomes (VERSÃO COM VALIDAÇÃO DE NOMES)
 ///
 /// OBJETIVO: Corrigir automaticamente nomes trocados APÓS a geração de cada bloco
@@ -38,7 +40,77 @@ import 'package:flutter/foundation.dart';
 /// - ~1ms de CPU por chunk
 /// - Correção transparente e automática
 /// - NÃO captura palavras comuns como nomes
+/// - 🆕 v7.6.136: Auto-correção de títulos abreviados (Dr → Doutor)
 class PostGenerationFixer {
+  /// 🆕 v7.6.136: Mapa de abreviações de títulos → forma completa
+  /// Usado para auto-correção: "Dr Álvaro" → "Doutor Álvaro"
+  static const Map<String, String> _titleAbbreviations = {
+    // Português
+    'dr': 'Doutor',
+    'dra': 'Doutora',
+    'sr': 'Senhor',
+    'sra': 'Senhora',
+    'prof': 'Professor',
+    'profa': 'Professora',
+    'pe': 'Padre',
+    'd': 'Dona', // "D. Maria" → "Dona Maria"
+    
+    // Inglês
+    'mr': 'Mister',
+    'mrs': 'Missus',
+    'ms': 'Miss',
+    // 'dr' já mapeado para Doutor (funciona para ambos idiomas)
+  };
+  
+  /// 🆕 v7.6.136: Expande abreviação de título para forma completa
+  /// Ex: "Dr Álvaro" → "Doutor Álvaro", "Sr Carlos" → "Senhor Carlos"
+  static String expandTitleAbbreviation(String text) {
+    // Padrão: (abreviação)(ponto opcional)(espaço)(Nome com maiúscula)
+    final regex = RegExp(
+      r'\b(Dr|Dra|Sr|Sra|Prof|Profa|Pe|D|Mr|Mrs|Ms)\.?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
+      caseSensitive: true,
+    );
+    
+    String result = text;
+    for (final match in regex.allMatches(text)) {
+      final abbrev = match.group(1)!.toLowerCase();
+      final name = match.group(2)!;
+      
+      if (_titleAbbreviations.containsKey(abbrev)) {
+        final fullTitle = _titleAbbreviations[abbrev]!;
+        final original = match.group(0)!;
+        final expanded = '$fullTitle $name';
+        result = result.replaceFirst(original, expanded);
+      }
+    }
+    
+    return result;
+  }
+  
+  /// 🆕 v7.6.136: Palavras que indicam relação familiar (para mapeamento)
+  /// Ex: "filho" → será mapeado para "Filho de [protagonista]" se necessário
+  /// Usado para distinguir papéis de nomes (não bloquear como stopwords)
+  static const Set<String> _familyRelationWords = {
+    // Português
+    'filho', 'filha', 'pai', 'mãe', 'irmão', 'irmã',
+    'avô', 'avó', 'neto', 'neta', 'tio', 'tia',
+    'primo', 'prima', 'sobrinho', 'sobrinha',
+    'marido', 'esposa', 'noivo', 'noiva',
+    'sogro', 'sogra', 'genro', 'nora', 'cunhado', 'cunhada',
+    
+    // Inglês
+    'son', 'daughter', 'father', 'mother', 'brother', 'sister',
+    'grandfather', 'grandmother', 'grandson', 'granddaughter',
+    'uncle', 'aunt', 'cousin', 'nephew', 'niece',
+    'husband', 'wife', 'fiancé', 'fiancée',
+  };
+  
+  /// 🆕 v7.6.136: Verifica se uma palavra é relação familiar
+  /// Usado para distinguir "Filho" (papel) de "João" (nome)
+  static bool isFamilyRelation(String word) {
+    return _familyRelationWords.contains(word.toLowerCase());
+  }
+  
   /// 🆕 v7.6.39: Palavras que NUNCA devem ser tratadas como nomes
   /// Inclui palavras comuns em inglês que começam com maiúscula
   static final Set<String> _nameStopwords = {
@@ -87,6 +159,7 @@ class PostGenerationFixer {
   };
 
   /// 🆕 v7.6.39: Valida se uma palavra capturada é um nome válido
+  /// 🆕 v7.6.132: Expande validação para rejeitar verbos/indefinidos/frases
   ///
   /// Retorna true se é um nome válido, false se deve ser ignorado
   static bool _isValidCapturedName(String? name) {
@@ -99,6 +172,42 @@ class PostGenerationFixer {
     if (_nameStopwords.contains(nameLower)) {
       if (kDebugMode) {
         debugPrint('⚠️ v7.6.39: "$name" bloqueado (stopword)');
+      }
+      return false;
+    }
+    
+    // 🆕 v7.6.132: Rejeitar verbos/palavras indefinidas comuns detectados em logs
+    // Ex: "Quero", "Fui", "Como", "Quais", "Ah", "Est", "Mas", "Ou"
+    const invalidWords = {
+      // Verbos em 1ª pessoa (detectados como nomes nos logs)
+      'quero', 'fui', 'estou', 'sou', 'tenho', 'posso', 'devo',
+      'vou', 'sei', 'queria', 'tinha', 'estava', 'podia',
+      
+      // Pronomes interrogativos/relativos
+      'como', 'quais', 'qual', 'quem', 'quanto', 'onde',
+      
+      // Interjeições/partículas
+      'ah', 'oh', 'eh', 'hum', 'opa', 'oi', 'olá',
+      
+      // Conjunções/preposições (frases)
+      'mas', 'ou', 'nem', 'pois', 'enquanto',
+      
+      // Fragmentos comuns (detectados como nomes)
+      'est', 'são', 'foi', 'era', 'seria', 'tem', 'pode',
+    };
+    
+    if (invalidWords.contains(nameLower)) {
+      if (kDebugMode) {
+        debugPrint('⚠️ v7.6.132: "$name" bloqueado (palavra indefinida/verbo)');
+      }
+      return false;
+    }
+    
+    // 🆕 v7.6.132: Rejeitar se contém palavras de frase (usando NameValidator)
+    // Ex: "Mas Mateus", "Ou Otávio" → false
+    if (NameValidator.isPhrase(name)) {
+      if (kDebugMode) {
+        debugPrint('⚠️ v7.6.132: "$name" bloqueado (frase detectada)');
       }
       return false;
     }
@@ -127,6 +236,77 @@ class PostGenerationFixer {
     }
   }
 
+  /// 🆕 v7.6.141: Normaliza casing do texto (lowercase exceto nomes próprios)
+  ///
+  /// OBJETIVO: Evitar conflitos no validador causados por capitalização inconsistente
+  ///
+  /// FUNCIONAMENTO:
+  /// 1. Converte TODO o texto para lowercase
+  /// 2. Detecta nomes próprios usando regex e lista de nomes conhecidos
+  /// 3. Capitaliza apenas os nomes próprios da lista conhecida
+  /// 4. Ignora palavras comuns que não estão na lista
+  ///
+  /// Exemplo:
+  /// Input:  "Para Mariana. O Presidente Costa Falou."
+  /// Output: "para mariana. o presidente costa falou." (sem nomes conhecidos)
+  /// Output: "para Mariana. o presidente Costa falou." (com Mariana e Costa conhecidos)
+  static String lowercaseExceptNames(String text, {Set<String>? knownNames}) {
+    if (text.isEmpty) return text;
+
+    // 1. Lowercase completo primeiro
+    String result = text.toLowerCase();
+
+    // Se não há nomes conhecidos, retorna tudo lowercase
+    if (knownNames == null || knownNames.isEmpty) {
+      return result;
+    }
+
+    // 2. Preparar mapa de nomes conhecidos (lowercase → capitalizado)
+    final namesMap = <String, String>{}; // lowercase → original capitalizado
+    for (final name in knownNames) {
+      if (name.isNotEmpty) {
+        namesMap[name.toLowerCase()] = _capitalizeFirstLetter(name);
+      }
+    }
+
+    // 3. Substituir nomes conhecidos no texto lowercase
+    // Ordenar por tamanho decrescente para substituir nomes compostos primeiro
+    final sortedEntries = namesMap.entries.toList()
+      ..sort((a, b) => b.key.length.compareTo(a.key.length));
+    
+    for (final entry in sortedEntries) {
+      final nameLower = entry.key;
+      final nameCapitalized = entry.value;
+      
+      // Substituir usando padrão que respeita limites de palavra
+      // Usar lookahead/lookbehind negativo para caracteres alfanuméricos
+      final pattern = RegExp(
+        '(?<![a-záàâãéêíóôõúç])' + RegExp.escape(nameLower) + '(?![a-záàâãéêíóôõúç])',
+        caseSensitive: false,
+        unicode: true,
+      );
+      
+      result = result.replaceAllMapped(pattern, (match) => nameCapitalized);
+    }
+
+    return result;
+  }
+
+  /// Capitaliza primeira letra de cada palavra
+  static String _capitalizeFirstLetter(String text) {
+    if (text.isEmpty) return text;
+    
+    // Se for nome composto (ex: "Maria Helena")
+    if (text.contains(' ')) {
+      return text.split(' ').map((word) {
+        if (word.isEmpty) return word;
+        return word[0].toUpperCase() + word.substring(1).toLowerCase();
+      }).join(' ');
+    }
+    
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
+
   /// 🔧 Corrige nomes trocados em um bloco de texto
   ///
   /// [text] - Texto gerado pelo Gemini
@@ -145,6 +325,16 @@ class PostGenerationFixer {
 
     String correctedText = text;
     int correctionsCount = 0;
+    
+    // 🆕 v7.6.136: Auto-expandir abreviações de títulos PRIMEIRO
+    // Ex: "Dr Álvaro" → "Doutor Álvaro", "Sr Carlos" → "Senhor Carlos"
+    final expandedText = expandTitleAbbreviation(correctedText);
+    if (expandedText != correctedText) {
+      if (kDebugMode) {
+        debugPrint('🔧 [Bloco $blockNumber] Títulos expandidos');
+      }
+      correctedText = expandedText;
+    }
 
     // 🆕 v7.6.36: Normalizar mapa de papéis para busca flexível
     final normalizedRoleMap = _normalizeRoleMap(roleToName);
@@ -615,6 +805,17 @@ class PostGenerationFixer {
         // Verificar se temos nome correto para este papel
         final correctName = roleToCorrectName[roleKey];
         if (correctName == null) continue;
+        
+        // 🔧 v7.6.128: VALIDAÇÃO DO NOME CORRETO
+        // Pular se o nome "correto" é inválido (previne "seu pai, Não")
+        if (!_isValidCapturedName(correctName)) {
+          if (kDebugMode) {
+            debugPrint(
+              '⚠️ [Bloco $blockNumber] Nome correto inválido: "$correctName" para papel "$roleKey" - pulando correção',
+            );
+          }
+          continue;
+        }
 
         // Comparar (case-insensitive)
         if (foundName.toLowerCase() != correctName.toLowerCase()) {
@@ -741,6 +942,17 @@ class PostGenerationFixer {
       if (!_introducedCharacters.containsKey(role)) continue;
 
       final correctName = _introducedCharacters[role]!;
+      
+      // 🔧 v7.6.128: VALIDAÇÃO DO NOME CORRETO
+      // Pular se o nome "correto" é inválido (previne "meu advogado, Não")
+      if (!_isValidCapturedName(correctName)) {
+        if (kDebugMode) {
+          debugPrint(
+            '⚠️ [Bloco $blockNumber] Nome correto inválido: "$correctName" para papel "$role" - pulando correção profissional',
+          );
+        }
+        continue;
+      }
 
       for (final match in regex.allMatches(text)) {
         final foundName = match.group(1)?.trim();

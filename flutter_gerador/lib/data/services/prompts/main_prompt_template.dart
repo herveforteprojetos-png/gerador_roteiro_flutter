@@ -43,9 +43,120 @@ class MainPromptTemplate {
     required String characterGuidance,
     required String forbiddenNamesWarning,
     required Map<String, String> labels,
+    int totalWords = 10000, // 🆕 Total de palavras do roteiro completo
   }) {
     return '''⭐ IDIOMA OBRIGATÓRIO: ${_getLanguageInstructionInline(language)}
 ${_getKoreanNameRules(language)}
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  🚨🚨🚨 REGRA #0: NUNCA COPIE BLOCOS ANTERIORES! 🚨🚨🚨                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+❌❌❌ ERRO MORTAL DETECTADO: COPIAR PARÁGRAFOS DO CONTEXTO ❌❌❌
+
+PROBLEMA REAL (roteiro anterior rejeitado):
+   Bloco 6: "Na manhã seguinte, a capital acordou sob um céu azul vibrante..."
+   Bloco 9: "Na manhã seguinte, a capital acordou sob um céu azul vibrante..." ← CÓPIA LITERAL!
+   Bloco 11: "Na manhã seguinte, a capital acordou sob um céu azul vibrante..." ← CÓPIA DE NOVO!
+   
+   Bloco 5: "Enquanto Mateus celebrava, Dr. Álvaro estava na cela fria..."
+   Bloco 6: "Enquanto Mateus celebrava, Dr. Álvaro estava na cela fria..." ← CÓPIA LITERAL!
+   Bloco 8: "Enquanto Mateus celebrava, Dr. Álvaro estava na cela fria..." ← 3ª VEZ!
+   Bloco 12: "Enquanto Mateus celebrava, Dr. Álvaro estava na cela fria..." ← 4ª VEZ!
+   Bloco 14: "Enquanto Mateus celebrava, Dr. Álvaro estava na cela fria..." ← 5ª VEZ!
+   
+   RESULTADO: ROTEIRO REJEITADO - Repetição massiva = lixo!
+
+🚨 REGRA ABSOLUTA - ANTES DE ESCREVER QUALQUER PARÁGRAFO:
+
+1️⃣ LEIA O CONTEXTO PRÉVIO (seção "CONTEXTO" acima)
+2️⃣ VERIFIQUE se este parágrafo JÁ FOI ESCRITO antes
+3️⃣ SE JÁ FOI ESCRITO → ESCREVA ALGO TOTALMENTE DIFERENTE!
+4️⃣ SE NÃO FOI ESCRITO → Pode usar, mas NUNCA repita depois
+
+✅ VERSÃO CORRETA (FAÇA ASSIM!):
+   ✅ Bloco 6: "A manhã amanheceu clara. Mateus chegou ao escritório cedo."
+   ✅ Bloco 9: "Dois dias depois, ele revisava os relatórios financeiros." ← NOVO!
+   ✅ Bloco 11: "Na reunião semanal, apresentou os resultados." ← NOVO DE NOVO!
+   
+   RESULTADO: Cada bloco avança a história, sem repetições!
+
+🔴 PROIBIÇÕES ABSOLUTAS:
+   ❌ COPIAR descrições de cenários anteriores (escritório, cela, praça)
+   ❌ COPIAR frases de contraste ("Enquanto X..., Y...")
+   ❌ COPIAR reflexões/lembranças já usadas
+   ❌ COPIAR descrições sensoriais (cheiro, som, textura)
+   
+✅ PERMITIDO:
+   ✅ Mencionar BREVEMENTE locais ("No escritório, Mateus...")
+   ✅ Avançar tempo ("Dias depois...", "Na semana seguinte...")
+   ✅ Novas ações, novos diálogos, novos eventos
+
+🎯 TESTE MENTAL OBRIGATÓRIO (responda antes de escrever cada parágrafo):
+   □ "Este parágrafo já apareceu no CONTEXTO?"
+      → SE SIM: APAGUE e escreva algo 100% diferente!
+      → SE NÃO: Pode continuar, mas marque mentalmente para não repetir
+   
+   □ "Estou descrevendo um cenário que já foi descrito?"
+      → SE SIM: Use apenas 1 frase resumo ("De volta ao escritório...")
+      → SE NÃO: Pode descrever, mas seja breve (máx 2 frases)
+
+🔴 SE HOUVER 1 PARÁGRAFO COPIADO, O BLOCO SERÁ REJEITADO IMEDIATAMENTE!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  🚨 ERRO CRÍTICO #0.5: PADRÕES REPETITIVOS PROIBIDOS (v7.6.134) 🚨           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+❌❌❌ PADRÕES ESTRUTURAIS QUE CAUSAM PREVISIBILIDADE ❌❌❌
+
+🔴 PADRÃO 1: FRASES DE CONTRASTE REPETITIVAS
+
+   ❌ ERRO REAL DETECTADO (roteiro rejeitado - 12x o mesmo padrão):
+   Bloco 3: "Enquanto Otávio construía, Álvaro definhava na prisão..."
+   Bloco 5: "Enquanto Otávio avançava, Álvaro lamentava na cela..."
+   Bloco 7: "Enquanto Otávio prosperava, Álvaro afundava..."
+   Bloco 9: "Enquanto Otávio brilhava, Álvaro apodrecia..."
+   Bloco 11: "Enquanto Otávio crescia, Álvaro encolhia..."
+   → PROBLEMA: Estrutura "Enquanto X [positivo], Y [negativo]" 12x = PREVISÍVEL!
+   
+   ✅ SOLUÇÃO - VARIAR A ESTRUTURA:
+   Bloco 3: "Enquanto Otávio construía, Álvaro definhava..." ← OK (1ª vez)
+   Bloco 5: "No mesmo período, a prisão consumia Álvaro." ← DIFERENTE!
+   Bloco 7: "Álvaro, por sua vez, enfrentava a solidão." ← DIFERENTE!
+   Bloco 9: Foco só em Otávio (sem mencionar Álvaro) ← VARIAÇÃO!
+   Bloco 11: Foco só em Álvaro (sem mencionar Otávio) ← VARIAÇÃO!
+   
+   📋 REGRA: Estrutura "Enquanto X, Y" = MÁXIMO 2x no roteiro todo!
+
+🔴 PADRÃO 2: GATILHOS DE MEMÓRIA EXCESSIVOS
+
+   ❌ ERRO REAL DETECTADO (18x no mesmo roteiro):
+   "Ele se lembrava..." / "Lembrou-se de..." / "A lembrança voltou..."
+   → PROBLEMA: Protagonista vive no passado, não no presente!
+   
+   ✅ REGRA v7.6.134: "Ele se lembrava" = MÁXIMO 4x no roteiro!
+   
+   ❌ ERRADO: 18 flashbacks de memória (exaustivo!)
+   ✅ CORRETO: 4 memórias estratégicas (15%, 45%, 70%, 95%)
+   
+   💡 ALTERNATIVAS (sem usar "lembrou"):
+   • "A frase do pai ecoou em sua mente." (1x = lembrou)
+   • "Ele agiu instintivamente." (sem flashback)
+   • "Sabia exatamente o que fazer." (sem olhar pra trás)
+
+🔴 PADRÃO 3: DESCRIÇÕES DE CENÁRIO REPETIDAS
+
+   ❌ ERRO: Descrever "cela fria" ou "gabinete luxuoso" 10x
+   ✅ CORRETO: Descrever 1x em detalhe, depois usar 1 palavra ("na cela", "no gabinete")
+
+📋 CHECKLIST ANTI-PADRÃO v7.6.134 (antes de cada bloco):
+   □ "Enquanto X, Y" - Já usei 2x? → PARE de usar!
+   □ "Ele se lembrava" - Já usei 4x? → PARE de usar!
+   □ "A ironia era" - Já usei 2x? → PARE de usar!
+   □ Descrição de cenário - Já descrevi? → Use 1 frase só!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║  🚨🚨🚨 ERRO CRÍTICO #1: NUNCA MUDE O NOME DOS PERSONAGENS! 🚨🚨🚨           ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -201,17 +312,20 @@ TODO o texto DEVE estar em $language - SEM EXCEÇÕES!
 ⚠️ CONTEXTO: Este roteiro será narrado por IA de Voz (Text-to-Speech).
    O texto DEVE ser formatado para guiar a entonação e evitar leitura robótica!
 
-1️⃣ **CAPITALIZAÇÃO & PONTUAÇÃO (ENTONAÇÃO):**
-   - O texto DEVE seguir a NORMA CULTA RIGOROSA do idioma.
-   - A IA de voz usa letras maiúsculas e pontuação para saber onde colocar emoção.
-   - Início de frase SEMPRE com maiúscula!
-   - Nomes próprios SEMPRE com maiúscula!
+1️⃣ **CAPITALIZAÇÃO (NORMA SIMPLIFICADA v7.6.141):**
    
-   ❌ ERRADO: "o presidente olhou e disse oi." (Gera voz robótica/monótona)
-   ✅ CORRETO: "O Presidente olhou e disse: 'Oi!'" (Gera pausa dramática e ênfase)
+   🆕 NOVA REGRA: Gere TODO o texto em MINÚSCULAS, exceto NOMES PRÓPRIOS.
    
-   ❌ ERRADO: "ele foi até a casa. ela estava esperando."
-   ✅ CORRETO: "Ele foi até a casa. Ela estava esperando."
+   • NOMES DE PERSONAGENS: Primeira letra maiúscula (Mariana, Costa, Helena)
+   • INÍCIO DE FRASES: MINÚSCULO (não capitalize)
+   • RESTO DO TEXTO: Minúsculo
+   
+   ✅ CORRETO: "para Mariana. o presidente Costa falou."
+   ❌ ERRADO: "Para Mariana. O presidente Costa falou." (início de frase capitalizado)
+   ❌ ERRADO: "MARIANA OLHOU PARA HELENA" (tudo maiúsculo)
+   
+   🎯 MOTIVO: A capitalização será normalizada automaticamente.
+              Apenas mantenha NOMES com primeira letra maiúscula.
 
 2️⃣ **NÚMEROS E SIGLAS POR EXTENSO:**
    - Escreva números e valores SEMPRE por extenso para evitar erros de leitura.
@@ -237,22 +351,84 @@ TODO o texto DEVE estar em $language - SEM EXCEÇÕES!
    ❌ ERRADO: "Na mansão onde tudo tinha começado, Maria ainda estava processando a revelação..."
    ✅ CORRETO: "Maria fechou os olhos. Precisava de um momento. A revelação ainda ecoava em sua mente."
 
+🚨🚨🚨 REGRA CRÍTICA #1 - NUNCA RECOMECE A HISTÓRIA! 🚨🚨🚨
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⛔ ERRO MORTAL: Você está gerando UM BLOCO de uma história maior!
+   Se o CONTEXTO mostra que Mateus JÁ recebeu o cartão de Otávio,
+   você NÃO PODE escrever a cena dele recebendo o cartão NOVAMENTE!
+
+❌ PROIBIDO FAZER:
+   • Recontar cenas que já aconteceram no CONTEXTO
+   • Reescrever o início da história (ex: "Mateus olhava o relógio...")
+   • Repetir a mesma reviravolta (ex: "o idoso revelou ser um magnata")
+   • Narrar eventos passados como se fossem novos
+
+✅ VOCÊ DEVE:
+   • CONTINUAR de onde o CONTEXTO parou
+   • Avançar para NOVOS eventos que ainda não aconteceram
+   • Progredir a trama cronologicamente
+
+📊 TESTE MENTAL ANTES DE ESCREVER:
+   1. Leia o CONTEXTO fornecido
+   2. Identifique QUAL É O ÚLTIMO EVENTO narrado
+   3. Comece SEU BLOCO logo APÓS esse evento
+   
+   EXEMPLO:
+   Se o CONTEXTO termina com "Mateus foi nomeado CEO"
+   → Seu bloco deve começar DEPOIS disso (ex: "Nos meses seguintes, Mateus...")
+   → NÃO reescreva a cena de nomeação!
+
+🔴 SE VOCÊ RECONTAR A HISTÓRIA DO INÍCIO, O BLOCO SERÁ REJEITADO!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 5️⃣ **RESTRIÇÃO DE REPETIÇÃO (ANTI-ECHO) 🚫:**
    - É PROIBIDO repetir frases inteiras, ditados populares ou metáforas usadas no bloco anterior!
    - Se o personagem já lembrou de um conselho do pai/mãe/avó recentemente, NÃO repita a mesma lembrança.
    - Crie uma NOVA reflexão ou foque no PRESENTE da cena.
    - Cada bloco deve trazer NOVAS descrições. Não descreva o cenário com as mesmas palavras!
    
-   ❌ ERRADO: Bloco 1: "Como dizia meu pai: a vida é um rio..."
-             Bloco 2: "Lembrei do que meu pai dizia: a vida é um rio..."
-             Bloco 3: "Meu pai sempre dizia: a vida é um rio..."
+   🚨🚨🚨 REGRA CRÍTICA v7.6.134: FORESHADOWING = EXATAMENTE 4x! 🚨🚨🚨
    
-   ✅ CORRETO: Bloco 1: "Como dizia meu pai: a vida é um rio..."
-              Bloco 2: "Precisava agir. Não havia tempo para filosofias."
-              Bloco 3: "Pela primeira vez, entendi o que meu pai quis dizer."
+   ⚠️ PROBLEMA v7.6.133: Frase inspiracional apareceu 9x = SPAM!
    
-   ⚠️ REGRA DE OURO: Se você leu uma frase bonita no contexto anterior, NÃO a repita!
-      Invente algo novo ou avance a história sem reflexões repetidas.
+   ❌ ERRO GRAVÍSSIMO (roteiro rejeitado - 9x a mesma frase):
+      Bloco 2: "A bondade é a moeda que nunca perde o valor" ← 1ª (OK)
+      Bloco 4: "A bondade é a moeda que nunca perde o valor" ← 2ª (OK)
+      Bloco 6: "A bondade é a moeda que nunca perde o valor" ← 3ª (OK)
+      Bloco 8: "A bondade é a moeda que nunca perde o valor" ← 4ª (OK - ÚLTIMA!)
+      Bloco 10: "A bondade é a moeda que nunca perde o valor" ← 5ª (PROIBIDO!)
+      Bloco 12: "A bondade é a moeda que nunca perde o valor" ← 6ª (PROIBIDO!)
+      Bloco 14: "A bondade é a moeda que nunca perde o valor" ← 7ª (SPAM!)
+      Bloco 15: "A bondade é a moeda que nunca perde o valor" ← 8ª (SPAM!)
+      Bloco 16: "A bondade é a moeda que nunca perde o valor" ← 9ª (INSUPORTÁVEL!)
+      
+      RESULTADO: Frase repetida 9 vezes = IRRITANTE para espectador!
+   
+   ✅ FORMA CORRETA (exatamente 4x nos pontos estratégicos):
+      Bloco ~15%: "Como dizia meu pai: a vida é um rio..." ← 1ª (introdução)
+      Bloco ~45%: "Lembrei das palavras de meu pai: a vida é um rio..." ← 2ª (desenvolvimento)
+      Bloco ~70%: "A vida é um rio, pensei." ← 3ª (pré-clímax)
+      Bloco ~95%: "A vida é um rio. Agora eu entendia." ← 4ª (resolução - ÚLTIMA!)
+      
+      Blocos intermediários: SEM a frase! Avance a história normalmente.
+   
+   📊 CONTADOR MENTAL OBRIGATÓRIO v7.6.134:
+      • 1ª menção (~15%) → OK, introduz a frase
+      • 2ª menção (~45%) → OK, relembra
+      • 3ª menção (~70%) → OK, ganha significado
+      • 4ª menção (~95%) → OK, fechamento - ÚLTIMA!
+      • 5ª+ menção → PROIBIDO! Virou spam!
+   
+   📍 POSICIONAMENTO ESTRATÉGICO:
+      • Bloco 15% = Apresentação da frase (pai/avó ensina)
+      • Bloco 45% = Lembra no meio de crise (força para agir)
+      • Bloco 70% = Antes do clímax (motivação final)
+      • Bloco 95% = Fechamento (compreensão completa)
+   
+   ⚠️ REGRA DE OURO v7.6.134: EXATAMENTE 4x, NEM MAIS, NEM MENOS!
+      • Menos de 4x = Foreshadowing incompleto
+      • Mais de 4x = SPAM irritante para espectador!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -355,13 +531,56 @@ TODO o texto DEVE estar em $language - SEM EXCEÇÕES!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🚨 REGRA #1: MÁXIMO 6 PERSONAGENS COM NOME
-   • 1 Protagonista (narrador)
-   • 2 Antagonistas principais
-   • 3 Secundários (aliados, vítimas)
-   ❌ PROIBIDO: Mais de 6 personagens (público perde o fio!)
-   ❌ PROIBIDO: Adicionar pai, mãe, irmão, tio, primo = muitos!
-   ✅ CORRETO: Outros familiares = MENÇÃO, não personagem
+🚨 REGRA #1: MÁXIMO 6 PERSONAGENS COM NOME (v7.6.134 - VALIDAÇÃO RIGOROSA)
+
+   ⚠️⚠️⚠️ ATENÇÃO MÁXIMA: LIMITE ABSOLUTO = 6 NOMES! ⚠️⚠️⚠️
+   
+   📋 DISTRIBUIÇÃO PERMITIDA:
+   • 1 Protagonista (narrador) ← OBRIGATÓRIO
+   • 1-2 Antagonistas principais ← MÁXIMO 2
+   • 2-3 Secundários (aliados, família nuclear) ← MÁXIMO 3
+   
+   🔢 CONTADOR OBRIGATÓRIO - ANTES DE NOMEAR QUALQUER PERSONAGEM:
+   □ Personagem 1 (protagonista): ________________
+   □ Personagem 2 (antagonista 1): ________________
+   □ Personagem 3 (antagonista 2 OU aliado): ________________
+   □ Personagem 4 (secundário): ________________
+   □ Personagem 5 (secundário): ________________
+   □ Personagem 6 (secundário): ________________
+   ✋ PAROU AQUI! 7º nome = ROTEIRO REJEITADO!
+   
+   ❌ PROIBIDO NOMEAR (use descrição genérica):
+   • Beneficiários de programas ("uma jovem", não "Sofia")
+   • Testemunhas ("o vizinho", não "Roberto")
+   • Figurantes ("o garçom", não "Paulo")
+   • Profissionais de apoio ("a recepcionista", não "Mariana")
+   • Familiares distantes ("o tio", não "Ernesto")
+   
+   ✅ CORRETO: Outros familiares = "meu pai", "minha mãe" (sem nome próprio)
+   ✅ CORRETO: Exemplos de sucesso = "uma jovem", "um rapaz", "um empresário"
+   
+   🔴 PENALIDADE v7.6.134:
+   • 7 personagens = Nota -0.5 (GRAVE)
+   • 8 personagens = Nota -1.0 (MUITO GRAVE) + REJEIÇÃO
+   • 9+ personagens = ROTEIRO DESCARTADO AUTOMATICAMENTE
+   
+⚠️ REGRA CRÍTICA v7.6.129 - PERSONAGENS "EXEMPLO" NÃO LEVAM NOME:
+   
+   ❌ ERRADO (8 nomes - 2 são exemplos desnecessários):
+   "Mateus ajudou Clara, filha de faxineira, que entrou em medicina.
+    Também ajudou Roberto, do interior, que virou engenheiro.
+    O empresário Gustavo ficou impressionado e doou milhões."
+   → Problema: Clara/Roberto/Gustavo têm mesma função (mostrar impacto)
+   → Solução: NÃO dar nomes a eles!
+   
+   ✅ CORRETO (6 nomes - exemplos sem nome mantêm impacto):
+   "Mateus ajudou centenas de jovens. Uma delas, filha de faxineira,
+    conseguiu entrar em medicina. Um rapaz do interior realizou o sonho
+    de ser engenheiro. Até empresários milionários se impressionaram
+    com o programa e doaram recursos."
+   → Impacto mantido: ✅ Ainda é emocionante!
+   → Memória: ✅ Público lembra dos 6 principais!
+   → YouTube: ✅ Retenção 65-75% (vs 45-60% com 8+)
 
 � CONSOLIDAÇÃO OBRIGATÓRIA - EVITE PERSONAGENS REDUNDANTES:
 
@@ -611,6 +830,41 @@ TOTAL: ~2.200 palavras de queda VISCERAL ✅
    • Ato 1: Vilão RI, ZOMBA, HUMILHA (sem piedade!)
    • Ato 2: Vilão em PODER (ostentando, pisando em cima)
    • Ato 3: Vilão CAI + 1 momento de arrependimento (50 palavras)
+
+🚨 REGRA #5: ATO 3 COMPACTO (v7.6.134 - MÁXIMO 2 BLOCOS PÓS-CLÍMAX)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   ⚠️ ERRO REAL DETECTADO: Ato 3 com 6 blocos APÓS o clímax!
+   
+   ❌ ERRADO (roteiro inflado):
+   Bloco 10: Vilão é preso (CLÍMAX) ← Aqui deveria acelerar!
+   Bloco 11: Protagonista reflete... (arrastado)
+   Bloco 12: Protagonista visita projeto... (arrastado)
+   Bloco 13: Protagonista em reunião... (arrastado)
+   Bloco 14: Vilão na prisão... (arrastado)
+   Bloco 15: Protagonista celebra... (arrastado)
+   Bloco 16: Mais reflexões... (arrastado)
+   → PROBLEMA: 6 blocos de "vitória lap" = TEDIOSO!
+   
+   ✅ CORRETO (Ato 3 compacto):
+   Bloco 10: Vilão é preso (CLÍMAX)
+   Bloco 11: Queda detalhada do vilão + confronto final
+   Bloco 12: Resolução emocional + fechamento (FIM!)
+   → RESULTADO: História termina no ponto alto!
+   
+   📋 REGRA ABSOLUTA:
+   • Após CLÍMAX (prisão/derrota do vilão) = MÁXIMO 2 blocos!
+   • Bloco Pós-Clímax 1: Consequências imediatas (queda visceral)
+   • Bloco Pós-Clímax 2: Fechamento emocional (resolução)
+   • NÃO adicione blocos extras de "dias depois", "meses depois"!
+   
+   💡 COMO IDENTIFICAR O CLÍMAX:
+   • Vilão preso/derrotado
+   • Verdade revelada publicamente
+   • Protagonista vence confronto decisivo
+   → Após isso = ACELERE e TERMINE!
+   
+   🔴 PENALIDADE: Mais de 2 blocos pós-clímax = -0.5 na nota!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚨🚨🚨 TABELA DE PENALIDADES - CONSEQUÊNCIAS POR VIOLAR REGRAS 🚨🚨🚨
@@ -896,6 +1150,48 @@ ERRO v7.6.1 (Herança):
 ❌ ERRO #5: Foreshadowing incompleto ou com frases diferentes
 ⚠️ CRÍTICO: Foreshadowing = MESMA FRASE EXATA 4x (15-45-70-95%)!
 ⚠️ ERRO SISTÊMICO v7.6.3 + v7.6.4: 100% dos roteiros usaram múltiplas frases! PARE ISSO AGORA!
+
+🔍 VALIDAÇÃO OBRIGATÓRIA v7.6.129 - CHECKLIST AO FINAL DE CADA BLOCO:
+   
+   📍 Ao terminar Bloco ~15% da história:
+   ✅ "Escrevi a frase do pai/avó pela PRIMEIRA vez?"
+   ✅ "Copiei ela EXATAMENTE para reusar nos blocos 45-70-95%?"
+   ✅ "Anotei a frase completa para garantir repetição exata?"
+   
+   📍 Ao terminar Bloco ~45% da história:
+   ✅ "Repeti a MESMA frase EXATA do bloco 15%?"
+   ❌ "NÃO inventei variação como 'a vida tece destinos'!"
+   ⚠️ Use Ctrl+F no texto anterior para buscar e copiar exatamente!
+   
+   📍 Ao terminar Bloco ~70% da história (CRÍTICO - onde MAIS erra!):
+   ✅ "Repeti a MESMA frase idêntica dos blocos 15% e 45%?"
+   ❌ "NÃO troquei por 'a conta chega' ou 'fios podres'!"
+   ❌ "NÃO criei nova metáfora de costura/construção!"
+   ⚠️ PARE AGORA e valide: Busque no texto completo a frase do 15%!
+   
+   📍 Ao terminar Bloco ~95% da história:
+   ✅ "Repeti pela 4ª e ÚLTIMA vez a frase idêntica?"
+   ✅ "Busquei no texto e confirmei: são 4 EXATAS?"
+   ⚠️ Validação final: Ctrl+F a frase e contar = deve ter 4 ocorrências!
+
+🔍 VALIDAÇÃO OBRIGATÓRIA v7.6.129 - CHECKLIST AO FINAL DE CADA BLOCO:
+   
+   📍 Ao terminar Bloco ~15%:
+   ✅ "Escrevi a frase do pai/avó pela PRIMEIRA vez?"
+   ✅ "Copiei ela EXATAMENTE para usar nos blocos 45-70-95%?"
+   
+   📍 Ao terminar Bloco ~45%:
+   ✅ "Repeti a MESMA frase do bloco 15%? (Ctrl+F para buscar)"
+   ❌ "NÃO inventei frase nova ou variação!"
+   
+   📍 Ao terminar Bloco ~70% (CRÍTICO - onde mais erra!):
+   ✅ "Repeti a MESMA frase dos blocos 15% e 45%?"
+   ❌ "NÃO troquei por 'a conta chega' ou 'a terra cobra'!"
+   ⚠️ PARE E VALIDE: Busque no texto e confirme que é IDÊNTICA!
+   
+   📍 Ao terminar Bloco ~95%:
+   ✅ "Repeti pela 4ª e ÚLTIMA vez a mesma frase?"
+   ✅ "São 4 repetições EXATAS? (buscar no texto completo)"
 
 �🚨🚨 VOCÊ JÁ COMETEU ESTE ERRO 3 VEZES SEGUIDAS! 🚨🚨🚨
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1189,7 +1485,56 @@ $forbiddenNamesWarning
    Novo roteiro = Nova história = Novos personagens = Novos nomes!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-${contextoPrevio.isNotEmpty ? 'CONTEXTO:\n$contextoPrevio\n\n' : ''}${avoidRepetition ? '\n🚨 AVISO URGENTE: O bloco anterior foi REJEITADO por repetição!\n⚠️ VOCÊ COPIOU PARÁGRAFOS DO CONTEXTO! Isso é PROIBIDO!\n✅ AGORA: Escreva conteúdo 100% NOVO, SEM copiar frases anteriores!\n   Use palavras DIFERENTES, estruturas DIFERENTES, avance a história!\n\n' : ''}${characterGuidance.isEmpty ? '' : characterGuidance}$instruction.\n$temaSection${localizacao.trim().isEmpty ? '${labels['location']}: ${labels['locationNotSpecified']}' : '${labels['location']}: $localizacao'}
+${contextoPrevio.isNotEmpty ? '''╔══════════════════════════════════════════════════════════════════════════════╗
+║  📖 CONTEXTO: HISTÓRIA JÁ ESCRITA (O QUE JÁ ACONTECEU)                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+$contextoPrevio
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ➡️ SUA TAREFA: CONTINUE A HISTÓRIA A PARTIR DAQUI! ➡️                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+🎬 INSTRUÇÕES DE CONTINUIDADE:
+
+1️⃣ O texto acima É A HISTÓRIA ATÉ AGORA
+   → NÃO recomece do zero
+   → NÃO repita cenas que já aconteceram
+   → CONTINUE de onde parou
+
+2️⃣ COMECE SEU BLOCO exatamente onde o contexto terminou
+   → Se terminou com "ele saiu da sala" → comece com o que aconteceu DEPOIS
+   → Se terminou com "ela tomou a decisão" → mostre as CONSEQUÊNCIAS
+   → Avance a linha do tempo: minutos, horas ou dias depois
+
+3️⃣ MANTENHA OS PERSONAGENS JÁ ESTABELECIDOS
+   → Use os mesmos nomes que apareceram no contexto
+   → NÃO mude personalidades ou relações já definidas
+   → Mantenha a continuidade das ações
+
+4️⃣ AVANCE A TRAMA
+   → Introduza novos eventos
+   → Desenvolva conflitos existentes
+   → Mostre consequências das ações anteriores
+   → Aprofunde relacionamentos
+
+❌ NÃO FAÇA:
+   ❌ "João acordou naquela manhã..." (se ele já acordou no contexto)
+   ❌ "Voltando ao início..." (NUNCA volte atrás!)
+   ❌ "Como vimos antes..." (não resuma, AVANCE!)
+   ❌ Recontar cenas que já aconteceram
+
+✅ FAÇA:
+   ✅ "Duas horas depois, João..."
+   ✅ "No dia seguinte..."
+   ✅ "Enquanto isso, em outro lugar..."
+   ✅ "A consequência veio rápido..."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+''' : ''}${avoidRepetition ? '\n🚨 AVISO URGENTE: O bloco anterior foi REJEITADO por repetição!\n⚠️ VOCÊ COPIOU PARÁGRAFOS DO CONTEXTO! Isso é PROIBIDO!\n✅ AGORA: Escreva conteúdo 100% NOVO, SEM copiar frases anteriores!\n   Use palavras DIFERENTES, estruturas DIFERENTES, avance a história!\n\n' : ''}${characterGuidance.isEmpty ? '' : characterGuidance}$instruction.\n$temaSection${localizacao.trim().isEmpty ? '${labels['location']}: ${labels['locationNotSpecified']}' : '${labels['location']}: $localizacao'}
 $localizationGuidance
 
 ${_getThemeInterpretationRules()}
@@ -1373,9 +1718,9 @@ OBRIGATÓRIO: Texto limpo, narrativo, fluido, pronto para narração direta. NUN
    • Varie o ritmo: alterne cenas de ação com reflexão
    • Use ganchos sutis antes de mudanças de cena
 
-${_get3ActStructureRules()}
+${_get3ActStructureRules(totalWords)}
 
-${_getDetailedAct3Rules()}
+${_getDetailedAct3Rules(totalWords)}
 
 ${_getYouTubeFinaleStructureRules()}''';
   }
@@ -2029,6 +2374,30 @@ Isso é ESSENCIAL para autenticidade e imersão do público coreano!
    • Personagens secundários: MÁXIMO 3
    
    TOTAL MÁXIMO: 6 personagens com nome
+   
+⚠️⚠️⚠️ REGRA CRÍTICA v7.6.129 - PERSONAGENS "EXEMPLO" NÃO LEVAM NOME:
+   
+   ❌ ERRADO (8 nomes - desperdiça slots com exemplos):
+   "Mateus ajudou Clara, filha de faxineira, que entrou em medicina.
+    Também ajudou Roberto, do interior, que virou engenheiro.
+    O empresário Gustavo ficou impressionado e doou milhões."
+   → Problema: Clara/Roberto/Gustavo = mesma função (mostrar impacto)
+   → Público: "Quem são essas pessoas? Não consigo lembrar!"
+   
+   ✅ CORRETO (6 nomes - exemplos sem nome mantém impacto):
+   "Mateus ajudou centenas de jovens. Uma delas, filha de faxineira,
+    conseguiu entrar em medicina. Um rapaz do interior realizou o sonho
+    de ser engenheiro. Até empresários milionários se impressionaram."
+   → Impacto: ✅ AINDA EMOCIONANTE!
+   → Memória: ✅ Público lembra dos 6 principais!
+   → YouTube: ✅ Retenção 65-75% (vs 45-60% com 8+ nomes)
+   
+   💡 QUANDO NÃO DAR NOME:
+   • Beneficiários de programa social = "jovens", "estudantes"
+   • Clientes satisfeitos = "um homem", "uma senhora"
+   • Doadores/investidores = "um empresário", "um magnata"
+   • Testemunhas = "vizinhos", "colegas"
+   • Vítimas secundárias = "uma família", "trabalhadores"
 
 ⚠️⚠️⚠️ ATENÇÃO ESPECIAL: TEMAS FAMILIARES ⚠️⚠️⚠️
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2044,6 +2413,31 @@ Isso é ESSENCIAL para autenticidade e imersão do público coreano!
 
 🚨🚨🚨 CONSOLIDAÇÃO DE PERSONAGENS SECUNDÁRIOS 🚨🚨🚨
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ REGRA CRÍTICA: Se dois personagens têm a MESMA FUNÇÃO, devem ser 1 só!
+
+⚠️⚠️⚠️ EVITE BLOCOS REPETITIVOS NO ATO 3 (v7.6.129):
+   
+   ❌ ERRO COMUM (últimos 3-4 blocos com padrão idêntico):
+   Bloco N:   "Protagonista prospera + conquistas detalhadas"
+   Bloco N+1: "Vilão 1 sofre + miséria/pobreza detalhada"
+   Bloco N+2: "Vilão 2 sofre + prisão/solidão detalhada"
+   Bloco N+3: "Protagonista prospera DE NOVO + mais conquistas"
+   → Problema: Leitura CANSATIVA, previsível, arrastada
+   → Impacto: Espectador pula/abandona (“já entendi”)
+   
+   ✅ SOLUÇÃO OPÇÃO A - Intercalar cenas (mais dinâmico):
+   Bloco N:   "Protagonista + Fundo 100M + Vilão 1 lê notícia (reação)"
+   Bloco N+1: "Vilão 2 prisão + Vilão 1 perde casa (ambos no mesmo bloco)"
+   Bloco N+2: "Protagonista finaliza legado + reflexão + ambos em ruína"
+   
+   ✅ SOLUÇÃO OPÇÃO B - Condensar blocos (mais eficiente):
+   Bloco N:   "Protagonista cria programas + impacto detalhado (900 pal)"
+   Bloco N+1: "Vilões 1 e 2 ruína completa + prisão + solidão (900 pal)"
+   Bloco N+2: "Legado protagonista consolidado + paz interior (900 pal)"
+   
+   💡 REGRA: Últimos 35% devem AVANÇAR ação, NÃO repetir padrão!
+   💡 TESTE: Se 2 blocos começam igual = problema! Varie a abertura!
+
 ⚠️ REGRA CRÍTICA: Se dois personagens têm a MESMA FUNÇÃO, devem ser 1 só!
 
 ❌ EXEMPLO DE ERRO REAL DETECTADO:
@@ -2132,34 +2526,85 @@ Isso é ESSENCIAL para autenticidade e imersão do público coreano!
 ''';
   }
 
-  static String _get3ActStructureRules() {
-    return '''🚨 ESTRUTURA DE 3 ATOS - OBRIGATÓRIA PARA HISTÓRIAS COMPLETAS:
+  static String _get3ActStructureRules(int totalWords) {
+    // Calcula palavras para cada ato baseado no total
+    final act1Words = (totalWords * 0.25).round();
+    final act2Words = (totalWords * 0.40).round();
+    final act2MaxWords = (totalWords * 0.45).round(); // LIMITE ABSOLUTO
+    final act3Words = (totalWords * 0.35).round();
+    
+    return '''🚨🚨🚨 ESTRUTURA DE 3 ATOS - VALIDAÇÃO AUTOMÁTICA ATIVADA 🚨🚨🚨
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ ATENÇÃO CRÍTICA: A história DEVE ter INÍCIO, MEIO e FIM COMPLETOS!
+⚠️ ATENÇÃO CRÍTICA: Esta história tem $totalWords palavras TOTAIS.
+Se você NÃO seguir esta estrutura, o roteiro será REJEITADO!
 
-🚨 DISTRIBUIÇÃO OBRIGATÓRIA DO ESPAÇO:
-   • ATO 1 - INÍCIO (Setup): 25% do roteiro
-   • ATO 2 - MEIO (Desenvolvimento): 40% do roteiro ← 🚨 LIMITE MÁXIMO: 45%!
-   • ATO 3 - FIM (Resolução): 35% do roteiro ← 🚨 NÃO NEGOCIÁVEL!
+🚨 DISTRIBUIÇÃO OBRIGATÓRIA (CALCULADA PARA $totalWords PALAVRAS):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   📌 ATO 1 - INÍCIO (Setup): ~$act1Words palavras (25%)
+      ✅ Apresentar protagonista, conflito inicial, mundo
+      
+   📌 ATO 2 - MEIO (Desenvolvimento): ~$act2Words palavras (40%)
+      ✅ TARGET: $act2Words palavras
+      🚨 LIMITE MÁXIMO ABSOLUTO: $act2MaxWords palavras (45%)
+      ❌ SE ULTRAPASSAR $act2MaxWords palavras = ROTEIRO REJEITADO!
+      
+   📌 ATO 3 - FIM (Resolução): ~$act3Words palavras (35%)
+      🚨🚨🚨 MÍNIMO OBRIGATÓRIO: $act3Words palavras 🚨🚨🚨
+      ❌ SE TIVER MENOS QUE $act3Words palavras = ROTEIRO REJEITADO!
+      ✅ Clímax + Resolução + Fechamento COMPLETOS
+
+⚠️ ERRO FATAL COMUM:
+   ❌ Gastar 50% no Ato 2 (desenvolvimento longo demais)
+   ❌ Deixar só 20% para o Ato 3 (final apressado/cortado)
+   ❌ RESULTADO: História sem final satisfatório
+   
+✅ FAÇA ASSIM:
+   ✅ Quando atingir $act2Words palavras no Ato 2 → PARE!
+   ✅ Inicie o ATO 3 imediatamente
+   ✅ Reserve $act3Words palavras completas para o final
 ''';
   }
 
-  static String _getDetailedAct3Rules() {
-    return '''🎬 ESTRUTURA DETALHADA DO ATO 3 (35% FINAL) - OBRIGATÓRIO:
+  static String _getDetailedAct3Rules(int totalWords) {
+    // Calcula palavras mínimas para cada parte do Ato 3
+    final act3Total = (totalWords * 0.35).round();
+    final part1Words = (act3Total * 0.43).round(); // 15% do total
+    final part2Words = (act3Total * 0.29).round(); // 10% do total
+    final part3Words = (act3Total * 0.29).round(); // 10% do total
+    
+    return '''🎬 ATO 3 DETALHADO: $act3Total PALAVRAS OBRIGATÓRIAS (35% DE $totalWords)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ O ATO 3 é o CLÍMAX e RESOLUÇÃO. Deve SEMPRE incluir TODAS as 3 partes:
+🚨 VOCÊ DEVE ESCREVER TODAS AS 3 PARTES COM O TAMANHO MÍNIMO:
 
-📍 PARTE 1: EXECUÇÃO DA VINGANÇA/REVELAÇÃO (15% do roteiro)
-   ✅ Protagonista USA a "arma" obtida no Ato 2
-   ✅ Confronto direto OU revelação pública acontece NA TELA
+📍 PARTE 1 - CLÍMAX/CONFRONTO: MÍNIMO $part1Words palavras (43% do Ato 3)
+   ✅ CENA COMPLETA mostrando confronto final
+   ✅ Diálogos diretos, ações visíveis
+   ❌ ERRO: "Eles se confrontaram e resolveram" (10 palavras) ← REJEITADO!
+   ✅ CORRETO: Cena completa com falas, emoções, reviravoltas
 
-📍 PARTE 2: QUEDA DOS ANTAGONISTAS (10% do roteiro)
-   ✅ Consequências IMEDIATAS e VISÍVEIS mostradas EM CENA
-   ❌ PROIBIDO: "Eles foram presos" sem MOSTRAR a prisão
+📍 PARTE 2 - CONSEQUÊNCIAS: MÍNIMO $part2Words palavras (29% do Ato 3)
+   ✅ Mostrar CENAS das consequências acontecendo
+   ❌ ERRO: "Ele foi preso. Perdeu tudo." (5 palavras) ← REJEITADO!
+   ✅ CORRETO: Cena da prisão, cena da perda, reações visíveis
+   
+📍 PARTE 3 - RESOLUÇÃO FINAL: MÍNIMO $part3Words palavras (29% do Ato 3)
+   ✅ Estado final do protagonista MOSTRADO em cena
+   ✅ Reflexão, novo começo, fechamento emocional
+   ❌ ERRO: "E ela viveu feliz." (4 palavras) ← REJEITADO!
+   ✅ CORRETO: Cena final mostrando nova vida, emoções, mudanças
 
-📍 PARTE 3: RESOLUÇÃO DO PROTAGONISTA (10% do roteiro)
-   ✅ Protagonista em posição final clara COM CENA DESCRITIVA
-   ✅ Fechamento emocional satisfatório MOSTRADO
+🧮 CONTA MENTAL OBRIGATÓRIA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Antes de finalizar, CALCULE:
+• Parte 1 tem $part1Words palavras? (Se não, CONTINUE ESCREVENDO)
+• Parte 2 tem $part2Words palavras? (Se não, CONTINUE ESCREVENDO)
+• Parte 3 tem $part3Words palavras? (Se não, CONTINUE ESCREVENDO)
+• TOTAL do Ato 3 = $act3Total palavras?
+
+❌ SE O ATO 3 TIVER MENOS QUE $act3Total PALAVRAS:
+   → O roteiro será REJEITADO por final incompleto!
+   → Espectadores vão reclamar que "o final foi corrido"
+   → Perda de retenção e engajamento
 
 🚨 CONTROLE DE TEMPO NOS ÚLTIMOS 35%:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
