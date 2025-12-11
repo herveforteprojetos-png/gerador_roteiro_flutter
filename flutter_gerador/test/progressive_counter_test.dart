@@ -8,7 +8,8 @@ void main() {
   group('Progressive Counter - ActInfo Calculation', () {
     const targetTotal = 6800; // Total padrão de palavras
     const act1Limit = 1700; // 25%
-    const act2Limit = 3060; // 45%
+    const act2MaxWords = 2720; // 40% (do total)
+    const act2End = 4420; // 65% (fim do Ato 2)
     const act3Min = 2380; // 35%
 
     test('Ato 1 - Início (0 palavras)', () {
@@ -55,7 +56,7 @@ void main() {
       expect(actInfo.actNumber, 2);
       expect(actInfo.actName, 'ATO 2 - MEIO (Desenvolvimento)');
       expect(actInfo.actCurrentWords, 1); // 1701 - 1700 (fim Ato 1)
-      expect(actInfo.actMaxWords, act2Limit - act1Limit); // ~1360
+      expect(actInfo.actMaxWords, act2MaxWords); // 40% do total
       expect(actInfo.isOverLimit, false);
     });
 
@@ -70,38 +71,38 @@ void main() {
       expect(actInfo.actRemainingWords, greaterThan(0));
     });
 
-    test('Ato 2 - Fim crítico (3000 palavras - restam 60)', () {
+    test('Ato 2 - Fim crítico (4300 palavras - restam 120)', () {
       final actInfo = StructureRules.getActInfo(
-        currentTotalWords: 3000,
+        currentTotalWords: 4300,
         targetTotalWords: targetTotal,
       );
 
       expect(actInfo.actNumber, 2);
-      expect(actInfo.actCurrentWords, 3000 - act1Limit);
+      expect(actInfo.actCurrentWords, 4300 - act1Limit);
       expect(actInfo.actRemainingWords, lessThan(300)); // Zona crítica
     });
 
-    test('Ato 3 - Início (3061 palavras)', () {
+    test('Ato 3 - Início (4421 palavras)', () {
       final actInfo = StructureRules.getActInfo(
-        currentTotalWords: 3061,
+        currentTotalWords: 4421,
         targetTotalWords: targetTotal,
       );
 
       expect(actInfo.actNumber, 3);
       expect(actInfo.actName, 'ATO 3 - FIM (Resolução)');
-      expect(actInfo.actCurrentWords, 1); // 3061 - 3060
+      expect(actInfo.actCurrentWords, 1); // 4421 - 4420
       expect(actInfo.actMaxWords, act3Min);
       expect(actInfo.actRemainingWords, greaterThan(2000)); // Muito espaço
     });
 
-    test('Ato 3 - Meio (4500 palavras)', () {
+    test('Ato 3 - Meio (5000 palavras)', () {
       final actInfo = StructureRules.getActInfo(
-        currentTotalWords: 4500,
+        currentTotalWords: 5000,
         targetTotalWords: targetTotal,
       );
 
       expect(actInfo.actNumber, 3);
-      expect(actInfo.actCurrentWords, 4500 - act2Limit);
+      expect(actInfo.actCurrentWords, 5000 - act2End);
       expect(actInfo.actRemainingWords, greaterThan(500));
     });
 
@@ -112,8 +113,11 @@ void main() {
       );
 
       expect(actInfo.actNumber, 3);
-      expect(actInfo.actCurrentWords, 6800 - act2Limit);
-      expect(actInfo.actRemainingWords, lessThan(0)); // Completou mínimo
+      expect(actInfo.actCurrentWords, 6800 - act2End);
+      expect(
+        actInfo.actRemainingWords,
+        lessThanOrEqualTo(0),
+      ); // Completou mínimo
     });
   });
 

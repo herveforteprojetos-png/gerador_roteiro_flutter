@@ -28,8 +28,11 @@ class StructureRules {
     required int currentTotalWords,
     required int targetTotalWords,
   }) {
-    final act1Limit = (targetTotalWords * 0.25).round();
-    final act2Limit = (targetTotalWords * 0.45).round(); // MÁXIMO 45%
+    final act1Limit = (targetTotalWords * 0.25).round(); // 25%
+    final act2End = (targetTotalWords * 0.65)
+        .round(); // Ato 1 (25%) + Ato 2 (40%) = 65%
+    final act2MaxWords = (targetTotalWords * 0.40)
+        .round(); // Ato 2 sozinho = 40%
 
     // Determinar em qual Ato estamos
     if (currentTotalWords <= act1Limit) {
@@ -42,10 +45,9 @@ class StructureRules {
         actRemainingWords: act1Limit - currentTotalWords,
         isOverLimit: false,
       );
-    } else if (currentTotalWords <= act2Limit) {
+    } else if (currentTotalWords <= act2End) {
       // Estamos no Ato 2
       final act2CurrentWords = currentTotalWords - act1Limit;
-      final act2MaxWords = act2Limit - act1Limit;
       return ActInfo(
         actNumber: 2,
         actName: 'ATO 2 - MEIO (Desenvolvimento)',
@@ -56,7 +58,7 @@ class StructureRules {
       );
     } else {
       // Estamos no Ato 3
-      final act3CurrentWords = currentTotalWords - act2Limit;
+      final act3CurrentWords = currentTotalWords - act2End;
       final act3MinWords = (targetTotalWords * 0.35).round();
       final act3RemainingWords = act3MinWords - act3CurrentWords;
 
@@ -67,7 +69,7 @@ class StructureRules {
         actMaxWords: act3MinWords, // Usar mínimo como "máximo" para Ato 3
         actRemainingWords: act3RemainingWords,
         isOverLimit:
-            currentTotalWords > act2Limit && act3CurrentWords < act3MinWords,
+            currentTotalWords > act2End && act3CurrentWords < act3MinWords,
       );
     }
   }
