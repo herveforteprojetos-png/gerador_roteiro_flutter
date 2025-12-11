@@ -1711,6 +1711,27 @@ ${isSpanish ? '🚨 ESPAÑOL - CONTROL ESTRICTO DE EXTENSIÓN:\n   • Tu bloque
 PROIBIDO: Emojis, símbolos, formatação markdown (incluindo backticks `), títulos, bullets, calls-to-action, hashtags, elementos visuais.
 OBRIGATÓRIO: Texto limpo, narrativo, fluido, pronto para narração direta. NUNCA use backticks (`) ou qualquer marcação ao redor de palavras.
 
+📖 TÉCNICA LITERÁRIA - SHOW, DON'T TELL (v7.6.143):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 CRÍTICO: MOSTRE emoções através de AÇÕES físicas, NÃO diga diretamente!
+
+❌ EVITE (tell):
+   "Ele sentiu medo" | "Estava nervoso" | "Ficou surpreso"
+   "Sentiu um arrepio" | "O coração acelerou" | "Suor frio"
+
+✅ MOSTRE (show):
+   "Suas mãos tremeram ao segurar o papel"
+   "Engoliu em seco, a voz sumiu por um instante"
+   "Os dedos tamborilaram na mesa, inquietos"
+   "Desviou o olhar para a janela, incapaz de encarar"
+
+📋 REGRAS:
+   • Use AÇÕES CONCRETAS: gestos, movimentos, expressões faciais
+   • Descreva REAÇÕES FÍSICAS: respiração, postura, micro-expressões
+   • Incorpore AMBIENTE: como personagem interage com objetos/espaço
+   • Limite tells a 1-2 por parágrafo (máximo)
+   • Prefira SEMPRE show quando possível
+
 🎙️ OTIMIZAÇÃO PARA NARRAÇÃO DE YOUTUBE (VÍDEOS LONGOS 1h+):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 ESTRUTURA PARA RETENÇÃO DE AUDIÊNCIA:
@@ -2532,7 +2553,7 @@ Isso é ESSENCIAL para autenticidade e imersão do público coreano!
     final act2Words = (totalWords * 0.40).round();
     final act2MaxWords = (totalWords * 0.45).round(); // LIMITE ABSOLUTO
     final act3Words = (totalWords * 0.35).round();
-    
+
     return '''🚨🚨🚨 ESTRUTURA DE 3 ATOS - VALIDAÇÃO AUTOMÁTICA ATIVADA 🚨🚨🚨
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️ ATENÇÃO CRÍTICA: Esta história tem $totalWords palavras TOTAIS.
@@ -2571,7 +2592,7 @@ Se você NÃO seguir esta estrutura, o roteiro será REJEITADO!
     final part1Words = (act3Total * 0.43).round(); // 15% do total
     final part2Words = (act3Total * 0.29).round(); // 10% do total
     final part3Words = (act3Total * 0.29).round(); // 10% do total
-    
+
     return '''🎬 ATO 3 DETALHADO: $act3Total PALAVRAS OBRIGATÓRIAS (35% DE $totalWords)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚨 VOCÊ DEVE ESCREVER TODAS AS 3 PARTES COM O TAMANHO MÍNIMO:
