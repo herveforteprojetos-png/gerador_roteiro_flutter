@@ -1732,6 +1732,38 @@ OBRIGATÓRIO: Texto limpo, narrativo, fluido, pronto para narração direta. NUN
    • Limite tells a 1-2 por parágrafo (máximo)
    • Prefira SEMPRE show quando possível
 
+📚 VOCABULÁRIO SIMPLES - NARRAÇÃO YOUTUBE (v7.6.144):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 CRÍTICO: Use LINGUAGEM DE 8ª SÉRIE - O público OUVE enquanto faz outras atividades!
+
+❌ PALAVRAS COMPLEXAS PROIBIDAS (substitua por simples):
+   "fibrocimento" → "telha de amianto" ou "telhado"
+   "paralelepípedos" → "pedras da rua"
+   "impecável" → "arrumado/perfeito"
+   "fervilhava" → "estava agitada/movimentada"
+   "comboio" → "fila de carros"
+   "burocrático" → "complicado/cheio de regras"
+   "monumental" → "muito grande/enorme"
+   "articulada" → "bem explicada/clara"
+   "euforia" → "animação/alegria"
+   "ceticismo" → "desconfiança/dúvida"
+
+❌ EVITE:
+   • Palavras com 4+ sílabas técnicas (paralelepípedo, extraordinário)
+   • Termos estrangeiros (tailleur, pro-bono, status)
+   • Advérbios abstratos (inequivocamente, ostensivamente)
+   • Jargões profissionais sem explicação
+
+✅ PREFIRA:
+   • Palavras de 1-3 sílabas comuns (casa, rua, medo, força)
+   • Vocabulário do dia a dia (roupa social, de graça, situação)
+   • Ações simples e diretas (correu, falou, olhou)
+   • Explicações curtas para termos técnicos necessários
+
+📋 REGRA DE OURO:
+   Se você HESITARIA antes de falar essa palavra em uma conversa casual,
+   ela é COMPLEXA DEMAIS! Troque por algo que uma criança de 13 anos entenderia.
+
 🎙️ OTIMIZAÇÃO PARA NARRAÇÃO DE YOUTUBE (VÍDEOS LONGOS 1h+):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 ESTRUTURA PARA RETENÇÃO DE AUDIÊNCIA:
