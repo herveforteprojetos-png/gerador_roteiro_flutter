@@ -373,13 +373,13 @@ class GeminiService {
               '⏱️ [Bloco $block] ⚠️ VAZIO - Iniciando ciclo de retries...',
             );
           }
-          // 🔥 v7.6.130: Retries com backoff exponencial (2-4-8s) para 503/erros
-          // Antes: 1s, 2s, 3s = 6s total
-          // Agora: 2s, 4s, 8s = 14s total (mais estável para quota Google)
+          // 🔥 v7.6.145: Retries com backoff exponencial CAP em 5s
+          // v7.6.130: 2s, 4s, 8s = 14s total
+          // v7.6.145: 2s, 4s, 5s = 11s total (cap em 5s para evitar esperas longas)
           for (int retry = 1; retry <= 3; retry++) {
             final retryDelay = retry == 1
                 ? 2
-                : (retry == 2 ? 4 : 8); // Exponencial
+                : (retry == 2 ? 4 : 5); // Cap em 5s (v7.6.145)
             if (kDebugMode) {
               debugPrint(
                 '⏱️ [Bloco $block] 🔄 Retry $retry/3 - Aguardando ${retryDelay}s (backoff exponencial)...',
@@ -1050,7 +1050,7 @@ class GeminiService {
     if (target <= 0) return '';
 
     final maxContextBlocks = ContextBuilder.getMaxContextBlocks(c.language);
-    final contextoPrevio = previous.isEmpty
+    final rawContext = previous.isEmpty
         ? ''
         : ContextBuilder.buildLimitedContext(
             previous,
@@ -1058,6 +1058,12 @@ class GeminiService {
             maxContextBlocks,
             TextUtils.countWords,
           );
+    
+    // 🔧 v7.6.145: TRIM agressivo para economizar tokens (cap 20k chars)
+    // Mantém últimos ~3 blocos para contexto, remove excesso
+    final contextoPrevio = rawContext.length > 20000
+        ? '...[contexto anterior resumido]\n\n${rawContext.substring(rawContext.length - 20000)}'
+        : rawContext;
 
     String trackerInfo = '';
     if (tracker.confirmedNames.isNotEmpty && blockNumber > 1) {
