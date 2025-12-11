@@ -133,7 +133,7 @@ class GeminiService {
       _dio = Dio(
         BaseOptions(
           connectTimeout: const Duration(seconds: 45),
-          receiveTimeout: const Duration(minutes: 5),
+          receiveTimeout: const Duration(minutes: 3), // v7.6.146: Timeout reduzido para 3min
           sendTimeout: const Duration(seconds: 45),
         ),
       ) {
@@ -1059,10 +1059,10 @@ class GeminiService {
             TextUtils.countWords,
           );
     
-    // 🔧 v7.6.145: TRIM agressivo para economizar tokens (cap 20k chars)
-    // Mantém últimos ~3 blocos para contexto, remove excesso
-    final contextoPrevio = rawContext.length > 20000
-        ? '...[contexto anterior resumido]\n\n${rawContext.substring(rawContext.length - 20000)}'
+    // 🔧 v7.6.146: TRIM mais agressivo para economizar tokens (cap 15k chars)
+    // Mantém últimos ~2.5 blocos para contexto, acelera blocos finais
+    final contextoPrevio = rawContext.length > 15000
+        ? '...[contexto anterior resumido]\n\n${rawContext.substring(rawContext.length - 15000)}'
         : rawContext;
 
     String trackerInfo = '';
