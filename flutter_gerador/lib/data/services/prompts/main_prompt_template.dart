@@ -1753,6 +1753,7 @@ OBRIGATÓRIO: Texto limpo, narrativo, fluido, pronto para narração direta. NUN
    • Termos estrangeiros (tailleur, pro-bono, status)
    • Advérbios abstratos (inequivocamente, ostensivamente)
    • Jargões profissionais sem explicação
+   • Mencionar netos/netas SEM estabelecer filhos/pais primeiro (causa erro de validação)
 
 ✅ PREFIRA:
    • Palavras de 1-3 sílabas comuns (casa, rua, medo, força)
