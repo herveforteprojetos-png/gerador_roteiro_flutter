@@ -90,14 +90,14 @@ RESPONDA APENAS COM O JSON ARRAY:''';
         text = await _llmClient.generateText(
           prompt: prompt,
           apiKey: apiKey,
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.5-flash',
           maxTokens: 500,
           temperature: 0.1,
         );
       } else {
         // Fallback para Dio direto (compatibilidade)
         final response = await _dio.post(
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
           queryParameters: {'key': apiKey},
           data: {
             'contents': [
@@ -451,14 +451,14 @@ RESPONDA EM JSON:
         text = await _llmClient.generateText(
           prompt: validationPrompt,
           apiKey: apiKey,
-          model: 'gemini-2.0-flash-exp',
+          model: 'gemini-2.5-flash',
           maxTokens: 500,
           temperature: 0.1,
         );
       } else {
         // Fallback para Dio direto
         final response = await _dio.post(
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
           queryParameters: {'key': apiKey},
           data: {
             'contents': [
