@@ -400,6 +400,8 @@ class GeminiService {
                 block,
                 totalBlocks,
                 worldState: worldState,
+                fullContextForCounter:
+                    acc, // 🆕 v7.6.142.1: Passa contexto completo
               ),
             );
 
@@ -1042,6 +1044,8 @@ class GeminiService {
     int totalBlocks, {
     bool avoidRepetition = false,
     WorldState? worldState,
+    String?
+    fullContextForCounter, // 🆕 v7.6.142.1: Contexto completo para contador
   }) async {
     if (target <= 0) return '';
 
@@ -1174,7 +1178,9 @@ class GeminiService {
     );
 
     // 🆕 v7.6.142: CONTADOR PROGRESSIVO - Calcular e exibir info do Ato atual
-    final currentTotalWords = TextUtils.countWords(previous);
+    // 🆕 v7.6.142.1: Usar contexto completo se fornecido (evita bug em retries)
+    final contextForCounter = fullContextForCounter ?? previous;
+    final currentTotalWords = TextUtils.countWords(contextForCounter);
     final actInfo = StructureRules.getActInfo(
       currentTotalWords: currentTotalWords,
       targetTotalWords: c.quantity,
