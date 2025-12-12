@@ -1084,8 +1084,9 @@ class GeminiService {
       c,
       tracker,
     );
+    // 🔧 v7.6.147: Passa blockNumber para otimizar fatos nos blocos finais
     String worldStateContext = worldState != null && blockNumber > 1
-        ? worldState.getContextForPrompt()
+        ? worldState.getContextForPrompt(currentBlock: blockNumber)
         : '';
 
     final languageMultiplier =

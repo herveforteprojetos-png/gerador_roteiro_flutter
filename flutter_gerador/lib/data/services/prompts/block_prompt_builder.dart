@@ -144,9 +144,10 @@ class BlockPromptBuilder {
     final characterGuidance = buildCharacterGuidance(c, tracker);
 
     // 🌍 v7.6.52: WORLD STATE CONTEXT - Memória Infinita
+    // 🔧 v7.6.147: Passa blockNumber para otimizar fatos nos blocos finais
     String worldStateContext = '';
     if (worldState != null && blockNumber > 1) {
-      worldStateContext = worldState.getContextForPrompt();
+      worldStateContext = worldState.getContextForPrompt(currentBlock: blockNumber);
     }
 
     // 📏 IMPORTANTE: Limitar palavras por bloco para estabilidade

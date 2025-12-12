@@ -147,7 +147,9 @@ class WorldState {
 
   /// Retorna contexto formatado para incluir no prompt de geração
   /// Estrutura "Sanduíche" de 3 Camadas
-  String getContextForPrompt() {
+  /// 
+  /// 🔧 v7.6.147: [currentBlock] permite otimizar fatos nos blocos finais
+  String getContextForPrompt({int? currentBlock}) {
     if (personagens.isEmpty && fatos.isEmpty && sinopseComprimida.isEmpty) {
       return '';
     }
@@ -203,10 +205,14 @@ class WorldState {
       }
     }
 
-    // Fatos recentes
-    final recentFatos = fatos.length > 5
-        ? fatos.sublist(fatos.length - 5)
+    // 🔧 v7.6.147: Otimização de fatos para blocos finais
+    // Blocos 6+: limita a 10 fatos (economiza ~5k chars, ~20-30s)
+    // Blocos 1-5: usa lógica antiga (últimos 5 fatos)
+    final int maxFacts = (currentBlock != null && currentBlock >= 6) ? 10 : 5;
+    final recentFatos = fatos.length > maxFacts
+        ? fatos.sublist(fatos.length - maxFacts)
         : fatos;
+    
     if (recentFatos.isNotEmpty) {
       buffer.writeln('');
       buffer.writeln('   📝 FATOS RECENTES:');
