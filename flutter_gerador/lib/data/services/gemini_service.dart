@@ -1193,6 +1193,16 @@ class GeminiService {
       targetTotalWords: c.quantity,
     );
 
+    // 🔧 v7.6.148: Ajustar minAcceptable dinamicamente se ato próximo do limite
+    // Se restam <50% do target normal, aceitar blocos muito menores (35% vs 65%)
+    final isActNearLimit = actInfo.actRemainingWords < (adjustedTarget * 0.5);
+    int finalMinAcceptable = minAcceptable;
+    if (isActNearLimit && !isFlashModel) {
+      final adjustedMinPercent = 0.35; // 35% do target quando ato no limite
+      finalMinAcceptable = (adjustedTarget * adjustedMinPercent).round();
+    }
+
+    // Remover cálculo duplicado de actInfo (já calculado acima para v7.6.148)
     // 📊 Log do contador progressivo
     if (kDebugMode) {
       debugPrint('');
@@ -1214,6 +1224,10 @@ class GeminiService {
       }
       if (actInfo.actNumber == 3 && actInfo.actRemainingWords > 500) {
         debugPrint('✅ Ato 3 com espaço suficiente');
+      }
+      // 🔧 v7.6.148: Log de ajuste dinâmico de mínimo
+      if (isActNearLimit) {
+        debugPrint('⚙️ v7.6.148: minAcceptable reduzido para $finalMinAcceptable palavras (35% do target)');
       }
       debugPrint(
         '📊 ════════════════════════════════════════════════════════════',
@@ -1308,9 +1322,10 @@ class GeminiService {
         }
 
         // 🚨 NOVO: Rejeitar blocos muito curtos (abaixo de 80% do target)
-        if (wordCount < minAcceptable) {
+        // 🔧 v7.6.148: Usar finalMinAcceptable (ajustado dinamicamente)
+        if (wordCount < finalMinAcceptable) {
           _debugLogger.warning(
-            "Bloco $blockNumber rejeitado: muito curto ($wordCount palavras, mínimo $minAcceptable)",
+            "Bloco $blockNumber rejeitado: muito curto ($wordCount palavras, mínimo $finalMinAcceptable)",
             blockNumber: blockNumber,
           );
           return '';

@@ -326,7 +326,9 @@ class CharacterValidation {
     final grandson = relationships['protagonist']?['neto'] ?? {};
     final granddaughter = relationships['protagonist']?['neta'] ?? {};
 
-    if (grandson.isNotEmpty || granddaughter.isNotEmpty) {
+    // 🔧 v7.6.148: Relaxar validação em blocos avançados (6+)
+    // Relações familiares já estabelecidas em blocos anteriores
+    if ((grandson.isNotEmpty || granddaughter.isNotEmpty) && blockNumber < 6) {
       final hasChildren = text.contains(
         RegExp(
           r'meu filho|minha filha|my son|my daughter',
