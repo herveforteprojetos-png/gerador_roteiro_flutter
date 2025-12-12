@@ -1194,12 +1194,21 @@ class GeminiService {
     );
 
     // 🔧 v7.6.148: Ajustar minAcceptable dinamicamente se ato próximo do limite
-    // Se restam <50% do target normal, aceitar blocos muito menores (35% vs 65%)
+    // 🔧 v7.6.148.1: Usar o MENOR entre 35% do target OU palavras restantes do ato
     final isActNearLimit = actInfo.actRemainingWords < (adjustedTarget * 0.5);
     int finalMinAcceptable = minAcceptable;
     if (isActNearLimit && !isFlashModel) {
       final adjustedMinPercent = 0.35; // 35% do target quando ato no limite
-      finalMinAcceptable = (adjustedTarget * adjustedMinPercent).round();
+      final minFromTarget = (adjustedTarget * adjustedMinPercent).round();
+      
+      // 🎯 v7.6.148.1: Se palavras restantes < minFromTarget, usar 60% das restantes
+      // Exemplo: restam 262 palavras → min = 157 palavras (60% de 262)
+      final minFromRemaining = (actInfo.actRemainingWords * 0.6).round();
+      
+      // Usar o menor dos dois (evita exigir mais palavras que o ato permite)
+      finalMinAcceptable = minFromTarget < minFromRemaining 
+          ? minFromTarget 
+          : minFromRemaining;
     }
 
     // Remover cálculo duplicado de actInfo (já calculado acima para v7.6.148)
@@ -1227,7 +1236,8 @@ class GeminiService {
       }
       // 🔧 v7.6.148: Log de ajuste dinâmico de mínimo
       if (isActNearLimit) {
-        debugPrint('⚙️ v7.6.148: minAcceptable reduzido para $finalMinAcceptable palavras (35% do target)');
+        debugPrint('⚙️ v7.6.148.1: minAcceptable ajustado para $finalMinAcceptable palavras');
+        debugPrint('   (35% target=${(adjustedTarget * 0.35).round()}, 60% restantes=${(actInfo.actRemainingWords * 0.6).round()}, usando menor)');
       }
       debugPrint(
         '📊 ════════════════════════════════════════════════════════════',

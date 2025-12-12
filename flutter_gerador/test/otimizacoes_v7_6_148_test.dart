@@ -92,29 +92,53 @@ void main() {
       const actRemainingWords = 178; // Restantes no ato
 
       final isActNearLimit = actRemainingWords < (adjustedTarget * 0.5);
-      final adjustedMinPercent = isActNearLimit ? 0.35 : 0.65;
-      final finalMinAcceptable = (adjustedTarget * adjustedMinPercent).round();
+      
+      // v7.6.148.1: Usar menor entre 35% target e 60% restantes
+      final minFromTarget = (adjustedTarget * 0.35).round();
+      final minFromRemaining = (actRemainingWords * 0.6).round();
+      final finalMinAcceptable = minFromTarget < minFromRemaining 
+          ? minFromTarget 
+          : minFromRemaining;
 
       // Validações
       expect(isActNearLimit, true); // 178 < 697
-      expect(finalMinAcceptable, 488); // 35% de 1394
+      expect(minFromTarget, 488); // 35% de 1394
+      expect(minFromRemaining, 107); // 60% de 178 (arredondado)
+      expect(finalMinAcceptable, 107); // Usa o menor (107 < 488)
 
-      // Antes da v7.6.148, minAcceptable seria 906 (65%)
-      // Bloco com 193 palavras seria rejeitado (193 < 906)
-      // Agora com 488, bloco com 193 palavras ainda é rejeitado...
-      // Mas isso é esperado - 193 é MUITO curto (13% do target)
-      
-      // O objetivo é aceitar blocos de ~400-500 palavras quando ato no limite
-      const wordCount = 450;
+      // Bloco com 193 palavras agora seria ACEITO!
+      const wordCount = 193;
       final wouldBeAccepted = wordCount >= finalMinAcceptable;
+      expect(wouldBeAccepted, true); // 193 >= 107, aceito! ✅
+    });
+
+    test('Cenário extremo: Bloco 6 com 262 palavras restantes', () {
+      // NOVO cenário do log mais recente:
+      // Ato 2: 3988/4250 palavras, restantes: 262
+      // Blocos gerados: 247, 255, 223, 302 palavras
+      // v7.6.148 rejeitou todos (min=488)
       
-      expect(wouldBeAccepted, false); // 450 < 488, ainda rejeitado
+      const adjustedTarget = 1394;
+      const actRemainingWords = 262;
       
-      // Isso significa que precisamos de pelo menos ~500 palavras
-      const wordCount2 = 500;
-      final wouldBeAccepted2 = wordCount2 >= finalMinAcceptable;
+      final isActNearLimit = actRemainingWords < (adjustedTarget * 0.5);
+      final minFromTarget = (adjustedTarget * 0.35).round();
+      final minFromRemaining = (actRemainingWords * 0.6).round();
+      final finalMinAcceptable = minFromTarget < minFromRemaining 
+          ? minFromTarget 
+          : minFromRemaining;
       
-      expect(wouldBeAccepted2, true); // 500 >= 488, aceito!
+      expect(isActNearLimit, true); // 262 < 697
+      expect(minFromTarget, 488); // 35% de 1394
+      expect(minFromRemaining, 157); // 60% de 262
+      expect(finalMinAcceptable, 157); // Usa 157 (menor que 488)
+      
+      // Todas as tentativas do log seriam aceitas agora
+      const wordCounts = [247, 255, 223, 302];
+      for (final wordCount in wordCounts) {
+        final accepted = wordCount >= finalMinAcceptable;
+        expect(accepted, true); // Todos >= 157, todos aceitos! ✅
+      }
     });
 
     test('Flash model: não aplica ajuste dinâmico', () {
@@ -166,7 +190,6 @@ const adjustedTarget = 1394; // Target do bloco
     test('Flash model: não aplica ajuste dinâmico (sempre 45%)', () {
       const adjustedTarget = 1400;
       const actRemainingWords = 200;
-      const isFlashModel = true;
       const isActNearLimit = actRemainingWords < (adjustedTarget * 0.5);
 
       // Flash sempre usa 45%, não importa se ato está no limite
@@ -176,9 +199,6 @@ const adjustedTarget = 1394; // Target do bloco
       // Mesmo com ato no limite, Flash usa seu próprio percentual
       expect(isActNearLimit, true);
       expect(finalMinAcceptable, 630); // 45% de 1400 (fixo para Flash)
-      
-      // Confirma que não usou o ajuste de 35%
-      expect(isFlashModel, isFlashModel); // Evita warning "unused variable"
     });
 
     test('Economia de retries: bloco 500 palavras vs 193 palavras', () {
