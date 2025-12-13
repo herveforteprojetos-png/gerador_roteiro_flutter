@@ -378,13 +378,15 @@ class GeminiService {
           // 🔥 v7.6.145: Retries com backoff exponencial CAP em 5s
           // v7.6.130: 2s, 4s, 8s = 14s total
           // v7.6.145: 2s, 4s, 5s = 11s total (cap em 5s para evitar esperas longas)
-          for (int retry = 1; retry <= 3; retry++) {
+          // v7.6.162: 5 retries para blocos finais (7+), 3 para blocos iniciais
+          final maxRetries = block >= 7 ? 5 : 3;
+          for (int retry = 1; retry <= maxRetries; retry++) {
             final retryDelay = retry == 1
                 ? 2
                 : (retry == 2 ? 4 : 5); // Cap em 5s (v7.6.145)
             if (kDebugMode) {
               debugPrint(
-                '⏱️ [Bloco $block] 🔄 Retry $retry/3 - Aguardando ${retryDelay}s (backoff exponencial)...',
+                '⏱️ [Bloco $block] 🔄 Retry $retry/$maxRetries - Aguardando ${retryDelay}s (backoff exponencial)...',
               );
             }
             await Future.delayed(Duration(seconds: retryDelay));
@@ -1376,11 +1378,12 @@ class GeminiService {
       // 🚨 v7.6.152: LIMITE RÍGIDO DE CHARS - Rejeitar blocos com dobro de tamanho
       // Evita blocos gigantes que causam duplicação narrativa
       // v7.6.156: Ajustado por idioma (chars/palavra varia por idioma)
+      // v7.6.162: Reduzido 1.5× → 1.25× para evitar crash nos blocos finais
       final charsPerWord = BlockPromptBuilder.getCharsPerWordForLanguage(c.language);
       final expectedMaxChars = (adjustedTarget * charsPerWord * 1.08).round();
-      if (data.length > expectedMaxChars * 1.5) {
+      if (data.length > expectedMaxChars * 1.25) {
         _debugLogger.warning(
-          "Bloco $blockNumber rejeitado: resposta muito longa (${data.length} chars, máx ${(expectedMaxChars * 1.5).round()})",
+          "Bloco $blockNumber rejeitado: resposta muito longa (${data.length} chars, máx ${(expectedMaxChars * 1.25).round()})",
           blockNumber: blockNumber,
         );
         return '';

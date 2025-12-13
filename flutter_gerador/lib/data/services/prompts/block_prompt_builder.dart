@@ -206,12 +206,45 @@ class BlockPromptBuilder {
     final maxAcceptable = (adjustedTarget * 1.08).round();
     
     // 🚨 v7.6.157: LIMITE DE CARACTERES ajustado por idioma + AVISO ULTRA-AGRESSIVO
+    // 🚨 v7.6.162: ULTRA-AGRESSIVO para blocos finais (7+) onde Flash ignora limites
     final charsPerWord = getCharsPerWordForLanguage(c.language);
     final maxChars = (adjustedTarget * charsPerWord * 1.08).round(); // +8% margem
+    final isFinalBlocks = blockNum >= 7;
+    final strictMaxChars = isFinalBlocks ? (maxChars * 0.85).round() : maxChars;
 
-    final measure = isSpanish
-        ? '🚨🚨🚨 EXTREMADAMENTE CRÍTICO 🚨🚨🚨\nGERE EXATAMENTE $adjustedTarget palabras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable).\n\n⛔⛔⛔ LÍMITE ABSOLUTO: MÁXIMO $maxChars CARACTERES! ⛔⛔⛔\n❌ CUALQUIER RESPUESTA CON MÁS DE $maxChars CARACTERES SERÁ RECHAZADA AUTOMÁTICAMENTE!\n✅ RESPUESTAS CON MENOS DE $maxAcceptable PALABRAS TAMBIÉN SON ACEPTABLES SI EVITAN EXCEDER EL LÍMITE DE CARACTERES!\n\n⚠️ SI EL BLOQUE SE ESTÁ HACIENDO MUY LARGO, ¡TERMINE ANTICIPADAMENTE!'
-        : '🚨🚨🚨 EXTREMAMENTE CRÍTICO 🚨🚨🚨\nGERE EXATAMENTE $adjustedTarget palavras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable).\n\n⛔⛔⛔ LIMITE ABSOLUTO: MÁXIMO $maxChars CARACTERES! ⛔⛔⛔\n❌ QUALQUER RESPOSTA COM MAIS DE $maxChars CARACTERES SERÁ REJEITADA AUTOMATICAMENTE!\n✅ RESPOSTAS COM MENOS DE $maxAcceptable PALAVRAS TAMBÉM SÃO ACEITÁVEIS SE EVITAREM ULTRAPASSAR O LIMITE DE CARACTERES!\n\n⚠️ SE O BLOCO ESTÁ FICANDO MUITO LONGO, ENCERRE ANTECIPADAMENTE!';
+    final measure = isFinalBlocks
+        ? (isSpanish
+            ? '''
+🔴🔴🔴🔴🔴 ALERTA CRÍTICO - BLOQUE FINAL 🔴🔴🔴🔴🔴
+⛔ ¡ESTE ES UN BLOQUE FINAL - LOS LÍMITES SON ULTRA-RÍGIDOS!
+⛔ ¡YA HAS FALLADO EN ESTE BLOQUE ANTES - NO FALLES OTRA VEZ!
+
+🚨🚨🚨 LÍMITE ABSOLUTO: MÁXIMO $strictMaxChars CARACTERES 🚨🚨🚨
+❌ ¡NO GENERES MÁS DE $strictMaxChars CARACTERES!
+❌ ¡SI PASAS DE $strictMaxChars CARACTERES, SERÁ RECHAZADO INMEDIATAMENTE!
+❌ ¡CUENTA CADA CARÁCTER! ¡NO APROXIMES! ¡NO SEAS VERBOSO!
+
+GENERA EXACTAMENTE $adjustedTarget palabras - ¡NI MÁS, NI MENOS!
+¡SÉ DIRECTO, CONCISO, SIN FLORITURAS INNECESARIAS!
+🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴
+'''
+            : '''
+🔴🔴🔴🔴🔴 ALERTA CRÍTICO - BLOCO FINAL 🔴🔴🔴🔴🔴
+⛔ ESTE É UM BLOCO FINAL - OS LIMITES SÃO ULTRA-RÍGIDOS!
+⛔ VOCÊ JÁ FALHOU NESTE BLOCO ANTES - NÃO FALHE NOVAMENTE!
+
+🚨🚨🚨 LIMITE ABSOLUTO: MÁXIMO $strictMaxChars CARACTERES 🚨🚨🚨
+❌ NÃO GERE MAIS DE $strictMaxChars CARACTERES!
+❌ SE PASSAR DE $strictMaxChars CARACTERES, SERÁ REJEITADO IMEDIATAMENTE!
+❌ CONTE CADA CARACTERE! NÃO APROXIME! NÃO SEJA VERBOSO!
+
+GERE EXATAMENTE $adjustedTarget palavras - NÃO MAIS, NÃO MENOS!
+SEJA DIRETO, CONCISO, SEM FIRULAS DESNECESSÁRIAS!
+🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴
+''')
+        : (isSpanish
+            ? '🚨🚨🚨 EXTREMADAMENTE CRÍTICO 🚨🚨🚨\nGERE EXATAMENTE $adjustedTarget palabras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable).\n\n⛔⛔⛔ LÍMITE ABSOLUTO: MÁXIMO $maxChars CARACTERES! ⛔⛔⛔\n❌ CUALQUIER RESPUESTA CON MÁS DE $maxChars CARACTERES SERÁ RECHAZADA AUTOMÁTICAMENTE!\n✅ RESPUESTAS CON MENOS DE $maxAcceptable PALABRAS TAMBIÉN SON ACEPTABLES SI EVITAN EXCEDER EL LÍMITE DE CARACTERES!\n\n⚠️ SI EL BLOQUE SE ESTÁ HACIENDO MUY LARGO, ¡TERMINE ANTICIPADAMENTE!'
+            : '🚨🚨🚨 EXTREMAMENTE CRÍTICO 🚨🚨🚨\nGERE EXATAMENTE $adjustedTarget palavras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable).\n\n⛔⛔⛔ LIMITE ABSOLUTO: MÁXIMO $maxChars CARACTERES! ⛔⛔⛔\n❌ QUALQUER RESPOSTA COM MAIS DE $maxChars CARACTERES SERÁ REJEITADA AUTOMATICAMENTE!\n✅ RESPOSTAS COM MENOS DE $maxAcceptable PALAVRAS TAMBÉM SÃO ACEITÁVEIS SE EVITAREM ULTRAPASSAR O LIMITE DE CARACTERES!\n\n⚠️ SE O BLOCO ESTÁ FICANDO MUITO LONGO, ENCERRE ANTECIPADAMENTE!');
 
     final localizationGuidance = BaseRules.buildLocalizationGuidance(c);
     final narrativeStyleGuidance = NarrativeStyleManager.getStyleGuidance(c);
@@ -653,11 +686,12 @@ class BlockPromptBuilder {
     }
 
     // 🇺🇸 INGLÊS: 4.5-5 chars/palavra
+    // v7.6.162: Reduzido 4.7 → 4.3 (-8.5%) para evitar crash nos blocos finais
     if (normalized.contains('ingl') || // Captura: inglês, ingles, Inglês (encoding quebrado)
         normalized.contains('english') ||
         normalized == 'en' ||
         normalized == 'en-us') {
-      return 4.7;
+      return 4.3;
     }
 
     // 🇧🇷 PORTUGUÊS ou OUTROS: 5-5.5 chars/palavra
