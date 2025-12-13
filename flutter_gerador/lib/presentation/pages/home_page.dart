@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart'; // 🚨 v7.6.154: Para usar kDebugMode
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/presentation/providers/script_generation_provider.dart';
@@ -71,6 +72,16 @@ class _HomePageState extends ConsumerState<HomePage> {
       configNotifier.updateUsePersonalizedTheme(
         preferences['usePersonalizedTheme'] ?? false,
       );
+      
+      // 🚨 v7.6.154: CARREGAR qualityMode salvo!
+      final savedQualityMode = preferences['qualityMode'] ?? 'pro';
+      if (kDebugMode) {
+        debugPrint('💾 Carregando qualityMode do storage: $savedQualityMode');
+      }
+      configNotifier.updateQualityMode(savedQualityMode);
+      if (kDebugMode) {
+        debugPrint('✅ qualityMode do storage aplicado ao provider');
+      }
     } catch (e) {
       debugPrint('Erro ao carregar configurações salvas: $e');
     }
@@ -90,6 +101,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         quantity: config.quantity,
         personalizedTheme: config.personalizedTheme,
         usePersonalizedTheme: config.usePersonalizedTheme,
+        qualityMode: config.qualityMode, // 🚨 v7.6.154: SALVAR qualityMode!
       );
     }
   }

@@ -23,5 +23,6 @@ export 'prompts/perspective_builder.dart';
 export '../prompts/base_rules.dart';
 export '../prompts/structure_rules.dart';
 export '../prompts/youtube_rules.dart';
+export '../prompts/block_prompt_builder.dart'; // 🆕 v7.6.153: Para limpeza de cache
 export '../prompts/character_rules.dart'
     hide CharacterNote, CharacterHistory, CharacterTracker;

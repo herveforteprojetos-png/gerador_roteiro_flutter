@@ -1,5 +1,5 @@
 /// 🧪 Testes do TextCapitalizer v7.6.136
-/// 
+///
 /// Testa a nova lógica: Gemini envia minúsculo + NOMES MAIÚSCULOS
 /// Esta classe normaliza para exibição ao usuário
 
@@ -11,7 +11,7 @@ void main() {
     // ═══════════════════════════════════════════════════════════════════════
     // 🎯 normalizeGeminiOutput - Método Principal
     // ═══════════════════════════════════════════════════════════════════════
-    
+
     group('normalizeGeminiOutput', () {
       test('converte NOME MAIÚSCULO para Title Case', () {
         const input = 'MATEUS olhava o relógio.';
@@ -70,7 +70,7 @@ void main() {
     // ═══════════════════════════════════════════════════════════════════════
     // 🔍 extractUppercaseNames - Extração de Nomes
     // ═══════════════════════════════════════════════════════════════════════
-    
+
     group('extractUppercaseNames', () {
       test('detecta nomes TODO MAIÚSCULOS', () {
         const text = 'MATEUS olhava HELENA na sala.';
@@ -113,7 +113,7 @@ void main() {
     // ═══════════════════════════════════════════════════════════════════════
     // 📊 isGeminiFormat - Validação de Formato
     // ═══════════════════════════════════════════════════════════════════════
-    
+
     group('isGeminiFormat', () {
       test('detecta formato Gemini válido', () {
         const text = 'MATEUS olhava o relógio. ele sorriu para HELENA.';
@@ -136,7 +136,8 @@ void main() {
       });
 
       test('aceita proporção correta (>70% minúsculas)', () {
-        const text = 'MATEUS olhava o relógio na parede do escritório cinzento.';
+        const text =
+            'MATEUS olhava o relógio na parede do escritório cinzento.';
         expect(TextCapitalizer.isGeminiFormat(text), isTrue);
       });
     });
@@ -144,12 +145,12 @@ void main() {
     // ═══════════════════════════════════════════════════════════════════════
     // 🔧 analyzeText - Análise de Debug
     // ═══════════════════════════════════════════════════════════════════════
-    
+
     group('analyzeText', () {
       test('retorna análise completa', () {
         const text = 'MATEUS olhava HELENA. ele sorriu.';
         final analysis = TextCapitalizer.analyzeText(text);
-        
+
         expect(analysis['isGeminiFormat'], isTrue);
         expect(analysis['detectedNames'], containsAll(['MATEUS', 'HELENA']));
         expect(analysis['nameCount'], 2);
@@ -161,19 +162,20 @@ void main() {
     // ═══════════════════════════════════════════════════════════════════════
     // 📝 Casos de Uso Reais
     // ═══════════════════════════════════════════════════════════════════════
-    
+
     group('Casos Reais', () {
       test('parágrafo completo do roteiro', () {
-        const input = '''MATEUS olhava o relógio na parede do escritório cinzento. faltavam apenas cinco minutos para a hora do almoço. ele suspirou, desviando os olhos do monitor do computador. na mesa ao lado, OTÁVIO digitava freneticamente, alheio ao mundo.''';
-        
+        const input =
+            '''MATEUS olhava o relógio na parede do escritório cinzento. faltavam apenas cinco minutos para a hora do almoço. ele suspirou, desviando os olhos do monitor do computador. na mesa ao lado, OTÁVIO digitava freneticamente, alheio ao mundo.''';
+
         final result = TextCapitalizer.normalizeGeminiOutput(input);
-        
+
         // Verifica conversão de nomes
         expect(result, contains('Mateus'));
         expect(result, contains('Otávio'));
         expect(result, isNot(contains('MATEUS')));
         expect(result, isNot(contains('OTÁVIO')));
-        
+
         // Verifica capitalização de início de frase
         expect(result, contains('Faltavam'));
         expect(result, contains('Ele'));
@@ -181,10 +183,11 @@ void main() {
       });
 
       test('diálogo com múltiplos personagens', () {
-        const input = '''MATEUS perguntou para HELENA se ela tinha visto CÉSAR. HELENA respondeu que CÉSAR tinha ido embora mais cedo.''';
-        
+        const input =
+            '''MATEUS perguntou para HELENA se ela tinha visto CÉSAR. HELENA respondeu que CÉSAR tinha ido embora mais cedo.''';
+
         final result = TextCapitalizer.normalizeGeminiOutput(input);
-        
+
         expect(result, contains('Mateus'));
         expect(result, contains('Helena'));
         expect(result, contains('César'));
@@ -195,7 +198,7 @@ void main() {
         // Gemini pode enviar DOUTOR ÁLVARO como dois nomes
         const input = 'DOUTOR ÁLVARO entrou na sala.';
         final result = TextCapitalizer.normalizeGeminiOutput(input);
-        
+
         expect(result, contains('Doutor'));
         expect(result, contains('Álvaro'));
       });
@@ -203,7 +206,7 @@ void main() {
       test('nome composto', () {
         const input = 'MARIA HELENA conversava com PEDRO HENRIQUE.';
         final result = TextCapitalizer.normalizeGeminiOutput(input);
-        
+
         expect(result, equals('Maria Helena conversava com Pedro Henrique.'));
       });
     });

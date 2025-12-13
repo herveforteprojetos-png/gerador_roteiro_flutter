@@ -408,7 +408,9 @@ $idadeInstrucao
       narrativeStyleGuidance: narrativeStyleGuidance,
       customPrompt: config.customPrompt,
       useCustomPrompt: config.useCustomPrompt,
-      nameList: NameGenerator.generateNameList(getLanguageInstruction(config.language)),
+      nameList: NameGenerator.generateNameList(
+        getLanguageInstruction(config.language),
+      ),
       trackerInfo: trackerInfo,
       measure: measure,
       isSpanish: isSpanish,

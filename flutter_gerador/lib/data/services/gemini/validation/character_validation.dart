@@ -534,22 +534,19 @@ class CharacterValidation {
   }
 
   /// 🔍 Valida reutilização de nomes (debug/logging)
+  /// 🇰🇷 v7.6.155: Suporte para hangul e outros scripts não-latinos
   void validateNameReuse(
     String generatedText,
     CharacterTracker tracker,
     int blockNumber,
   ) {
-    final namePattern = RegExp(
-      r'\b([A-ZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏa-zàáâãäåçèéêëìíîï]{2,})\b',
+    // 🇰🇷 v7.6.155: Usar extractNamesFromText que suporta hangul, CJK, latino
+    // Problema ANTIGO: Regex só detectava [A-Z], ignorando 이준호, 김민준
+    // Solução: NameValidator.extractNamesFromText detecta todos os scripts
+    final foundNames = NameValidator.extractNamesFromText(
+      generatedText,
+      tracker.confirmedNames,
     );
-    final foundNames = <String>{};
-
-    for (final match in namePattern.allMatches(generatedText)) {
-      final name = match.group(1)?.trim();
-      if (name != null && NameValidator.looksLikePersonName(name)) {
-        foundNames.add(name);
-      }
-    }
 
     for (final name in foundNames) {
       if (tracker.hasName(name)) {
@@ -601,18 +598,10 @@ class CharacterValidation {
   }
 
   /// 🔍 Valida relações familiares (debug/logging)
+  /// 🇰🇷 v7.6.155: Suporte para hangul e outros scripts não-latinos
   void validateFamilyRelations(String generatedText, int blockNumber) {
-    final namePattern = RegExp(
-      r'\b([A-ZÀÁÂÃÄÅÇÈÉÊËÌÍÎÏ][a-zàáâãäåçèéêëìíîï]{2,})\b',
-    );
-    final names = <String>{};
-
-    for (final match in namePattern.allMatches(generatedText)) {
-      final name = match.group(1)?.trim();
-      if (name != null && NameValidator.looksLikePersonName(name)) {
-        names.add(name);
-      }
-    }
+    // 🇰🇷 v7.6.155: Usar extractNamesFromText para suportar todos os scripts
+    final names = NameValidator.extractNamesFromText(generatedText);
 
     for (final name in names) {
       final role = RolePatterns.extractRoleForName(name, generatedText);

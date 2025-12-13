@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 
 /// Testes para v7.6.146 - Otimizações de velocidade e timeout
-/// 
+///
 /// Mudanças:
 /// 1. Context trim reduzido: 20k → 15k chars
 /// 2. Timeout de API reduzido: 5min → 3min
-/// 
+///
 /// Objetivos:
 /// - Acelerar geração dos blocos finais (5min → 2-3min esperado)
 /// - Evitar esperas excessivas (timeout 3min vs 5min)
@@ -135,7 +135,8 @@ void main() {
 
       // ACT
       // Redução de contexto: 25% menos chars (15k vs 20k)
-      final contextReduction = (oldContextSize - newContextSize) / oldContextSize;
+      final contextReduction =
+          (oldContextSize - newContextSize) / oldContextSize;
 
       // Velocidade esperada: ~40% mais rápido (baseado em redução de contexto + overhead)
       final expectedSpeedup = 0.4;

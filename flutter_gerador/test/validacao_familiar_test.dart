@@ -33,11 +33,11 @@ void main() {
       expect(prompt, contains('EVITE'));
       expect(prompt, contains('netos/netas'));
       expect(prompt, contains('estabelecer filhos/pais primeiro'));
-      
+
       // Verifica que está na seção de vocabulário
       expect(prompt, contains('VOCABULÁRIO SIMPLES'));
       expect(prompt, contains('v7.6.144'));
-      
+
       // Confirma que menciona "erro de validação"
       expect(prompt, contains('erro de validação'));
     });
@@ -74,13 +74,19 @@ void main() {
 
       // Verifica que regra de netos está após EVITE
       final netosIndex = prompt.indexOf('netos/netas');
-      expect(netosIndex, greaterThan(eviteIndex),
-          reason: 'Regra de netos deve estar na lista EVITE');
-          
+      expect(
+        netosIndex,
+        greaterThan(eviteIndex),
+        reason: 'Regra de netos deve estar na lista EVITE',
+      );
+
       // Verifica que está antes de PREFIRA
       final prefiraIndex = prompt.indexOf('✅ PREFIRA:');
-      expect(netosIndex, lessThan(prefiraIndex),
-          reason: 'Regra de netos deve estar antes de PREFIRA');
+      expect(
+        netosIndex,
+        lessThan(prefiraIndex),
+        reason: 'Regra de netos deve estar antes de PREFIRA',
+      );
     });
 
     test('Funciona com idioma espanhol', () {

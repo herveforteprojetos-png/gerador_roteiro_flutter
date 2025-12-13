@@ -245,6 +245,12 @@ class LlmClient {
       return result;
     } catch (e) {
       _log('❌ Erro na requisição API: $e', level: 'error');
+      
+      // 🚨 Tratamento especial para erro 429 (Rate Limit)
+      if (e.toString().contains('429')) {
+        _log('⚠️ Rate Limit atingido - aguarde antes de nova tentativa', level: 'warning');
+      }
+      
       rethrow;
     }
   }

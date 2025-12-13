@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart'; // ðŸš¨ v7.6.154: Para usar kDebugMode
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_gerador/data/models/generation_progress.dart';
 import 'package:flutter_gerador/presentation/providers/script_generation_provider.dart';
@@ -22,7 +23,7 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   final ScrollController _mainScrollController = ScrollController();
   final ScrollController _scriptScrollController = ScrollController();
-  bool _isScriptScrollLocked = true; // Começa bloqueado
+  bool _isScriptScrollLocked = true; // Comeï¿½a bloqueado
   bool _isHoveringScriptArea = false; // Para efeito visual
 
   @override
@@ -38,7 +39,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.dispose();
   }
 
-  /// Carrega as configurações salvas
+  /// Carrega as configuraï¿½ï¿½es salvas
   Future<void> _loadSavedSettings() async {
     try {
       final configNotifier = ref.read(generationConfigProvider.notifier);
@@ -55,13 +56,13 @@ class _HomePageState extends ConsumerState<HomePage> {
         configNotifier.updateModel(savedModel);
       }
 
-      // Carregar preferências do usuário
+      // Carregar preferï¿½ncias do usuï¿½rio
       final preferences = await StorageService.getUserPreferences();
       configNotifier.updateQuantity(preferences['quantity'] ?? 2000);
       configNotifier.updateMeasureType(
         preferences['measureType'] ?? 'palavras',
       );
-      configNotifier.updateLanguage(preferences['language'] ?? 'Português');
+      configNotifier.updateLanguage(preferences['language'] ?? 'Portuguï¿½s');
       configNotifier.updatePerspective(
         preferences['perspective'] ?? 'terceira',
       );
@@ -71,12 +72,22 @@ class _HomePageState extends ConsumerState<HomePage> {
       configNotifier.updateUsePersonalizedTheme(
         preferences['usePersonalizedTheme'] ?? false,
       );
+      
+      // ðŸš¨ v7.6.154: CARREGAR qualityMode salvo!
+      final savedQualityMode = preferences['qualityMode'] ?? 'pro';
+      if (kDebugMode) {
+        debugPrint('ðŸ’¾ Carregando qualityMode do storage: $savedQualityMode');
+      }
+      configNotifier.updateQualityMode(savedQualityMode);
+      if (kDebugMode) {
+        debugPrint('âœ… qualityMode do storage aplicado ao provider');
+      }
     } catch (e) {
-      debugPrint('Erro ao carregar configurações salvas: $e');
+      debugPrint('Erro ao carregar configuraÃ§Ãµes salvas: $e');
     }
   }
 
-  /// Salva a chave API e preferências quando alteradas
+  /// Salva a chave API e preferï¿½ncias quando alteradas
   Future<void> _saveSettings() async {
     final config = ref.read(generationConfigProvider);
 
@@ -90,11 +101,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         quantity: config.quantity,
         personalizedTheme: config.personalizedTheme,
         usePersonalizedTheme: config.usePersonalizedTheme,
+        qualityMode: config.qualityMode, // ðŸš¨ v7.6.154: SALVAR qualityMode!
       );
     }
   }
 
-  /// Gera o roteiro com base nas configurações
+  /// Gera o roteiro com base nas configuraï¿½ï¿½es
   void _generateScript() async {
     debugPrint('\n');
     debugPrint(
@@ -108,26 +120,26 @@ class _HomePageState extends ConsumerState<HomePage> {
     final config = ref.read(generationConfigProvider);
     final generationNotifier = ref.read(scriptGenerationProvider.notifier);
 
-    debugPrint('?? HOME_PAGE: Validando configuração...');
+    debugPrint('?? HOME_PAGE: Validando configuraï¿½ï¿½o...');
 
-    // Validação direta do estado (não do notifier.isValid que pode estar desatualizado)
+    // Validaï¿½ï¿½o direta do estado (nï¿½o do notifier.isValid que pode estar desatualizado)
     final isValid =
         config.apiKey.isNotEmpty &&
         config.title.isNotEmpty &&
         config.quantity > 0;
 
     if (!isValid) {
-      debugPrint('? HOME_PAGE: Configuração INVÁLIDA');
+      debugPrint('? HOME_PAGE: Configuraï¿½ï¿½o INVï¿½LIDA');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Por favor, preencha todos os campos obrigatórios.'),
+          content: Text('Por favor, preencha todos os campos obrigatï¿½rios.'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    debugPrint('? HOME_PAGE: Configuração VÁLIDA');
+    debugPrint('? HOME_PAGE: Configuraï¿½ï¿½o Vï¿½LIDA');
 
     // ?? DEBUG: Verificando language antes de usar config
     debugPrint('?? HOME_PAGE: config.language = "${config.language}"');
@@ -135,7 +147,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       '?? HOME_PAGE: config.language.codeUnits = ${config.language.codeUnits}',
     );
 
-    // Usar a configuração atual sem modificações
+    // Usar a configuraï¿½ï¿½o atual sem modificaï¿½ï¿½es
     final finalConfig = config;
 
     // ?? DEBUG: Verificando language depois de criar final config
@@ -155,11 +167,11 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       debugPrint('? HOME_PAGE: generationNotifier.generateScript() retornou');
 
-      await _saveSettings(); // Salvar configurações após geração bem-sucedida
+      await _saveSettings(); // Salvar configuraï¿½ï¿½es apï¿½s geraï¿½ï¿½o bem-sucedida
 
-      debugPrint('?? HOME_PAGE: Configurações salvas');
+      debugPrint('?? HOME_PAGE: Configuraï¿½ï¿½es salvas');
     } catch (e) {
-      debugPrint('? HOME_PAGE: EXCEÇÃO capturada: $e');
+      debugPrint('? HOME_PAGE: EXCEï¿½ï¿½O capturada: $e');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -201,7 +213,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       },
     );
 
-    // Se o usuário salvou, atualizar o resultado
+    // Se o usuï¿½rio salvou, atualizar o resultado
     if (result != null) {
       // Atualizar o resultado do script no provider
       ref.read(scriptGenerationProvider.notifier).updateScriptText(result);
@@ -214,7 +226,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final generationNotifier = ref.read(scriptGenerationProvider.notifier);
     final config = ref.watch(
       generationConfigProvider,
-    ); // ? WATCH o estado para reagir a mudanças
+    ); // ? WATCH o estado para reagir a mudanï¿½as
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
       body: SingleChildScrollView(
@@ -225,13 +237,13 @@ class _HomePageState extends ConsumerState<HomePage> {
             // HEADER COMPACTO
             const ExpandedHeaderWidget(),
 
-            // ÁREA PRINCIPAL UNIFICADA
+            // ï¿½REA PRINCIPAL UNIFICADA
             Padding(
               padding: const EdgeInsets.all(8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // SEÇÃO: PROGRESSO OU RESULTADO
+                  // SEï¿½ï¿½O: PROGRESSO OU RESULTADO
                   if (generationState.isGenerating)
                     GenerationProgressView(
                       progress:
@@ -243,7 +255,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             totalPhases: 6,
                             currentBlock: 0,
                             totalBlocks: 10,
-                            logs: ['Iniciando geração...'],
+                            logs: ['Iniciando geraï¿½ï¿½o...'],
                             wordsGenerated: 0,
                           ),
                       onCancel: () => generationNotifier.cancelGeneration(),
@@ -280,7 +292,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       ),
                                     ],
                                   ),
-                                  // Botão de expandir roteiro
+                                  // Botï¿½o de expandir roteiro
                                   IconButton(
                                     onPressed: () => _showExpandedScriptEditor(
                                       context,
@@ -328,7 +340,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   ),
                                   child: Stack(
                                     children: [
-                                      // Área do roteiro com scroll controlado
+                                      // ï¿½rea do roteiro com scroll controlado
                                       Padding(
                                         padding: const EdgeInsets.all(16),
                                         child: NotificationListener<ScrollNotification>(
@@ -336,7 +348,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                               (
                                                 ScrollNotification notification,
                                               ) {
-                                                // Se estiver bloqueado, não permite scroll
+                                                // Se estiver bloqueado, nï¿½o permite scroll
                                                 return _isScriptScrollLocked;
                                               },
                                           child: Scrollbar(
@@ -367,7 +379,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           ),
                                         ),
                                       ),
-                                      // Botão de cadeado estilo moderno
+                                      // Botï¿½o de cadeado estilo moderno
                                       Positioned(
                                         top: 12,
                                         right: 12,
@@ -495,7 +507,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                 Text(
                                                   _isScriptScrollLocked
                                                       ? 'BLOQUEADO'
-                                                      : 'SCROLLÁVEL',
+                                                      : 'SCROLLï¿½VEL',
                                                   style: TextStyle(
                                                     color: _isScriptScrollLocked
                                                         ? const Color(
@@ -513,7 +525,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           ),
                                         ),
                                       ),
-                                      // Overlay leve quando bloqueado (NÃO bloqueia cliques)
+                                      // Overlay leve quando bloqueado (Nï¿½O bloqueia cliques)
                                       if (_isScriptScrollLocked)
                                         Positioned.fill(
                                           child: IgnorePointer(
@@ -538,7 +550,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
 
-                        // MÉTRICAS
+                        // Mï¿½TRICAS
                         Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: _buildScriptMetrics(
@@ -546,7 +558,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
 
-                        // BOTÕES DE AÇÃO
+                        // BOTï¿½ES DE Aï¿½ï¿½O
                         Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: _buildActionButtons(
@@ -554,7 +566,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
 
-                        // BOTÃO NOVA GERAÇÃO
+                        // BOTï¿½O NOVA GERAï¿½ï¿½O
                         Row(
                           children: [
                             // Ferramentas Extras (lado esquerdo)
@@ -579,7 +591,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                               ),
                             ),
-                            // Botão Gerar Novo (lado direito)
+                            // Botï¿½o Gerar Novo (lado direito)
                             Expanded(
                               flex: 1,
                               child: Container(
@@ -643,7 +655,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     )
                   else
-                    // BOTÃO GERAR ROTEIRO (estado inicial)
+                    // BOTï¿½O GERAR ROTEIRO (estado inicial)
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.all(40.0),
@@ -803,7 +815,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Roteiro copiado para a área de transferência!'),
+          content: const Text('Roteiro copiado para a ï¿½rea de transferï¿½ncia!'),
           backgroundColor: AppColors.fireOrange,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -829,7 +841,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-// Widget separado para o dialog expandido de edição de roteiro
+// Widget separado para o dialog expandido de ediï¿½ï¿½o de roteiro
 class _ExpandedScriptDialog extends StatefulWidget {
   final String initialText;
 
@@ -908,7 +920,7 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                       ),
                     ),
                   ),
-                  // Contadores dinâmicos
+                  // Contadores dinï¿½micos
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -969,7 +981,7 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                   ),
                   decoration: InputDecoration(
                     hintText:
-                        'Edite seu roteiro aqui...\n\n?? Este editor expandido permite:\n\n• Editar o roteiro gerado com facilidade\n• Ver todo o texto de uma só vez\n• Fazer correções e ajustes precisos\n• Acompanhar contadores de caracteres e palavras\n• Usar Ctrl+A para selecionar tudo\n• Usar Ctrl+Z para desfazer\n• Usar Ctrl+F para buscar texto\n\nFaça os ajustes necessários! ?',
+                        'Edite seu roteiro aqui...\n\n?? Este editor expandido permite:\n\nï¿½ Editar o roteiro gerado com facilidade\nï¿½ Ver todo o texto de uma sï¿½ vez\nï¿½ Fazer correï¿½ï¿½es e ajustes precisos\nï¿½ Acompanhar contadores de caracteres e palavras\nï¿½ Usar Ctrl+A para selecionar tudo\nï¿½ Usar Ctrl+Z para desfazer\nï¿½ Usar Ctrl+F para buscar texto\n\nFaï¿½a os ajustes necessï¿½rios! ?',
                     hintStyle: TextStyle(
                       color: Colors.grey[500],
                       fontSize: 15,
@@ -1001,7 +1013,7 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                 ),
               ),
             ),
-            // Botões de ação
+            // Botï¿½es de aï¿½ï¿½o
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -1013,10 +1025,10 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
               ),
               child: Row(
                 children: [
-                  // Informações adicionais
+                  // Informaï¿½ï¿½es adicionais
                   Expanded(
                     child: Text(
-                      'Faça os ajustes necessários no seu roteiro e salve as alterações',
+                      'Faï¿½a os ajustes necessï¿½rios no seu roteiro e salve as alteraï¿½ï¿½es',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 13,
@@ -1024,7 +1036,7 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                       ),
                     ),
                   ),
-                  // Botões
+                  // Botï¿½es
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(null),
                     style: TextButton.styleFrom(
@@ -1041,7 +1053,7 @@ class _ExpandedScriptDialogState extends State<_ExpandedScriptDialog> {
                     onPressed: () =>
                         Navigator.of(context).pop(expandedController.text),
                     icon: const Icon(Icons.save, size: 18),
-                    label: const Text('Salvar Alterações'),
+                    label: const Text('Salvar Alteraï¿½ï¿½es'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.fireOrange,
                       foregroundColor: Colors.white,

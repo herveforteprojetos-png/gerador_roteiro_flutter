@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 /// 🧪 Testes para v7.6.148: Correção de falhas em blocos finais
-/// 
+///
 /// Problemas resolvidos:
 /// 1. Validação de família muito rígida (neto/filho) em blocos avançados
 /// 2. MinAcceptable muito alto quando ato próximo do limite
@@ -9,35 +9,35 @@ void main() {
   group('v7.6.148 - Validação de Família Relaxada', () {
     test('Lógica de validação: Blocos 1-5 validam neto/filho', () {
       const blockNumber = 3;
-      
+
       // Simula lógica: se (neto/neta presente) E (blockNumber < 6)
       final shouldValidate = blockNumber < 6;
-      
+
       expect(shouldValidate, true); // Bloco 3 deve validar
     });
 
     test('Lógica de validação: Blocos 6+ NÃO validam neto/filho', () {
       const blockNumber = 7;
-      
+
       // Simula lógica: se (neto/neta presente) E (blockNumber < 6)
       final shouldValidate = blockNumber < 6;
-      
+
       expect(shouldValidate, false); // Bloco 7 NÃO deve validar
     });
 
     test('Exatamente no limite (Bloco 6): Validação já relaxada', () {
       const blockNumber = 6;
-      
+
       final shouldValidate = blockNumber < 6;
-      
+
       expect(shouldValidate, false); // Bloco 6 já relaxado
     });
 
     test('Bloco 5: Ainda valida (último bloco com validação)', () {
       const blockNumber = 5;
-      
+
       final shouldValidate = blockNumber < 6;
-      
+
       expect(shouldValidate, true); // Bloco 5 ainda valida
     });
   });
@@ -54,7 +54,8 @@ void main() {
 
     test('Cálculo de minAcceptable: Ato no limite (35%)', () {
       const adjustedTarget = 1400; // Target normal
-      const actRemainingWords = 200; // Restam apenas 200 palavras (< 50% do target)
+      const actRemainingWords =
+          200; // Restam apenas 200 palavras (< 50% do target)
       const isActNearLimit = actRemainingWords < (adjustedTarget * 0.5); // true
 
       final adjustedMinPercent = isActNearLimit ? 0.35 : 0.65;
@@ -92,12 +93,12 @@ void main() {
       const actRemainingWords = 178; // Restantes no ato
 
       final isActNearLimit = actRemainingWords < (adjustedTarget * 0.5);
-      
+
       // v7.6.148.1: Usar menor entre 35% target e 60% restantes
       final minFromTarget = (adjustedTarget * 0.35).round();
       final minFromRemaining = (actRemainingWords * 0.6).round();
-      final finalMinAcceptable = minFromTarget < minFromRemaining 
-          ? minFromTarget 
+      final finalMinAcceptable = minFromTarget < minFromRemaining
+          ? minFromTarget
           : minFromRemaining;
 
       // Validações
@@ -117,22 +118,22 @@ void main() {
       // Ato 2: 3988/4250 palavras, restantes: 262
       // Blocos gerados: 247, 255, 223, 302 palavras
       // v7.6.148 rejeitou todos (min=488)
-      
+
       const adjustedTarget = 1394;
       const actRemainingWords = 262;
-      
+
       final isActNearLimit = actRemainingWords < (adjustedTarget * 0.5);
       final minFromTarget = (adjustedTarget * 0.35).round();
       final minFromRemaining = (actRemainingWords * 0.6).round();
-      final finalMinAcceptable = minFromTarget < minFromRemaining 
-          ? minFromTarget 
+      final finalMinAcceptable = minFromTarget < minFromRemaining
+          ? minFromTarget
           : minFromRemaining;
-      
+
       expect(isActNearLimit, true); // 262 < 697
       expect(minFromTarget, 488); // 35% de 1394
       expect(minFromRemaining, 157); // 60% de 262
       expect(finalMinAcceptable, 157); // Usa 157 (menor que 488)
-      
+
       // Todas as tentativas do log seriam aceitas agora
       const wordCounts = [247, 255, 223, 302];
       for (final wordCount in wordCounts) {
@@ -149,7 +150,8 @@ void main() {
 
       // Flash sempre usa 45%, não importa se ato está no limite
       final minPercentForValidation = 0.45;
-      final finalMinAcceptable = (adjustedTarget * minPercentForValidation).round();
+      final finalMinAcceptable = (adjustedTarget * minPercentForValidation)
+          .round();
 
       // Mesmo com ato no limite, Flash usa seu próprio percentual
       expect(isActNearLimit, true);
@@ -159,7 +161,7 @@ void main() {
 
   group('v7.6.148 - Integração', () {
     test('Cenário completo: Bloco 7 com neta + ato no limite', () {
-const adjustedTarget = 1394; // Target do bloco
+      const adjustedTarget = 1394; // Target do bloco
       const actRemainingWords = 178; // Restantes no ato
 
       final isActNearLimit = actRemainingWords < (adjustedTarget * 0.5);
@@ -174,13 +176,13 @@ const adjustedTarget = 1394; // Target do bloco
       // Bloco com 193 palavras rejeitado (193 < 906)
       // DEPOIS v7.6.148: minAcceptable = 488 (35% de 1394)
       // Bloco com 193 palavras AINDA rejeitado (193 < 488)
-      
+
       // Mas blocos de ~500 palavras agora são aceitos
       const wordCount = 500;
       final wouldBeAccepted = wordCount >= finalMinAcceptable;
-      
+
       expect(wouldBeAccepted, true); // 500 >= 488, aceito!
-      
+
       // Comparação: antes seria rejeitado
       const oldMinAcceptable = 906;
       final wouldBeRejectedBefore = wordCount < oldMinAcceptable;
@@ -194,7 +196,8 @@ const adjustedTarget = 1394; // Target do bloco
 
       // Flash sempre usa 45%, não importa se ato está no limite
       final minPercentForValidation = 0.45;
-      final finalMinAcceptable = (adjustedTarget * minPercentForValidation).round();
+      final finalMinAcceptable = (adjustedTarget * minPercentForValidation)
+          .round();
 
       // Mesmo com ato no limite, Flash usa seu próprio percentual
       expect(isActNearLimit, true);
@@ -204,10 +207,10 @@ const adjustedTarget = 1394; // Target do bloco
     test('Economia de retries: bloco 500 palavras vs 193 palavras', () {
       const adjustedTarget = 1394;
       const actRemainingWords = 178;
-      
+
       final isActNearLimit = actRemainingWords < (adjustedTarget * 0.5);
-      final finalMinAcceptable = isActNearLimit 
-          ? (adjustedTarget * 0.35).round() 
+      final finalMinAcceptable = isActNearLimit
+          ? (adjustedTarget * 0.35).round()
           : (adjustedTarget * 0.65).round();
 
       // Cenário A: Bloco de 193 palavras (muito curto)
@@ -231,19 +234,19 @@ const adjustedTarget = 1394; // Target do bloco
       const blockNumber = 6;
       const adjustedTarget = 1394;
       const actRemainingWords = 300; // Próximo do limite
-      
+
       // Fix 1: Validação de família relaxada
       final shouldValidateFamily = blockNumber < 6;
       expect(shouldValidateFamily, false); // Não valida neto/filho
-      
+
       // Fix 2: MinAcceptable ajustado
       final isActNearLimit = actRemainingWords < (adjustedTarget * 0.5);
       final adjustedMinPercent = isActNearLimit ? 0.35 : 0.65;
       final finalMinAcceptable = (adjustedTarget * adjustedMinPercent).round();
-      
+
       expect(isActNearLimit, true); // 300 < 697
       expect(finalMinAcceptable, 488); // 35% do target
-      
+
       // Bloco com 500 palavras seria aceito
       const wordCount = 500;
       final blockAccepted = wordCount >= finalMinAcceptable;
@@ -255,24 +258,24 @@ const adjustedTarget = 1394; // Target do bloco
       const adjustedTarget = 1395;
       const actRemainingWords = 150; // Muito próximo do limite
       const wordCount = 500; // Bloco gerado razoável
-      
+
       // Fix 1: Não valida neto/filho (bloco 7)
       final familyValidationSkipped = blockNumber >= 6;
       expect(familyValidationSkipped, true);
-      
+
       // Fix 2: MinAcceptable reduzido
       final isActNearLimit = actRemainingWords < (adjustedTarget * 0.5);
       final finalMinAcceptable = isActNearLimit
           ? (adjustedTarget * 0.35).round()
           : (adjustedTarget * 0.65).round();
-      
+
       expect(isActNearLimit, true);
       expect(finalMinAcceptable, 488); // 35% de 1395
-      
+
       // Validação de tamanho deve passar
       final sizeValid = wordCount >= finalMinAcceptable;
       expect(sizeValid, true); // 500 >= 488
-      
+
       // Ambas validações OK = bloco aceito
       final blockAccepted = familyValidationSkipped && sizeValid;
       expect(blockAccepted, true);
@@ -283,20 +286,20 @@ const adjustedTarget = 1394; // Target do bloco
       const block5 = 5;
       final block5ValidatesFamily = block5 < 6;
       expect(block5ValidatesFamily, true);
-      
+
       // Bloco 6: Primeira validação relaxada
       const block6 = 6;
       final block6ValidatesFamily = block6 < 6;
       expect(block6ValidatesFamily, false);
-      
+
       // Ambos podem ter minAcceptable ajustado se ato no limite
       const adjustedTarget = 1394;
       const actRemaining5 = 1000; // Ato ainda OK no bloco 5
       const actRemaining6 = 200; // Ato no limite no bloco 6
-      
+
       final isBlock5NearLimit = actRemaining5 < (adjustedTarget * 0.5);
       final isBlock6NearLimit = actRemaining6 < (adjustedTarget * 0.5);
-      
+
       expect(isBlock5NearLimit, false); // Bloco 5 ainda tem espaço
       expect(isBlock6NearLimit, true); // Bloco 6 ato no limite
     });

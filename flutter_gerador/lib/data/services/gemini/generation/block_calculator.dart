@@ -11,13 +11,13 @@ import 'package:flutter_gerador/data/models/script_config.dart';
 enum LanguageCategory {
   /// Idiomas latinos: Português, Inglês, Espanhol, Francês, Italiano, Romeno
   latino,
-  
+
   /// Idiomas cirílicos: Russo, Búlgaro
   cirilico,
-  
+
   /// Idioma coreano (한국어) - Alfabeto Hangul
   hangul,
-  
+
   /// Idiomas com diacríticos pesados: Alemão, Polonês, Turco
   diacriticos,
 }
@@ -40,14 +40,14 @@ class BlockCalculator {
     final phaseIdx = progress <= 0.15
         ? 0
         : progress <= 0.35
-            ? 1
-            : progress <= 0.65
-                ? 2
-                : progress <= 0.80
-                    ? 3
-                    : progress <= 0.95
-                        ? 4
-                        : 5;
+        ? 1
+        : progress <= 0.65
+        ? 2
+        : progress <= 0.80
+        ? 3
+        : progress <= 0.95
+        ? 4
+        : 5;
     return phases[phaseIdx];
   }
 
@@ -56,7 +56,7 @@ class BlockCalculator {
   static bool checkTargetMet(String text, ScriptConfig c) {
     // 🔍 Flash usa tolerância maior pois trabalha com mais blocos
     final isFlash = c.qualityMode.toLowerCase().contains('flash');
-    
+
     if (c.measureType == 'caracteres') {
       // Flash: 3% tolerância | Pro: 0.5% tolerância
       final tolerancePercent = isFlash ? 0.03 : 0.005;
@@ -64,7 +64,7 @@ class BlockCalculator {
       final tol = max(minTol, (c.quantity * tolerancePercent).round());
       return text.length >= (c.quantity - tol);
     }
-    
+
     final wc = countWords(text);
     // Flash: 5% tolerância | Pro: 1% tolerância
     final tolerancePercent = isFlash ? 0.05 : 0.01;
@@ -80,7 +80,7 @@ class BlockCalculator {
   }
 
   /// 🏷️ Determina a categoria linguística de um idioma
-  /// 
+  ///
   /// Mapeia idiomas para categorias que afetam o cálculo de blocos:
   /// - latino: Idiomas com alfabeto latino simples
   /// - cirilico: Alfabeto cirílico (caracteres mais pesados)
@@ -88,7 +88,7 @@ class BlockCalculator {
   /// - diacriticos: Idiomas com acentuação pesada
   static LanguageCategory getCategory(String language) {
     final lang = language.toLowerCase();
-    
+
     // 🇧🇷 LATINO: Português, Inglês, Espanhol, Francês, Italiano, Romeno
     if (lang.contains('português') ||
         lang.contains('portugues') ||
@@ -106,7 +106,7 @@ class BlockCalculator {
         lang.contains('român')) {
       return LanguageCategory.latino;
     }
-    
+
     // 🇷🇺 CIRÍLICO: Russo, Búlgaro
     if (lang.contains('russo') ||
         lang.contains('russian') ||
@@ -115,14 +115,14 @@ class BlockCalculator {
         lang.contains('bulgarian')) {
       return LanguageCategory.cirilico;
     }
-    
+
     // 🇰🇷 HANGUL: Coreano
     if (language.contains('한국어') ||
         lang.contains('coreano') ||
         lang.contains('korean')) {
       return LanguageCategory.hangul;
     }
-    
+
     // 🌍 DIACRÍTICOS: Alemão, Polonês, Turco
     if (lang.contains('alemão') ||
         lang.contains('alemao') ||
@@ -134,18 +134,18 @@ class BlockCalculator {
         lang.contains('turkish')) {
       return LanguageCategory.diacriticos;
     }
-    
+
     // Default: latino
     return LanguageCategory.latino;
   }
 
   /// 🎯 Calcula o target de palavras por bloco baseado em idioma e modelo
-  /// 
+  ///
   /// Multiplicadores por modelo:
   /// - Ultra (3.0): 1.20x (blocos 20% maiores que Pro)
   /// - Pro (2.5): 1.00x (referência base)
   /// - Flash (2.5): 0.67x (blocos 33% menores que Pro)
-  /// 
+  ///
   /// Targets base por categoria:
   /// - Latino: 1350 palavras/bloco (Pro)
   /// - Cirílico: 1000 palavras/bloco (Pro)
@@ -153,7 +153,7 @@ class BlockCalculator {
   /// - Diacríticos: 1100 palavras/bloco (Pro)
   static double getTargetPalBloco(ScriptConfig c) {
     final category = getCategory(c.language);
-    
+
     // 📊 Target base por categoria (valores para Pro)
     final int baseTarget;
     switch (category) {
@@ -170,10 +170,10 @@ class BlockCalculator {
         baseTarget = 1100;
         break;
     }
-    
+
     // 🔍 Detectar modelo e aplicar multiplicador
     final qualityLower = c.qualityMode.toLowerCase();
-    
+
     if (qualityLower.contains('flash')) {
       // ⚡ FLASH: Blocos menores (67% do Pro)
       return baseTarget * 0.67;
@@ -252,11 +252,11 @@ class BlockCalculator {
     // 🆕 v7.6.126: Refatorado para usar getTargetPalBloco com suporte Ultra
     final double targetPalBloco = getTargetPalBloco(c);
     final category = getCategory(c.language);
-    
+
     // 🏷️ Label para debug
     String langCategory;
     final qualityLower = c.qualityMode.toLowerCase();
-    
+
     if (qualityLower.contains('ultra')) {
       langCategory = '🚀 ${category.name.toUpperCase()} (ULTRA)';
     } else if (qualityLower.contains('flash')) {
@@ -274,11 +274,12 @@ class BlockCalculator {
 
     // Definir maxBlocks baseado na categoria
     if (category == LanguageCategory.hangul) {
-      maxBlocks = 35;  // Coreano v7.6.135: reduzido (gera mais palavras por bloco)
+      maxBlocks =
+          35; // Coreano v7.6.135: reduzido (gera mais palavras por bloco)
     } else if (category == LanguageCategory.cirilico) {
-      maxBlocks = 30;  // Cirílico: limite intermediário
+      maxBlocks = 30; // Cirílico: limite intermediário
     } else {
-      maxBlocks = 25;  // Padrão para latinos e diacríticos
+      maxBlocks = 25; // Padrão para latinos e diacríticos
     }
 
     int finalBlocks = calculatedBlocks.clamp(minBlocks, maxBlocks);
@@ -368,7 +369,7 @@ class BlockCalculator {
     if (c.measureType == 'caracteres') {
       maxBlockSize = isFlash ? 8000 : 15000;
     } else {
-      maxBlockSize = isFlash ? 1200 : 5000;  // Flash: ~1200 palavras max
+      maxBlockSize = isFlash ? 1200 : 5000; // Flash: ~1200 palavras max
     }
 
     // Para o último bloco, usar o multiplicador ajustado

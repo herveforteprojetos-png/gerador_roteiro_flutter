@@ -147,7 +147,7 @@ class WorldState {
 
   /// Retorna contexto formatado para incluir no prompt de geração
   /// Estrutura "Sanduíche" de 3 Camadas
-  /// 
+  ///
   /// 🔧 v7.6.147: [currentBlock] permite otimizar fatos nos blocos finais
   String getContextForPrompt({int? currentBlock}) {
     if (personagens.isEmpty && fatos.isEmpty && sinopseComprimida.isEmpty) {
@@ -212,7 +212,7 @@ class WorldState {
     final recentFatos = fatos.length > maxFacts
         ? fatos.sublist(fatos.length - maxFacts)
         : fatos;
-    
+
     if (recentFatos.isNotEmpty) {
       buffer.writeln('');
       buffer.writeln('   📝 FATOS RECENTES:');
@@ -238,13 +238,13 @@ class WorldState {
   /// 🆕 v7.6.117: Não sobrescreve personagens já existentes com nomes diferentes
   void upsertCharacter(String papel, WorldCharacter character) {
     final normalizedRole = _normalizeRole(papel);
-    
+
     // Se já existe um personagem com este papel E tem nome diferente, não sobrescrever
     final existing = personagens[normalizedRole];
     if (existing != null && existing.nome.isNotEmpty) {
       final existingNameNorm = existing.nome.toLowerCase().trim();
       final newNameNorm = character.nome.toLowerCase().trim();
-      
+
       // Se os nomes são diferentes, manter o original (evita inconsistência)
       if (existingNameNorm != newNameNorm && existingNameNorm.isNotEmpty) {
         if (kDebugMode) {
@@ -255,7 +255,7 @@ class WorldState {
         return; // Não sobrescrever!
       }
     }
-    
+
     personagens[normalizedRole] = character;
     if (kDebugMode) {
       debugPrint(

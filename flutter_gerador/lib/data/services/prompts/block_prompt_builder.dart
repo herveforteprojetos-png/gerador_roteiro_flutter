@@ -147,7 +147,9 @@ class BlockPromptBuilder {
     // 🔧 v7.6.147: Passa blockNumber para otimizar fatos nos blocos finais
     String worldStateContext = '';
     if (worldState != null && blockNumber > 1) {
-      worldStateContext = worldState.getContextForPrompt(currentBlock: blockNumber);
+      worldStateContext = worldState.getContextForPrompt(
+        currentBlock: blockNumber,
+      );
     }
 
     // 📏 IMPORTANTE: Limitar palavras por bloco para estabilidade
@@ -429,7 +431,10 @@ class BlockPromptBuilder {
     }
 
     // 🛡️ LIMITE ABSOLUTO OTIMIZADO: Reduzido para evitar timeout em idiomas pesados
-    const maxContextWords = 3500;
+    // 🚨 v7.6.153: REDUZIDO 3500→2000 para economizar tokens em Free Tier
+    // Coreano: 2000 palavras × 5.5 = 11.000 chars (vs 19.250 anterior)
+    // Economia: ~2.000 tokens por request = permite mais requests/min
+    const maxContextWords = 2000;
     final currentWords = _countWords(fullContext);
 
     if (currentWords <= maxContextWords) {
@@ -701,6 +706,11 @@ class BlockPromptBuilder {
 
   // Cache para evitar reprocessamento em contagens frequentes
   static final Map<int, int> _wordCountCache = {};
+
+  /// 🧹 v7.6.153: Limpa cache entre gerações
+  static void clearCache() {
+    _wordCountCache.clear();
+  }
 
   static int _countWords(String text) {
     if (text.isEmpty) return 0;

@@ -112,10 +112,11 @@ void main() {
       expect(
         NameValidator.hasNameConflict('Montenegro', {'Otávio Montenegro'}),
         false,
-        reason: 'Nomes curtos não bloqueiam por substring em compostos (relaxamento)',
+        reason:
+            'Nomes curtos não bloqueiam por substring em compostos (relaxamento)',
       );
     });
-    
+
     test('🔴 Retorna true quando nome novo contém nome existente longo', () {
       // "Carlos Ferreira" contém "carlos" (existente) que tem >3 chars
       // E NÃO está na whitelist
@@ -244,9 +245,15 @@ void main() {
     });
 
     test('✅ Contém organizações/empresas', () {
-      expect(NameValidator.compoundWhitelist.contains('torre corporativa'), true);
+      expect(
+        NameValidator.compoundWhitelist.contains('torre corporativa'),
+        true,
+      );
       expect(NameValidator.compoundWhitelist.contains('grupo otávio'), true);
-      expect(NameValidator.compoundWhitelist.contains('horizonte sustentável'), true);
+      expect(
+        NameValidator.compoundWhitelist.contains('horizonte sustentável'),
+        true,
+      );
       expect(NameValidator.compoundWhitelist.contains('futuro verde'), true);
       expect(NameValidator.compoundWhitelist.contains('polícia federal'), true);
     });
@@ -258,9 +265,18 @@ void main() {
     });
 
     test('✅ Contém nomes compostos de personagens', () {
-      expect(NameValidator.compoundWhitelist.contains('otávio albuquerque'), true);
-      expect(NameValidator.compoundWhitelist.contains('otávio montenegro'), true);
-      expect(NameValidator.compoundWhitelist.contains('helena montenegro'), true);
+      expect(
+        NameValidator.compoundWhitelist.contains('otávio albuquerque'),
+        true,
+      );
+      expect(
+        NameValidator.compoundWhitelist.contains('otávio montenegro'),
+        true,
+      );
+      expect(
+        NameValidator.compoundWhitelist.contains('helena montenegro'),
+        true,
+      );
       expect(NameValidator.compoundWhitelist.contains('maria helena'), true);
     });
   });
@@ -276,7 +292,8 @@ void main() {
     });
 
     test('✅ isUppercaseNameFormat rejeita formato tradicional', () {
-      const traditionalText = 'Mateus olhava o relógio. Ele sorriu para Helena.';
+      const traditionalText =
+          'Mateus olhava o relógio. Ele sorriu para Helena.';
       expect(NameValidator.isUppercaseNameFormat(traditionalText), false);
     });
 
@@ -301,19 +318,22 @@ void main() {
     test('✅ extractNamesFromText auto-detecta formato Gemini', () {
       const geminiText = 'MATEUS olhava HELENA. ele sorriu.';
       final names = NameValidator.extractNamesFromText(geminiText);
-      
+
       // Deve retornar em Title Case (Mateus, Helena)
       expect(names, containsAll(['Mateus', 'Helena']));
       expect(names, isNot(contains('MATEUS')));
       expect(names, isNot(contains('HELENA')));
     });
 
-    test('✅ extractNamesFromText usa lógica tradicional para formato Title Case', () {
-      // Texto tradicional com nomes no meio de frases
-      const traditionalText = 'E então Arthur disse que Maria estava lá.';
-      final names = NameValidator.extractNamesFromText(traditionalText);
-      
-      expect(names, containsAll(['Arthur', 'Maria']));
-    });
+    test(
+      '✅ extractNamesFromText usa lógica tradicional para formato Title Case',
+      () {
+        // Texto tradicional com nomes no meio de frases
+        const traditionalText = 'E então Arthur disse que Maria estava lá.';
+        final names = NameValidator.extractNamesFromText(traditionalText);
+
+        expect(names, containsAll(['Arthur', 'Maria']));
+      },
+    );
   });
 }

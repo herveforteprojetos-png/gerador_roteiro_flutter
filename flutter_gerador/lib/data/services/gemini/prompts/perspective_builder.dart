@@ -381,14 +381,14 @@ $idadeInstrucao
       return 1.0; // Sem ajuste
     }
 
-    // 🇰🇷 COREANO: Muito conciso (aglutinação) + Modelo tende a ser preguiçoso
-    // ANÁLISE: Pedindo 1.0x, ele entrega ~70% da meta.
-    // SOLUÇÃO: Pedir 1.55x (55% a mais) para forçar expansão ou atingir o teto natural.
+    // 🇰🇷 COREANO: BlockCalculator já aplica multiplicador 1.18x
+    // IMPORTANTE: NÃO aplicar multiplicador adicional aqui (causaria 2x multiplicação)
+    // v7.6.149: Removido 1.55x para evitar targets muito altos (1590 em vez de 1026)
     if (normalized.contains('coreano') ||
         normalized.contains('korean') ||
         normalized.contains('한국어') ||
         normalized == 'ko') {
-      return 1.55;
+      return 1.0; // Sem multiplicador adicional
     }
 
     // 🇧🇷 PORTUGUÊS ou OUTROS: Baseline perfeito

@@ -13,35 +13,50 @@ void main() {
       expect(retry3Delay, equals(5), reason: 'Retry 3 deve ter 5s (cap)');
 
       final totalDelay = retry1Delay + retry2Delay + retry3Delay;
-      expect(totalDelay, equals(11),
-          reason: 'Total 11s (antes era 14s = 2+4+8)');
+      expect(
+        totalDelay,
+        equals(11),
+        reason: 'Total 11s (antes era 14s = 2+4+8)',
+      );
     });
 
     test('Trim de contexto quando >20k chars', () {
       // Simula contexto muito grande
       final longContext = 'A' * 25000; // 25k chars
-      
+
       final trimmed = longContext.length > 20000
           ? '...[contexto anterior resumido]\n\n${longContext.substring(longContext.length - 20000)}'
           : longContext;
 
-      expect(trimmed.length, lessThan(20100),
-          reason: 'Contexto deve ser cortado para ~20k');
-      expect(trimmed, contains('...[contexto anterior resumido]'),
-          reason: 'Deve ter marcador de trim');
+      expect(
+        trimmed.length,
+        lessThan(20100),
+        reason: 'Contexto deve ser cortado para ~20k',
+      );
+      expect(
+        trimmed,
+        contains('...[contexto anterior resumido]'),
+        reason: 'Deve ter marcador de trim',
+      );
     });
 
     test('Contexto pequeno não é trimado', () {
       final shortContext = 'A' * 5000; // 5k chars
-      
+
       final result = shortContext.length > 20000
           ? '...[contexto anterior resumido]\n\n${shortContext.substring(shortContext.length - 20000)}'
           : shortContext;
 
-      expect(result, equals(shortContext),
-          reason: 'Contexto pequeno não deve ser alterado');
-      expect(result, isNot(contains('...[contexto anterior resumido]')),
-          reason: 'Não deve ter marcador de trim');
+      expect(
+        result,
+        equals(shortContext),
+        reason: 'Contexto pequeno não deve ser alterado',
+      );
+      expect(
+        result,
+        isNot(contains('...[contexto anterior resumido]')),
+        reason: 'Não deve ter marcador de trim',
+      );
     });
 
     test('Economia de tokens calculada corretamente', () {

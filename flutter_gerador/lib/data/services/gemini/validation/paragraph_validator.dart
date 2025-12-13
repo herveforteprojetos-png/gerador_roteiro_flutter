@@ -19,7 +19,7 @@ class ParagraphValidator {
 
     // Detectar padrões comuns de início
     final patterns = <String>[];
-    
+
     for (final paragraph in paragraphs) {
       final pattern = _extractStartPattern(paragraph);
       patterns.add(pattern);
@@ -35,8 +35,12 @@ class ParagraphValidator {
         if (consecutiveCount >= 3) {
           if (kDebugMode) {
             debugPrint('🚨 v7.6.110: INÍCIO REPETITIVO DETECTADO!');
-            debugPrint('   Padrão "$pattern" repetido $consecutiveCount vezes consecutivas');
-            debugPrint('   ⚠️ VIOLAÇÃO: É PROIBIDO começar 3+ parágrafos com mesmo padrão');
+            debugPrint(
+              '   Padrão "$pattern" repetido $consecutiveCount vezes consecutivas',
+            );
+            debugPrint(
+              '   ⚠️ VIOLAÇÃO: É PROIBIDO começar 3+ parágrafos com mesmo padrão',
+            );
           }
           return true; // Violação detectada
         }
@@ -68,14 +72,24 @@ class ParagraphValidator {
     // Padrão: Nome próprio (capitalizado)
     if (RegExp(r'^[A-ZÀ-Ü][a-zà-ü]+$').hasMatch(words[0])) {
       // Se segunda palavra também é nome, considerar nome completo
-      if (words.length > 1 && RegExp(r'^[A-ZÀ-Ü][a-zà-ü]+$').hasMatch(words[1])) {
+      if (words.length > 1 &&
+          RegExp(r'^[A-ZÀ-Ü][a-zà-ü]+$').hasMatch(words[1])) {
         return 'name:${words[0]}_${words[1]}';
       }
       return 'name:${words[0]}';
     }
 
     // Padrão: Pronomes
-    final pronouns = {'ele', 'ela', 'eles', 'elas', 'eu', 'nós', 'você', 'vocês'};
+    final pronouns = {
+      'ele',
+      'ela',
+      'eles',
+      'elas',
+      'eu',
+      'nós',
+      'você',
+      'vocês',
+    };
     if (pronouns.contains(firstWord)) {
       return 'pronoun:$firstWord';
     }
@@ -88,12 +102,23 @@ class ParagraphValidator {
 
     // Padrão: Conectivos (OK - variação desejável)
     final connectors = {
-      'de repente', 'subitamente', 'naquele instante',
-      'no entanto', 'porém', 'contudo', 'todavia',
-      'enquanto isso', 'ao mesmo tempo', 'segundos depois',
-      'apesar', 'mesmo', 'embora', 'quando', 'depois'
+      'de repente',
+      'subitamente',
+      'naquele instante',
+      'no entanto',
+      'porém',
+      'contudo',
+      'todavia',
+      'enquanto isso',
+      'ao mesmo tempo',
+      'segundos depois',
+      'apesar',
+      'mesmo',
+      'embora',
+      'quando',
+      'depois',
     };
-    
+
     for (final connector in connectors) {
       if (text.toLowerCase().startsWith(connector)) {
         return 'connector'; // Conectivos são BONS - não contar como repetição
@@ -121,7 +146,9 @@ class ParagraphValidator {
       final pattern = _extractStartPattern(paragraphs[i]);
       patternCounts[pattern] = (patternCounts[pattern] ?? 0) + 1;
 
-      if (pattern == lastPattern && pattern != 'other' && pattern != 'connector') {
+      if (pattern == lastPattern &&
+          pattern != 'other' &&
+          pattern != 'connector') {
         consecutiveCount++;
         if (consecutiveCount >= 3) {
           consecutiveViolations.add(

@@ -21,7 +21,7 @@ class GenerationConfigNotifier extends StateNotifier<GenerationConfig> {
   void updateApiKey(String apiKey) {
     debugPrint('🔑 updateApiKey chamado: "$apiKey"');
     state = state.copyWith(apiKey: apiKey);
-    debugPrint('🔑 state.apiKey agora é: "$state.apiKey"');
+    debugPrint('🔑 state.apiKey agora é: "${state.apiKey}"');
   }
 
   void updateOpenAIKey(String openAIKey) {

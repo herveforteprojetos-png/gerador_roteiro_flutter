@@ -86,13 +86,22 @@ void main() {
       final vocabularioIndex = prompt.indexOf('VOCABULÁRIO SIMPLES');
       final estructuraIndex = prompt.indexOf('ESTRUTURA DE 3 ATOS');
 
-      expect(vocabularioIndex, greaterThan(0),
-          reason: 'Seção de vocabulário deve existir');
-      expect(estructuraIndex, greaterThan(0),
-          reason: 'Seção de estrutura deve existir');
-      expect(vocabularioIndex, lessThan(estructuraIndex),
-          reason:
-              'Vocabulário simples deve aparecer ANTES das regras de estrutura');
+      expect(
+        vocabularioIndex,
+        greaterThan(0),
+        reason: 'Seção de vocabulário deve existir',
+      );
+      expect(
+        estructuraIndex,
+        greaterThan(0),
+        reason: 'Seção de estrutura deve existir',
+      );
+      expect(
+        vocabularioIndex,
+        lessThan(estructuraIndex),
+        reason:
+            'Vocabulário simples deve aparecer ANTES das regras de estrutura',
+      );
     });
 
     test('Inclui exemplos práticos de substituição', () {
@@ -126,13 +135,19 @@ void main() {
       // Exemplos específicos de substituição
       final hasFibrocimento = prompt.contains('fibrocimento');
       final hasTelha = prompt.contains('telha');
-      expect(hasFibrocimento && hasTelha, isTrue,
-          reason: 'Deve mostrar fibrocimento → telha');
+      expect(
+        hasFibrocimento && hasTelha,
+        isTrue,
+        reason: 'Deve mostrar fibrocimento → telha',
+      );
 
       final hasParaleleppedos = prompt.contains('paralelepípedos');
       final hasPedras = prompt.contains('pedras da rua');
-      expect(hasParaleleppedos && hasPedras, isTrue,
-          reason: 'Deve mostrar paralelepípedos → pedras da rua');
+      expect(
+        hasParaleleppedos && hasPedras,
+        isTrue,
+        reason: 'Deve mostrar paralelepípedos → pedras da rua',
+      );
     });
 
     test('Funciona com idioma espanhol', () {

@@ -153,7 +153,7 @@ class CharacterTracker {
   /// 🆕 v7.6.136: Usa NameValidator para evitar falsos positivos
   bool addName(String name, {String? role, int? blockNumber}) {
     if (name.isEmpty || name.length <= 2) return true; // Nome vazio não é erro
-    
+
     // 🆕 v7.6.136: Ignorar FRASES (não são nomes de personagens)
     // Ex: "Mas Mateus", "Com Helena", "Até César" → ignorar
     if (NameValidator.isPhrase(name)) {
@@ -162,7 +162,7 @@ class CharacterTracker {
       }
       return true; // Não é erro, apenas ignorar
     }
-    
+
     // 🆕 v7.6.136: Ignorar nomes na WHITELIST de compostos
     // Ex: "Futuro Brilhante", "Doutor Álvaro" → não são conflitos
     final nameLower = name.toLowerCase();
@@ -172,7 +172,7 @@ class CharacterTracker {
       }
       // Continuar adição normal, sem gerar conflito
     }
-    
+
     // 🆕 v7.6.136: Usar NameValidator.hasNameConflict() em vez de lógica duplicada
     // Esta função já trata prefixos (Doutor, Senhor) e whitelist
     if (NameValidator.hasNameConflict(name, _confirmedNames)) {

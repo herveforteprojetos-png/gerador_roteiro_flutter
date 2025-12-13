@@ -94,7 +94,7 @@ class ScriptGenerationNotifier extends StateNotifier<ScriptGenerationState> {
     // CORREÇÃO: Reset completo de estado antes de nova geração
     _cancelRequested = false;
     geminiService.resetState(); // Reset do estado interno do service
-    
+
     // 🔥 v7.6.128: Limpar cache de validações de nomes
     NameValidator.clearCache();
 

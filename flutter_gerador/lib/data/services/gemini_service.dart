@@ -133,7 +133,9 @@ class GeminiService {
       _dio = Dio(
         BaseOptions(
           connectTimeout: const Duration(seconds: 45),
-          receiveTimeout: const Duration(minutes: 3), // v7.6.146: Timeout reduzido para 3min
+          receiveTimeout: const Duration(
+            minutes: 3,
+          ), // v7.6.146: Timeout reduzido para 3min
           sendTimeout: const Duration(seconds: 45),
         ),
       ) {
@@ -619,11 +621,17 @@ class GeminiService {
             debugPrint(
               '⏱️ [Bloco $block] ✅ Extração de nomes: ${namesDuration.inMilliseconds}ms (${allNames.length} nomes)',
             );
+            // 🇰🇷 v7.6.150: Log detalhado DESABILITADO (causava travamento com 534+ palavras)
+            // Mostrar apenas quantidade de nomes
           }
 
           allNames = allNames
               .where((n) => NameValidator.looksLikePersonName(n))
               .toList();
+          
+          // 🇰🇷 v7.6.150: DESABILITADO - log causava travamento da UI
+          // (534+ palavras coreanas comuns eram detectadas como nomes)
+          
           final unregistered = allNames
               .where((n) => !persistentTracker.hasName(n))
               .toList();
@@ -908,6 +916,12 @@ class GeminiService {
     _globalRequestCount = 0;
     _globalLastRequestTime = DateTime.now();
     _rateLimitBusy = false;
+    
+    // 🚨 v7.6.153: LIMPAR CACHE DO PROMPT BUILDER
+    // Evita acúmulo de dados de gerações anteriores (economia de tokens!)
+    try {
+      BlockPromptBuilder.clearCache();
+    } catch (e) {}
   }
 
   void _startWatchdog() {
@@ -1006,7 +1020,13 @@ class GeminiService {
         }
 
         if (errorStr.contains('429') && attempt < maxRetries - 1) {
-          await Future.delayed(Duration(seconds: (attempt + 1) * 5));
+          // 🚨 v7.6.153: DELAY EXPONENCIAL AGRESSIVO para Rate Limit (429)
+          // Gemini Free: 2 RPM → precisa esperar ~30s entre requisições
+          final delaySeconds = min(60, 30 * (1 << attempt)); // 30s, 60s, 60s...
+          _debugLogger.warning(
+            "⚠️ Rate Limit (429) - aguardando ${delaySeconds}s antes de retry ${attempt + 1}/$maxRetries",
+          );
+          await Future.delayed(Duration(seconds: delaySeconds));
           continue;
         }
 
@@ -1058,7 +1078,7 @@ class GeminiService {
             maxContextBlocks,
             TextUtils.countWords,
           );
-    
+
     // 🔧 v7.6.146: TRIM mais agressivo para economizar tokens (cap 15k chars)
     // Mantém últimos ~2.5 blocos para contexto, acelera blocos finais
     final contextoPrevio = rawContext.length > 15000
@@ -1093,15 +1113,26 @@ class GeminiService {
         PerspectiveBuilder.getLanguageVerbosityMultiplier(c.language);
     final adjustedTarget = (target * languageMultiplier).round();
 
+    // Detectar idioma coreano
+    final isKorean =
+        c.language.contains('한국어') ||
+        c.language.toLowerCase().contains('coreano') ||
+        c.language.toLowerCase().contains('korean');
+
     // 📊 v7.6.120: Limites MUITO relaxados para Flash (aceita quase tudo)
     // Flash varia MUITO, então precisamos aceitar praticamente qualquer coisa
+    // 🇰🇷 v7.6.149: Coreano também precisa de limites mais relaxados (API gera menos palavras)
     final isFlashModel = c.qualityMode.toLowerCase().contains('flash');
     final minPercentForPrompt = isFlashModel
         ? 0.80
-        : 0.92; // Flash: 80%, Pro: 92%
+        : isKorean
+            ? 0.75 // 🇰🇷 Coreano: 75% (mais relaxado)
+            : 0.92; // Flash: 80%, Pro: 92%
     final minPercentForValidation = isFlashModel
         ? 0.45
-        : 0.65; // Flash: 45% (MUITO relaxado), Pro: 65%
+        : isKorean
+            ? 0.50 // 🇰🇷 Coreano: 50% (mais relaxado que Pro 65%)
+            : 0.65; // Flash: 45% (MUITO relaxado), Pro: 65%
 
     final minAcceptableForPrompt = (adjustedTarget * minPercentForPrompt)
         .round();
@@ -1113,19 +1144,35 @@ class GeminiService {
         c.language.toLowerCase().contains('espanhol') ||
         c.language.toLowerCase().contains('spanish');
 
-    // 📝 v7.6.115: Instrução de extensão adaptativa (Flash precisa de mais ênfase)
+    // 📝 v7.6.115: Instrução de extensão adaptativa (Flash e Coreano precisam de mais ênfase)
+    // 🇰🇷 v7.6.149: Coreano - enfatizar MUITO mais a necessidade de blocos longos
     final extensionEmphasis = isFlashModel
         ? '\n\n⚠️ ATENÇÃO EXTENSÃO: Escreva de forma EXTREMAMENTE detalhada e descritiva!\n'
               'Desenvolva CADA cena com muitos detalhes sensoriais (sons, cheiros, texturas).\n'
               'Use diálogos longos e reflexões internas elaboradas.\n'
               'NÃO seja conciso - seja EXPANSIVO e DETALHADO!\n'
               'Meta: $adjustedTarget palavras - NÃO pare antes disso!'
-        : '';
+        : isKorean
+            ? '\n\n⚠️⚠️⚠️ 길이 주의 - 매우 중요!\n'
+                  '최소 $minAcceptableForPrompt 단어 이상 작성해야 합니다!\n'
+                  '목표: $adjustedTarget 단어 (이보다 적으면 거부됨)\n\n'
+                  '각 장면을 매우 상세하게 묘사하세요:\n'
+                  '• 감각적 세부사항 (소리, 냄새, 질감, 색상)\n'
+                  '• 긴 대화와 내면적 성찰\n'
+                  '• 등장인물의 감정과 생각을 깊이 있게\n'
+                  '• 배경 설명을 풍부하게\n\n'
+                  '간결하게 쓰지 마세요! 확장적이고 상세하게 작성하세요!'
+            : '';
 
     // Usar minAcceptableForPrompt no prompt para incentivar mais palavras
     final measure = isSpanish
         ? 'GERE EXATAMENTE $adjustedTarget palabras (MÍNIMO $minAcceptableForPrompt, MÁXIMO $maxAcceptable)$extensionEmphasis'
-        : 'GERE EXATAMENTE $adjustedTarget palavras (MÍNIMO $minAcceptableForPrompt, MÁXIMO $maxAcceptable)$extensionEmphasis';
+        : isKorean
+            ? '정확히 $adjustedTarget 단어를 생성하세요 (최소 $minAcceptableForPrompt 단어, 최대 $maxAcceptable 단어).\n'
+                  '⚠️ 중요: 이 블록은 반드시 $adjustedTarget 단어에 도달해야 합니다!\n'
+                  '각 장면을 자세히 설명하고, 감정과 대화를 풍부하게 표현하세요.\n'
+                  '$minAcceptableForPrompt 단어보다 적게 쓰면 블록이 거부됩니다!$extensionEmphasis'
+            : 'GERE EXATAMENTE $adjustedTarget palavras (MÍNIMO $minAcceptableForPrompt, MÁXIMO $maxAcceptable)$extensionEmphasis';
 
     final localizationGuidance = BaseRules.buildLocalizationGuidance(c);
     final narrativeStyleGuidance =
@@ -1195,20 +1242,52 @@ class GeminiService {
 
     // 🔧 v7.6.148: Ajustar minAcceptable dinamicamente se ato próximo do limite
     // 🔧 v7.6.148.1: Usar o MENOR entre 35% do target OU palavras restantes do ato
+    // 🇰🇷 v7.6.149: Para coreano, não ajustar (aceitar mais flexível)
+    // 🎯 v7.6.151: Detectar último bloco e ser mais flexível
+    final isLastBlock = blockNumber == totalBlocks;
     final isActNearLimit = actInfo.actRemainingWords < (adjustedTarget * 0.5);
     int finalMinAcceptable = minAcceptable;
-    if (isActNearLimit && !isFlashModel) {
+    
+    // 🎯 v7.6.151: Último bloco tem regras especiais (evitar retries desnecessários)
+    if (isLastBlock && !isFlashModel) {
+      // Para último bloco: aceitar 40% do target OU tudo que resta (o que for menor)
+      final minFromTarget = (adjustedTarget * 0.40).round();
+      final minFromRemaining = actInfo.actRemainingWords;
+      finalMinAcceptable = min(minFromTarget, minFromRemaining);
+      
+      if (kDebugMode) {
+        debugPrint('🎯 v7.6.151: Último bloco - minAcceptable flexível');
+        debugPrint('   minFromTarget (40%): $minFromTarget');
+        debugPrint('   minFromRemaining: $minFromRemaining');
+        debugPrint('   finalMinAcceptable: $finalMinAcceptable');
+      }
+    } else if (isActNearLimit && !isFlashModel && !isKorean) {
       final adjustedMinPercent = 0.35; // 35% do target quando ato no limite
       final minFromTarget = (adjustedTarget * adjustedMinPercent).round();
-      
+
       // 🎯 v7.6.148.1: Se palavras restantes < minFromTarget, usar 60% das restantes
       // Exemplo: restam 262 palavras → min = 157 palavras (60% de 262)
       final minFromRemaining = (actInfo.actRemainingWords * 0.6).round();
-      
+
       // Usar o menor dos dois (evita exigir mais palavras que o ato permite)
-      finalMinAcceptable = minFromTarget < minFromRemaining 
-          ? minFromTarget 
+      finalMinAcceptable = minFromTarget < minFromRemaining
+          ? minFromTarget
           : minFromRemaining;
+    }
+
+    // 🇰🇷 v7.6.149: Para coreano, garantir que minAcceptable nunca seja > target
+    if (isKorean && finalMinAcceptable > adjustedTarget) {
+      finalMinAcceptable = (adjustedTarget * 0.50).round();
+    }
+
+    // 🇰🇷 v7.6.149: Log de debug para coreano
+    if (kDebugMode && isKorean) {
+      debugPrint('🇰🇷 DEBUG COREANO:');
+      debugPrint('   adjustedTarget: $adjustedTarget');
+      debugPrint('   minAcceptable (50%): $minAcceptable');
+      debugPrint('   minAcceptableForPrompt (75%): $minAcceptableForPrompt');
+      debugPrint('   finalMinAcceptable: $finalMinAcceptable');
+      debugPrint('   isActNearLimit: $isActNearLimit');
     }
 
     // Remover cálculo duplicado de actInfo (já calculado acima para v7.6.148)
@@ -1228,6 +1307,9 @@ class GeminiService {
       );
       debugPrint('⏳ Restantes: ${actInfo.actRemainingWords} palavras');
       debugPrint('📊 Total acumulado: $currentTotalWords palavras');
+      if (isLastBlock) {
+        debugPrint('🏁 ÚLTIMO BLOCO - minAcceptable flexível ($finalMinAcceptable palavras)');
+      }
       if (actInfo.actNumber == 2 && actInfo.actRemainingWords < 300) {
         debugPrint('🚨 ALERTA: Ato 2 próximo do limite!');
       }
@@ -1235,9 +1317,13 @@ class GeminiService {
         debugPrint('✅ Ato 3 com espaço suficiente');
       }
       // 🔧 v7.6.148: Log de ajuste dinâmico de mínimo
-      if (isActNearLimit) {
-        debugPrint('⚙️ v7.6.148.1: minAcceptable ajustado para $finalMinAcceptable palavras');
-        debugPrint('   (35% target=${(adjustedTarget * 0.35).round()}, 60% restantes=${(actInfo.actRemainingWords * 0.6).round()}, usando menor)');
+      if (isActNearLimit && !isLastBlock) {
+        debugPrint(
+          '⚙️ v7.6.148.1: minAcceptable ajustado para $finalMinAcceptable palavras',
+        );
+        debugPrint(
+          '   (35% target=${(adjustedTarget * 0.35).round()}, 60% restantes=${(actInfo.actRemainingWords * 0.6).round()}, usando menor)',
+        );
       }
       debugPrint(
         '📊 ════════════════════════════════════════════════════════════',
@@ -1287,6 +1373,17 @@ class GeminiService {
         debugPrint('   📝 Resposta: ${data.length} chars');
       }
 
+      // 🚨 v7.6.152: LIMITE RÍGIDO DE CHARS - Rejeitar blocos com dobro de tamanho
+      // Evita blocos gigantes que causam duplicação narrativa
+      final expectedMaxChars = (adjustedTarget * 4.5).round(); // ~4 chars por palavra
+      if (data.length > expectedMaxChars * 1.5) {
+        _debugLogger.warning(
+          "Bloco $blockNumber rejeitado: resposta muito longa (${data.length} chars, máx ${(expectedMaxChars * 1.5).round()})",
+          blockNumber: blockNumber,
+        );
+        return '';
+      }
+
       if (data.isNotEmpty) {
         _lastSuccessfulCall = DateTime.now();
         _consecutive503Errors = max(0, _consecutive503Errors - 1);
@@ -1318,9 +1415,10 @@ class GeminiService {
 
         // ⚠️ v7.6.120: Validar contagem de palavras com tolerância MUITO relaxada para Flash
         // Flash varia muito (pode gerar 500 ou 3000 palavras), então aceitamos quase tudo
+        // 🚨 v7.6.152: LIMITE MAIS RÍGIDO - Máximo 40% acima do target (não 50%)
         final maxOveragePercent = isFlashModel
             ? 120.0
-            : 50.0; // Flash: até 120% acima do target
+            : 40.0; // Pro: até 40% acima do target (antes era 50%)
         final overagePercent =
             ((wordCount - adjustedTarget) / adjustedTarget) * 100;
         if (overagePercent > maxOveragePercent) {

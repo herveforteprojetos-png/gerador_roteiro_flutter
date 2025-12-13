@@ -11,7 +11,7 @@ void main() {
   print('═══════════════════════════════════════════════════════════════');
   print('🔍 ANÁLISE DE ROTEIRO - v7.6.136');
   print('═══════════════════════════════════════════════════════════════\n');
-  
+
   // ═══════════════════════════════════════════════════════════════
   // ROTEIRO FORNECIDO (35k caracteres)
   // ═══════════════════════════════════════════════════════════════
@@ -31,7 +31,7 @@ Mateus não pensou duas vezes. Levantou-se do banco, a marmita ainda quente nas 
   // ═══════════════════════════════════════════════════════════════
   print('📋 1. NOMES ENCONTRADOS NO ROTEIRO:');
   print('─────────────────────────────────────────────────────────────────\n');
-  
+
   // Padrões para extrair nomes
   final namePatterns = [
     RegExp(r'\b(Mateus)\b'),
@@ -41,82 +41,96 @@ Mateus não pensou duas vezes. Levantou-se do banco, a marmita ainda quente nas 
     RegExp(r'\b(Helena)\b'),
     RegExp(r'\b(César)\b'),
   ];
-  
+
   final foundNames = <String>{};
   for (final pattern in namePatterns) {
     for (final match in pattern.allMatches(screenplay)) {
       foundNames.add(match.group(0)!);
     }
   }
-  
+
   print('   Nomes extraídos:');
   for (final name in foundNames) {
     print('   • $name');
   }
-  
+
   // ═══════════════════════════════════════════════════════════════
   // 2. VERIFICAÇÃO COM LISTA DE PROIBIDOS
   // ═══════════════════════════════════════════════════════════════
   print('\n📋 2. VERIFICAÇÃO COM LISTA DE NOMES PROIBIDOS:');
   print('─────────────────────────────────────────────────────────────────\n');
-  
+
   // Nomes proibidos do NameGenerator v7.6.135
   final forbiddenNames = {
-    'Mateus', 'Otávio', 'Helena', 'Maria', 'João', 'José', 'Pedro', 'Ana'
+    'Mateus',
+    'Otávio',
+    'Helena',
+    'Maria',
+    'João',
+    'José',
+    'Pedro',
+    'Ana',
   };
-  
+
   final violations = <String>[];
   for (final name in foundNames) {
-    final baseName = name.replaceAll('Dona ', '').replaceAll('Dr. ', '').replaceAll('Doutor ', '');
+    final baseName = name
+        .replaceAll('Dona ', '')
+        .replaceAll('Dr. ', '')
+        .replaceAll('Doutor ', '');
     if (forbiddenNames.contains(baseName)) {
       violations.add('$name (base: $baseName)');
     }
   }
-  
+
   if (violations.isNotEmpty) {
     print('   ⚠️ NOMES PROIBIDOS ENCONTRADOS:');
     for (final v in violations) {
       print('   🔴 $v');
     }
-    print('\n   📌 NOTA: Estes nomes estão na lista de proibidos do NameGenerator.');
+    print(
+      '\n   📌 NOTA: Estes nomes estão na lista de proibidos do NameGenerator.',
+    );
     print('   📌 Em roteiros gerados, eles NÃO devem aparecer.');
-    print('   📌 Este roteiro parece ser um EXEMPLO/TESTE (não gerado pelo sistema).');
+    print(
+      '   📌 Este roteiro parece ser um EXEMPLO/TESTE (não gerado pelo sistema).',
+    );
   } else {
     print('   ✅ Nenhum nome proibido encontrado.');
   }
-  
+
   // ═══════════════════════════════════════════════════════════════
   // 3. TESTE DE CONFLITOS DE NOMES
   // ═══════════════════════════════════════════════════════════════
   print('\n📋 3. TESTE DE CONFLITOS (NameValidator.hasNameConflict):');
   print('─────────────────────────────────────────────────────────────────\n');
-  
+
   final existingNames = {'mateus', 'otávio', 'helena', 'césar'};
-  
+
   final testCases = [
-    'Dona Sônia',       // Deve passar (prefixo "Dona")
-    'Dr. Álvaro',       // Deve passar (prefixo "Dr.")
-    'Doutor Álvaro',    // Deve passar (prefixo "Doutor")
-    'Mateus',           // Deve bloquear (match exato)
+    'Dona Sônia', // Deve passar (prefixo "Dona")
+    'Dr. Álvaro', // Deve passar (prefixo "Dr.")
+    'Doutor Álvaro', // Deve passar (prefixo "Doutor")
+    'Mateus', // Deve bloquear (match exato)
     'Otávio Empresário', // Deve testar se conflita
-    'Mas Mateus',       // Deve passar (frase com "mas")
-    'Era Otávio',       // Deve passar (frase com "era")
-    'Helena',           // Deve bloquear (match exato)
+    'Mas Mateus', // Deve passar (frase com "mas")
+    'Era Otávio', // Deve passar (frase com "era")
+    'Helena', // Deve bloquear (match exato)
     'Futuro Brilhante', // Deve passar (whitelist organização)
   ];
-  
+
   for (final testName in testCases) {
     final hasConflict = NameValidator.hasNameConflict(testName, existingNames);
     final status = hasConflict ? '🔴 CONFLITO' : '✅ OK';
     print('   $status: "$testName"');
   }
-  
+
   // ═══════════════════════════════════════════════════════════════
   // 4. TESTE DE DETECÇÃO DE FRASES
   // ═══════════════════════════════════════════════════════════════
   print('\n📋 4. TESTE DE DETECÇÃO DE FRASES (NameValidator.isPhrase):');
   print('─────────────────────────────────────────────────────────────────\n');
-  
+
   final phraseCases = [
     'Mas Mateus',
     'Ou Helena',
@@ -124,22 +138,22 @@ Mateus não pensou duas vezes. Levantou-se do banco, a marmita ainda quente nas 
     'Enquanto César',
     'Senhor Otávio',
     'Dona Sônia',
-    'Mateus',       // Não é frase
-    'Helena',       // Não é frase
+    'Mateus', // Não é frase
+    'Helena', // Não é frase
   ];
-  
+
   for (final phrase in phraseCases) {
     final isPhrase = NameValidator.isPhrase(phrase);
     final status = isPhrase ? '📝 FRASE' : '👤 NOME';
     print('   $status: "$phrase"');
   }
-  
+
   // ═══════════════════════════════════════════════════════════════
   // 5. TESTE DE EXPANSÃO DE TÍTULOS
   // ═══════════════════════════════════════════════════════════════
   print('\n📋 5. TESTE DE EXPANSÃO DE TÍTULOS (PostGenerationFixer):');
   print('─────────────────────────────────────────────────────────────────\n');
-  
+
   final titleCases = [
     'Dr. Álvaro chegou ao escritório.',
     'Sr. Otávio era um empresário.',
@@ -147,7 +161,7 @@ Mateus não pensou duas vezes. Levantou-se do banco, a marmita ainda quente nas 
     'D. Sônia preparou a marmita.',
     'Prof. Carlos deu a aula.',
   ];
-  
+
   for (final text in titleCases) {
     final expanded = PostGenerationFixer.expandTitleAbbreviation(text);
     if (expanded != text) {
@@ -157,58 +171,58 @@ Mateus não pensou duas vezes. Levantou-se do banco, a marmita ainda quente nas 
       print('   ✅ "$text" (sem mudanças)');
     }
   }
-  
+
   // ═══════════════════════════════════════════════════════════════
   // 6. TESTE DE RELAÇÕES FAMILIARES
   // ═══════════════════════════════════════════════════════════════
   print('\n📋 6. TESTE DE RELAÇÕES FAMILIARES:');
   print('─────────────────────────────────────────────────────────────────\n');
-  
+
   final relationCases = [
     'mãe',
     'filho',
     'pai',
-    'Dona Sônia',  // Não é relação (é nome)
-    'Mateus',      // Não é relação (é nome)
+    'Dona Sônia', // Não é relação (é nome)
+    'Mateus', // Não é relação (é nome)
     'mother',
     'son',
   ];
-  
+
   for (final word in relationCases) {
     final isRelation = PostGenerationFixer.isFamilyRelation(word);
     final status = isRelation ? '👨‍👩‍👧 RELAÇÃO' : '👤 NOME';
     print('   $status: "$word"');
   }
-  
+
   // ═══════════════════════════════════════════════════════════════
   // 7. ANÁLISE DE OCORRÊNCIAS NO TEXTO
   // ═══════════════════════════════════════════════════════════════
   print('\n📋 7. CONTAGEM DE OCORRÊNCIAS NO TRECHO:');
   print('─────────────────────────────────────────────────────────────────\n');
-  
+
   final countPatterns = {
     'Mateus': RegExp(r'\bMateus\b'),
     'Dona Sônia': RegExp(r'\bDona Sônia\b'),
     'Dr. Álvaro': RegExp(r'\bDr\. Álvaro\b'),
     'Otávio': RegExp(r'\bOtávio\b'),
   };
-  
+
   for (final entry in countPatterns.entries) {
     final count = entry.value.allMatches(screenplay).length;
     print('   • ${entry.key}: $count ocorrências');
   }
-  
+
   // ═══════════════════════════════════════════════════════════════
   // 8. RESUMO FINAL
   // ═══════════════════════════════════════════════════════════════
   print('\n═══════════════════════════════════════════════════════════════');
   print('📊 RESUMO DA ANÁLISE');
   print('═══════════════════════════════════════════════════════════════\n');
-  
+
   print('   📝 Total de caracteres: ${screenplay.length}');
   print('   📝 Nomes únicos encontrados: ${foundNames.length}');
   print('   📝 Nomes proibidos usados: ${violations.length}');
-  
+
   if (violations.isNotEmpty) {
     print('\n   ⚠️ AVISO IMPORTANTE:');
     print('   Este roteiro contém nomes que estão na lista de proibidos:');
@@ -223,12 +237,12 @@ Mateus não pensou duas vezes. Levantou-se do banco, a marmita ainda quente nas 
     print('   • Em vez de Otávio → Ricardo, Fernando, Marcelo, etc.');
     print('   • Em vez de Helena → Beatriz, Camila, Isabela, etc.');
   }
-  
+
   print('\n   ✅ Sistema de validação v7.6.136 funcionando corretamente!');
   print('   ✅ Whitelist de compostos expandida');
   print('   ✅ Skip de prefixos (Doutor, Senhor, Dona, etc.)');
   print('   ✅ Detecção de frases (Mas X, Ou Y, Era Z)');
   print('   ✅ Expansão automática de abreviações (Dr→Doutor)');
-  
+
   print('\n═══════════════════════════════════════════════════════════════\n');
 }

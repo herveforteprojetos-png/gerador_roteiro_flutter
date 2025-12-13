@@ -54,14 +54,13 @@ class PostGenerationFixer {
     'profa': 'Professora',
     'pe': 'Padre',
     'd': 'Dona', // "D. Maria" → "Dona Maria"
-    
     // Inglês
     'mr': 'Mister',
     'mrs': 'Missus',
     'ms': 'Miss',
     // 'dr' já mapeado para Doutor (funciona para ambos idiomas)
   };
-  
+
   /// 🆕 v7.6.136: Expande abreviação de título para forma completa
   /// Ex: "Dr Álvaro" → "Doutor Álvaro", "Sr Carlos" → "Senhor Carlos"
   static String expandTitleAbbreviation(String text) {
@@ -70,12 +69,12 @@ class PostGenerationFixer {
       r'\b(Dr|Dra|Sr|Sra|Prof|Profa|Pe|D|Mr|Mrs|Ms)\.?\s+([A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç]+)',
       caseSensitive: true,
     );
-    
+
     String result = text;
     for (final match in regex.allMatches(text)) {
       final abbrev = match.group(1)!.toLowerCase();
       final name = match.group(2)!;
-      
+
       if (_titleAbbreviations.containsKey(abbrev)) {
         final fullTitle = _titleAbbreviations[abbrev]!;
         final original = match.group(0)!;
@@ -83,10 +82,10 @@ class PostGenerationFixer {
         result = result.replaceFirst(original, expanded);
       }
     }
-    
+
     return result;
   }
-  
+
   /// 🆕 v7.6.136: Palavras que indicam relação familiar (para mapeamento)
   /// Ex: "filho" → será mapeado para "Filho de [protagonista]" se necessário
   /// Usado para distinguir papéis de nomes (não bloquear como stopwords)
@@ -97,20 +96,20 @@ class PostGenerationFixer {
     'primo', 'prima', 'sobrinho', 'sobrinha',
     'marido', 'esposa', 'noivo', 'noiva',
     'sogro', 'sogra', 'genro', 'nora', 'cunhado', 'cunhada',
-    
+
     // Inglês
     'son', 'daughter', 'father', 'mother', 'brother', 'sister',
     'grandfather', 'grandmother', 'grandson', 'granddaughter',
     'uncle', 'aunt', 'cousin', 'nephew', 'niece',
     'husband', 'wife', 'fiancé', 'fiancée',
   };
-  
+
   /// 🆕 v7.6.136: Verifica se uma palavra é relação familiar
   /// Usado para distinguir "Filho" (papel) de "João" (nome)
   static bool isFamilyRelation(String word) {
     return _familyRelationWords.contains(word.toLowerCase());
   }
-  
+
   /// 🆕 v7.6.39: Palavras que NUNCA devem ser tratadas como nomes
   /// Inclui palavras comuns em inglês que começam com maiúscula
   static final Set<String> _nameStopwords = {
@@ -175,34 +174,34 @@ class PostGenerationFixer {
       }
       return false;
     }
-    
+
     // 🆕 v7.6.132: Rejeitar verbos/palavras indefinidas comuns detectados em logs
     // Ex: "Quero", "Fui", "Como", "Quais", "Ah", "Est", "Mas", "Ou"
     const invalidWords = {
       // Verbos em 1ª pessoa (detectados como nomes nos logs)
       'quero', 'fui', 'estou', 'sou', 'tenho', 'posso', 'devo',
       'vou', 'sei', 'queria', 'tinha', 'estava', 'podia',
-      
+
       // Pronomes interrogativos/relativos
       'como', 'quais', 'qual', 'quem', 'quanto', 'onde',
-      
+
       // Interjeições/partículas
       'ah', 'oh', 'eh', 'hum', 'opa', 'oi', 'olá',
-      
+
       // Conjunções/preposições (frases)
       'mas', 'ou', 'nem', 'pois', 'enquanto',
-      
+
       // Fragmentos comuns (detectados como nomes)
       'est', 'são', 'foi', 'era', 'seria', 'tem', 'pode',
     };
-    
+
     if (invalidWords.contains(nameLower)) {
       if (kDebugMode) {
         debugPrint('⚠️ v7.6.132: "$name" bloqueado (palavra indefinida/verbo)');
       }
       return false;
     }
-    
+
     // 🆕 v7.6.132: Rejeitar se contém palavras de frase (usando NameValidator)
     // Ex: "Mas Mateus", "Ou Otávio" → false
     if (NameValidator.isPhrase(name)) {
@@ -273,19 +272,21 @@ class PostGenerationFixer {
     // Ordenar por tamanho decrescente para substituir nomes compostos primeiro
     final sortedEntries = namesMap.entries.toList()
       ..sort((a, b) => b.key.length.compareTo(a.key.length));
-    
+
     for (final entry in sortedEntries) {
       final nameLower = entry.key;
       final nameCapitalized = entry.value;
-      
+
       // Substituir usando padrão que respeita limites de palavra
       // Usar lookahead/lookbehind negativo para caracteres alfanuméricos
       final pattern = RegExp(
-        '(?<![a-záàâãéêíóôõúç])' + RegExp.escape(nameLower) + '(?![a-záàâãéêíóôõúç])',
+        '(?<![a-záàâãéêíóôõúç])' +
+            RegExp.escape(nameLower) +
+            '(?![a-záàâãéêíóôõúç])',
         caseSensitive: false,
         unicode: true,
       );
-      
+
       result = result.replaceAllMapped(pattern, (match) => nameCapitalized);
     }
 
@@ -295,15 +296,18 @@ class PostGenerationFixer {
   /// Capitaliza primeira letra de cada palavra
   static String _capitalizeFirstLetter(String text) {
     if (text.isEmpty) return text;
-    
+
     // Se for nome composto (ex: "Maria Helena")
     if (text.contains(' ')) {
-      return text.split(' ').map((word) {
-        if (word.isEmpty) return word;
-        return word[0].toUpperCase() + word.substring(1).toLowerCase();
-      }).join(' ');
+      return text
+          .split(' ')
+          .map((word) {
+            if (word.isEmpty) return word;
+            return word[0].toUpperCase() + word.substring(1).toLowerCase();
+          })
+          .join(' ');
     }
-    
+
     return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 
@@ -325,7 +329,7 @@ class PostGenerationFixer {
 
     String correctedText = text;
     int correctionsCount = 0;
-    
+
     // 🆕 v7.6.136: Auto-expandir abreviações de títulos PRIMEIRO
     // Ex: "Dr Álvaro" → "Doutor Álvaro", "Sr Carlos" → "Senhor Carlos"
     final expandedText = expandTitleAbbreviation(correctedText);
@@ -805,7 +809,7 @@ class PostGenerationFixer {
         // Verificar se temos nome correto para este papel
         final correctName = roleToCorrectName[roleKey];
         if (correctName == null) continue;
-        
+
         // 🔧 v7.6.128: VALIDAÇÃO DO NOME CORRETO
         // Pular se o nome "correto" é inválido (previne "seu pai, Não")
         if (!_isValidCapturedName(correctName)) {
@@ -942,7 +946,7 @@ class PostGenerationFixer {
       if (!_introducedCharacters.containsKey(role)) continue;
 
       final correctName = _introducedCharacters[role]!;
-      
+
       // 🔧 v7.6.128: VALIDAÇÃO DO NOME CORRETO
       // Pular se o nome "correto" é inválido (previne "meu advogado, Não")
       if (!_isValidCapturedName(correctName)) {

@@ -7,16 +7,16 @@ import 'package:flutter_gerador/data/models/debug_log.dart';
 import 'package:flutter_gerador/data/services/gemini/tracking/name_constants.dart';
 import 'llm_client.dart';
 
-/// âœ… ScriptValidator - Validador de Roteiros
+/// ✅ ScriptValidator - Validador de Roteiros
 ///
-/// ResponsÃ¡vel por:
-/// - ValidaÃ§Ã£o de coerÃªncia tÃ­tulo â†” histÃ³ria
-/// - TraduÃ§Ã£o de keywords para idiomas alvo
-/// - ExtraÃ§Ã£o de elementos-chave do tÃ­tulo
-/// - ValidaÃ§Ã£o de relacionamentos familiares
-/// - ValidaÃ§Ã£o de nomes de protagonista
+/// Responsável por:
+/// - Validação de coerência título â†” história
+/// - Tradução de keywords para idiomas alvo
+/// - Extração de elementos-chave do título
+/// - Validação de relacionamentos familiares
+/// - Validação de nomes de protagonista
 ///
-/// Parte da refatoraÃ§Ã£o SOLID do GeminiService v7.6.64
+/// Parte da refatoração SOLID do GeminiService v7.6.64
 class ScriptValidator {
   final Dio _dio;
   final LlmClient? _llmClient;
@@ -33,9 +33,9 @@ class ScriptValidator {
           ),
       _llmClient = llmClient;
 
-  // ================== TRADUÃ‡ÃƒO DE KEYWORDS ==================
+  // ================== TRADUÇÃO DE KEYWORDS ==================
 
-  /// ðŸŒ Traduz keywords para o idioma alvo
+  /// 🌍 Traduz keywords para o idioma alvo
   ///
   /// [keywords]: Lista de palavras-chave em portuguÃªs
   /// [targetLanguage]: Idioma de destino
@@ -61,7 +61,7 @@ class ScriptValidator {
     try {
       final prompt =
           '''
-TAREFA: Tradutor de Palavras-Chave para ValidaÃ§Ã£o de Roteiro.
+TAREFA: Tradutor de Palavras-Chave para Validação de Roteiro.
 
 IDIOMA DE ORIGEM: PortuguÃªs
 IDIOMA DE DESTINO: $targetLanguage
@@ -128,7 +128,7 @@ RESPONDA APENAS COM O JSON ARRAY:''';
         final translated = parsed.map((e) => e.toString()).toList();
 
         if (kDebugMode) {
-          debugPrint('ðŸŒ TRADUÃ‡ÃƒO DE KEYWORDS:');
+          debugPrint('🌍 TRADUÇÃO DE KEYWORDS:');
           debugPrint('   Original (PT): ${keywords.join(", ")}');
           debugPrint(
             '   Traduzido ($targetLanguage): ${translated.join(", ")}',
@@ -149,10 +149,10 @@ RESPONDA APENAS COM O JSON ARRAY:''';
 
   // ================== EXTRAÃ‡ÃƒO DE ELEMENTOS DO TÃTULO ==================
 
-  /// ðŸŽ¯ Extrai elementos-chave do tÃ­tulo
+  /// ðŸŽ¯ Extrai elementos-chave do título
   ///
   /// Identifica personagens, aÃ§Ãµes, contextos e objetos
-  /// que DEVEM aparecer na histÃ³ria
+  /// que DEVEM aparecer na história
   Map<String, List<String>> extractTitleKeyElements(
     String title,
     String language,
@@ -215,7 +215,7 @@ RESPONDA APENAS COM O JSON ARRAY:''';
       r'(?:advogad[oa]|juiz[a]?|promotor[a]?)': 'profissional jurÃ­dico',
       r'(?:CEO|empresÃ¡ri[oa]|dono|chefe|patrÃ£o|gerente)': 'executivo/chefe',
       r'(?:mendigo|sem-teto|morador de rua|idoso faminto|noiva|noivo)':
-          'pessoa em situaÃ§Ã£o especial',
+          'pessoa em situação especial',
 
       // English
       r'(?:store|shop|convenience\s+store)\s+(?:clerk|employee|worker)':
@@ -300,10 +300,10 @@ RESPONDA APENAS COM O JSON ARRAY:''';
 
   // ================== VALIDAÃ‡ÃƒO DE COERÃŠNCIA ==================
 
-  /// ðŸ” Valida coerÃªncia tÃ­tulo â†” histÃ³ria (versÃ£o rigorosa)
+  /// ðŸ” Valida coerência título â†” história (versÃ£o rigorosa)
   ///
-  /// [title]: TÃ­tulo da histÃ³ria
-  /// [story]: Texto da histÃ³ria gerada
+  /// [title]: TÃ­tulo da história
+  /// [story]: Texto da história gerada
   /// [language]: Idioma do roteiro
   /// [apiKey]: Chave da API
   ///
@@ -315,7 +315,7 @@ RESPONDA APENAS COM O JSON ARRAY:''';
     required String apiKey,
   }) async {
     try {
-      // 1ï¸âƒ£ ExtraÃ§Ã£o de elementos-chave
+      // 1ï¸âƒ£ Extração de elementos-chave
       final keyElements = extractTitleKeyElements(title, language);
       final missingElements = <String>[];
       final foundElements = <String>[];
@@ -326,7 +326,7 @@ RESPONDA APENAS COM O JSON ARRAY:''';
           '   Personagens: ${keyElements['personagens']?.join(", ") ?? "nenhum"}',
         );
         debugPrint(
-          '   AÃ§Ãµes: ${keyElements['acoes']?.join(", ") ?? "nenhuma"}',
+          '   Ações: ${keyElements['acoes']?.join(", ") ?? "nenhuma"}',
         );
         debugPrint(
           '   Contextos: ${keyElements['contextos']?.join(", ") ?? "nenhum"}',
@@ -336,7 +336,7 @@ RESPONDA APENAS COM O JSON ARRAY:''';
         );
       }
 
-      // 2ï¸âƒ£ TraduÃ§Ã£o de keywords
+      // 2ï¸âƒ£ Tradução de keywords
       final translatedPersonagens = await translateKeywordsToTargetLang(
         keyElements['personagens'] ?? [],
         language,
@@ -353,7 +353,7 @@ RESPONDA APENAS COM O JSON ARRAY:''';
         apiKey,
       );
 
-      // 3ï¸âƒ£ ValidaÃ§Ã£o bÃ¡sica
+      // 3ï¸âƒ£ Validação bÃ¡sica
       final storyLower = story.toLowerCase();
 
       // Validar personagens
@@ -413,7 +413,7 @@ RESPONDA APENAS COM O JSON ARRAY:''';
         }
       }
 
-      // 4ï¸âƒ£ ValidaÃ§Ã£o avanÃ§ada com IA
+      // 4ï¸âƒ£ Validação avanÃ§ada com IA
       // ðŸ—ï¸ v7.6.64: Usar LlmClient se disponÃ­vel
       final storyPreview = story.length > 2000
           ? '${story.substring(0, 2000)}...'
@@ -421,13 +421,13 @@ RESPONDA APENAS COM O JSON ARRAY:''';
 
       final validationPrompt =
           '''
-VocÃª Ã© um validador rigoroso de coerÃªncia narrativa. 
+VocÃª Ã© um validador rigoroso de coerência narrativa. 
 
 TÃTULO: "$title"
 
 ELEMENTOS-CHAVE ESPERADOS:
 ${keyElements['personagens']!.isNotEmpty ? '- Personagens: ${keyElements['personagens']!.join(", ")}' : ''}
-${keyElements['acoes']!.isNotEmpty ? '- AÃ§Ãµes: ${keyElements['acoes']!.join(", ")}' : ''}
+${keyElements['acoes']!.isNotEmpty ? '- Ações: ${keyElements['acoes']!.join(", ")}' : ''}
 ${keyElements['contextos']!.isNotEmpty ? '- Contextos: ${keyElements['contextos']!.join(", ")}' : ''}
 ${keyElements['objetos']!.isNotEmpty ? '- Objetos: ${keyElements['objetos']!.join(", ")}' : ''}
 
@@ -435,7 +435,7 @@ HISTÃ“RIA (inÃ­cio):
 $storyPreview
 
 TAREFA:
-Analise RIGOROSAMENTE se a histÃ³ria desenvolve TODOS os elementos do tÃ­tulo.
+Analise RIGOROSAMENTE se a história desenvolve TODOS os elementos do título.
 
 RESPONDA EM JSON:
 {
@@ -516,7 +516,7 @@ RESPONDA EM JSON:
       };
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('âš ï¸ Erro na validaÃ§Ã£o de coerÃªncia: $e');
+        debugPrint('âš ï¸ Erro na validaÃ§Ã£o de coerência: $e');
       }
       return {
         'isValid': true, // Em caso de erro, nÃ£o bloquear

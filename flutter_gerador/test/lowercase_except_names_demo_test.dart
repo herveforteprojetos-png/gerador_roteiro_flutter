@@ -13,12 +13,7 @@ Lá, Encontrou Dona Helena E Doutor Álvaro.
 ''';
 
     // Nomes conhecidos do roteiro (registrados pelo sistema)
-    final knownCharacters = {
-      'Mariana',
-      'Costa', 
-      'Helena',
-      'Álvaro',
-    };
+    final knownCharacters = {'Mariana', 'Costa', 'Helena', 'Álvaro'};
 
     // Aplicar normalização
     final normalized = PostGenerationFixer.lowercaseExceptNames(
@@ -34,29 +29,38 @@ Lá, Encontrou Dona Helena E Doutor Álvaro.
     // Validações
     expect(normalized, contains('para Mariana')); // 'para' em lowercase
     expect(normalized, contains('Mariana')); // Nome preservado
-    expect(normalized, contains('presidente Costa')); // 'presidente' lowercase, 'Costa' preservado
-    expect(normalized, contains('escola municipal')); // Tudo lowercase (não são nomes)
+    expect(
+      normalized,
+      contains('presidente Costa'),
+    ); // 'presidente' lowercase, 'Costa' preservado
+    expect(
+      normalized,
+      contains('escola municipal'),
+    ); // Tudo lowercase (não são nomes)
     expect(normalized, contains('Helena')); // Nome preservado
     expect(normalized, contains('Álvaro')); // Nome com acento preservado
-    
+
     // Palavras comuns devem estar em lowercase
     expect(normalized, isNot(contains('Presidente'))); // Não é nome
     expect(normalized, isNot(contains('Escola'))); // Não é nome
     expect(normalized, isNot(contains('Municipal'))); // Não é nome
-    expect(normalized, isNot(contains('Doutor'))); // Não é nome (a menos que seja parte do nome)
+    expect(
+      normalized,
+      isNot(contains('Doutor')),
+    ); // Não é nome (a menos que seja parte do nome)
   });
 
   test('Demo: exemplo do requisito original', () {
     const input = 'Para Mariana. O Presidente Costa.';
-    
+
     print('\n📌 EXEMPLO DO REQUISITO:');
     print('Input: "$input"');
-    
+
     // Sem nomes conhecidos
     final withoutNames = PostGenerationFixer.lowercaseExceptNames(input);
     print('Sem nomes conhecidos: "$withoutNames"');
     expect(withoutNames, 'para mariana. o presidente costa.');
-    
+
     // Com nomes conhecidos
     final withNames = PostGenerationFixer.lowercaseExceptNames(
       input,
@@ -86,12 +90,12 @@ Lá, Encontrou Dona Helena E Doutor Álvaro.
     for (final testCase in testCases) {
       final input = testCase['input'] as String;
       final names = testCase['names'] as Set<String>;
-      
+
       final output = PostGenerationFixer.lowercaseExceptNames(
         input,
         knownNames: names,
       );
-      
+
       print('INPUT:  $input');
       print('NAMES:  ${names.join(', ')}');
       print('OUTPUT: $output');
