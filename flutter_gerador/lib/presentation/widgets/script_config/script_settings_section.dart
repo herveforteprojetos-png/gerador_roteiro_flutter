@@ -411,6 +411,7 @@ class ScriptSettingsSection extends StatelessWidget {
                           value: 'ko',
                           child: Text('Coreano (한국어)'),
                         ),
+                        DropdownMenuItem(value: 'hr', child: Text('Croata')),
                         DropdownMenuItem(
                           value: 'es-mx',
                           child: Text('Espanhol Mexicano'),

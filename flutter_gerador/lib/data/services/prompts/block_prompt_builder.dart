@@ -204,10 +204,14 @@ class BlockPromptBuilder {
     // 📏 CONTROLE RIGOROSO DE CONTAGEM: ±8% aceitável
     final minAcceptable = (adjustedTarget * 0.92).round();
     final maxAcceptable = (adjustedTarget * 1.08).round();
+    
+    // 🚨 v7.6.156: LIMITE DE CARACTERES ajustado por idioma
+    final charsPerWord = getCharsPerWordForLanguage(c.language);
+    final maxChars = (adjustedTarget * charsPerWord * 1.08).round(); // +8% margem
 
     final measure = isSpanish
-        ? 'GERE EXATAMENTE $adjustedTarget palabras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable). É MELHOR ficar perto de $adjustedTarget do que muito abaixo!'
-        : 'GERE EXATAMENTE $adjustedTarget palavras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable). É MELHOR ficar perto de $adjustedTarget do que muito abaixo!';
+        ? 'GERE EXATAMENTE $adjustedTarget palabras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable).\n⚠️ LIMITE ABSOLUTO: MÁXIMO $maxChars CARACTERES! NÃO ULTRAPASSE!\nÉ MELHOR ficar perto de $adjustedTarget palavras do que muito abaixo!'
+        : 'GERE EXATAMENTE $adjustedTarget palavras (MÍNIMO $minAcceptable, MÁXIMO $maxAcceptable).\n⚠️ LIMITE ABSOLUTO: MÁXIMO $maxChars CARACTERES! NÃO ULTRAPASSE!\nÉ MELHOR ficar perto de $adjustedTarget palavras do que muito abaixo!';
 
     final localizationGuidance = BaseRules.buildLocalizationGuidance(c);
     final narrativeStyleGuidance = NarrativeStyleManager.getStyleGuidance(c);
@@ -511,11 +515,49 @@ class BlockPromptBuilder {
       return 1.0; // Sem ajuste
     }
 
-    // 🇷🇺 RUSSO: Muito conciso
+    // 🇷🇺 RUSSO: Muito conciso (sem artigos, casos gramaticais)
     if (normalized.contains('russo') ||
         normalized.contains('russian') ||
         normalized == 'ru') {
       return 1.15; // Pedir 15% MAIS
+    }
+
+    // 🇧🇬 BÚLGARO: Conciso similar ao russo
+    if (normalized.contains('búlgar') ||
+        normalized.contains('bulgar') ||
+        normalized.contains('bulgarian') ||
+        normalized == 'bg') {
+      return 1.15; // Pedir 15% MAIS
+    }
+
+    // �🇷 CROATA: Ligeiramente mais conciso que português
+    if (normalized.contains('croata') ||
+        normalized.contains('croatian') ||
+        normalized.contains('hrvatski') ||
+        normalized == 'hr') {
+      return 1.05; // Pedir 5% MAIS
+    }
+
+    // �🇵🇱 POLONÊS: Ligeiramente mais conciso que português
+    if (normalized.contains('polon') ||
+        normalized.contains('polish') ||
+        normalized == 'pl') {
+      return 1.05; // Pedir 5% MAIS
+    }
+
+    // 🇹🇷 TURCO: Muito conciso (aglutinação de palavras)
+    if (normalized.contains('turco') ||
+        normalized.contains('turk') ||
+        normalized.contains('turkish') ||
+        normalized == 'tr') {
+      return 1.10; // Pedir 10% MAIS
+    }
+
+    // 🇷🇴 ROMENO: Similar ao italiano/português
+    if (normalized.contains('romeno') ||
+        normalized.contains('roman') ||
+        normalized == 'ro') {
+      return 0.92; // Pedir 8% menos para compensar
     }
 
     // 🇰🇷 COREANO: Muito conciso
@@ -525,22 +567,105 @@ class BlockPromptBuilder {
       return 1.20; // Pedir 20% MAIS
     }
 
-    // 🇯🇵 JAPONÊS: Muito conciso
-    if (normalized.contains('japon') ||
-        normalized.contains('japanese') ||
-        normalized == 'ja') {
-      return 1.20; // Pedir 20% MAIS
-    }
-
-    // 🇨🇳 CHINÊS: Extremamente conciso
-    if (normalized.contains('chin') ||
-        normalized.contains('chinese') ||
-        normalized == 'zh') {
-      return 1.30; // Pedir 30% MAIS
-    }
-
     // 🇧🇷 PORTUGUÊS ou OUTROS: Baseline perfeito
     return 1.0;
+  }
+
+  /// Retorna chars por palavra para cada idioma (usado no limite de caracteres)
+  static double getCharsPerWordForLanguage(String language) {
+    final normalized = language.toLowerCase().trim();
+
+    // 🇰🇷 COREANO: 2-3 chars/palavra
+    if (normalized.contains('coreano') ||
+        normalized.contains('korean') ||
+        normalized == 'ko') {
+      return 2.5;
+    }
+
+    // �🇪 ALEMÃO: 6-7 chars/palavra (palavras compostas longas)
+    if (normalized.contains('alem') ||
+        normalized.contains('german') ||
+        normalized == 'de') {
+      return 6.5;
+    }
+
+    // 🇷🇺 RUSSO: 5-6 chars/palavra (alfabeto cirílico)
+    if (normalized.contains('russo') ||
+        normalized.contains('russian') ||
+        normalized == 'ru') {
+      return 5.5;
+    }
+
+    // �🇬 BÚLGARO: 5-6 chars/palavra (alfabeto cirílico, similar ao russo)
+    if (normalized.contains('búlgar') ||
+        normalized.contains('bulgar') ||
+        normalized.contains('bulgarian') ||
+        normalized == 'bg') {
+      return 5.5;
+    }
+    // 🇭🇷 CROATA: 5.5-6 chars/palavra (diacríticos, similar ao polonês)
+    if (normalized.contains('croata') ||
+        normalized.contains('croatian') ||
+        normalized.contains('hrvatski') ||
+        normalized == 'hr') {
+      return 5.7;
+    }
+    // 🇵🇱 POLONÊS: 5.5-6 chars/palavra (diacríticos)
+    if (normalized.contains('polon') ||
+        normalized.contains('polish') ||
+        normalized == 'pl') {
+      return 5.8;
+    }
+
+    // 🇹🇷 TURCO: 5-5.5 chars/palavra
+    if (normalized.contains('turco') ||
+        normalized.contains('turk') ||
+        normalized.contains('turkish') ||
+        normalized == 'tr') {
+      return 5.3;
+    }
+
+    // 🇷🇴 ROMENO: 5-5.5 chars/palavra (similar ao italiano)
+    if (normalized.contains('romeno') ||
+        normalized.contains('roman') ||
+        normalized == 'ro') {
+      return 5.3;
+    }
+
+    // �🇫🇷 FRANCÊS: 5-5.5 chars/palavra
+    if (normalized.contains('franc') ||
+        normalized.contains('french') ||
+        normalized == 'fr') {
+      return 5.3;
+    }
+
+    // 🇮🇹 ITALIANO: 5-5.5 chars/palavra
+    if (normalized.contains('italia') ||
+        normalized.contains('italian') ||
+        normalized == 'it') {
+      return 5.2;
+    }
+
+    // 🇪🇸 ESPANHOL: 5-5.5 chars/palavra
+    if (normalized.contains('espanhol') ||
+        normalized.contains('spanish') ||
+        normalized.contains('español') ||
+        normalized == 'es' ||
+        normalized == 'es-mx') {
+      return 5.3;
+    }
+
+    // 🇺🇸 INGLÊS: 4.5-5 chars/palavra
+    if (normalized.contains('inglês') ||
+        normalized.contains('ingles') ||
+        normalized.contains('english') ||
+        normalized == 'en' ||
+        normalized == 'en-us') {
+      return 4.7;
+    }
+
+    // 🇧🇷 PORTUGUÊS ou OUTROS: 5-5.5 chars/palavra
+    return 5.2;
   }
 
   static String buildCharacterGuidance(
