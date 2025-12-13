@@ -564,8 +564,7 @@ class BaseRules {
       return 'Brasil';
     }
 
-    if (normalized.contains('inglês') ||
-        normalized.contains('ingles') ||
+    if (normalized.contains('ingl') ||
         normalized.contains('english') ||
         normalized == 'en' ||
         normalized == 'en-us') {
@@ -577,6 +576,66 @@ class BaseRules {
         normalized.contains('spanish') ||
         normalized == 'es') {
       return 'Mexico';
+    }
+
+    if (normalized.contains('franc') ||
+        normalized.contains('french') ||
+        normalized == 'fr') {
+      return 'France';
+    }
+
+    if (normalized.contains('alem') ||
+        normalized.contains('german') ||
+        normalized == 'de') {
+      return 'Germany';
+    }
+
+    if (normalized.contains('italia') ||
+        normalized.contains('italian') ||
+        normalized == 'it') {
+      return 'Italy';
+    }
+
+    if (normalized.contains('polon') ||
+        normalized.contains('polish') ||
+        normalized == 'pl') {
+      return 'Poland';
+    }
+
+    if (normalized.contains('búlg') ||
+        normalized.contains('bulg') ||
+        normalized == 'bg') {
+      return 'Bulgaria';
+    }
+
+    if (normalized.contains('russo') ||
+        normalized.contains('russian') ||
+        normalized == 'ru') {
+      return 'Russia';
+    }
+
+    if (normalized.contains('core') ||
+        normalized.contains('korean') ||
+        normalized == 'ko') {
+      return 'South Korea';
+    }
+
+    if (normalized.contains('turc') ||
+        normalized.contains('turk') ||
+        normalized == 'tr') {
+      return 'Turkey';
+    }
+
+    if (normalized.contains('romen') ||
+        normalized.contains('roman') ||
+        normalized == 'ro') {
+      return 'Romania';
+    }
+
+    if (normalized.contains('croat') ||
+        normalized.contains('hrvat') ||
+        normalized == 'hr') {
+      return 'Croatia';
     }
 
     return '';

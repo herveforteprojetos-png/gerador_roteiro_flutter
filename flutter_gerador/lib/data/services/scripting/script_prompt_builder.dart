@@ -692,80 +692,132 @@ ${!isFinalBlock ? '🚫 NUNCA finalize a história antes do bloco final ($totalB
 
   /// Retorna mapa de hooks por idioma
   static Map<String, String> _getHooksByLanguage(String language) {
-    switch (language.toLowerCase()) {
-      case 'en':
-      case 'english':
-        return {
-          'billionaire':
-              'What happens when you help a stranger... and discover they could change your life forever?',
-          'betrayal':
-              'Some truths should remain buried. This is the story of when I discovered mine.',
-          'secret':
-              'Everyone has secrets. The problem is when they start hunting you.',
-          'family':
-              'The last words she said to me changed everything. I just wish I had listened sooner.',
-          'emotional': 'I never cry. But this story... this story broke me.',
-          'medical':
-              'The doctor called it a miracle. I call it the day everything changed.',
-          'work':
-              'My boss laughed when he fired me. He stopped laughing three months later.',
-          'horror':
-              'I used to think monsters were just stories. That was before I met one.',
-          'romance':
-              'They say you only truly love once. I thought that was true... until that day.',
-          'generic':
-              'This story changed everything I thought I knew about trust.',
-        };
+    final normalized = language.toLowerCase().trim();
 
-      case 'es':
-      case 'spanish':
-        return {
-          'billionaire':
-              '¿Qué pasa cuando ayudas a un extraño... y descubres que podría cambiar tu vida para siempre?',
-          'betrayal':
-              'Algunas verdades deberían permanecer enterradas. Esta es la historia de cuando descubrí la mía.',
-          'secret':
-              'Todos tienen secretos. El problema es cuando empiezan a cazarte.',
-          'family':
-              'Las últimas palabras que me dijo lo cambiaron todo. Ojalá hubiera escuchado antes.',
-          'emotional':
-              'Nunca lloro. Pero esta historia... esta historia me quebró.',
-          'medical':
-              'El doctor lo llamó un milagro. Yo lo llamo el día que todo cambió.',
-          'work':
-              'Mi jefe se rió cuando me despidió. Dejó de reír tres meses después.',
-          'horror':
-              'Solía pensar que los monstruos eran solo cuentos. Eso fue antes de conocer uno.',
-          'romance':
-              'Dicen que solo amas de verdad una vez. Yo creía eso... hasta ese día.',
-          'generic':
-              'Esta historia cambió todo lo que pensaba saber sobre la confianza.',
-        };
-
-      default: // Portuguese
-        return {
-          'billionaire':
-              'O que acontece quando você ajuda um estranho... e descobre que ele pode mudar sua vida para sempre?',
-          'betrayal':
-              'Algumas verdades deveriam permanecer enterradas. Esta é a história de quando descobri a minha.',
-          'secret':
-              'Todo mundo tem segredos. O problema é quando eles começam a te caçar.',
-          'family':
-              'As últimas palavras que ela me disse mudaram tudo. Eu só queria ter ouvido antes.',
-          'emotional':
-              'Eu nunca choro. Mas essa história... essa história me quebrou.',
-          'medical':
-              'O médico chamou de milagre. Eu chamo de o dia em que tudo mudou.',
-          'work':
-              'Meu chefe riu quando me demitiu. Ele parou de rir três meses depois.',
-          'horror':
-              'Eu costumava pensar que monstros eram só histórias. Isso foi antes de conhecer um.',
-          'romance':
-              'Dizem que você só ama de verdade uma vez. Eu acreditava nisso... até aquele dia.',
-          'generic':
-              'Esta história mudou tudo o que eu pensava saber sobre confiança.',
-        };
+    // 🇺🇸 Inglês
+    if (normalized.contains('ingl') || normalized.contains('english') || normalized == 'en') {
+      return {
+        'billionaire': 'What happens when you help a stranger... and discover they could change your life forever?',
+        'betrayal': 'Some truths should remain buried. This is the story of when I discovered mine.',
+        'secret': 'Everyone has secrets. The problem is when they start hunting you.',
+        'family': 'The last words she said to me changed everything. I just wish I had listened sooner.',
+        'emotional': 'I never cry. But this story... this story broke me.',
+        'medical': 'The doctor called it a miracle. I call it the day everything changed.',
+        'work': 'My boss laughed when he fired me. He stopped laughing three months later.',
+        'horror': 'I used to think monsters were just stories. That was before I met one.',
+        'romance': 'They say you only truly love once. I thought that was true... until that day.',
+        'generic': 'This story changed everything I thought I knew about trust.',
+      };
     }
+
+    // 🇪🇸 Espanhol
+    if (normalized.contains('espanhol') || normalized.contains('spanish') || normalized == 'es') {
+      return {
+        'billionaire': '¿Qué pasa cuando ayudas a un extraño... y descubres que podría cambiar tu vida para siempre?',
+        'betrayal': 'Algunas verdades deberían permanecer enterradas. Esta es la historia de cuando descubrí la mía.',
+        'secret': 'Todos tienen secretos. El problema es cuando empiezan a cazarte.',
+        'family': 'Las últimas palabras que me dijo lo cambiaron todo. Ojalá hubiera escuchado antes.',
+        'emotional': 'Nunca lloro. Pero esta historia... esta historia me quebró.',
+        'medical': 'El doctor lo llamó un milagro. Yo lo llamo el día que todo cambió.',
+        'work': 'Mi jefe se rió cuando me despidió. Dejó de reír tres meses después.',
+        'horror': 'Solía pensar que los monstruos eran solo cuentos. Eso fue antes de conocer uno.',
+        'romance': 'Dicen que solo amas de verdad una vez. Yo creía eso... hasta ese día.',
+        'generic': 'Esta historia cambió todo lo que pensaba saber sobre la confianza.',
+      };
+    }
+
+    // 🇫🇷 Francês
+    if (normalized.contains('franc') || normalized.contains('french') || normalized == 'fr') {
+      return {
+        'billionaire': "Que se passe-t-il quand vous aidez un étranger... et découvrez qu'il pourrait changer votre vie à jamais?",
+        'betrayal': "Certaines vérités devraient rester enterrées. C'est l'histoire de quand j'ai découvert la mienne.",
+        'secret': 'Tout le monde a des secrets. Le problème, c\'est quand ils commencent à vous chasser.',
+        'family': "Les derniers mots qu'elle m'a dits ont tout changé. J'aurais juste aimé écouter plus tôt.",
+        'emotional': 'Je ne pleure jamais. Mais cette histoire... cette histoire m\'a brisé.',
+        'medical': 'Le médecin a appelé ça un miracle. Moi, j\'appelle ça le jour où tout a changé.',
+        'work': 'Mon patron a ri quand il m\'a viré. Il a arrêté de rire trois mois plus tard.',
+        'horror': 'Je pensais que les monstres n\'étaient que des histoires. C\'était avant d\'en rencontrer un.',
+        'romance': 'On dit qu\'on aime vraiment qu\'une seule fois. Je le croyais... jusqu\'à ce jour-là.',
+        'generic': 'Cette histoire a changé tout ce que je pensais savoir sur la confiance.',
+      };
+    }
+
+    // 🇩🇪 Alemão
+    if (normalized.contains('alem') || normalized.contains('german') || normalized == 'de') {
+      return {
+        'generic': 'Diese Geschichte hat alles verändert, was ich über Vertrauen zu wissen glaubte.',
+      };
+    }
+
+    // 🇮🇹 Italiano
+    if (normalized.contains('italia') || normalized.contains('italian') || normalized == 'it') {
+      return {
+        'generic': 'Questa storia ha cambiato tutto ciò che pensavo di sapere sulla fiducia.',
+      };
+    }
+
+    // 🇵🇱 Polonês
+    if (normalized.contains('polon') || normalized.contains('polish') || normalized == 'pl') {
+      return {
+        'generic': 'Ta historia zmieniła wszystko, co myślałem, że wiem o zaufaniu.',
+      };
+    }
+
+    // 🇧🇬 Búlgaro
+    if (normalized.contains('búlg') || normalized.contains('bulg') || normalized == 'bg') {
+      return {
+        'generic': 'Тази история промени всичко, което мислех, че знам за доверието.',
+      };
+    }
+
+    // 🇷🇺 Russo
+    if (normalized.contains('russo') || normalized.contains('russian') || normalized == 'ru') {
+      return {
+        'generic': 'Эта история изменила все, что я думал, что знаю о доверии.',
+      };
+    }
+
+    // 🇰🇷 Coreano
+    if (normalized.contains('core') || normalized.contains('korean') || normalized == 'ko') {
+      return {
+        'generic': '이 이야기는 신뢰에 대해 내가 알고 있다고 생각했던 모든 것을 바꿨습니다.',
+      };
+    }
+
+    // 🇹🇷 Turco
+    if (normalized.contains('turc') || normalized.contains('turk') || normalized == 'tr') {
+      return {
+        'generic': 'Bu hikaye, güven hakkında bildiğimi düşündüğüm her şeyi değiştirdi.',
+      };
+    }
+
+    // 🇷🇴 Romeno
+    if (normalized.contains('romen') || normalized.contains('roman') || normalized == 'ro') {
+      return {
+        'generic': 'Această poveste a schimbat tot ce credeam că știu despre încredere.',
+      };
+    }
+
+    // 🇭🇷 Croata
+    if (normalized.contains('croat') || normalized.contains('hrvat') || normalized == 'hr') {
+      return {
+        'generic': 'Ova priča promijenila je sve što sam mislio da znam o povjerenju.',
+      };
+    }
+
+    // 🇧🇷 Português (padrão)
+    return {
+      'billionaire': 'O que acontece quando você ajuda um estranho... e descobre que ele pode mudar sua vida para sempre?',
+      'betrayal': 'Algumas verdades deveriam permanecer enterradas. Esta é a história de quando descobri a minha.',
+      'secret': 'Todo mundo tem segredos. O problema é quando eles começam a te caçar.',
+      'family': 'As últimas palavras que ela me disse mudaram tudo. Eu só queria ter ouvido antes.',
+      'emotional': 'Eu nunca choro. Mas essa história... essa história me quebrou.',
+      'medical': 'O médico chamou de milagre. Eu chamo de o dia em que tudo mudou.',
+      'work': 'Meu chefe riu quando me demitiu. Ele parou de rir três meses depois.',
+      'horror': 'Eu costumava pensar que monstros eram só histórias. Isso foi antes de conhecer um.',
+      'romance': 'Dizem que você só ama de verdade uma vez. Eu acreditava nisso... até aquele dia.',
+      'generic': 'Esta história mudou tudo o que eu pensava saber sobre confiança.',
+    };
   }
 
   /// ⏱️ Obtém instrução de pacing baseado no progresso
