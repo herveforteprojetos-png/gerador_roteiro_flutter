@@ -576,7 +576,7 @@ class BlockPromptBuilder {
     final normalized = language.toLowerCase().trim();
 
     // 🇰🇷 COREANO: 2-3 chars/palavra
-    if (normalized.contains('coreano') ||
+    if (normalized.contains('core') || // Captura: coreano, Coreano (encoding quebrado)
         normalized.contains('korean') ||
         normalized == 'ko') {
       return 2.5;
@@ -603,8 +603,7 @@ class BlockPromptBuilder {
       return 5.5;
     }
     // 🇭🇷 CROATA: 5.5-6 chars/palavra (diacríticos, similar ao polonês)
-    if (normalized.contains('croata') ||
-        normalized.contains('croatian') ||
+    if (normalized.contains('croat') || // Captura: croata, Croata (encoding quebrado)
         normalized.contains('hrvatski') ||
         normalized == 'hr') {
       return 5.7;
@@ -617,16 +616,15 @@ class BlockPromptBuilder {
     }
 
     // 🇹🇷 TURCO: 5-5.5 chars/palavra
-    if (normalized.contains('turco') ||
-        normalized.contains('turk') ||
-        normalized.contains('turkish') ||
+    if (normalized.contains('turc') || // Captura: turco, Turco (encoding quebrado)
+        normalized.contains('turk') || // Turkish
         normalized == 'tr') {
       return 5.3;
     }
 
     // 🇷🇴 ROMENO: 5-5.5 chars/palavra (similar ao italiano)
-    if (normalized.contains('romeno') ||
-        normalized.contains('roman') ||
+    if (normalized.contains('romen') || // Captura: romeno, Romeno (encoding quebrado)
+        normalized.contains('roman') || // Romanian
         normalized == 'ro') {
       return 5.3;
     }
