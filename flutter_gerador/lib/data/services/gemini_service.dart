@@ -1254,7 +1254,7 @@ class GeminiService {
     int finalMinAcceptable = minAcceptable;
     
     // 🎯 v7.6.151: Último bloco tem regras especiais (evitar retries desnecessários)
-    if (isLastBlock && !isFlashModel) {
+    if (isLastBlock) {
       // Para último bloco: aceitar 40% do target OU tudo que resta (o que for menor)
       final minFromTarget = (adjustedTarget * 0.40).round();
       final minFromRemaining = actInfo.actRemainingWords;
@@ -1266,7 +1266,8 @@ class GeminiService {
         debugPrint('   minFromRemaining: $minFromRemaining');
         debugPrint('   finalMinAcceptable: $finalMinAcceptable');
       }
-    } else if (isActNearLimit && !isFlashModel && !isKorean) {
+    } else if (isActNearLimit && !isKorean) {
+      // 🆕 v7.6.167: Flash também precisa de ajuste dinâmico! (antes excluído)
       final adjustedMinPercent = 0.35; // 35% do target quando ato no limite
       final minFromTarget = (adjustedTarget * adjustedMinPercent).round();
 
