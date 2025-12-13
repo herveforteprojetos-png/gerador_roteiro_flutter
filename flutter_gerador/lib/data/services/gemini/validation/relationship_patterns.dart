@@ -202,6 +202,149 @@ class RelationshipPatterns {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // PADRÕES DE RELACIONAMENTO - ALEMÃO
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Padrões de relacionamentos familiares em Alemão
+  static final Map<String, RegExp> germanRelations = {
+    'ehemann': RegExp(r'mein Ehemann(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'ehefrau': RegExp(r'meine Ehefrau(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'vater': RegExp(r'mein Vater(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'mutter': RegExp(r'meine Mutter(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'bruder': RegExp(r'mein Bruder(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'schwester': RegExp(r'meine Schwester(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'sohn': RegExp(r'mein Sohn(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'tochter': RegExp(r'meine Tochter(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PADRÕES DE RELACIONAMENTO - ITALIANO
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Padrões de relacionamentos familiares em Italiano
+  static final Map<String, RegExp> italianRelations = {
+    'marito': RegExp(r'mio marito(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'moglie': RegExp(r'mia moglie(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'padre': RegExp(r'mio padre(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'madre': RegExp(r'mia madre(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'fratello': RegExp(r'mio fratello(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'sorella': RegExp(r'mia sorella(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'figlio': RegExp(r'mio figlio(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'figlia': RegExp(r'mia figlia(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PADRÕES DE RELACIONAMENTO - POLONÊS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Padrões de relacionamentos familiares em Polonês
+  static final Map<String, RegExp> polishRelations = {
+    'mąż': RegExp(r'mój mąż(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'żona': RegExp(r'moja żona(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'ojciec': RegExp(r'mój ojciec(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'matka': RegExp(r'moja matka(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'brat': RegExp(r'mój brat(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'siostra': RegExp(r'moja siostra(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'syn': RegExp(r'mój syn(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'córka': RegExp(r'moja córka(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PADRÕES DE RELACIONAMENTO - BÚLGARO
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Padrões de relacionamentos familiares em Búlgaro
+  static final Map<String, RegExp> bulgarianRelations = {
+    'съпруг': RegExp(r'моят съпруг(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'съпруга': RegExp(r'моята съпруга(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'баща': RegExp(r'моят баща(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'майка': RegExp(r'моята майка(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'брат': RegExp(r'моят брат(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'сестра': RegExp(r'моята сестра(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'син': RegExp(r'моят син(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'дъщеря': RegExp(r'моята дъщеря(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PADRÕES DE RELACIONAMENTO - RUSSO
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Padrões de relacionamentos familiares em Russo
+  static final Map<String, RegExp> russianRelations = {
+    'муж': RegExp(r'мой муж(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'жена': RegExp(r'моя жена(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'отец': RegExp(r'мой отец(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'мать': RegExp(r'моя мать(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'брат': RegExp(r'мой брат(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'сестра': RegExp(r'моя сестра(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'сын': RegExp(r'мой сын(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+    'дочь': RegExp(r'моя дочь(?:,)?\s+([А-Я][а-я]+)', caseSensitive: false),
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PADRÕES DE RELACIONAMENTO - COREANO
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Padrões de relacionamentos familiares em Coreano
+  static final Map<String, RegExp> koreanRelations = {
+    '남편': RegExp(r'제 남편(?:,)?\s+([가-힣]+)', caseSensitive: false),
+    '아내': RegExp(r'제 아내(?:,)?\s+([가-힣]+)', caseSensitive: false),
+    '아버지': RegExp(r'제 아버지(?:,)?\s+([가-힣]+)', caseSensitive: false),
+    '어머니': RegExp(r'제 어머니(?:,)?\s+([가-힣]+)', caseSensitive: false),
+    '형': RegExp(r'제 형(?:,)?\s+([가-힣]+)', caseSensitive: false),
+    '누나': RegExp(r'제 누나(?:,)?\s+([가-힣]+)', caseSensitive: false),
+    '아들': RegExp(r'제 아들(?:,)?\s+([가-힣]+)', caseSensitive: false),
+    '딸': RegExp(r'제 딸(?:,)?\s+([가-힣]+)', caseSensitive: false),
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PADRÕES DE RELACIONAMENTO - TURCO
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Padrões de relacionamentos familiares em Turco
+  static final Map<String, RegExp> turkishRelations = {
+    'kocam': RegExp(r'benim kocam(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'eşim': RegExp(r'benim eşim(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'babam': RegExp(r'benim babam(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'annem': RegExp(r'benim annem(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'kardeşim': RegExp(r'benim kardeşim(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'oğlum': RegExp(r'benim oğlum(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'kızım': RegExp(r'benim kızım(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PADRÕES DE RELACIONAMENTO - ROMENO
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Padrões de relacionamentos familiares em Romeno
+  static final Map<String, RegExp> romanianRelations = {
+    'soț': RegExp(r'soțul meu(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'soție': RegExp(r'soția mea(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'tată': RegExp(r'tatăl meu(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'mamă': RegExp(r'mama mea(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'frate': RegExp(r'fratele meu(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'soră': RegExp(r'sora mea(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'fiu': RegExp(r'fiul meu(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'fiică': RegExp(r'fiica mea(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PADRÕES DE RELACIONAMENTO - CROATA
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Padrões de relacionamentos familiares em Croata
+  static final Map<String, RegExp> croatianRelations = {
+    'muž': RegExp(r'moj muž(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'žena': RegExp(r'moja žena(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'otac': RegExp(r'moj otac(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'majka': RegExp(r'moja majka(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'brat': RegExp(r'moj brat(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'sestra': RegExp(r'moja sestra(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'sin': RegExp(r'moj sin(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+    'kći': RegExp(r'moja kći(?:,)?\s+([A-Z][a-z]+)', caseSensitive: false),
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // MÉTODOS UTILITÁRIOS
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -209,8 +352,7 @@ class RelationshipPatterns {
   static Map<String, RegExp> getRelationsForLanguage(String language) {
     final normalized = language.toLowerCase().trim();
 
-    if (normalized.contains('inglês') ||
-        normalized.contains('ingles') ||
+    if (normalized.contains('ingl') ||
         normalized.contains('english') ||
         normalized == 'en') {
       return englishRelations;
@@ -227,6 +369,60 @@ class RelationshipPatterns {
         normalized.contains('español') ||
         normalized == 'es') {
       return spanishRelations;
+    }
+
+    if (normalized.contains('alem') ||
+        normalized.contains('german') ||
+        normalized == 'de') {
+      return germanRelations;
+    }
+
+    if (normalized.contains('italia') ||
+        normalized.contains('italian') ||
+        normalized == 'it') {
+      return italianRelations;
+    }
+
+    if (normalized.contains('polon') ||
+        normalized.contains('polish') ||
+        normalized == 'pl') {
+      return polishRelations;
+    }
+
+    if (normalized.contains('búlg') ||
+        normalized.contains('bulg') ||
+        normalized == 'bg') {
+      return bulgarianRelations;
+    }
+
+    if (normalized.contains('russo') ||
+        normalized.contains('russian') ||
+        normalized == 'ru') {
+      return russianRelations;
+    }
+
+    if (normalized.contains('core') ||
+        normalized.contains('korean') ||
+        normalized == 'ko') {
+      return koreanRelations;
+    }
+
+    if (normalized.contains('turc') ||
+        normalized.contains('turk') ||
+        normalized == 'tr') {
+      return turkishRelations;
+    }
+
+    if (normalized.contains('romen') ||
+        normalized.contains('roman') ||
+        normalized == 'ro') {
+      return romanianRelations;
+    }
+
+    if (normalized.contains('croat') ||
+        normalized.contains('hrvat') ||
+        normalized == 'hr') {
+      return croatianRelations;
     }
 
     // Português como padrão
