@@ -6,6 +6,7 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_gerador/data/models/script_config.dart';
+import 'package:flutter_gerador/data/services/prompts/block_prompt_builder.dart';
 
 /// 🏷️ Categorias linguísticas para cálculo de blocos
 enum LanguageCategory {
@@ -194,9 +195,12 @@ class BlockCalculator {
         c.language.toLowerCase().contains('coreano') ||
         c.language.toLowerCase().contains('korean');
 
-    final charToWordRatio = (c.measureType == 'caracteres' && isKoreanMeasure)
-        ? 4.2 // Coreano: alta densidade silábica
-        : 5.5; // Outros idiomas: padrão
+    // 🚨 v7.6.158: Usar ratio específico por idioma (2.5-6.5 range)
+    final charToWordRatio = c.measureType == 'caracteres'
+        ? (isKoreanMeasure 
+            ? 4.2 // Coreano em modo caracteres (legacy)
+            : BlockPromptBuilder.getCharsPerWordForLanguage(c.language))
+        : BlockPromptBuilder.getCharsPerWordForLanguage(c.language);
 
     int wordsEquivalent = c.measureType == 'caracteres'
         ? (c.quantity / charToWordRatio).round()
