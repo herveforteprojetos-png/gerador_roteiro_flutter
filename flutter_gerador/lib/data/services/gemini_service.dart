@@ -1378,12 +1378,14 @@ class GeminiService {
       // 🚨 v7.6.152: LIMITE RÍGIDO DE CHARS - Rejeitar blocos com dobro de tamanho
       // Evita blocos gigantes que causam duplicação narrativa
       // v7.6.156: Ajustado por idioma (chars/palavra varia por idioma)
-      // v7.6.162: Reduzido 1.5× → 1.25× para evitar crash nos blocos finais
+      // v7.6.162: 1.5× → 1.25× (muito restritivo, causou crash no Bloco 1)
+      // v7.6.163: Validação diferenciada (1.35× blocos 1-6, 1.25× blocos 7+)
       final charsPerWord = BlockPromptBuilder.getCharsPerWordForLanguage(c.language);
       final expectedMaxChars = (adjustedTarget * charsPerWord * 1.08).round();
-      if (data.length > expectedMaxChars * 1.25) {
+      final validationMultiplier = blockNumber >= 7 ? 1.25 : 1.35;
+      if (data.length > expectedMaxChars * validationMultiplier) {
         _debugLogger.warning(
-          "Bloco $blockNumber rejeitado: resposta muito longa (${data.length} chars, máx ${(expectedMaxChars * 1.25).round()})",
+          "Bloco $blockNumber rejeitado: resposta muito longa (${data.length} chars, máx ${(expectedMaxChars * validationMultiplier).round()})",
           blockNumber: blockNumber,
         );
         return '';

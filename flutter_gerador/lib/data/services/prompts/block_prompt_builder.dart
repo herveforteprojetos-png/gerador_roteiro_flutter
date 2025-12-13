@@ -686,12 +686,13 @@ SEJA DIRETO, CONCISO, SEM FIRULAS DESNECESSÁRIAS!
     }
 
     // 🇺🇸 INGLÊS: 4.5-5 chars/palavra
-    // v7.6.162: Reduzido 4.7 → 4.3 (-8.5%) para evitar crash nos blocos finais
+    // v7.6.162: 4.7 → 4.3 (muito conservador, causou crash no Bloco 1)
+    // v7.6.163: 4.3 → 4.5 (meio termo, balanceado)
     if (normalized.contains('ingl') || // Captura: inglês, ingles, Inglês (encoding quebrado)
         normalized.contains('english') ||
         normalized == 'en' ||
         normalized == 'en-us') {
-      return 4.3;
+      return 4.5;
     }
 
     // 🇧🇷 PORTUGUÊS ou OUTROS: 5-5.5 chars/palavra
