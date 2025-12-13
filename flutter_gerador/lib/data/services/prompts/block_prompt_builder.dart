@@ -209,7 +209,7 @@ class BlockPromptBuilder {
     // 🚨 v7.6.162: ULTRA-AGRESSIVO para blocos finais (7+) onde Flash ignora limites
     final charsPerWord = getCharsPerWordForLanguage(c.language);
     final maxChars = (adjustedTarget * charsPerWord * 1.08).round(); // +8% margem
-    final isFinalBlocks = blockNum >= 7;
+    final isFinalBlocks = blockNumber >= 7;
     final strictMaxChars = isFinalBlocks ? (maxChars * 0.85).round() : maxChars;
 
     final measure = isFinalBlocks
