@@ -207,7 +207,8 @@ class BlockPromptBuilder {
     
     // 🚨 v7.6.157: LIMITE DE CARACTERES ajustado por idioma + AVISO ULTRA-AGRESSIVO
     // 🚨 v7.6.162: ULTRA-AGRESSIVO para blocos finais (7+) onde Flash ignora limites
-    final charsPerWord = getCharsPerWordForLanguage(c.language);
+    // 🚨 v7.6.164: Ratio diferenciado para blocos 7+ (passa blockNumber)
+    final charsPerWord = getCharsPerWordForLanguage(c.language, blockNumber: blockNumber);
     final maxChars = (adjustedTarget * charsPerWord * 1.08).round(); // +8% margem
     final isFinalBlocks = blockNumber >= 7;
     final strictMaxChars = isFinalBlocks ? (maxChars * 0.85).round() : maxChars;
@@ -605,7 +606,8 @@ SEJA DIRETO, CONCISO, SEM FIRULAS DESNECESSÁRIAS!
   }
 
   /// Retorna chars por palavra para cada idioma (usado no limite de caracteres)
-  static double getCharsPerWordForLanguage(String language) {
+  /// v7.6.164: Ratio diferenciado para blocos 7+ em Inglês (4.0 vs 4.5)
+  static double getCharsPerWordForLanguage(String language, {int blockNumber = 1}) {
     final normalized = language.toLowerCase().trim();
 
     // 🇰🇷 COREANO: 2-3 chars/palavra
@@ -688,11 +690,12 @@ SEJA DIRETO, CONCISO, SEM FIRULAS DESNECESSÁRIAS!
     // 🇺🇸 INGLÊS: 4.5-5 chars/palavra
     // v7.6.162: 4.7 → 4.3 (muito conservador, causou crash no Bloco 1)
     // v7.6.163: 4.3 → 4.5 (meio termo, balanceado)
+    // v7.6.164: Blocos 7+ usam 4.0 (mais conservador) para compensar Flash ignorando limites
     if (normalized.contains('ingl') || // Captura: inglês, ingles, Inglês (encoding quebrado)
         normalized.contains('english') ||
         normalized == 'en' ||
         normalized == 'en-us') {
-      return 4.5;
+      return blockNumber >= 7 ? 4.0 : 4.5;
     }
 
     // 🇧🇷 PORTUGUÊS ou OUTROS: 5-5.5 chars/palavra

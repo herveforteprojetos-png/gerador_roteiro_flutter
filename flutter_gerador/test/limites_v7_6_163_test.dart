@@ -14,11 +14,11 @@ void main() {
       expect(BlockPromptBuilder.getCharsPerWordForLanguage('en'), equals(4.5));
     });
 
-    group('Validação Blocos 1-6 (1.45×)', () {
+    group('Validação Blocos 1-6 (1.47×)', () {
       const targetWords = 930;
       const ratio = 4.5;
       const margem = 1.08;
-      const validationMultiplier = 1.45;
+      const validationMultiplier = 1.47;
 
       final expectedMaxChars = (targetWords * ratio * margem).round();
       final validationLimit = (expectedMaxChars * validationMultiplier).round();
@@ -33,7 +33,7 @@ void main() {
         
         // Aceita arredondamento
         expect(expectedMaxChars >= 4520 && expectedMaxChars <= 4536, isTrue);
-        expect(validationLimit >= 6554 && validationLimit <= 6600, isTrue);
+        expect(validationLimit >= 6644 && validationLimit <= 6650, isTrue);
       });
 
       test('Bloco 1 real (6609 chars) deve PASSAR', () {
@@ -113,9 +113,9 @@ void main() {
         const validationV162 = 1.25;
         final limiteV162 = (930 * ratioV162 * 1.08 * validationV162).round();
         
-        // v7.6.163: ratio 4.5, validação 1.45×
+        // v7.6.163: ratio 4.5, validação 1.47×
         const ratioV163 = 4.5;
-        const validationV163 = 1.45;
+        const validationV163 = 1.47;
         final limiteV163 = (930 * ratioV163 * 1.08 * validationV163).round();
         
         print('v7.6.162 (blocos 1-6): $limiteV162 chars');
@@ -123,7 +123,7 @@ void main() {
         print('Diferença: +${limiteV163 - limiteV162} chars (+${((limiteV163 / limiteV162 - 1) * 100).round()}%)');
         
         // Aceita arredondamento
-        expect(limiteV163 >= 6550 && limiteV163 <= 6600, isTrue);
+        expect(limiteV163 >= 6640 && limiteV163 <= 6650, isTrue);
         expect(limiteV163 > limiteV162, isTrue, reason: 'v7.6.163 mais permissivo para blocos iniciais');
       });
 
@@ -164,7 +164,7 @@ void main() {
         
         // Aceita arredondamento
         expect(maxCharsNormal >= 4520 && maxCharsNormal <= 4536, isTrue);
-        expect(maxCharsRestrict, equals(3856));
+        expect(maxCharsRestrict >= 3842 && maxCharsRestrict <= 3860, isTrue);
       });
     });
 
@@ -214,18 +214,18 @@ void main() {
       const limiteV162 = 5245;
       final crashV162 = bloco1Real > limiteV162;
       
-      // v7.6.163 (deve passar)
-      const limiteV163 = 6554;
+      // v7.6.163.2 (deve passar)
+      const limiteV163 = 6644;
       final passaV163 = bloco1Real <= limiteV163;
       
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       print('Bloco 1 real: $bloco1Real chars');
       print('v7.6.162 limite: $limiteV162 → ${crashV162 ? "❌ FALHA" : "✅ PASSA"}');
-      print('v7.6.163 limite: $limiteV163 → ${passaV163 ? "✅ PASSA" : "❌ FALHA"}');
+      print('v7.6.163.2 limite: $limiteV163 → ${passaV163 ? "✅ PASSA" : "❌ FALHA"}');
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       
       expect(crashV162, isTrue, reason: 'v7.6.162 causou crash no Bloco 1');
-      expect(passaV163, isFalse, reason: 'v7.6.163.1: 6609 ainda passa por pouco, mas logo retry passa');
+      expect(passaV163, isTrue, reason: 'v7.6.163.2: 6609 <= 6644 (PASSA!)');
     });
   });
 }

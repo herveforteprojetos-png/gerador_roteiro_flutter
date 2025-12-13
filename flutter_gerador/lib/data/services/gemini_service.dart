@@ -379,7 +379,8 @@ class GeminiService {
           // v7.6.130: 2s, 4s, 8s = 14s total
           // v7.6.145: 2s, 4s, 5s = 11s total (cap em 5s para evitar esperas longas)
           // v7.6.162: 5 retries para blocos finais (7+), 3 para blocos iniciais
-          final maxRetries = block >= 7 ? 5 : 3;
+          // v7.6.166: 5 retries para TODOS os blocos (emergency accept precisa disso)
+          final maxRetries = 5;
           for (int retry = 1; retry <= maxRetries; retry++) {
             final retryDelay = retry == 1
                 ? 2
@@ -406,6 +407,7 @@ class GeminiService {
                 worldState: worldState,
                 fullContextForCounter:
                     acc, // 🆕 v7.6.142.1: Passa contexto completo
+                retryAttempt: retry, // 🆕 v7.6.165: Passa número da tentativa
               ),
             );
 
@@ -1068,6 +1070,7 @@ class GeminiService {
     WorldState? worldState,
     String?
     fullContextForCounter, // 🆕 v7.6.142.1: Contexto completo para contador
+    int retryAttempt = 0, // 🆕 v7.6.165: Número da tentativa (0 = primeira, 1+ = retry)
   }) async {
     if (target <= 0) return '';
 
@@ -1382,9 +1385,30 @@ class GeminiService {
       // v7.6.163: Validação diferenciada (1.35× blocos 1-6, 1.25× blocos 7+)
       // v7.6.163.1: 1.35× → 1.45× blocos 1-6 (6609 chars ainda não passava)
       // v7.6.163.2: 1.45× → 1.47× blocos 1-6 (garantir 6609 passa: 4520×1.47=6644)
-      final charsPerWord = BlockPromptBuilder.getCharsPerWordForLanguage(c.language);
+      // v7.6.164: Ratio diferenciado + validação 1.4× para blocos 7+ (Flash ignora limites)
+      // v7.6.165: Emergency accept - após 5 retries, aceitar até 1.8× em blocos 7+
+      // v7.6.166: Emergency accept em TODOS blocos (3+ retries blocos 1-6, 4+ retries blocos 7+)
+      final charsPerWord = BlockPromptBuilder.getCharsPerWordForLanguage(c.language, blockNumber: blockNumber);
       final expectedMaxChars = (adjustedTarget * charsPerWord * 1.08).round();
-      final validationMultiplier = blockNumber >= 7 ? 1.25 : 1.47;
+      
+      // 🚨 v7.6.166: Emergency accept para TODOS os blocos após múltiplas falhas
+      double validationMultiplier;
+      if (blockNumber >= 7) {
+        // Blocos 7-12
+        if (retryAttempt >= 4) {
+          validationMultiplier = 1.8; // Tentativa 5+: emergency
+        } else {
+          validationMultiplier = 1.4; // Tentativas 1-4: rigoroso
+        }
+      } else {
+        // Blocos 1-6
+        if (retryAttempt >= 3) {
+          validationMultiplier = 1.65; // Tentativa 4+: emergency (menos permissivo que blocos 7+)
+        } else {
+          validationMultiplier = 1.47; // Tentativas 1-3: normal
+        }
+      }
+      
       if (data.length > expectedMaxChars * validationMultiplier) {
         _debugLogger.warning(
           "Bloco $blockNumber rejeitado: resposta muito longa (${data.length} chars, máx ${(expectedMaxChars * validationMultiplier).round()})",
