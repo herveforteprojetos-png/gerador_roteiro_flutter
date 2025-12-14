@@ -1357,7 +1357,23 @@ class GeminiService {
           : 12.0;
       final maxTokens = min((target * tokenMultiplier).ceil(), 50000);
 
-      final selectedModel = _getSelectedModel(c.qualityMode);
+      // 🔄 v7.6.169: MODELO HÍBRIDO (Flash → Pro nos blocos finais)
+      // Flash ignora limites com contexto >116k chars (blocos 7+)
+      // Solução: Flash (blocos 1-6) + Pro (blocos 7-12) APENAS no modo Flash
+      // Pro e Ultra permanecem usando seus modelos do início ao fim
+      final selectedModel = LlmClient.getModelForBlock(
+        qualityMode: c.qualityMode,
+        blockNumber: blockNumber,
+        totalBlocks: totalBlocks,
+      );
+
+      if (kDebugMode && c.qualityMode == 'flash') {
+        final switchThreshold = (totalBlocks * 0.6).ceil();
+        final modelName = blockNumber >= switchThreshold ? 'Pro' : 'Flash';
+        debugPrint(
+          '🔄 v7.6.169 HÍBRIDO: Bloco $blockNumber/$totalBlocks usando Gemini $modelName',
+        );
+      }
 
       // ⏱️ v7.6.118: CRONOMETRAGEM DA API
       final apiStartTime = DateTime.now();
@@ -1366,7 +1382,7 @@ class GeminiService {
         debugPrint('   📦 Prompt: ${prompt.length} chars');
       }
 
-      final data = await _llmClient.generateText(
+      final rawData = await _llmClient.generateText(
         apiKey: c.apiKey,
         model: selectedModel,
         prompt: prompt,
@@ -1380,47 +1396,73 @@ class GeminiService {
         debugPrint(
           '⏱️ [Bloco $blockNumber] API respondeu em ${apiDuration.inMilliseconds}ms (${apiDuration.inSeconds}s)',
         );
-        debugPrint('   📝 Resposta: ${data.length} chars');
+        debugPrint('   📝 Resposta: ${rawData.length} chars');
       }
 
-      // 🚨 v7.6.152: LIMITE RÍGIDO DE CHARS - Rejeitar blocos com dobro de tamanho
-      // Evita blocos gigantes que causam duplicação narrativa
-      // v7.6.156: Ajustado por idioma (chars/palavra varia por idioma)
-      // v7.6.162: 1.5× → 1.25× (muito restritivo, causou crash no Bloco 1)
-      // v7.6.163: Validação diferenciada (1.35× blocos 1-6, 1.25× blocos 7+)
-      // v7.6.163.1: 1.35× → 1.45× blocos 1-6 (6609 chars ainda não passava)
-      // v7.6.163.2: 1.45× → 1.47× blocos 1-6 (garantir 6609 passa: 4520×1.47=6644)
-      // v7.6.164: Ratio diferenciado + validação 1.4× para blocos 7+ (Flash ignora limites)
-      // v7.6.165: Emergency accept - após 5 retries, aceitar até 1.8× em blocos 7+
-      // v7.6.166: Emergency accept em TODOS blocos (3+ retries blocos 1-6, 4+ retries blocos 7+)
+      // ✂️ v7.6.171: TRIM INTELIGENTE - Corte em parágrafo completo
+      // Problema v7.6.170: Corte em ponto final quebrava parágrafos no meio
+      // Solução: Priorizar quebra dupla (\n\n), depois parágrafo único (\n), por último frase
+      // Resultado: Narrativa fluida, zero frases cortadas, transições suaves
       final charsPerWord = BlockPromptBuilder.getCharsPerWordForLanguage(c.language, blockNumber: blockNumber);
       final expectedMaxChars = (adjustedTarget * charsPerWord * 1.08).round();
+      final hardLimit = (expectedMaxChars * 1.5).round(); // 50% margem generosa
       
-      // 🚨 v7.6.166: Emergency accept para TODOS os blocos após múltiplas falhas
-      double validationMultiplier;
-      if (blockNumber >= 7) {
-        // Blocos 7-12
-        if (retryAttempt >= 4) {
-          validationMultiplier = 1.8; // Tentativa 5+: emergency
-        } else {
-          validationMultiplier = 1.4; // Tentativas 1-4: rigoroso
+      String data = rawData;
+      if (rawData.length > hardLimit) {
+        // Corta em limite
+        final trimmed = rawData.substring(0, hardLimit);
+        
+        // 🎯 PRIORIDADE 1: Último parágrafo completo (quebra dupla)
+        final lastDoubleLine = trimmed.lastIndexOf('\n\n');
+        
+        // 🎯 PRIORIDADE 2: Última linha única (quebra simples)
+        final lastSingleLine = trimmed.lastIndexOf('\n');
+        
+        // 🎯 PRIORIDADE 3: Último ponto final/exclamação/interrogação
+        final lastPeriod = trimmed.lastIndexOf('.');
+        final lastExclamation = trimmed.lastIndexOf('!');
+        final lastQuestion = trimmed.lastIndexOf('?');
+        final lastPunctuation = [lastPeriod, lastExclamation, lastQuestion]
+            .reduce((a, b) => a > b ? a : b);
+        
+        // Escolhe o melhor ponto de corte
+        int cutPoint = -1;
+        String cutType = 'hard';
+        
+        // Se tem parágrafo completo nos últimos 20% do limite
+        if (lastDoubleLine > hardLimit * 0.80) {
+          cutPoint = lastDoubleLine;
+          cutType = 'paragraph';
         }
-      } else {
-        // Blocos 1-6
-        if (retryAttempt >= 3) {
-          validationMultiplier = 1.65; // Tentativa 4+: emergency (menos permissivo que blocos 7+)
+        // Se não, tenta linha única nos últimos 15%
+        else if (lastSingleLine > hardLimit * 0.85) {
+          cutPoint = lastSingleLine;
+          cutType = 'line';
+        }
+        // Se não, tenta pontuação nos últimos 10%
+        else if (lastPunctuation > hardLimit * 0.90) {
+          cutPoint = lastPunctuation + 1; // +1 para incluir o ponto
+          cutType = 'sentence';
+        }
+        
+        // Aplica o corte
+        if (cutPoint > 0) {
+          data = trimmed.substring(0, cutPoint);
         } else {
-          validationMultiplier = 1.47; // Tentativas 1-3: normal
+          // Fallback: corta hard mesmo (muito raro)
+          data = trimmed;
+        }
+        
+        if (kDebugMode) {
+          debugPrint(
+            '✂️ v7.6.171 TRIM INTELIGENTE: Bloco $blockNumber cortado ${rawData.length} → ${data.length} chars (tipo: $cutType, limite: $hardLimit)',
+          );
         }
       }
       
-      if (data.length > expectedMaxChars * validationMultiplier) {
-        _debugLogger.warning(
-          "Bloco $blockNumber rejeitado: resposta muito longa (${data.length} chars, máx ${(expectedMaxChars * validationMultiplier).round()})",
-          blockNumber: blockNumber,
-        );
-        return '';
-      }
+      // 🚫 v7.6.170: Validação de tamanho DESABILITADA (trim garante limite)
+      // Motivo: Com trim automático, nunca haverá blocos gigantes
+      // Resultado: Zero retries por tamanho = economia brutal de tempo/API calls
 
       if (data.isNotEmpty) {
         _lastSuccessfulCall = DateTime.now();

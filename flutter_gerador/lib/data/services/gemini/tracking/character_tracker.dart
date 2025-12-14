@@ -149,10 +149,34 @@ class CharacterTracker {
   // 🔄 RASTREAMENTO DE FECHAMENTO DE PERSONAGENS
   final Map<String, bool> _characterResolution = {};
 
+  // 🚫 v7.6.172: BLACKLIST de pronomes comuns (nunca são nomes)
+  // Problema: "Her", "He", "She" sendo detectados como nomes → retries
+  static const _pronounBlacklist = {
+    // Inglês
+    'he', 'she', 'her', 'his', 'him', 'they', 'them', 'their',
+    'it', 'its', 'i', 'you', 'we', 'us', 'our', 'my', 'your',
+    // Português
+    'ele', 'ela', 'seu', 'sua', 'dele', 'dela', 'eles', 'elas',
+    'seus', 'suas', 'deles', 'delas', 'meu', 'minha', 'você',
+    // Espanhol
+    'él', 'ella', 'su', 'sus', 'lo', 'la', 'ellos', 'ellas',
+    // Francês
+    'il', 'elle', 'son', 'sa', 'ses', 'leur', 'leurs', 'ils', 'elles',
+  };
+
   /// 🆕 v7.6.25: Retorna false se nome foi rejeitado (papel duplicado)
   /// 🆕 v7.6.136: Usa NameValidator para evitar falsos positivos
+  /// 🆕 v7.6.172: Filtra pronomes comuns (Her, He, She, etc)
   bool addName(String name, {String? role, int? blockNumber}) {
     if (name.isEmpty || name.length <= 2) return true; // Nome vazio não é erro
+
+    // 🚫 v7.6.172: FILTRO DE PRONOMES - ignorar completamente
+    if (_pronounBlacklist.contains(name.toLowerCase())) {
+      if (kDebugMode) {
+        debugPrint('⏭️ v7.6.172: "$name" ignorado (pronome comum, não nome)');
+      }
+      return true; // Não é erro, apenas ignorar
+    }
 
     // 🆕 v7.6.136: Ignorar FRASES (não são nomes de personagens)
     // Ex: "Mas Mateus", "Com Helena", "Até César" → ignorar

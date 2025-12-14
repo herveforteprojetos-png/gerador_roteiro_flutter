@@ -71,6 +71,52 @@ class LlmClient {
     }
   }
 
+  /// 🎯 v7.6.169: Seleção HÍBRIDA de modelo (Flash com fallback para Pro em blocos finais)
+  ///
+  /// ESTRATÉGIA HÍBRIDA (somente para Flash):
+  /// - Flash (qualityMode='flash'):
+  ///   * Blocos 1-6: gemini-2.5-flash (contexto pequeno, funciona bem)
+  ///   * Blocos 7-12: gemini-2.0-pro (contexto grande, Flash ignora limites)
+  /// - Pro/Ultra: mantém o mesmo modelo para todos os blocos
+  ///
+  /// [qualityMode]: Modo de qualidade selecionado pelo usuário
+  /// [blockNumber]: Número do bloco atual (1-12)
+  /// [totalBlocks]: Total de blocos da história
+  ///
+  /// Retorna: Nome do modelo a ser usado neste bloco específico
+  static String getModelForBlock({
+    required String qualityMode,
+    required int blockNumber,
+    required int totalBlocks,
+  }) {
+    final mode = qualityMode.toLowerCase();
+    
+    // Pro e Ultra: sem mudanças, mesmo modelo do início ao fim
+    if (mode == 'pro' || mode == 'ultra') {
+      return getModelForQuality(qualityMode);
+    }
+    
+    // Flash: HÍBRIDO - Pro para blocos finais (contexto > 116k chars)
+    if (mode == 'flash') {
+      // Threshold: usar Pro a partir de ~60% dos blocos (quando contexto fica grande)
+      final switchThreshold = (totalBlocks * 0.6).ceil();
+      
+      if (blockNumber >= switchThreshold) {
+        if (kDebugMode) {
+          debugPrint(
+            '🔄 v7.6.169 HÍBRIDO: Bloco $blockNumber/$totalBlocks usando Pro (contexto grande)',
+          );
+        }
+        return modelPro; // Usar Pro para blocos finais
+      } else {
+        return modelFlash; // Usar Flash para blocos iniciais
+      }
+    }
+    
+    // Fallback: usar modelo padrão
+    return getModelForQuality(qualityMode);
+  }
+
   /// 🔧 Gera texto usando a API Gemini
   ///
   /// [prompt]: O prompt a ser enviado
