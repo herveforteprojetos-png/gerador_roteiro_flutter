@@ -361,13 +361,17 @@ class GeminiService {
           );
         }
 
-        if (added.trim().isNotEmpty && block > 1) {
-          added = PostGenerationFixer.fixSwappedNames(
-            added,
-            persistentTracker.roleToNameMap,
-            block,
-          );
-        }
+        // 🔴 v7.6.168: PostGenerationFixer DESABILITADO - causando correções errôneas
+        // Bug: substitui pronomes corretos (she/he) e nomes corretos por "vast"
+        // Exemplo: "she stated" → "vast stated", "grandmother's voice" → "vast's voice"
+        // TODO: Corrigir extração de nomes antes de reabilitar
+        // if (added.trim().isNotEmpty && block > 1) {
+        //   added = PostGenerationFixer.fixSwappedNames(
+        //     added,
+        //     persistentTracker.roleToNameMap,
+        //     block,
+        //   );
+        // }
 
         if (added.trim().isEmpty && acc.isNotEmpty) {
           if (kDebugMode) {
